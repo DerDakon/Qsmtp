@@ -27,5 +27,5 @@ const char *ssl_strerror(void)
 		return err;
 	if (!errno)
 		return NULL;
-	return errno == ETIMEDOUT ? "timed out" : strerror(errno);
+	return (errno == ETIMEDOUT) ? "timed out" : strerror(errno);
 }
