@@ -3,12 +3,12 @@
 #include <fcntl.h>
 #include "ssl_timeoutio.h"
 #include "log.h"
+#include "tls.h"
 
 #define ndelay_on(fd) fcntl(fd,F_SETFL,fcntl(fd,F_GETFL,0) | O_NONBLOCK)
 #define ndelay_off(fd) fcntl(fd,F_SETFL,fcntl(fd,F_GETFL,0) & ~O_NONBLOCK)
 
 int ssl_rfd = -1, ssl_wfd = -1; /* SSL_get_Xfd() are broken */
-extern SSL *ssl;
 
 int ssl_timeoutio(int (*fun)(), long t, char *buf, const int len)
 {
