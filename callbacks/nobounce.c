@@ -1,11 +1,15 @@
+#include <syslog.h>
 #include "usercallback.h"
 #include "netio.h"
 #include "qsmtpd.h"
+#include "log.h"
 
 int
-cb_nobounce(const struct userconf *ds, char **logmsg, int *t)
+cb_nobounce(const struct userconf *ds, char **logmsg __attribute__ ((unused)), int *t)
 {
 	int rc = 0;		/* return code */
+	const char *logmess[] = {"rejected message to <", THISRCPT, "> from IP [", xmitstat.remoteip,
+				"] {no bounces allowed}", NULL};
 
 	if (xmitstat.mailfrom.len)
 		return 0;
@@ -17,8 +21,6 @@ cb_nobounce(const struct userconf *ds, char **logmsg, int *t)
 		return 0;
 
 	rc = netwrite("550 5.7.1 address does not send mail, there can't be any bounces\r\n");
-	*logmsg = "no bounce";
-	if (!rc)
-		rc++;
-	return rc;
+	log_writen(LOG_INFO, logmess);
+	return rc ? rc : 1;
 }
