@@ -22,11 +22,15 @@ static unsigned int smtpext;
 static char *rhost;
 static size_t rhostlen;
 
+static void quitmsg(void);
+
 void __attribute__ ((noreturn))
-err_mem(void)
+err_mem(const int doquit)
 {
+	if (doquit)
+		quitmsg();
 /* write text including 0 byte */
-	write(1, "ZOut of memory. (#4.3.0)\n", 26);
+	write(1, "Z4.3.0 Out of memory.\n", 23);
 	_exit(0);
 }
 
@@ -124,7 +128,7 @@ netget(void)
 syntax:
 error:
 	switch (errno) {
-		case ENOMEM:	err_mem();
+		case ENOMEM:	err_mem(1);
 		default:
 #warning FIXME: add error handling
 				quit();
@@ -452,7 +456,7 @@ main(int argc, char *argv[])
 			rhost = malloc(INET6_ADDRSTRLEN);
 		}
 		if (errno == ENOMEM) {
-			err_mem();
+			err_mem(1);
 		}
 		/* there can't be any errors here ;) */
 		(void) inet_ntop(AF_INET6, &mx->addr, rhost, INET6_ADDRSTRLEN);

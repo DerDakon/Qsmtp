@@ -102,7 +102,7 @@ getmxlist(char *rhost, struct ips **mx)
 		if (rhost[l - 1] == ']') {
 			*mx = malloc(sizeof(**mx));
 			if (!*mx) {
-				err_mem();
+				err_mem(0);
 			}
 
 			rhost[l - 1] = '\0';
@@ -147,7 +147,7 @@ getmxlist(char *rhost, struct ips **mx)
 							user = malloc(tmp - more + 1);
 							pass = malloc(strlen(tmp));
 							if (!pass || !user) {
-								err_mem();
+								err_mem(0);
 							}
 							memcpy(user, more, tmp - more);
 							user[tmp - more] = '\0';
