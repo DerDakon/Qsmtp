@@ -235,6 +235,47 @@ wr(void)
 	writefc();
 }
 
+static void
+set(void)
+{
+	int error = 1;
+
+	if (linein[3] == '\n') {
+		puts("SYNTAX: set <PARAMETER> [<VALUE>]");
+		commstat = EINVAL;
+		return;
+	}
+	for (int i = 0; params[i].name; i++) {
+		if (!strncmp(linein + 4, params[i].name, params[i].len)) {
+			char *r;
+			int tmp;
+	
+			if (linein[4 + params[i].len] == '\n') {
+				tmp = 0;
+			} else {
+				if (linein[4 + params[i].len] != ' ') {
+					break;
+				}
+				tmp = strtol(linein + 17, &r, 0);
+				if (*r != '\n')
+					goto err;
+			}
+			params[i].value = tmp;
+			printf("setting %s to %i (hex 0x%x)\n", params[i].name, tmp, tmp);
+			error = 0;
+			break;
+		}
+	}
+	if (error) {
+		puts("ERROR: unknown parameter");
+		commstat = EINVAL;
+	}
+	return;
+err:
+	printf("ERROR: can't parse second argument as integer\n");
+	commstat = EINVAL;
+}
+
 struct addrlist {
 	TAILQ_ENTRY(addrlist) entries;	/* List. */
 	char *address;
@@ -443,47 +484,6 @@ edit(void)
 			commstat = EINVAL;
 		}
 	} while (strcmp(linein, "quit\n"));
-}
-
-static void
-set(void)
-{
-	int error = 1;
-
-	if (linein[3] == '\n') {
-		puts("SYNTAX: set <PARAMETER> [<VALUE>]");
-		commstat = EINVAL;
-		return;
-	}
-	for (int i = 0; params[i].name; i++) {
-		if (!strncmp(linein + 4, params[i].name, params[i].len)) {
-			char *r;
-			int tmp;
-	
-			if (linein[4 + params[i].len] == '\n') {
-				tmp = 0;
-			} else {
-				if (linein[4 + params[i].len] != ' ') {
-					break;
-				}
-				tmp = strtol(linein + 17, &r, 0);
-				if (*r != '\n')
-					goto err;
-			}
-			params[i].value = tmp;
-			printf("setting %s to %i (hex 0x%x)\n", params[i].name, tmp, tmp);
-			error = 0;
-			break;
-		}
-	}
-	if (error) {
-		puts("ERROR: unknown parameter");
-		commstat = EINVAL;
-	}
-	return;
-err:
-	printf("ERROR: can't parse second argument as integer\n");
-	commstat = EINVAL;
 }
 
 static struct commands {
