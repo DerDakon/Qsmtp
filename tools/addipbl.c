@@ -29,24 +29,22 @@ main(int argc, char *argv[])
 
 		s = strchr(argv[j], '/');
 		if (!s) {
-			fputs("no / found in argument '", stderr);
-			fputs(argv[j], stderr);
-			fputs("'\n", stderr);
-			continue;
-		}
-		*s = '\0';
-		m = strtoul(s + 1, &t, 10);
-		if (*t) {
-			fputs("invalid mask found in argument '", stderr);
-			fputs(argv[j], stderr);
-			fputs("'\n", stderr);
-			continue;
-		}
-		if ((m < 8) || (m > 32)) {
-			fputs("mask not in range 8..32 in argument '", stderr);
-			fputs(argv[j], stderr);
-			fputs("'\n", stderr);
-			continue;
+			m = 32;
+		} else {
+			*s = '\0';
+			m = strtoul(s + 1, &t, 10);
+			if (*t) {
+				fputs("invalid mask found in argument '", stderr);
+				fputs(argv[j], stderr);
+				fputs("'\n", stderr);
+				continue;
+			}
+			if ((m < 8) || (m > 32)) {
+				fputs("mask not in range 8..32 in argument '", stderr);
+				fputs(argv[j], stderr);
+				fputs("'\n", stderr);
+				continue;
+			}
 		}
 		if (inet_pton(AF_INET, argv[j], &ip) <= 0) {
 			fputs("invalid IP address in argument '", stderr);
