@@ -3,11 +3,9 @@
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <sys/socket.h>
-#include <sys/select.h>
 #include <sys/wait.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <netdb.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
@@ -16,7 +14,7 @@
 #include <errno.h>
 #include <syslog.h>
 #include <dirent.h>
-#include <time.h>
+#include <signal.h>
 #include "antispam.h"
 #include "log.h"
 #include "netio.h"
