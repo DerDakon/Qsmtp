@@ -8,9 +8,9 @@
 struct xmitstat xmitstat;
 string heloname = {.s = "caliban.sf-tec.de", .len = 17};
 
-int ssl = 0;
 int log_write() {return 0;}
 int log_writen() {return 0;}
+int dieerror() {return 0;}
 
 int
 main(int argc, char *argv[])

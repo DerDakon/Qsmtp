@@ -58,7 +58,7 @@ targets/addipbl: tools/addipbl.o
 	$(LD) $(LDFLAGS) -o $@ $^
 
 targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/match.o \
-		$(OWFATPATH)/libowfat.a
+		lib/netio.o lib/tls.o lib/ssl_timeoutio.o $(OWFATPATH)/libowfat.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 	strip $@
 
