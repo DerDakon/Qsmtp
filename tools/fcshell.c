@@ -1,10 +1,13 @@
 #include <sys/queue.h>
+#include <sys/stat.h>
+#include <sys/file.h>
 #include <stdio.h>
 #include <syslog.h>
 #include <errno.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 #define VERSION "0.01"
 
@@ -43,6 +46,13 @@ err(const char *s)
 {
 	printf("ERROR: %s\n", s);
 	dolog(s);
+}
+
+static void
+err2(const char *s, const char *t)
+{
+	printf("ERROR: %s%s\n", s, t);
+	syslog(LOG_ERR, "%s%s\n", s, t);
 }
 
 static void __attribute__ ((noreturn))
@@ -241,6 +251,80 @@ struct edbuf {
 	} buf;
 } editbuffer;
 
+static int
+editread(const int type)
+{
+	if (type <=2 ) {
+		FILE *fcfd;
+
+		TAILQ_INIT(&editbuffer.buf.lhead);
+		
+	} else {
+		int fd;
+		struct stat st;
+
+		editbuffer.buf.map.mem = NULL;
+		editbuffer.buf.map.len = 0;
+		if ( (fd = open(editbuffer.name, O_RDONLY)) < 0) {
+			if (errno != ENOENT) {
+				commstat = errno;
+				err2("opening file failed: ", editbuffer.name);
+				return 1;
+			} else {
+				commstat = 0;
+				return 0;
+			}
+		}
+		if (flock(fd,LOCK_SH)) {
+			commstat = errno;
+			close(fd);
+			err2("cannot lock input file: ", editbuffer.name);
+			return 1;
+		}
+		if (fstat(fd, &st)) {
+			commstat = errno;
+			return 1;
+		}
+		if (!st.st_size) {
+			close(fd);
+			commstat = 0;
+			return 0;
+		}
+
+		if (st.st_size % (type == 3) ? 5 : 17) {
+			err2("file has wrong length for this type of file: ", editbuffer.name);
+			close(fd);
+			return 1;
+		}
+		editbuffer.buf.map.mem = malloc(st.st_size);
+		if (!editbuffer.buf.map.mem) {
+			close(fd);
+			err("out of memory");
+			commstat = ENOMEM;
+			return 1;
+		}
+
+		off_t len = 0;
+
+		while (len < st.st_size) {
+			int i;
+
+			if ( (i = read(fd, editbuffer.buf.map.mem + len, st.st_size - len)) < 0) {
+				commstat = errno;
+				free(editbuffer.buf.map.mem);
+				editbuffer.buf.map.mem = NULL;
+				err2("error reading from file ", editbuffer.name);
+				return 1;
+			}
+			len += i;
+		}
+		editbuffer.buf.map.len = st.st_size;
+		close(fd);
+	}
+	commstat = 0;
+	return 0;
+}
+
 static void
 editquit(void)
 {
@@ -321,6 +405,9 @@ edit(void)
 	active = efiles + index;
 
 	editbuffer.name = active->name;
+
+	if (editread(active->type))
+		return;
 
 	do {
 		fprintf(stdout, "fc <%s> > ", active->name);
