@@ -679,19 +679,12 @@ smtp_rcpt(void)
 
 /* load user and domain "filterconf" file */
 	/* if the file is empty there is no problem, NULL is a legal value for the buffers */
-	if ((j = loadlistfd(getfile(&ds, "filterconf", &i), &ucbuf, &(ds.userconf), NULL, 0)) < 0) {
-		if (errno == ENOENT) {
-			ds.userconf = NULL;
-			ds.domainconf = NULL;
-			dcbuf = NULL;
-			/* ucbuf is already set to NULL by lloadfilefd, called from loadlistfd */
-		} else {
-			e = errno;
+	if (loadlistfd(getfile(&ds, "filterconf", &i), &ucbuf, &(ds.userconf), NULL, 0)) {
+		e = errno;
 
-			free(ds.userpath.s);
-			free(ds.domainpath.s);
-			return err_control2("user/domain filterconf for ", r->to.s) ? errno : e;
-		}
+		free(ds.userpath.s);
+		free(ds.domainpath.s);
+		return err_control2("user/domain filterconf for ", r->to.s) ? errno : e;
 	} else {
 		if (i) {
 			ds.domainconf = ds.userconf;
@@ -703,18 +696,14 @@ smtp_rcpt(void)
 			/* make sure this one opens the domain file: just set user path length to 0 */
 			l = ds.userpath.len;
 			ds.userpath.len = 0;
-			if ( (j = loadlistfd(getfile(&ds, "filterconf", &j), &dcbuf, &(ds.domainconf), NULL, 0)) ) {
-				if (errno == ENOENT) {
-					ds.domainconf = NULL;
-				} else {
-					e = errno;
+			if (loadlistfd(getfile(&ds, "filterconf", &j), &dcbuf, &(ds.domainconf), NULL, 0)) {
+				e = errno;
 
-					free(ucbuf);
-					free(ds.userconf);
-					free(ds.userpath.s);
-					free(ds.domainpath.s);
-					return err_control2("domain filterconf for ", r->to.s) ? errno : e;
-				}
+				free(ucbuf);
+				free(ds.userconf);
+				free(ds.userpath.s);
+				free(ds.domainpath.s);
+				return err_control2("domain filterconf for ", r->to.s) ? errno : e;
 			}
 			ds.userpath.len = l;
 		}
