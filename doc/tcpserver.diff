@@ -1,0 +1,10 @@
+--- ucspi-tcp-0.88/tcpserver.c	2004-09-03 13:26:00.000000000 +0200
++++ ucspi-tcp-0.88-ipv6/tcpserver.c	2004-09-03 10:22:30.000000000 +0200
+@@ -163,6 +163,7 @@
+     buffer_init(&b,write,t,bspace,sizeof bspace);
+     if (buffer_putsflush(&b,banner) == -1)
+       strerr_die2sys(111,DROP,"unable to print banner: ");
++    env("BANNER",banner);
+   }
+ 
+   if (socket_local6(t,localip,&localport,&scope_id) == -1)

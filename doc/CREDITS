@@ -1,0 +1,31 @@
+Qsmtpd was written by Rolf Eike Beer <qsmtp@opensource.sf-tec.de>. It is
+licensed under GPL, version 2.
+
+It includes some work from other peoples:
+
+=============== TLS stuff =================
+TLS stuff is taken from "netqmail-1.05-tls-20040419.patch", which has the
+following credits:
+
+Frederik Vermeulen <qmail-tls akrul inoa.net> 20040419
+http://inoa.net/qmail-tls/
+
+Copyright: GPL
+           Links with OpenSSL
+           Inspiration and code from examples in SSLeay (E. Young
+           <eay@cryptsoft.com> and T. Hudson <tjh@cryptsoft.com>),
+           stunnel (M. Trojnara <mtrojnar@ddc.daewoo.com.pl>),
+           Postfix/TLS (L. Jaenicke <Lutz.Jaenicke@aet.tu-cottbus.de>),
+           modssl (R. Engelschall <rse@engelschall.com>),
+           openssl examples of E. Rescorla <ekr@rtfm.com>.
+
+=============== AUTH stuff =================
+The authentication part is taken from qmail-smtpd-auth-0.31, which has
+this credits:
+
+This patch adds ESMTP AUTH authentication protocol support to
+qmail-1.03.  It's originally based on Mrs. Brisby's smtp-auth patch
+with many enhancements from Krzysztof Dabrowski <brush@elysium.pl>.
+
+Beginning with version 0.30, the patch was completely rewritten to
+use only djb's string functions by Eric M. Johnston <emj@postal.net>.

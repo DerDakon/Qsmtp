@@ -1,0 +1,92 @@
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+#include <syslog.h>
+#include "usercallback.h"
+#include "control.h"
+#include "dns.h"
+#include "qsmtpd.h"
+#include "log.h"
+
+/* Bad "MAIL FROM": reject sender addresses or domains, case is ignored
+ *
+ * There are three types entries in badmailfrom file:
+ * 1) complete mail addresses: entire from address must match this one
+ * 2) @domain: from domain must match string, "@aol.com" would block "foo@aol.com" but not "foo@bar.aol.com"
+ * 3) no '@' at all: block everything from this domain and subdomains, the character in MAIL FROM before the match
+ *    must be '.' or '@' so "aol.com" would reject "foo@aol.com" and "foo@bar.aol.com" but not "foo@no-aol.com"
+ */
+
+static int
+lookupbmf(char *at, const char **a)
+{
+	unsigned int i = 0;
+	int rc = 0;
+
+	while (a[i]) {
+		if (*a[i] == '@') {
+			if (at && !strcasecmp(a[i], at)) {
+				rc = 2;
+				break;
+			}
+		} else if (!strchr(a[i],'@')) {
+			unsigned int k = strlen(a[i]);
+
+			if (k < xmitstat.mailfrom.len) {
+				char *c = xmitstat.mailfrom.s + (xmitstat.mailfrom.len - k);
+
+				/* compare a[i] with the last k bytes of xmitstat.mailfrom.s */
+				if (!strcasecmp(c, a[i]) && ((*(c - 1) == '.') || (*(c - 1) == '@'))) {
+					rc = 2;
+					break;
+				}
+			}
+		} else if (!strcasecmp(a[i], xmitstat.mailfrom.s)) {
+			rc = 2;
+			break;
+		}
+		
+		i++;
+	}	
+	free(a);
+	return rc;
+}
+
+int
+cb_badmailfrom(const struct userconf *ds, char **logmsg, int *t)
+{
+	int u;		/* if it is the user or domain policy */
+	char *b;	/* buffer to read file into */
+	char **a;	/* array of domains and/or mailaddresses to block */
+	int rc = 0;	/* return code */
+	int fd;		/* file descriptor of the policy file */
+	char *at;
+
+	if ( (fd = getfileglobal(ds, "badmailfrom", t)) < 0)
+		return (errno != ENOENT) ? fd : 0;
+
+	if ( ( rc = loadlistfd(fd, &b, &a, checkaddr, 2) ) < 0 )
+		return rc;
+
+	at = strchr(xmitstat.mailfrom.s, '@');
+	rc = lookupbmf(at, a);
+	free(b);
+	if (!rc)
+		return rc;
+
+	if ( (fd = getfileglobal(ds, "goodmailfrom", &u)) < 0) {
+		if (errno != ENOENT)
+			return fd;
+	} else {
+		if (loadlistfd(fd, &b, &a, checkaddr, 2) < 0)
+			return -1;
+		if (lookupbmf(at, a)) {
+			logwhitelisted("bad mail from", *t, u);
+			rc = 0;
+		} else {
+			*logmsg = "bad mail from";
+		}
+		free(b);
+	}
+	return rc;
+}

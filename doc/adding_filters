@@ -1,0 +1,44 @@
+To add your own recipient spamfilter function just follow this steps:
+
+1. look at the existing filters. It is very likely that one of them does already
+   what you want or something similar so you can copy this one and use parts of
+   it.
+
+2. Write your function. It must have the same signature like the others defined
+   in callbacks/rcpt_cbs.c. Here are some things you should know:
+
+   -use getfile or getfileglobal to load a config file from the user directory
+    with fallbacks to domain directory and global config
+   -if the config entry is a single integer (or a boolean) use
+    getsetting{,global} instead and store the value in the file "filterconf" in
+    the user or domain directory. This function has a little special behavior
+    for booleans: if a user does not set a value (or set it to 0) it will
+    continue and scan for this setting in domain and global file. If one of the
+    three possible positions sets a value to something != 0 this value is taken.
+    If you set a boolean to -1 this means "this is not set and don't override
+    this from domain/global setting". This means if a user sets "forcessl=0"
+    (or no forcessl at all) and the domain sets "forcessl=1" than forcessl will
+    be activates. But if the user sets "forcessl=-1" it will be deactivated.
+   -getsetting sets errno on exit. I prefer to see this as a sign that the user
+    has deactivated the check (so he has to eat it's own dust).
+   -the possible return values of the function are documented in
+    include/usercallback.h
+   -the logmsg parameter is NULL at the beginning of each function
+   -if your callbacks checks the parameter of the "MAIL FROM:" or it's reverse
+    lookup don't forget to handle the case of a bounce message
+    (xmitstat.mailfrom.len == 0)
+   -the logmsg parameter will not be freed so this has to be a constant. If you
+    want to log something dynamically or not fitting in the given logmsg use
+    log_write{,n} yourself and leave *logmsg alone
+3. add your function to callbackst/rcpt_cbs.c at two points: add it to the list
+   at the top of the file (preferably as the last entry) and add it to the
+   array at the bottom of the file. Here you should choose a point you find
+   useful. It should be good practise to do all offline checks before the first
+   only check. All checks that do not make any network traffic themself (not
+   counting writing an error message) are offline checks. DNS lookups, asking
+   other mailserver and so on are online checks.
+4. add your file to TARGETS in callbacks/Makefile
+5. add your file to the dependencies of targets/qsmtpd in Makefile
+6. test it
+7. if it really works write a bit of documentation and send it to me so I can
+   review it and include it if I find it useful.
