@@ -4,7 +4,8 @@ SHELL=/bin/sh
 CC=gcc
 CFLAGS=-O2 -c -Wall -W -I$(shell pwd)/include -DIPV4ONLY -g
 LD=gcc
-LDFLAGS=-lssl -lcrypto #-lefence
+LDFLAGS= #-lefence
+LDFLAGSSSL=-lssl -lcrypto
 
 export SHELL CC CFLAGS LD LDFLAGS
 
@@ -39,7 +40,7 @@ targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.
 		callbacks/check2822.o callbacks/ipbl.o callbacks/spf.o callbacks/soberg.o \
 		callbacks/helo.o callbacks/forceesmtp.o \
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
 targets/addipbl: tools/addipbl.o
 	$(LD) $(LDFLAGS) -o $@ $^
