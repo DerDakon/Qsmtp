@@ -158,7 +158,7 @@ getmxlist(char *remhost, struct ips **mx)
 			target = strchr(smtproutes[k], ':');
 			*target++ = '\0';
 
-			if (!*(smtproute[k]) || matchdomain(remhost, reml, smtproutes[k])) {
+			if (!*(smtproutes[k]) || matchdomain(remhost, reml, smtproutes[k])) {
 				char *port;
 
 				port = strchr(target, ':');
