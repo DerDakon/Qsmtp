@@ -8,6 +8,8 @@
 #include "antispam.h"
 #include "log.h"
 #include "dns.h"
+#include "qsmtpd.h"
+#include "control.h"
 
 /**
  * nibbletohex - take a nibble and output it as hex to a buffer, followed by '.'
@@ -25,33 +27,33 @@ nibbletohex(char *dest, const char n)
 /**
  * check_rbl - do a rbl lookup for remoteip
  *
- * remoteip: IPv6 address of the remote host
- * rbls: a NULL terminated array of rbls
+ * @rbls: a NULL terminated array of rbls
+ * @txt: pointer to "char *" where the TXT record of the listing will be stored if !NULL
  *
  * returns: on match the index of the first match is returned
  *          -1 if not listed or error (if not listed errno is set to 0)
  */
 int
-check_rbl(const struct in6_addr *remoteip, const char **rbls, char **txt)
+check_rbl(char *const *rbls, char **txt)
 {
 	char lookup[256];
 	unsigned int l;
 	int i = 0;
 	int again = 0;	/* if this is set at least one rbl lookup failed with temp error */
 
-	if (IN6_IS_ADDR_V4MAPPED(remoteip->s6_addr)) {
+	if (xmitstat.ipv4conn) {
 		struct in_addr r;
 
-		r.s_addr = (remoteip->s6_addr[12] << 24) + (remoteip->s6_addr[13] << 16) +
-					(remoteip->s6_addr[14] << 8) + remoteip->s6_addr[15];
+		r.s_addr = (xmitstat.sremoteip.s6_addr[12] << 24) + (xmitstat.sremoteip.s6_addr[13] << 16) +
+					(xmitstat.sremoteip.s6_addr[14] << 8) + xmitstat.sremoteip.s6_addr[15];
 		inet_ntop(AF_INET, &r, lookup, sizeof(lookup));
 		l = strlen(lookup);
 		lookup[l++] = '.';
 	} else {
 		int k;
 		for (k = 15; k >= 0; k--) {
-			nibbletohex(lookup + k * 4,     (remoteip->s6_addr[k] & 0x0f));
-			nibbletohex(lookup + k * 4 + 2, (remoteip->s6_addr[k] & 0xf0) >> 4);
+			nibbletohex(lookup + k * 4,     (xmitstat.sremoteip.s6_addr[k] & 0x0f));
+			nibbletohex(lookup + k * 4 + 2, (xmitstat.sremoteip.s6_addr[k] & 0xf0) >> 4);
 		}
 		l = 64;
 	}
@@ -112,7 +114,6 @@ tarpit(void)
 /**
  * check_ip4 - check an IPv4 mapped IPv6 address against a local blocklist
  *
- * @remoteip: the IP to check
  * @buf: buffer of local blocklist, each entry is 5 bytes long
  * @len: length of the buffer
  *
@@ -120,29 +121,21 @@ tarpit(void)
  *
  * IP entries in the buffer must be network byte order
  */
-int
-check_ip4(const struct in6_addr *remoteip, const unsigned char *buf, const unsigned int len)
+static int
+check_ip4(const unsigned char *buf, const unsigned int len)
 {
 	unsigned int i;
 
 	if (len % 5)
 		return -1;
 	for (i = 0; i < len; i += 5) {
-		struct in_addr mask;
 		/* cc shut up: we know what we are doing here */
 		const struct in_addr *ip = (struct in_addr *) buf;
 
 		if ((*(buf + 4) < 8) || (*(buf + 4) > 32))
 			return -1;
-		/* constuct a bit mask out of the net length.
-		 * remoteip and ip are network byte order, it's easier
-		 * to convert mask to network byte order than both
-		 * to host order. It's ugly, isn't it? */
-		mask.s_addr = htonl(-1 - ((1 << (32 - *(buf + 4))) - 1));
-
-		if ((remoteip->s6_addr32[3] & mask.s_addr) == ip->s_addr) {
+		if (ip4_matchnet((struct in_addr *) &(xmitstat.sremoteip.s6_addr32[3]), ip, *(buf + 4)))
 			return 1;
-		}
 		buf += 5;
 	}
 	return 0;
@@ -151,14 +144,13 @@ check_ip4(const struct in6_addr *remoteip, const unsigned char *buf, const unsig
 /**
  * check_ip6 - check an IPv6 address against a local blocklist
  *
- * @remoteip: the IP to check
  * @buf: buffer of local blocklist, each entry is ? bytes long
  * @len: length of the buffer
  *
  * returns: 1 if match, 0 if not, -1 if data malformed
  */
-int
-check_ip6(const struct in6_addr *remoteip, const unsigned char *buf, const unsigned int len)
+static int
+check_ip6(const unsigned char *buf, const unsigned int len)
 {
 	unsigned int i;
 
@@ -200,18 +192,9 @@ check_ip6(const struct in6_addr *remoteip, const unsigned char *buf, const unsig
 			}
 		}
 
-#if __WORDSIZE == 64
-		/* compare 8 bytes at once */
-		flag = 2;
-		if ((*((unsigned long long *) remoteip) & ((unsigned long long) mask)) == *((unsigned long long *) ip))
-			flag--;
-		if ((((unsigned long long *) remoteip)[1] & ((unsigned long long *) mask)[1]) == ((unsigned long long) ip)[1])
-			flag--;
-#else
 		for (i = 3; i >= 0; i--)
-			if ((remoteip->s6_addr32[i] & mask.s6_addr32[i]) == ip->s6_addr32[i])
+			if ((xmitstat.sremoteip.s6_addr32[i] & mask.s6_addr32[i]) == ip->s6_addr32[i])
 				flag--;
-#endif
 		if (!flag)
 			return 1;
 		buf += 9;
@@ -256,4 +239,47 @@ domainmatch(const char *fqdn, const unsigned int len, const char **list)
 	}	
 	free(list);
 	return rc;
+}
+
+/**
+ * ip4_matchnet - check if an IPv4 address is in a given network
+ *
+ * @ip: the IP address to check (network byte order)
+ * @net: the network to check (network byte order)
+ * @mask: the network mask, must be 8 <= netmask <= 32
+ */
+int
+ip4_matchnet(const struct in_addr *ip, const struct in_addr *net, const int mask)
+{
+	struct in_addr m;
+	/* constuct a bit mask out of the net length.
+		* remoteip and ip are network byte order, it's easier
+		* to convert mask to network byte order than both
+		* to host order. It's ugly, isn't it? */
+	m.s_addr = htonl(-1 - ((1 << (32 - mask)) - 1));
+
+	return ((ip->s_addr & m.s_addr) == net->s_addr);
+}
+
+/**
+ * lookupipbl - check if the remote host is listed in local IP map file given by fd
+ *
+ * @fd: file descriptor to file
+ */
+int
+lookupipbl(int fd)
+{
+	int i;
+	char *a;		/* buffer to read file into */
+
+	if ( ( i = lloadfilefd(fd, &a, 0) ) < 0 )
+		return i;
+	
+	if (xmitstat.ipv4conn) {
+		i = check_ip4(a, i);
+	} else {
+		i = check_ip6(a, i);
+	}
+	free(a);
+	return i;
 }

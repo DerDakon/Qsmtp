@@ -4,19 +4,27 @@
 #include <netinet/in.h>
 #include "sstring.h"
 
-extern int check_rbl(const struct in6_addr *, const char **, char **);
-extern inline void tarpit(void);
-extern int check_ip4(const struct in6_addr *, const unsigned char *, const unsigned int);
-extern int check_ip6(const struct in6_addr *, const unsigned char *, const unsigned int);
-extern int spflookup(const char *, string *);
-extern int domainmatch(const char *, const unsigned int, const char **);
+/* qsmtpd/antispam.c */
 
-#define SPF_HARD_ERROR -2
-#define SPF_TEMP_ERROR -1
-#define SPF_NONE 0
-#define SPF_PASS 1
-#define SPF_NEUTRAL 2
-#define SPF_SOFTFAIL 3
-#define SPF_FAIL 4
+extern int check_rbl(char *const *, char **);
+extern inline void tarpit(void);
+extern int domainmatch(const char *, const unsigned int, const char **);
+extern int ip4_matchnet(const struct in_addr *, const struct in_addr *, const int);
+extern int lookupipbl(int);
+
+/* qsmtpd/spf.c */
+
+extern int spflookup(const char *, const int);
+extern int spfreceived(int, const int);
+
+#define SPF_NONE	0
+#define SPF_PASS	1
+#define SPF_NEUTRAL	2
+#define SPF_SOFTFAIL	3
+#define SPF_FAIL	4
+#define SPF_UNKNOWN	5
+#define SPF_LOOP	6
+#define SPF_TEMP_ERROR 14
+#define SPF_HARD_ERROR 15
 
 #endif
