@@ -199,6 +199,11 @@ getmxlist(char *remhost, struct ips **mx)
 
 					err_confn(logmsg);
 				} else {
+					struct ips *m = *mx;
+					while (m) {
+						m->priority = 0;
+						m = m->next;
+					}
 					break;
 				}
 			}
