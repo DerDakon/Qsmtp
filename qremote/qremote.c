@@ -12,76 +12,12 @@
 #include "control.h"
 #include "log.h"
 #include "match.h"
+#include "sstring.h"
+#include "conn.h"
 
 int socketd;
 struct string heloname;
 static unsigned int smtpext;
-static unsigned long targetport = 25;
-
-int
-conn(const struct in6_addr remoteip)
-{
-	struct sockaddr_in6 sock;
-	int rc;
-
-	socketd = socket(PF_INET6, SOCK_STREAM, 0);
-
-	if (socketd < 0)
-		return errno;
-
-	sock.sin6_family = AF_INET6;
-	sock.sin6_port = 0;
-//	sock.sin6_flowinfo = 0;
-	sock.sin6_addr = in6addr_any;
-//	sock.sin6_scope_id = 0;
-
-	rc = bind(socketd, (struct sockaddr *) &sock, sizeof(sock));
-
-	if (rc)
-		return errno;
-
-	sock.sin6_port = htons(targetport);
-	sock.sin6_addr = remoteip;
-
-	return connect(socketd, (struct sockaddr *) &sock, sizeof(sock)) ? errno : 0;
-}
-
-/**
- * tryconn - try to estabish an SMTP connection to one of the hosts in the ip list (which is freed afterwards)
- *
- * @mx: list of IP adresses to try
- */
-int
-tryconn(struct ips *mx)
-{
-	struct ips *thisip;
-	int c;
-
-	thisip = mx;
-	while (1) {
-		int minpri = 65537;
-
-		for (thisip = mx; thisip; thisip = thisip->next) {
-			if (thisip->priority < minpri)
-				minpri = thisip->priority;
-		}
-		if (minpri == 65537) {
-			write(1, "Zcan't connect to any server\n", 29);
-			close(socketd);
-			exit(0);
-		}
-		for (thisip = mx; thisip; thisip = thisip->next) {
-			if (thisip->priority == minpri) {
-				c = conn(thisip->addr);
-				if (c) {
-					thisip->priority = 65537;
-				} else {
-					return 0;
-				}
-			}
-		}
-	}
-}
 
 void
 setup(void)
@@ -298,22 +234,11 @@ greeting(void)
 }
 
 int
-hascolon(const char *s, const int __attribute__ ((unused)) ignored)
-{
-	char *colon = strchr(s, ':');
-
-	if (!*colon)
-		return 0;
-	return (*(colon + 1) != ':');
-}
-
-int
 main(int argc, char *argv[])
 {
 	const char *netmsg[6];
 	int i, rcptstat;
 	struct ips *mx;
-	char **smtproutes, *smtproutbuf;
 
 	setup();
 
@@ -329,59 +254,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (!loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutbuf, &smtproutes, NULL) && smtproutbuf) {
-		char *target;
-		unsigned int k = 0;
-
-		while (smtproutes[k]) {
-			target = strchr(smtproutes[k], ':');
-			*target++ = '\0';
-
-			if (matchdomain(argv[1], strlen(argv[1]), smtproutes[k])) {
-				char *port;
-
-				port = strchr(target, ':');
-				if (port) {
-					char *more;
-
-					*port++ = '\0';
-					if ((more = strchr(port, ':'))) {
-						*more = '\0';
-						// add username and passwort here later
-					}
-					targetport = strtol(port, &more, 10);
-					if (*more || (targetport >= 65536)) {
-						const char *logmsg[] = {"invalid port number given for \"",
-									target, "\" given as target for \"",
-									argv[1], "\", using 25 instead", NULL};
-
-						log_writen(LOG_ERR, logmsg);
-						targetport = 25;
-					}
-				}
-				if (ask_dnsaaaa(target, &mx)) {
-					const char *logmsg[] = {"cannot find IP address for static route \"",
-									target, "\" given as target for \"",
-									argv[1], "\"", NULL};
-
-					log_writen(LOG_ERR, logmsg);
-					return 0;
-				}
-			}
-			k++;
-		}
-		free(smtproutes);
-		free(smtproutbuf);
-	}
-
-	if (!mx) {
-		if (ask_dnsmx(argv[1], &mx)) {
-			const char *logmsg[] = {"cannot find a mail exchanger for ", argv[1], NULL};
-	
-			log_writen(LOG_ERR, logmsg);
-			return 0;
-		}
-	}
+	getmxlist(argv[1], &mx);
 
 	dup2(socketd,0);
 

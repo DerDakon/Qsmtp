@@ -1,0 +1,153 @@
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <errno.h>
+#include <unistd.h>
+#include <string.h>
+#include <syslog.h>
+#include <fcntl.h>
+#include "dns.h"
+#include "control.h"
+#include "match.h"
+#include "log.h"
+
+extern int socketd;
+static unsigned long targetport = 25;
+
+static int
+conn(const struct in6_addr remoteip)
+{
+	struct sockaddr_in6 sock;
+	int rc;
+
+	socketd = socket(PF_INET6, SOCK_STREAM, 0);
+
+	if (socketd < 0)
+		return errno;
+
+	sock.sin6_family = AF_INET6;
+	sock.sin6_port = 0;
+	sock.sin6_flowinfo = 0;
+	sock.sin6_addr = in6addr_any;
+	sock.sin6_scope_id = 0;
+
+	rc = bind(socketd, (struct sockaddr *) &sock, sizeof(sock));
+
+	if (rc)
+		return errno;
+
+	sock.sin6_port = htons(targetport);
+	sock.sin6_addr = remoteip;
+
+	return connect(socketd, (struct sockaddr *) &sock, sizeof(sock)) ? errno : 0;
+}
+
+/**
+ * tryconn - try to estabish an SMTP connection to one of the hosts in the ip list
+ *
+ * @mx: list of IP adresses to try
+ *
+ * Every entry where a connection failed is marked with a priority of 65537
+ */
+int
+tryconn(struct ips *mx)
+{
+	struct ips *thisip;
+	int c;
+
+	thisip = mx;
+	while (1) {
+		int minpri = 65537;
+
+		for (thisip = mx; thisip; thisip = thisip->next) {
+			if (thisip->priority < minpri)
+				minpri = thisip->priority;
+		}
+		if (minpri == 65537) {
+			close(socketd);
+			write(5, "Zcan't connect to any server\n", 28);
+			exit(0);
+		}
+		for (thisip = mx; thisip; thisip = thisip->next) {
+			if (thisip->priority == minpri) {
+				c = conn(thisip->addr);
+				if (c) {
+					thisip->priority = 65537;
+				} else {
+					return 0;
+				}
+			}
+		}
+	}
+}
+
+static int
+hascolon(const char *s)
+{
+	char *colon = strchr(s, ':');
+
+	if (!*colon)
+		return 0;
+	return (*(colon + 1) != ':');
+}
+
+void
+getmxlist(const char *rhost, struct ips **mx)
+{
+	char **smtproutes, *smtproutbuf;
+
+	if (!loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutbuf, &smtproutes, hascolon) && smtproutbuf) {
+		char *target;
+		unsigned int k = 0;
+
+		while (smtproutes[k]) {
+			target = strchr(smtproutes[k], ':');
+			*target++ = '\0';
+
+			if (matchdomain(rhost, strlen(rhost), smtproutes[k])) {
+				char *port;
+
+				port = strchr(target, ':');
+				if (port) {
+					char *more;
+
+					*port++ = '\0';
+					if ((more = strchr(port, ':'))) {
+						*more = '\0';
+						// add username and passwort here later
+					}
+					targetport = strtol(port, &more, 10);
+					if (*more || (targetport >= 65536)) {
+						const char *logmsg[] = {"invalid port number given for \"",
+									target, "\" given as target for \"",
+									rhost, "\"", NULL};
+
+						log_writen(LOG_ERR, logmsg);
+						exit(0);
+					}
+				}
+				if (ask_dnsaaaa(target, mx)) {
+					const char *logmsg[] = {"cannot find IP address for static route \"",
+									target, "\" given as target for \"",
+									rhost, "\"", NULL};
+
+					log_writen(LOG_ERR, logmsg);
+					exit(0);
+				} else {
+					break;
+				}
+			}
+			k++;
+		}
+		free(smtproutes);
+		free(smtproutbuf);
+	}
+
+	if (!*mx) {
+		if (ask_dnsmx(rhost, mx)) {
+			const char *logmsg[] = {"cannot find a mail exchanger for ", rhost, NULL};
+	
+			log_writen(LOG_ERR, logmsg);
+			exit(0);
+		}
+	}
+}
