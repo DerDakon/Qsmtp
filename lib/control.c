@@ -85,7 +85,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			/* this line contains a comment: strip it */
 			while ( (inbuf[i] != '0') && (inbuf[i] != '\n') )
 				inbuf[i++] = '\0';
-		} else if ((striptab  == 2) && ((inbuf[i] == ' ') || (inbuf[i] == '\t') )) {
+		} else if ((striptab  & 2) && ((inbuf[i] == ' ') || (inbuf[i] == '\t') )) {
 			/* if there is a space or tab from here to the end of the line
 			 * should not be anything else */
 			do {
@@ -101,25 +101,37 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			i++;
 		/* maybe checking for \r and friends? */
 	}
-	/* compact the buffer */
-	j = i = 0;
-	while (i < oldlen) {
-		while (inbuf[i])
-			inbuf[j++] = inbuf[i++];
-		inbuf[j++] = '\0';
-		while ((i < oldlen) && !inbuf[i])
-			i++;
-	}
-	if (j == 1) {
-		free(*buf);
-		*buf = NULL;
-		return 0;
-	}
-	/* free the now useless memory at the end */
-	*buf = realloc(inbuf, j);
-	if (!*buf) {
+	if (striptab & 1) {
+		/* compact the buffer */
+		j = i = 0;
+		while (i < oldlen) {
+			while (inbuf[i])
+				inbuf[j++] = inbuf[i++];
+			inbuf[j++] = '\0';
+			while ((i < oldlen) && !inbuf[i])
+				i++;
+		}
+		if (j == 1) {
+			free(*buf);
+			*buf = NULL;
+			return 0;
+		}
+		/* free the now useless memory at the end */
+		*buf = realloc(inbuf, j);
+		if (!*buf) {
+			free(inbuf);
+			j = -1;
+		}
+	} else {
+		for (j = 0; j < oldlen; j++) {
+			if (inbuf[j]) {
+				*buf = inbuf;
+				return oldlen;
+			}
+		}
 		free(inbuf);
-		j = -1;
+		*buf = NULL;
+		j = 0;
 	}
 	return j;
 }
