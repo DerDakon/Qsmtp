@@ -91,7 +91,7 @@ check_rbl(char *const *rbls, char **txt)
 			struct ips *ip;
 
 			strcpy(lookup + l, rbls[i]);
-			j = ask_dnsa(lookup, &ips);
+			j = ask_dnsa(lookup, &ip);
 			if (j < 0) {
 				return j;
 			} else if (!j) {
