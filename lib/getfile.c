@@ -34,8 +34,7 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 			return -1;
 		}
 		memcpy(filename, ds->userpath.s, ds->userpath.len);
-		memcpy(filename + ds->userpath.len, fn, len);
-		filename[l] = '\0';
+		memcpy(filename + ds->userpath.len, fn, len + 1);
 
 		fd = open(filename, O_RDONLY);
 		if (fd < 0) {
@@ -65,8 +64,7 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 	}
 	l = ds->domainpath.len + len;
 	memcpy(filename, ds->domainpath.s, ds->domainpath.len);
-	memcpy(filename + ds->domainpath.len, fn, len);
-	filename[l] = '\0';
+	memcpy(filename + ds->domainpath.len, fn, len + 1);
 	fd = open(filename, O_RDONLY);
 	free(filename);
 	return fd;
@@ -100,8 +98,7 @@ getfileglobal(const struct userconf *ds, const char *fn, int *type)
 		return -1;
 	}
 	memcpy(t, "control/", 8);
-	memcpy(t + 8, fn, len);
-	t[len + 8] = '\0';
+	memcpy(t + 8, fn, len + 1);
 	fd = open(t, O_RDONLY);
 	free(t);
 
