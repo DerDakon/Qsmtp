@@ -181,10 +181,10 @@ ask_dnsa(const char *name, struct ips **result)
 				}
 				*q = p;
 				p->next = NULL;
-				p->addr.sin6_addr32[0] = 0;
-				p->addr.sin6_addr32[1] = 0;
-				p->addr.sin6_addr32[2] = htonl(0xffff);
-				memcpy(&(p->addr.sin6_addr32[3]), s, 4);
+				p->addr.s6_addr32[0] = 0;
+				p->addr.s6_addr32[1] = 0;
+				p->addr.s6_addr32[2] = htonl(0xffff);
+				memcpy(&(p->addr.s6_addr32[3]), s, 4);
 
 				q = &(p->next);
 				s += 4;
