@@ -211,7 +211,6 @@ loadoneliner(const char *filename, char **buf, int optional)
  * @buf: the buffer where the data should be stored (memory will be malloced)
  * @bufa: array to be build from buf (memory will be malloced)
  * @cf: function to check if an entry is valid or NULL if not to
- * @f: second parameter of cf
  *
  * if the file does not exist or has no content *buf and *bufa will be set to NULL
  */
@@ -320,6 +319,7 @@ finddomainmm(int fd, const char *domain)
 		if (cure) {
 			len = cure - cur;
 		} else {
+			/* last entry, missing newline at end of file */
 			len = map + st.st_size - cur;
 		}
 		while (((*(cur + len) == ' ') || (*(cur + len) == '\t')) && len)
