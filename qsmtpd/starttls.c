@@ -62,8 +62,8 @@ DH *tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 
 void tls_out(const char *s1, const char *s2)
 {
-	const char *msg[] = {"454 TLS ", s1, "", "", " (#4.3.0)", NULL};
-	
+	const char *msg[] = {"454 4.3.0 TLS ", s1, NULL, NULL, NULL};
+
 	if (s2) {
 		msg[2] = ": ";
 		msg[3] = s2;
