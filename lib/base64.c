@@ -24,7 +24,6 @@ int b64decode(const unsigned char *in, int l, string *out)
 
 	out->s = malloc(l + 3);
 	if (!out->s) {
-		errno = ENOMEM;
 		return -1;
 	}
 	s = out->s;
@@ -77,7 +76,6 @@ int b64encode(string *in, string *out)
 
 	out->s = malloc(in->len / 3 * 4 + 5);
 	if (!out->s) {
-		errno = ENOMEM;
 		return -1;
 	}
 	s = out->s;
