@@ -15,7 +15,7 @@
 
 int sd;
 struct string heloname;
-static int smtpext;
+static unsigned int smtpext;
 static unsigned long targetport = 25;
 
 int
