@@ -4,8 +4,8 @@
 #include <openssl/ssl.h>
 
 /* the version is like this: 0xMNNFFPPS: major minor fix patch status */
-#if OPENSSL_VERSION_NUMBER < 0x00906000L
-# error "Need OpenSSL version at least 0.9.6"
+#if OPENSSL_VERSION_NUMBER < 0x00906030L
+# error "Need OpenSSL version at least 0.9.6c"
 #endif
 
 extern int ssl_timeoutconn(long t);
