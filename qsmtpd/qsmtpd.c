@@ -121,7 +121,7 @@ err_control(const char *fn)
 int
 err_control2(const char *msg, const char *fn)
 {
-	const char *logmsg[] = {"error: unable to open file: \"", msg, fn, "\"\n", NULL};
+	const char *logmsg[] = {"error: unable to open file: ", msg, fn, "\n", NULL};
 
 	log_writen(LOG_ERR, logmsg);
 	return netwrite("421 4.3.5 unable to read controls\r\n");
