@@ -101,7 +101,7 @@ setup(void)
 		_exit(0);
 	}
 
-	if ( ( j = loadoneliner("control/helohost", &heloname.s, 0) ) < 0 ) {
+	if ( (j = loadoneliner("control/helohost", &heloname.s, 0) ) < 0 ) {
 		if ( ( j = loadoneliner("control/me", &heloname.s, 0) ) < 0 ) {
 			log_write(LOG_ERR, "can open neither control/helohost nor control/me");
 			_exit(0);
@@ -118,6 +118,11 @@ setup(void)
 			_exit(0);
 		}
 	}
+	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY), &timeout, 320)) < 0) {
+		log_write(LOG_ERR, "parse error in control/timeoutremote");
+		_exit(0);
+	}
+
 	heloname.len = j;
 }
 
