@@ -955,8 +955,10 @@ hasinput(void)
 {
 	int rc;
 
-	if ( (rc = data_pending()) <= 0)
+	if ( (rc = data_pending()) < 0)
 		return errno;
+	if (!rc)
+		return 0;
 
 	/* there is input data pending. This means the client sent some before our
 	 * reply. His SMTP engine is broken so we don't let him send the mail */
