@@ -195,7 +195,7 @@ ask_dnsa(const char *name, struct ips **result)
 			}
 		}
 		free(r);
-		return 0;
+		return l ? 0 : 1;
 	}
 	switch (errno) {
 		case ETIMEDOUT:
