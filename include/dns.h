@@ -10,12 +10,29 @@ struct ips {
 	struct ips *next;
 };
 
+/* lib/dns.c */
+
 extern int ask_dnsmx(const char *, struct ips **);
 extern int ask_dnsa(const char *, struct ips **);
+extern void freeips(struct ips *);
+
+/* lib/addrsyntax.c */
+
 extern int domainvalid(const char *, const int);
 extern int checkaddr(const char *, const int);
 extern int addrsyntax(char *in, const int flags, string *addr, char **more);
-extern void freeips(struct ips *);
+
+/* return codes of helovalid:
+	-1: error
+	 0: valid
+	 1: helo is my name
+	 2: helo is my IP address
+	 3: helo is syntactically invalid
+	 4: currently undefined
+	 5: 2+3 (helo is my IP address, but not enclosed in '[]' which is broken
+	 6, 7: currently undefined
+*/
+extern int helovalid(const char *);
 
 /* these functions are from libowfat somehow, you must apply the supplied patch to libowfat to get them */
 
