@@ -4,9 +4,9 @@
 #include "base64.h"
 #include "sstring.h"
 
-static char *b64alpha =
+static unsigned char *b64alpha =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-#define B64PAD '='
+#define B64PAD ((unsigned char) '=')
 
 /* returns 0 ok, >0 illegal, -1 problem */
 
@@ -31,7 +31,7 @@ int b64decode(const unsigned char *in, unsigned int l, string *out)
 	for (i = 0;i < l;i += 4) {
 		for (j = 0;j < 4;j++) {
 			if (((i + j) < l) && (in[i + j] != B64PAD)) {
-				char *c = strchr(b64alpha, in[i + j]);
+				unsigned char *c = strchr(b64alpha, in[i + j]);
 		
 				if (!c) {
 					return 1;
