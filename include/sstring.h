@@ -16,9 +16,7 @@ newstr(string *s, const unsigned int len)
 {
 	s->len = len;
 	s->s = malloc(len);
-	if (len && !s->s)
-		return ENOMEM;
-	return 0;
+	return (len && !s->s) ? -1 : 0;
 }
 
 #endif
