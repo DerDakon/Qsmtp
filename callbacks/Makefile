@@ -1,5 +1,5 @@
-TARGETS = rcpt_cbs.o badmailfrom.o check2822.o dnsbl.o forcessl.o whitelistauth.o ipbl.o badcc.o fromdomain.o spf.o nobounce.o \
-	  soberg.o helo.o usersize.o forceesmtp.o
+TARGETS = rcpt_cbs.o badmailfrom.o check2822.o dnsbl.o ipbl.o badcc.o fromdomain.o spf.o nobounce.o boolean.o \
+	  soberg.o helo.o usersize.o
 
 .phony: all clean
 
@@ -18,19 +18,15 @@ check2822.o: qsmtpd.h
 
 dnsbl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
-forcessl.o: netio.h tls.h
+boolean.o: qsmtpd.h tls.h netio.h log.h
 
 ipbl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
-
-whitelistauth.o: qsmtpd.h
 
 badcc.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
 fromdomain.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
 spf.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
-
-nobounce.o:  netio.h qsmtpd.h log.h
 
 helo.o: control.h qsmtpd.h
 
