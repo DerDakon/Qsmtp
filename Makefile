@@ -34,8 +34,9 @@ clean:
 	done
 
 targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.o qsmtpd/spf.o \
-		qsmtpd/vpopmail.o lib/log.o lib/netio.o lib/dns.o lib/control.o lib/addrsyntax.o \
-		lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o lib/match.o \
+		qsmtpd/vpopmail.o qsmtpd/data.o lib/log.o lib/netio.o lib/dns.o lib/control.o \
+		lib/addrsyntax.o lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o \
+		lib/match.o \
 		callbacks/badmailfrom.o callbacks/dnsbl.o callbacks/badcc.o callbacks/usersize.o \
 		callbacks/rcpt_cbs.o callbacks/boolean.o callbacks/fromdomain.o \
 		callbacks/check2822.o callbacks/ipbl.o callbacks/spf.o callbacks/soberg.o \

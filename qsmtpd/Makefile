@@ -1,4 +1,4 @@
-TARGETS=qsmtpd.o antispam.o auth.o starttls.o spf.o
+TARGETS=qsmtpd.o antispam.o auth.o starttls.o spf.o data.o
 
 .phony: all clean
 
@@ -24,5 +24,7 @@ spf.o: dns.h sstring.h antispam.h match.h
 
 vpopmail.o: vpopmail.h sstring.h
 
+data.o: netio.h log.h qsmtpd.h antispam.h version.h tls.h
+
 %.o: %.c
-	 $(CC) $(CFLAGS) $<
+	$(CC) $(CFLAGS) $<

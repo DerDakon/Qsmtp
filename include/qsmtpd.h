@@ -5,6 +5,16 @@
 #include "sstring.h"
 #include "dns.h"
 
+struct smtpcomm {
+	char		*name;		/* the SMTP command */
+	int		len;		/* strlen(name) */
+	long		mask;		/* the bitmask of states from where this is allowed */
+	int		(*func)(void);	/* the function that handles this command */
+	long		state;		/* the state to change to. If <0 don't change the state, if 0 use auto state */
+	unsigned int	flags;		/* 1: this command takes arguments */
+					/* 2: this command allows lines > 512 chars (and will check this itself) */
+};
+
 struct xmitstat {			/* This contains some flags describing the transmission and it's status.
 					 * This can be passed to the usercallbacks */
 	unsigned int esmtp:1;		/* if we are using ESMTP extensions */
@@ -28,14 +38,23 @@ struct xmitstat {			/* This contains some flags describing the transmission and 
 	char *spfexp;			/* the SPF explanation if provided by the domain or NULL if none */
 };
 
+extern struct smtpcomm commands[];
+
 extern struct xmitstat xmitstat;
 extern char *protocol;
 extern char *auth_host;			/* hostname for auth */
 extern char *auth_check;		/* checkpassword or one of his friends for auth */
 extern char **auth_sub;			/* subprogram and arguments to be invoked by auth_check (usually /bin/true) */
 extern string heloname;			/* the fqdn to show in helo */
+extern unsigned int goodrcpt;		/* number of valid recipients */
+extern int badbounce;			/* bounce message with more than one recipient */
+extern unsigned long databytes;		/* maximum message size */
+
+extern long comstate;			/* status of the SMTP state machine */
 
 extern int err_control(const char *);
+extern void freedata(void);
+extern int hasinput(void);
 
 #define EBOGUS 1002
 #define EDONE 1003
