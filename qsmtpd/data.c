@@ -539,12 +539,15 @@ err_write:
 	}
 	while (close(fd1[1]) && (errno == EINTR));
 	freedata();
-	if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
-		return errno;
+	if ((rc == ENOSPC) || (rc == EFBIG)) {
+		rc = EMSGSIZE;
+	} else if ((errno != ENOMEM) && (errno != EMSGSIZE)) {
+		if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
+			return errno;
+	}
 	switch (rc) {
+		case EMSGSIZE:
 		case ENOMEM:	return rc;
-		case ENOSPC:
-		case EFBIG:	return EMSGSIZE;
 		case EPIPE:	log_write(LOG_ERR, "broken pipe to qmail-queue");
 				return EDONE;
 		case EINTR:	log_write(LOG_ERR, "interrupt while writing to qmail-queue");
