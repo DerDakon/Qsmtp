@@ -275,7 +275,7 @@ smtp_ehlo(void)
 		msg[next++] = "250-AUTH PLAIN LOGIN\r\n";
 #endif
 	}
-/* check if STARTTLS should be announced. Don't announce if already in SSL-Mode or if certificate can't be opened */
+/* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
 	if (!ssl) {
 		int fd = open("control/servercert.pem", O_RDONLY);
 
