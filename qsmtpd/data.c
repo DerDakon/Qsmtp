@@ -366,8 +366,8 @@ smtp_data(void)
 	 * -we reach the empty line between header and body
 	 * -we reach the end of the transmission
 	 */
-	if ( (i = net_read()) )
-		return errno;
+	if (net_read())
+		goto err_write;
 /* write the data to mail */
 	while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes) && linelen && (hops <= MAXHOPS)) {
 
@@ -448,8 +448,8 @@ smtp_data(void)
 		WRITE(fd, "\n", 1);
 		/* this has to stay here and can't be combined with the net_read before the while loop:
 		 * if we combine them we add an extra new line for the line that ends the transmission */
-		if ( (i = net_read()) )
-			return errno;
+		if (net_read())
+			goto err_write;
 	}
 	if (xmitstat.check2822 & 1) {
 		if (!flagdate) {
@@ -465,8 +465,8 @@ smtp_data(void)
 	if (!linelen) {
 		/* if(linelen) message has no body and we already are at the end */
 		WRITE(fd, "\n", 1);
-		if ( (i = net_read()) )
-			return errno;
+		if (net_read())
+			goto err_write;
 		while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes)) {
 			int offset;
 
@@ -484,8 +484,8 @@ smtp_data(void)
 			msgsize += linelen + 2 - offset;
 
 			WRITE(fd, "\n", 1);
-			if ( (i = net_read()) )
-				return errno;
+			if (net_read())
+				goto err_write;
 		}
 	}
 	if (msgsize > maxbytes) {
@@ -504,21 +504,18 @@ smtp_data(void)
 
 	return queue_result();
 loop_data:
-	while (close(fd1[1]) && (errno == EINTR));
 	while (close(fd0[1]) && (errno == EINTR));
+	fd0[1] = 0;
 	/* eat all data until the transmission ends. But just drop it and return
 	 * an error defined before jumping here */
 	do {
 		msgsize += linelen + 2;
 		if (linein[0] == '.')
 			msgsize--;
-		if (net_read()) {
-			int e = errno;
-
-			freedata();
-			return e;
-		}
+		if (net_read())
+			goto err_write;
 	} while ((linelen != 1) && (linein[0] != '.'));
+	while (close(fd1[1]) && (errno == EINTR));
 	s = ultostr(msgsize);
 	logmail[7] = s ? s : "unknown";
 	logmail[3] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
@@ -565,4 +562,3 @@ err_write:
 		default:	return EBADFD; // will not be caught in main
 	}
 }
-
