@@ -187,8 +187,7 @@ spflookup(const char *domain, const int rec)
 		if (SPF_FAIL(prefix)) {
 			char *ex;
 
-#warning FIXME: this must be case insensitive
-			if ( (ex = strstr(txt, "exp=")) ) {
+			if ( (ex = strcasestr(txt, "exp=")) ) {
 				int ip4, ip6;
 
 				if ((i = spf_domainspec(domain, ex, &xmitstat.spfexp, &ip4, &ip6))) {
