@@ -260,6 +260,9 @@ checkreply(const char *status, const char **pre, const int mask)
 
 	if (status && !ignore)
 		write(1, "", 1);
+	/* this allows us to check for 2xx with (x < 300) later */
+	if (res < 200)
+		res = 599;
 	return res;
 }
 
