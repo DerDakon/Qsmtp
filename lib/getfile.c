@@ -30,15 +30,16 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 	if (ds->userpath.len) {
 		*type = 0;
 		l = ds->userpath.len + len;
-		if ( ! (filename = malloc(l + 1)))
-			goto enomem;
+		if ( ! (filename = malloc(l + 1))) {
+			return -1;
+		}
 		memcpy(filename, ds->userpath.s, ds->userpath.len);
 		memcpy(filename + ds->userpath.len, fn, len);
 		filename[l] = '\0';
 
 		fd = open(filename, O_RDONLY);
 		if (fd < 0) {
-			if ((errno != ENOENT) && (errno != ENOLCK))
+			if (errno != ENOENT)
 				return -1;
 		} else if (fd >= 0) {
 			free(filename);
@@ -56,8 +57,10 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 	if (ds->domainpath.len > ds->userpath.len) {
 		char *t;
 		
-		if (! (t = realloc(filename, ds->domainpath.len + len + 1)))
-			goto enomem;
+		if (! (t = realloc(filename, ds->domainpath.len + len + 1))) {
+			free(filename);
+			return -1;
+		}
 		filename = t;
 	}
 	l = ds->domainpath.len + len;
@@ -67,10 +70,6 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 	fd = open(filename, O_RDONLY);
 	free(filename);
 	return fd;
-enomem:
-	free(filename);
-	errno = ENOMEM;
-	return -1;
 }
 
 /**
@@ -98,7 +97,6 @@ getfileglobal(const struct userconf *ds, const char *fn, int *type)
 
 	*type = 2;
 	if (! (t = malloc(len + 9))) {
-		errno = ENOMEM;
 		return -1;
 	}
 	memcpy(t, "control/", 8);
@@ -108,14 +106,14 @@ getfileglobal(const struct userconf *ds, const char *fn, int *type)
 	free(t);
 
 	return fd;
-
 }
 
 static long
-checkconfig(const char **config, const char *flag, const unsigned int l)
+checkconfig(char *const *config, const char *flag, const unsigned int l)
 {
 	int i = 0;
 
+	errno = 0;
 	if (!config || !*config)
 		return 0;
 	while (config[i]) {
@@ -127,9 +125,8 @@ checkconfig(const char **config, const char *flag, const unsigned int l)
 					char *s;
 					unsigned long r;
 
-					errno = 0;
 					r = strtol(config[i] + l + 1, &s, 10);
-					if (s) {
+					if (*s) {
 						errno = EINVAL;
 						return -1;
 					}
