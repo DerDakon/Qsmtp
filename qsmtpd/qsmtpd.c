@@ -1083,11 +1083,13 @@ smtp_data(void)
 	/* fd is now the file descriptor we are writing to. This is better than always
 	 * calculating the offset to fd0[1] */
 	fd = fd0[1];
+/* write the "Received: " line to mail header */
 	WRITE(fd, "Received: from ", 15);
 	if (xmitstat.remotehost.s) {
 		WRITE(fd, xmitstat.remotehost.s, xmitstat.remotehost.len);
-	} else
+	} else {
 		WRITE(fd, "unknown", 7);
+	}
 	WRITE(fd, " ([", 3);
 	WRITE(fd, xmitstat.remoteip, strlen(xmitstat.remoteip));
 	WRITE(fd, "]", 1);
@@ -1114,11 +1116,14 @@ smtp_data(void)
 	WRITE(fd, head.tqh_first->to.s, head.tqh_first->to.len);
 	WRITE(fd, ">; ", 3);
 	ti = time(NULL);
-	i = strftime(datebuf,sizeof(datebuf),"%a, %d %b %Y %H:%M:%S %z",localtime(&ti));
+	i = strftime(datebuf, sizeof(datebuf), "%a, %d %b %Y %H:%M:%S %z", localtime(&ti));
 	WRITE(fd, datebuf, i);
 	WRITE(fd, "\n", 1);
-	if ( (rc = spfreceived(fd, xmitstat.spf)) )
-		goto err_write;
+/* write "Received-SPF: " line */
+	if (!(xmitstat.authname || xmitstat.tlsclient)) {
+		if ( (rc = spfreceived(fd, xmitstat.spf)) )
+			goto err_write;
+	}
 
 	/* loop until:
 	 * -the message is bigger than allowed
@@ -1127,6 +1132,7 @@ smtp_data(void)
 	 */
 	if ( (i = net_read()) )
 		return errno;
+/* write the data to mail */
 	while (strcmp(linein,".") && (msgsize <= maxbytes) && linelen && (hops <= MAXHOPS)) {
 
 		if (linein[0] == '.') {
