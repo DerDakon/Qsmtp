@@ -60,7 +60,7 @@ usersize:		The maximum size of a message the user wants to accept. This only wor
 			ESMTP SIZE (which all real mailservers do). The wide spread worm with own SMTP engine don't
 			use this so this will not block them.
 
-block_soberg:		(global) Block a mail where the combination of HELO and MAIL FROM looks like SoberG:
+block_SoberG:		(global) Block a mail where the combination of HELO and MAIL FROM looks like SoberG:
 			MAIL FROM: foo@bar.com would lead to HELO foo.com
 
 helovalid:		(global) Mails with invalid helo are rejected. The value is a bitwise of these bits:

@@ -19,7 +19,7 @@ cb_soberg(const struct userconf *ds, char **logmsg, int *t)
 
 	if (!xmitstat.mailfrom.len)
 		return 0;
-	if (getsettingglobal(ds, "block_soberg", t) <= 0)
+	if (getsettingglobal(ds, "block_SoberG", t) <= 0)
 		return 0;
 
 	/* this can't fail, either mailfrom.len is 0 or there is an '@' and at least one '.',
