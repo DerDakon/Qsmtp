@@ -92,7 +92,7 @@ int tls_verify(void)
 	STACK_OF(X509_NAME) *sk = SSL_load_client_CA_file(CLIENTCA);
 	int relayclient = 0;
 
-	if (!ssl || xmitstat.authname || ssl_verified)
+	if (!ssl || xmitstat.authname.len || ssl_verified)
 		return 0;
 	ssl_verified = 1; /* don't do this twice */
 

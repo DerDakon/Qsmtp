@@ -176,7 +176,7 @@ out:
 	free(resp.s);
 	if (fun) {
 		/* only free user.s here, it will be copied to
-		 * xmitstat.authname on success */
+		 * xmitstat.authname.s on success */
 		free(user.s);
 		return fun();
 	}
@@ -375,7 +375,7 @@ int smtp_auth(void)
 	int i;
 	char *type = linein + 5;
 
-	if (xmitstat.authname)
+	if (xmitstat.authname.len)
 		return 1;
 
 	STREMPTY(user);
@@ -386,7 +386,8 @@ int smtp_auth(void)
 	for (i = 0; authcmds[i].text; i++) {
 		if (!strncasecmp(authcmds[i].text, type, strlen(authcmds[i].text))) {
 			switch (authcmds[i].fun()) {
-				case 0:	xmitstat.authname = user.s;
+				case 0:	xmitstat.authname.s = user.s;
+					xmitstat.authname.len = user.len;
 					return netwrite("235 2.0.0 ok, go ahead\r\n") ? errno : 0;
 				case 1:	return netwrite("535 5.7.0 authorization failed\r\n") ? errno : EDONE;
 				case -1: return errno;

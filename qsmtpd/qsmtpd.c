@@ -246,7 +246,6 @@ smtp_helo(void)
 		return ENOMEM;
 	memcpy(protocol, "SMTP", 5);
 	xmitstat.esmtp = 0;
-	xmitstat.authname = NULL;
 	xmitstat.spf = 0;
 	datatype = 0;
 	if (helovalid(linein + 5) < 0)
@@ -301,7 +300,6 @@ smtp_ehlo(void)
 	free(sizebuf);
 	xmitstat.spf = 0;
 	xmitstat.esmtp = 1;
-	xmitstat.authname = NULL;
 	datatype = 1;
 	return rc;
 }
@@ -610,7 +608,7 @@ smtp_rcpt(void)
 		return i;
 	} else if (i == -1) {
 		return EBOGUS;
-	} else if ((i == -2) && !xmitstat.authname && !xmitstat.tlsclient) {
+	} else if ((i == -2) && !xmitstat.authname.len && !xmitstat.tlsclient) {
 /* check if client is allowed to relay by IP */
 		if (!relayclient) {
 			int fd;
@@ -801,10 +799,13 @@ userdenied:
 				/* this is _so_ ugly. I just want a local variable for this case */
 				const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
 
-				j = net_writen(rcptmsg);
+				tarpit();
+				if ((j = net_writen(rcptmsg)))
+					e = errno;
 			}
 			break;
-		case 4:	if ( (j = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
+		case 4:	tarpit();
+			if ( (j = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
 				e = errno;
 			break;
 	}
@@ -962,8 +963,9 @@ int
 smtp_data(void)
 {
 	char bytes[] = " bytes, ";
+	char *authmsg = NULL;
 	const char *logmail[] = {"received ", "", "message to <", NULL, "> from <", xmitstat.mailfrom.s,
-					"> from ip [", xmitstat.remoteip, "] (", NULL, bytes,
+					"> ", "", "from ip [", xmitstat.remoteip, "] (", NULL, bytes,
 					NULL, " recipients)",NULL};
 	int i, status, rc;
 	unsigned long msgsize = 0, maxbytes;
@@ -1052,6 +1054,25 @@ smtp_data(void)
 		return EDONE;
 	}
 
+/* print the authname.s into a buffer for the logmsg */
+	if (xmitstat.authname.len) {
+		if (strcasecmp(xmitstat.authname.s, xmitstat.mailfrom.s)) {
+			authmsg = malloc(xmitstat.authname.len + 20);
+
+			if (!authmsg)
+				goto err_write;
+			memcpy(authmsg, "(authenticated as ", 18);
+			memcpy(authmsg + 18, xmitstat.authname.s, xmitstat.authname.len);
+			memcpy(authmsg + 18 + xmitstat.authname.len, ")", 2);
+		} else {
+			authmsg = malloc(16);
+
+			if (!authmsg)
+				goto err_write;
+			memcpy(authmsg, "(authenticated)", 16);
+		}
+		logmail[7] = authmsg;
+	}
 	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n"))
 		return errno;
 	if (databytes) {
@@ -1078,9 +1099,9 @@ smtp_data(void)
 		WRITE(fd, xmitstat.helostr.s, xmitstat.helostr.len);
 	}
 	WRITE(fd, ")", 1);
-	if (xmitstat.authname) {
+	if (xmitstat.authname.len) {
 		WRITE(fd, " (auth=", 7);
-		WRITE(fd, xmitstat.authname, strlen(xmitstat.authname));
+		WRITE(fd, xmitstat.authname.s, xmitstat.authname.len);
 		WRITE(fd, ")", 1);
 	} else if (xmitstat.remoteinfo) {
 		WRITE(fd, " (", 2);
@@ -1100,7 +1121,7 @@ smtp_data(void)
 	WRITE(fd, datebuf, i);
 	WRITE(fd, "\n", 1);
 /* write "Received-SPF: " line */
-	if (!(xmitstat.authname || xmitstat.tlsclient)) {
+	if (!(xmitstat.authname.len || xmitstat.tlsclient)) {
 		if ( (rc = spfreceived(fd, xmitstat.spf)) )
 			goto err_write;
 	}
@@ -1248,15 +1269,15 @@ smtp_data(void)
 	s = ultostr(msgsize);
 	if (ssl)
 		logmail[1] = "encrypted ";
-	logmail[9] = s;
+	logmail[11] = s;
 	logmail[5] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
 	if (head.tqh_first == *head.tqh_last) {
 		t = ultostr(goodrcpt);
-		logmail[10] = t;
+		logmail[12] = t;
 	} else {
 		bytes[6] = ')';
 		bytes[7] = '\0';
-		/* logmsg[9] is already NULL so that logging will stop here */
+		/* logmsg[11] is already NULL so that logging will stop here */
 	}
 
 /* write the envelope information to qmail-queue */
@@ -1288,6 +1309,7 @@ smtp_data(void)
 	free(s);
 	free(t);
 	freedata();
+	free(authmsg);
 
 	while(waitpid(qpid, &status, 0) == -1) {
 		/* don't know why this could ever happen, but we want to be sure */
@@ -1298,6 +1320,7 @@ smtp_data(void)
 	}
 	if (WIFEXITED(status)) {
 		int exitcode = WEXITSTATUS(status);
+
 		if (!exitcode) {
 			if (netwrite("250 2.5.0 accepted message for delivery\r\n")) {
 				return errno;
@@ -1345,6 +1368,9 @@ smtp_data(void)
 			}
 			return netwrite(netmsg) ? errno : 0;
 		}
+	} else {
+		log_write(LOG_ERR, "WIFEXITED(qmail-queue) went wrong");
+		return netwrite("451 4.3.2 error while writing mail to queue\r\n") ? errno : EDONE;
 	}
 loop_data:
 	while (close(fd1[1]) && (errno == EINTR));
@@ -1368,9 +1394,9 @@ loop_data:
 	logmail[0] = "rejected message to <";
 	logmail[1] = "";
 	logmail[2] = "";
-	logmail[9] = s;
-	logmail[11] = logmsg;
-	logmail[12] = NULL;
+	logmail[11] = s;
+	logmail[13] = logmsg;
+	logmail[14] = NULL;
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
@@ -1384,6 +1410,7 @@ loop_data:
 		free(l);
 	}
 	free(s);
+	free(authmsg);
 	freedata();
 
 	if (errmsg)
@@ -1392,6 +1419,7 @@ loop_data:
 err_write:
 	rc = errno;
 	free(s);
+	free(authmsg);
 	if (fd0[1]) {
 		while (close(fd0[1]) && (errno == EINTR));
 	}
@@ -1400,6 +1428,7 @@ err_write:
 	if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
 		return errno;
 	switch (rc) {
+		case ENOMEM:	return rc;
 		case ENOSPC:
 		case EFBIG:	return EMSGSIZE;
 		case EPIPE:	log_write(LOG_ERR, "broken pipe to qmail-queue");
@@ -1464,7 +1493,7 @@ main(int argc, char *argv[]) {
 			commands[i].state = -1;
 		}
 	} else {
-		xmitstat.authname = NULL;
+		STREMPTY(xmitstat.authname);
 		xmitstat.check2822 = 2;
 		TAILQ_INIT(&head);		/* Initialize the recipient list. */
 	}

@@ -15,7 +15,7 @@ struct xmitstat {			/* This contains some flags describing the transmission and 
 	unsigned int ipv4conn:1;	/* if this connection is made from a real IPv6 address or not */
 	unsigned long thisbytes;	/* size of the message announced by the remote host */
 	string mailfrom;		/* the current from address */
-	char *authname;			/* if SMTP AUTH is used (and successful) this is set */
+	string authname;		/* if SMTP AUTH is used (and successful) this is set */
 	char *tlsclient;		/* TLS client authenticated by certificate for relaying */
 	string remotehost;		/* the reverse lookup of the remote host */
 	char *remoteip;			/* ip of the remote host as set in the environment */
