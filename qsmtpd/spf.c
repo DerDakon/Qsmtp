@@ -61,6 +61,7 @@ spflookup(const char *domain, const int rec)
 	if (i) {
 		switch (errno) {
 			case ENOENT:	break;
+			case ETIMEDOUT:
 			case EIO:
 			case ECONNREFUSED:
 			case EAGAIN:	return SPF_TEMP_ERROR;

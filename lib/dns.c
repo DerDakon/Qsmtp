@@ -74,6 +74,7 @@ ask_dnsmx(const char *name, struct ips **result)
 		return 0;
 	}
 	switch (errno) {
+		case ETIMEDOUT:
 		case EAGAIN:	return 2;
 		case ENFILE:
 		case EMFILE:
@@ -130,6 +131,7 @@ ask_dnsa(const char *name, struct ips **result)
 		return 0;
 	}
 	switch (errno) {
+		case ETIMEDOUT:
 		case EAGAIN:	return 2;
 		case ENFILE:
 		case EMFILE:
