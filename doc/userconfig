@@ -1,0 +1,65 @@
+The users may configure a bunch of filter rules. There are two kinds of settings: settings configured by a
+config directive in the file "filterconf" or settings configured by it's own file. If the setting is not configured
+in the user directrory Qsmtpd will take the value from the domain directory. If there is no domain setting also
+the global one is taken if the setting is marked "global".
+
+
+Filterconf settings
+
+These settings can occur in the file "filterconf" in the user or domain directory. Settings marked global can
+also occur in the global file /var/qmail/control/filterconf. There may be comments or empty lines in the
+filterconf file, both will be ignored. There are two kinds of settings, boolean and integer. If there is a
+boolean setting "foo" and there is a line containing just "foo" foo will be enabled. If there is no foo it will
+be disabled. Integer settings are "keyword=number", e.g. "foo=2" will set foo to 2. There may not be any characters
+between the keyword, the '=' and the number. Boolean expressions may be written as integers, "foo" as a boolean
+is the same as "foo=1" and "foo=123877", so "foo" line in the file is the same like "foo=0".
+
+There is a special value "-1" which means that if the user sets "foo=-1" foo will be disabled and the domain config
+will _not_ be used.
+
+
+List of settings:
+
+forcestarttls:		Recipient only accepts mail if the transmission is SSL-encrypted. Use this with care, this
+			violates RfC 3207 and is only for the really paranoid users.
+
+whitelistauth:		(global) If the user is authenticated by SMTP AUTH or by TLS client certificate the mail
+			is accepted and no other filters will be checked.
+
+check_strict_rfc2822:	The mail body is checked for compliance to RfC 2822 (e.g. only one From:). The mail is
+			rejected if the mail is invalid. If only one of the recipients does not enable this check
+			the mail will not be rejected. This is due to the fact that the mail must be completely
+			transferred before it can be rejected but then only one reply code for all recipients
+			can be returned.
+
+fromdomain:		(global) Do some checks to the domain of the "MAIL FROM:" address. The flags are binary
+			or'ed and stored as one number.
+			* 1: reject mail if from domain does not exist
+			* 2: reject mail if from domain resolves only to localhost addresses
+			* 4: reject mail if from domain resolves only to private nets (RfC 1918)
+
+reject_ipv6only:	(global) Reject if all MX records of the "MAIL FROM:" domain point to real IPv6 addresses.
+			This is useful only on an IPv4 only node where this addresses can't be routed.
+
+spfpolicy:		(global) Filter mail by the policy given by a DNS TXT record of the sender domain. The value
+			has this meanings:
+
+			* 1: temporary DNS errors will block mail temporary
+			* 2: rejects mail if the SPF record says 'fail'
+			* 3: rejects mail when the SPF record says 'softfail'
+			* 4: rejects mail when the SPF record says 'neutral'
+			* 5 (or more): rejects mail when no SPF records are found or they are syntactically invalid
+
+			=> see also: rspf (file), spfstrict (file), spfignore (file)
+
+nobounce:		Don't accept bounce messages to this recipients. This is useful if this address is never
+			used to send mail (e.g. contact addresses on websites).
+
+block_soberg:		(global)
+helovalid:		(global)
+
+fail_hard_on_temp:	If any filter returns with a temporary reject (e.g. sending IP is listed in a IP blacklist)
+			a permanent failure is announced instead of the temporary one.
+
+nonexist_on_block:	If any filter returns with a reject code the mail server will lie and tell the client the
+			user does not exist instead of returning a policy error.
