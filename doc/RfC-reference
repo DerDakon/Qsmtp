@@ -3,6 +3,7 @@ RfCs interesting for a mail server (and used for implementing this one):
 1652	SMTP Service Extension for 8bit-MIMEtransport
 (1845)	SMTP Service Extension for Checkpoint/Restart			(this looks interesting, feel free to send a patch)
 1870	SMTP Service Extension for Message Size Declaration
+1893	Enhanced Mail System Status Codes
 2034	SMTP Service Extension for Returning Enhanced Error Codes
 2505	Anti-Spam Recommendations for SMTP MTAs
 2554	SMTP Service Extension for Authentication
