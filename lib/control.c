@@ -264,7 +264,7 @@ finddomainmm(int fd, const char *domain)
 		unsigned int len;
 
 		if (cure) {
-			len = cure - cur - 1;
+			len = cure - cur;
 		} else {
 			len = map + st.st_size - cur;
 		}
@@ -286,6 +286,11 @@ finddomainmm(int fd, const char *domain)
 			}
 		}
 		cur = cure;
+		if (cure) {
+			while (*cur == '\n') {
+				cur++;
+			}
+		}
 	} while (cur);
 
 	munmap(map, st.st_size);
