@@ -181,8 +181,8 @@ spflookup(const char *domain, const int rec)
 #warning FIXME: this must be case invalid
 			if ((ex = strstr(txt, "exp="))) {
 				int ip4, ip6, i;
-				if ((i = spf_domainspec(ex, &xmitstat.spfexp, &ip4, &ip6))) {
-					xmitstat.spfexp = NULL;
+				if ((i = spf_domainspec(ex, &xmitstat.spfex, &ip4, &ip6))) {
+					xmitstat.spfex = NULL;
 				}
 			}
 		}
@@ -672,18 +672,18 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	}
 
 /**
- * spf_makroletter - expand a SPF makro letter
+ * spf_makroletter - exand a SPF makro letter
  *
  * @p: the token to parse
  * @domain: the current domain string
- * @exp: if this is an exp string
+ * @ex: if this is an ex string
  * @res: the resulting string is stored here
  * @l: offset into res
  *
  * returns: number of bytes parsed, -1 on error
  */
 int
-spf_makroletter(char *p, const char *domain, int exp, char **res, unsigned int *l)
+spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l)
 {
 	char *q = p;
 	int offs, num, r, delim;
@@ -729,7 +729,7 @@ spf_makroletter(char *p, const char *domain, int exp, char **res, unsigned int *
 				if (spf_appendmakro(res, l, domain, strlen(domain), num, r, delim))
 					return -1;
 				break;
-		case 'c':	if (!exp)
+		case 'c':	if (!ex)
 					PARSEERR;
 				/* fallthrough */
 		case 'i':	PARAMCHK;
@@ -751,7 +751,7 @@ spf_makroletter(char *p, const char *domain, int exp, char **res, unsigned int *
 						return -1;
 				}
 				break;
-		case 't':	if (!exp) {
+		case 't':	if (!ex) {
 					PARSEERR;
 				}
 				/* fallthrough */
@@ -764,7 +764,7 @@ spf_makroletter(char *p, const char *domain, int exp, char **res, unsigned int *
 					APPEND(7, "unknown");
 				}
 				break;
-		case 'r':	if (!exp) {
+		case 'r':	if (!ex) {
 					PARSEERR;
 				}
 				PARAMCHK;
@@ -817,17 +817,17 @@ spf_makroletter(char *p, const char *domain, int exp, char **res, unsigned int *
 	}
 
 /**
- * spf_makro - expand a SPF makro
+ * spf_makro - exand a SPF makro
  *
  * @token: the token to parse
  * @domain: the current domain string
- * @exp: if this is an exp string
+ * @ex: if this is an ex string
  * @result: the resulting string is stored here
  *
  * returns: 0 on success, -1 on ENOMEM, SPF_{HARD,TEMP}_ERROR on problems
  */
 int
-spf_makro(char *token, const char *domain, int exp, char **result)
+spf_makro(char *token, const char *domain, int ex, char **result)
 {
 	char *res;
 	char *p;
@@ -862,7 +862,7 @@ spf_makro(char *token, const char *domain, int exp, char **result)
 				case '%':	APPEND(1, "%");
 						p++;
 						break;
-				case '{':	z = spf_makroletter(++p, domain, exp, &res, &l);
+				case '{':	z = spf_makroletter(++p, domain, ex, &res, &l);
 						if (z < 0) {
 							return z;
 						} else if (!z || (*(p + z) != '}')) {
@@ -891,7 +891,7 @@ spf_makro(char *token, const char *domain, int exp, char **result)
  * spf_domainspec - parse the domainspec 
  *
  * @token: pointer to the string after the token
- * @domain: here the expanded domain string is stored (memory will be malloced)
+ * @domain: here the exanded domain string is stored (memory will be malloced)
  * @ip4cidr: the length of the IPv4 net (parsed if present in token, -1 if none given)
  * @ip6cidr: same for IPv6 net length
  *
