@@ -49,12 +49,12 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	}
 	if ( (i = fstat(fd, &st)) )
 		return i;
-	oldlen = st.st_size + 1;
-	if (!oldlen) {
+	if (!st.st_size) {
 		*buf = NULL;
 		while ( (i = close(fd)) && (errno != EINTR));
 		return i ? i : 0;
 	}
+	oldlen = st.st_size + 1;
 	inbuf = malloc(oldlen);
 	if (!inbuf)
 		return -1;
