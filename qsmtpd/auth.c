@@ -86,7 +86,6 @@ authgetl(void) {
 		i = net_readbin(64 + nfirst, authin.s + authin.len - nfirst, 0);
 		if (i < 0) {
 			free(authin.s);
-			STREMPTY(authin);
 			return -1;
 		}
 		nfirst = 1;
@@ -416,7 +415,6 @@ smtp_auth(void)
 	STREMPTY(user);
 	STREMPTY(pass);
 	STREMPTY(resp);
-	STREMPTY(authin);
 
 	for (i = 0; authcmds[i].text; i++) {
 		if (!strncasecmp(authcmds[i].text, type, strlen(authcmds[i].text))) {
