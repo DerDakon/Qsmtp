@@ -206,7 +206,7 @@ greeting(void)
 							break;
 						}
 					} else {
-						if (!*(linein + 5 + extensions[j].len)) {
+						if (!*(linein + 4 + extensions[j].len)) {
 							smtpext |= (1 << j);
 							break;
 						}
