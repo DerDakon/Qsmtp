@@ -118,6 +118,7 @@ getmxlist(char *rhost, struct ips **mx)
 			}
 		}
 		log_write(LOG_ERR, "parse error in first argument");
+		write(1, "Z4.3.0 parse error in first argument\n", 38);
 		exit(0);
 	}
 
@@ -160,8 +161,7 @@ getmxlist(char *rhost, struct ips **mx)
 									target, "\" given as target for \"",
 									rhost, "\"", NULL};
 
-						log_writen(LOG_ERR, logmsg);
-						exit(0);
+						err_confn(logmsg);
 					}
 				}
 				if (ask_dnsaaaa(target, mx)) {
@@ -169,8 +169,7 @@ getmxlist(char *rhost, struct ips **mx)
 									target, "\" given as target for \"",
 									rhost, "\"", NULL};
 
-					log_writen(LOG_ERR, logmsg);
-					exit(0);
+					err_confn(logmsg);
 				} else {
 					break;
 				}
@@ -183,9 +182,9 @@ getmxlist(char *rhost, struct ips **mx)
 
 	if (!*mx) {
 		if (ask_dnsmx(rhost, mx)) {
-			const char *logmsg[] = {"cannot find a mail exchanger for ", rhost, NULL};
-
-			log_writen(LOG_ERR, logmsg);
+			write(1, "Z4.4.3 cannot find a mail exchanger for ", 40);
+			write(1, rhost, strlen(rhost));
+			write(1, "\n", 2);
 			exit(0);
 		}
 	}
