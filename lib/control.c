@@ -50,10 +50,9 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		return i;
 	oldlen = st.st_size + 1;
 	if (!oldlen) {
+		*buf = NULL;
 		while ( (i = close(fd)) && (errno != EINTR));
-		if (!i)
-			errno = ENOENT;
-		return -1;
+		return i ? i : 0;
 	}
 	inbuf = malloc(oldlen);
 	if (!inbuf)
@@ -103,8 +102,8 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	}
 	if (j == 1) {
 		free(*buf);
-		errno = ENOENT;
-		return -1;
+		*buf = NULL;
+		return 0;
 	}
 	/* free the now useless memory at the end */
 	*buf = realloc(inbuf, j);
