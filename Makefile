@@ -1,5 +1,5 @@
-OWFATPATH=/mnt/misc/qmail/libowfat-0.20-eike
-CDBPATH=/mnt/misc/qmail/vpopmail-5.4.0/cdb
+OWFATPATH=../libowfat-0.20-eike
+CDBPATH=../vpopmail-5.4.0/cdb
 SHELL=/bin/sh
 CC=gcc
 CFLAGS=-O2 -c -Wall -W -I$(shell pwd)/include -DIPV4ONLY -DAUTHCRAM -g
@@ -38,6 +38,7 @@ targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.
 		callbacks/rcpt_cbs.o callbacks/forcessl.o callbacks/fromdomain.o \
 		callbacks/whitelistauth.o callbacks/check2822.o callbacks/ipbl.o \
 		callbacks/spf.o callbacks/nobounce.o callbacks/soberg.o callbacks/helo.o \
+		callbacks/forceesmtp.o \
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
 	$(LD) $(LDFLAGS) -o $@ $^
 	#chown qmaild:qmail $@
