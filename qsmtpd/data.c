@@ -295,7 +295,7 @@ queue_result(void)
 				else
 					netmsg = "451 4.3.0 qq temporary problem\r\n";
 			}
-			return netwrite(netmsg) ? errno : 0;
+			return netwrite(netmsg) ? errno : EDONE;
 		}
 	} else {
 		log_write(LOG_ERR, "WIFEXITED(qmail-queue) went wrong");
