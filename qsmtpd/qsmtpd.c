@@ -1151,7 +1151,7 @@ smtp_data(void)
 	if ( (i = net_read()) )
 		return errno;
 /* write the data to mail */
-	while (strcmp(linein,".") && (msgsize <= maxbytes) && linelen && (hops <= MAXHOPS)) {
+	while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes) && linelen && (hops <= MAXHOPS)) {
 
 		if (linein[0] == '.') {
 			/* write buffer beginning at [1], we do not have to check if the second character 
