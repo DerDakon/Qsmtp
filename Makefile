@@ -9,9 +9,9 @@ LDFLAGSSSL=-lssl -lcrypto
 
 export SHELL CC CFLAGS LD LDFLAGS
 
-SUBDIRS = lib callbacks qsmtpd tools
+SUBDIRS = lib callbacks qsmtpd qremote tools
 
-TARGETS = targets/Qsmtpd targets/addipbl targets/testspf
+TARGETS = targets/Qsmtpd targets/Qremote targets/addipbl targets/testspf
 
 .phony: all clean subdirs install
 
@@ -42,6 +42,10 @@ targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
+targets/Qremote: qremote/qremote.o lib/dns.o lib/netio.o lib/ssl_timeoutio.o lib/log.o lib/tls.o \
+		$(OWFATPATH)/libowfat.a
+	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
+
 targets/addipbl: tools/addipbl.o
 	$(LD) $(LDFLAGS) -o $@ $^
 
@@ -53,3 +57,4 @@ targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o $(OWFA
 #FIXME: the destination directory must be fixed in case someone modifies qsmtpd.c::auto_qmail
 install:
 	install -s -g qmail -o qmaild targets/Qsmtpd /var/qmail/bin
+#	install -s -g qmail -o qmailr targets/Qremote /var/qmail/bin
