@@ -691,14 +691,6 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 
 #define PARSEERR	{free(*res); return -1;}
 
-#define PARAMCHK	\
-	{\
-		offs = spf_makroparam(++p, &num, &r, &delim);\
-		p += offs;\
-		if ((offs < 0) || (*p != '}'))\
-			PARSEERR;\
-	}
-
 /**
  * spf_makroletter - expand a SPF makro letter
  *
@@ -713,12 +705,16 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 int
 spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l)
 {
-	char *q = p;
+	char *q = p, ch;
 	int offs, num, r, delim;
 
-	switch (*p) {
-		case 's':	PARAMCHK;
-				if (xmitstat.mailfrom.len) {
+	ch = *p++;
+	offs = spf_makroparam(p, &num, &r, &delim);
+	p += offs;
+	if ((offs < 0) || (*p != '}'))
+		PARSEERR;
+	switch (ch) {
+		case 's':	if (xmitstat.mailfrom.len) {
 					if (spf_appendmakro(res, l, xmitstat.mailfrom.s, xmitstat.mailfrom.len,
 										num, r, delim))
 						return -1;
@@ -726,8 +722,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 #warning FIXME: default sender missing
 				}
 				break;
-		case 'l':	PARAMCHK;
-				if (xmitstat.mailfrom.len) {
+		case 'l':	if (xmitstat.mailfrom.len) {
 					char *at = strchr(xmitstat.mailfrom.s, '@');
 
 					if (spf_appendmakro(res, l, xmitstat.mailfrom.s, at - xmitstat.mailfrom.s,
@@ -740,8 +735,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 					APPEND(10, "postmaster");
 				}
 				break;
-		case 'o':	PARAMCHK;
-				if (xmitstat.mailfrom.len) {
+		case 'o':	if (xmitstat.mailfrom.len) {
 					char *at = strchr(xmitstat.mailfrom.s, '@');
 					unsigned int offset =
 							at - xmitstat.mailfrom.s + 1;
@@ -753,15 +747,13 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 						return -1;
 				}
 				break;
-		case 'd':	PARAMCHK;
-				if (spf_appendmakro(res, l, domain, strlen(domain), num, r, delim))
+		case 'd':	if (spf_appendmakro(res, l, domain, strlen(domain), num, r, delim))
 					return -1;
 				break;
 		case 'c':	if (!ex)
 					PARSEERR;
 				/* fallthrough */
-		case 'i':	PARAMCHK;
-				if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
+		case 'i':	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
 					char ip[INET_ADDRSTRLEN];
 
 					inet_ntop(AF_INET,
@@ -783,8 +775,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 					PARSEERR;
 				}
 				/* fallthrough */
-		case 'p':	PARAMCHK;
-				if (xmitstat.remotehost.len) {
+		case 'p':	if (xmitstat.remotehost.len) {
 					if (spf_appendmakro(res, l, xmitstat.remotehost.s, xmitstat.remotehost.len,
 								num, r, delim))
 						return -1;
@@ -795,12 +786,10 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 		case 'r':	if (!ex) {
 					PARSEERR;
 				}
-				PARAMCHK;
-				p++;
-				APPEND(heloname.len, heloname.s);
+				if (spf_appendmakro(res, l, heloname.s, heloname.len, num, r, delim))
+					return -1;
 				break;
-		case 'v':	PARAMCHK;
-				if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
+		case 'v':	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
 					if (delim & 2) {
 						if (r) {
 							if (num == 1) {
@@ -822,11 +811,9 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 					APPEND(3, "ip6");
 				}
 				break;
-		case 'h':	PARAMCHK;
-				APPEND(10, "deprecated");
+		case 'h':	APPEND(10, "deprecated");
 				break;
-		default:	PARAMCHK;
-				APPEND(7, "unknown");
+		default:	APPEND(7, "unknown");
 	}
 	return p - q;
 }
@@ -846,6 +833,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 
 #undef PARSEERR
 #define PARSEERR	{free(res); return SPF_HARD_ERROR;}
+
 
 /**
  * spf_makro - expand a SPF makro
@@ -911,7 +899,7 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 					APPEND(p - oldp, oldp);
 				} else {
 					APPEND(strlen(oldp) + 1, oldp);
-				}				
+				}
 			}
 		} while (p);
 	}
