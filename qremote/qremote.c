@@ -186,6 +186,8 @@ syntax:
  * checkreply - check the reply of the server
  *
  * @status: status codes to print or NULL if not to
+ * @pre: text to write to stdout before server reply if mask matches
+ * @mask: bitmask for pre: 1: 2xx, 2: 4xx, 3: 5xx
  *
  * returns: the SMTP result code
  *
@@ -196,30 +198,44 @@ syntax:
  * success messages.
  */
 static int
-checkreply(const char *status)
+checkreply(const char *status, const char **pre, const int mask)
 {
 	int res;
 	int ignore = 0;
 
 	res = netget();
 	if (status) {
-		if ((res >= 200) && (res < 300)) {
+		int m;
+
+		if ((res >= 211) && (res <= 252)) {
 			if (status[0] == ' ') {
 				ignore = 1;
 			} else {
 				write(1, status, 1);
 			}
-		} else if ((res >= 400) && (res < 500)) {
+			m = 1;
+		} else if ((res >= 421) && (res <= 452)) {
 			write(1, status + 1, 1);
+			m = 2;
 		} else {
 			write(1, status + 2, 1);
+			m = 3;
 		}
-		write(1, linein, linelen);
+		if (!ignore) {
+			if (pre && (m & mask)) {
+				int i = 0;
+	
+				while (pre[i]) {
+					write(1, pre[i], strlen(pre[i]));
+					i++;
+				}
+			}
+			write(1, linein, linelen);
+		}
 	}
 	while (linein[3] == '-') {
-		if (netget() != res) {
-			// handle error case
-		}
+		/* ignore the SMTP code sent here, if it's different from the one before the server is broken */
+		(void) netget();
 		if (status && !ignore) {
 			write(1, linein, linelen);
 			write(1, "\n", 1);
@@ -312,6 +328,8 @@ greeting(void)
 	return 0;
 }
 
+static const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "./Remote_host_said: ", NULL};
+
 static void
 send_data(void)
 {
@@ -320,6 +338,7 @@ send_data(void)
 	int num;
 	int lastlf = 0;		/* set if last byte sent was a LF */
 
+	successmsg[2] = "";
 	netwrite("DATA\r\n");
 	if ( (num = netget()) != 354) {
 		write(1, num >= 500 ? "D5" : "Z4", 2);
@@ -406,7 +425,7 @@ send_data(void)
 	sendbuf[idx++] = '\r';
 	sendbuf[idx++] = '\n';
 	netnwrite(sendbuf, idx);
-	checkreply("KZD");
+	checkreply("KZD", successmsg, 1);
 	return;
 readerr:
 	write(1, "Zerror reading mail, aborting transfer.\n", 41);
@@ -420,6 +439,7 @@ send_bdat(void)
 	int num;
 	int last = 0;
 
+	successmsg[2] = "chunked ";
 	while ( (num = read(42, sendbuf, sizeof(sendbuf) - 1)) ) {
 		char chunklen[5];
 		const char *netmsg[] = {"BDAT ", chunklen, NULL, NULL};
@@ -441,32 +461,19 @@ send_bdat(void)
 		netnwrite(sendbuf, num);
 		if (last)
 			break;
-		if (checkreply(" ZD") != 250)
+		if (checkreply(" ZD", NULL, 0) != 250)
 			quit();
 	}
 	if (!last)
 		netwrite("BDAT 0 LAST\r\n");
-	checkreply("KZD");
+	checkreply("KZD", successmsg, 1);
 	return;
 readerr:
 	write(1, "Zerror reading mail, aborting transfer.\n", 41);
 	exit(0);
 }
 
-/**
- * err_mail - handle error reply to MAIL FROM command
- *
- * @s: status code returned by server
- */
-static void
-err_mail(const int s)
-{
-	write(1, s > 500 ? "D" : "Z", 1);
-	write(1, "Connected to ", 13);
-	write(1, rhost, rhostlen);
-	/* write text including 0 byte */
-	write(1, " but sender was rejected", 25);
-}
+static const char *mailerrmsg[] = {"Connected to ", NULL, " but sender was rejected", NULL};
 
 int
 main(int argc, char *argv[])
@@ -508,6 +515,7 @@ main(int argc, char *argv[])
 
 	getrhost(mx);
 	freeips(mx);
+	mailerrmsg[1] = rhost;
 
 	netmsg[0] = "MAIL FROM:<";
 	netmsg[1] = argv[2];
@@ -534,16 +542,14 @@ main(int argc, char *argv[])
 			net_writen(netmsg);
 		}
 /* MAIL FROM: reply */
-		if ( (i = checkreply(NULL)) >= 300) {
-			err_mail(i);
-
+		if (checkreply(" ZD", mailerrmsg, 6) >= 300) {
 			for (i = rcptcount; i > 0; i--)
-				checkreply(NULL);
+				checkreply(NULL, NULL, 0);
 			quit();
 		}
 /* RCPT TO: replies */
 		for (i = rcptcount; i > 0; i--) {
-			if (checkreply("rsh") < 300)
+			if (checkreply("rsh", NULL, 0) < 300)
 				rcptstat = 0;
 		}
 		if (rcptstat)
@@ -551,18 +557,19 @@ main(int argc, char *argv[])
 	} else {
 /* server does not allow pipelining: we must do this one by one */
 		net_read();
-		if ( (i = checkreply(NULL)) >= 300)
-			err_mail(i);
+		if (checkreply(" ZD", mailerrmsg, 6) >= 300)
+			quit();
 		netmsg[0] = "RCPT TO:<";
 		for (i = 4; i < argc; i++) {
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
-			if (checkreply("rsh") < 300)
+			if (checkreply("rsh", NULL, 0) < 300)
 				rcptstat = 0;
 		}
 		if (rcptstat)
 			quit();
 	}
+	successmsg[0] = rhost;
 	if (smtpext & 0x10) {
 		send_bdat();
 	} else {
