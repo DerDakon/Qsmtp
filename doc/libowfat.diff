@@ -177,7 +177,7 @@ diff -Naurp libowfat-0.21/dns/dns_mx.c libowfat-0.21-eike/dns/dns_mx.c
 diff -Naurp libowfat-0.21/dns/dns_name.c libowfat-0.21-eike/dns/dns_name.c
 --- libowfat-0.21/dns/dns_name.c	2004-06-04 19:38:30.000000000 +0200
 +++ libowfat-0.21-eike/dns/dns_name.c	2005-03-10 23:14:42.000000000 +0100
-@@ -68,3 +68,22 @@ int dns_name6(stralloc *out,const char i
+@@ -68,3 +68,27 @@ int dns_name6(stralloc *out,const char i
    if (!out->len) return dns_name6_inner(out,ip,DNS_IP6_INT);
    return 0;
  }
@@ -196,8 +196,13 @@ diff -Naurp libowfat-0.21/dns/dns_name.c libowfat-0.21-eike/dns/dns_name.c
 +  if (!out.len)
 +    r = dns_name6_inner(&out,ip,DNS_IP6_INT);
 +result:
-+  if (!r && out.len)
-+    *o = out.s;
++  if (!r && out.len) {
++    if (!stralloc_0(&out)) {
++      free(out.s);
++      r = -1;
++    } else
++      *o = out.s;
++  }
 +  return r;
 +}
 diff -Naurp libowfat-0.21/dns/dns_txt.c libowfat-0.21-eike/dns/dns_txt.c
