@@ -10,7 +10,7 @@ struct xmitstat {			/* This contains some flags describing the transmission and 
 	unsigned int esmtp:1;		/* if we are using ESMTP extensions */
 	unsigned int check2822:2;	/* if or not to check the message to strict compliance to RfC 2822 */
 	unsigned int helostatus:3;	/* status of the given HELO/EHLO, see antispam.h for the meaning */
-	int spf:4;			/* result of the SPF lookup */
+	unsigned int spf:4;		/* result of the SPF lookup */
 	int fromdomain:3;		/* result of the lookup for fromips */
 	unsigned int ipv4conn:1;	/* if this connection is made from a real IPv6 address or not */
 	unsigned long thisbytes;	/* size of the message announced by the remote host */
