@@ -12,7 +12,7 @@ void __attribute__ ((noreturn)) ssl_exit(int status) { if (ssl) ssl_free(ssl); _
 
 const char *ssl_error(void)
 {
-	int r = ERR_get_error();
+	unsigned long r = ERR_get_error();
 
 	if (!r)
 		return NULL;
