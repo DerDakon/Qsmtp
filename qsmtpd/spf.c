@@ -16,7 +16,7 @@ int spfip4(char *domain);
 int spfip6(char *domain);
 int spflookup(const char *domain, const int rec);
 int spfptr(const char *domain, char *token);
-int spfexists(char *token);
+int spfexists(const char *domain, char *token);
 int spf_domainspec(char *token, char **domain, int *ip4cidr, int *ip6cidr);
 
 /**
@@ -120,7 +120,7 @@ spflookup(const char *domain, const int rec)
 			result = spfptr(domain, token);
 		} else if (!strncasecmp(token, "exists:", 7)) {
 			token += 7;
-			result = spfexists(token);
+			result = spfexists(domain, token);
 		} else if (!strncasecmp(token, "all", 3) && (WSPACE(*(token + 3)) || !*(token + 3))) {
 			result = SPF_PASS;
 		} else if (((*token == 'a') || (*token == 'A')) &&
@@ -360,7 +360,7 @@ spfa(const char *domain, char *token)
 }
 
 int
-spfexists(char *token)
+spfexists(const char *domain, char *token)
 {
 	int ip6l, ip4l, i, r = 0;
 	char *domainspec;
