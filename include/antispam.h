@@ -6,6 +6,7 @@
 
 /* qsmtpd/antispam.c */
 
+extern void dotip6(char *);
 extern int check_rbl(char *const *, char **);
 extern void tarpit(void);
 extern int domainmatch(const char *, const unsigned int, const char **);

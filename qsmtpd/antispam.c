@@ -30,6 +30,16 @@ nibbletohex(char *dest, const char n)
 	*dest = '.';
 }
 
+void
+dotip6(char *buffer)
+{		
+	int k;
+
+	for (k = 15; k >= 0; k--) {
+		nibbletohex(buffer + k * 4,     (xmitstat.sremoteip.s6_addr[k] & 0xf0) >> 4);
+		nibbletohex(buffer + k * 4 + 2, (xmitstat.sremoteip.s6_addr[k] & 0x0f));
+	}
+}
 /**
  * reverseip4 - print client IPv4 address in reverse order into a given buffer
  *
@@ -67,11 +77,7 @@ check_rbl(char *const *rbls, char **txt)
 		l = reverseip4(lookup);
 		lookup[l++] = '.';
 	} else {
-		int k;
-		for (k = 15; k >= 0; k--) {
-			nibbletohex(lookup + k * 4,     (xmitstat.sremoteip.s6_addr[k] & 0x0f));
-			nibbletohex(lookup + k * 4 + 2, (xmitstat.sremoteip.s6_addr[k] & 0xf0) >> 4);
-		}
+		dotip6(lookup);
 		l = 64;
 	}
 	while (rbls[i]) {
