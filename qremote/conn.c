@@ -92,25 +92,24 @@ hascolon(const char *s)
 }
 
 void
-getmxlist(char *rhost, struct ips **mx)
+getmxlist(char *remhost, struct ips **mx)
 {
 	char **smtproutes, *smtproutbuf;
+	size_t reml = strlen(remhost);
 
-	if (rhost[0] == '[') {
-		size_t l = strlen(rhost);
-
-		if (rhost[l - 1] == ']') {
+	if (remhost[0] == '[') {
+		if (remhost[reml - 1] == ']') {
 			*mx = malloc(sizeof(**mx));
 			if (!*mx) {
 				err_mem(0);
 			}
 
-			rhost[l - 1] = '\0';
-			if (inet_pton(AF_INET6, rhost + 1, &((*mx)->addr)) > 0) {
+			remhost[reml - 1] = '\0';
+			if (inet_pton(AF_INET6, remhost + 1, &((*mx)->addr)) > 0) {
 				(*mx)->priority = 0;
 				(*mx)->next = NULL;
 				return;
-			} else if (inet_pton(AF_INET, rhost + 1, &((*mx)->addr.s6_addr32[3])) > 0) {
+			} else if (inet_pton(AF_INET, remhost + 1, &((*mx)->addr.s6_addr32[3])) > 0) {
 				memset((*mx)->addr.s6_addr32, 0, 12);
 				(*mx)->priority = 0;
 				(*mx)->next = NULL;
@@ -130,7 +129,7 @@ getmxlist(char *rhost, struct ips **mx)
 			target = strchr(smtproutes[k], ':');
 			*target++ = '\0';
 
-			if (matchdomain(rhost, strlen(rhost), smtproutes[k])) {
+			if (matchdomain(remhost, reml, smtproutes[k])) {
 				char *port;
 
 				port = strchr(target, ':');
@@ -159,7 +158,7 @@ getmxlist(char *rhost, struct ips **mx)
 					if (*more || (targetport >= 65536)) {
 						const char *logmsg[] = {"invalid port number given for \"",
 									target, "\" given as target for \"",
-									rhost, "\"", NULL};
+									remhost, "\"", NULL};
 
 						err_confn(logmsg);
 					}
@@ -167,7 +166,7 @@ getmxlist(char *rhost, struct ips **mx)
 				if (ask_dnsaaaa(target, mx)) {
 					const char *logmsg[] = {"cannot find IP address for static route \"",
 									target, "\" given as target for \"",
-									rhost, "\"", NULL};
+									remhost, "\"", NULL};
 
 					err_confn(logmsg);
 				} else {
@@ -181,9 +180,9 @@ getmxlist(char *rhost, struct ips **mx)
 	}
 
 	if (!*mx) {
-		if (ask_dnsmx(rhost, mx)) {
+		if (ask_dnsmx(remhost, mx)) {
 			write(1, "Z4.4.3 cannot find a mail exchanger for ", 40);
-			write(1, rhost, strlen(rhost));
+			write(1, remhost, reml);
 			write(1, "\n", 2);
 			exit(0);
 		}
