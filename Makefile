@@ -46,7 +46,7 @@ targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.
 		callbacks/badmailfrom.o callbacks/dnsbl.o callbacks/badcc.o callbacks/usersize.o \
 		callbacks/rcpt_cbs.o callbacks/boolean.o callbacks/fromdomain.o \
 		callbacks/check2822.o callbacks/ipbl.o callbacks/spf.o callbacks/soberg.o \
-		callbacks/helo.o callbacks/forceesmtp.o \
+		callbacks/helo.o callbacks/forceesmtp.o callbacks/namebl.o \
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 

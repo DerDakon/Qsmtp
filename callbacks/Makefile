@@ -1,5 +1,5 @@
 TARGETS = rcpt_cbs.o badmailfrom.o check2822.o dnsbl.o ipbl.o badcc.o fromdomain.o spf.o boolean.o soberg.o \
-	  helo.o usersize.o forceesmtp.o
+	  helo.o usersize.o forceesmtp.o namebl.o
 
 .phony: all clean
 
@@ -24,7 +24,7 @@ ipbl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
 badcc.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
-fromdomain.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h match.h
+fromdomain.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
 spf.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
@@ -37,6 +37,8 @@ usersize.o: netio.h qsmtpd.h
 rcpt_cbs.o: log.h
 
 forceesmtp.o: antispam.h control.h dns.h log.h qsmtpd.h
+
+namebl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
 %.o: %.c usercallback.h
 	$(CC) $(CFLAGS) $<
