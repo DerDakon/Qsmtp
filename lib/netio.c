@@ -18,13 +18,14 @@ time_t timeout;				/* how long to wait for data */
 #include <syslog.h>
 
 int do_debug_io;
+int in_data;
 
 void DEBUG_IN(const size_t len)
 {
 	char buffer[len + 4];
 	int en = 0;
 
-	if (!do_debug_io)
+	if (!do_debug_io || in_data)
 		return;
 
 	buffer[0] = '<';
@@ -44,7 +45,7 @@ void DEBUG_OUT(const char *s, const size_t l)
 	int en = 0;
 	const char *b, *c;
 	
-	if (!do_debug_io)
+	if (!do_debug_io || in_data)
 		return;
 
 	buffer[0] = '>';

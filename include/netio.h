@@ -36,6 +36,7 @@ extern int socketd;
 
 #ifdef DEBUG_IO
 extern int do_debug_io;
+extern int in_data;
 #endif
 
 #endif

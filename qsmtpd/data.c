@@ -339,6 +339,9 @@ smtp_data(void)
 		while ((waitpid(qpid, NULL, 0) == -1) && (errno == EINTR));
 		return e;
 	}
+#ifdef DEBUG_IO
+	in_data = 1;
+#endif
 	if (databytes) {
 		maxbytes = databytes;
 	} else {
@@ -493,6 +496,9 @@ smtp_data(void)
 	if (queue_envelope(msgsize))
 		goto err_write;
 
+#ifdef DEBUG_IO
+	in_data = 0;
+#endif
 	return queue_result();
 loop_data:
 	while (close(fd0[1]) && (errno == EINTR));
@@ -522,6 +528,9 @@ loop_data:
 	}
 	freedata();
 
+#ifdef DEBUG_IO
+	in_data = 0;
+#endif
 	if (errmsg)
 		return netwrite(errmsg) ? errno : EDONE;
 	return rc;
@@ -539,6 +548,9 @@ err_write:
 			break;
 	}
 
+#ifdef DEBUG_IO
+	in_data = 0;
+#endif
 	if ((rc == ENOSPC) || (rc == EFBIG)) {
 		rc = EMSGSIZE;
 	} else if ((errno != ENOMEM) && (errno != EMSGSIZE) && (errno != E2BIG) && (errno != EINVAL)) {
