@@ -102,7 +102,7 @@ queue_header(void)
 {
 	int fd = fd0[1];
 	int rc;
-	char datebuf[32];		/* the date for the Received-line */
+	char datebuf[36];		/* the date for the Received-line */
 	time_t ti;
 	int i;
 
@@ -120,28 +120,22 @@ queue_header(void)
 		WRITE(fd, " HELO ", 6);
 		WRITE(fd, xmitstat.helostr.s, xmitstat.helostr.len);
 	}
-	WRITE(fd, ")", 1);
 	if (xmitstat.authname.len) {
-		WRITE(fd, " (auth=", 7);
+		WRITE(fd, ") (auth=", 8);
 		WRITE(fd, xmitstat.authname.s, xmitstat.authname.len);
-		WRITE(fd, ")", 1);
 	} else if (xmitstat.remoteinfo) {
-		WRITE(fd, " (", 2);
+		WRITE(fd, ") (", 3);
 		WRITE(fd, xmitstat.remoteinfo, strlen(xmitstat.remoteinfo));
-		WRITE(fd, ")", 1);
 	}
-	WRITE(fd, "\n\tby ", 5);
+	WRITE(fd, ")\n\tby ", 6);
 	WRITE(fd, heloname.s, heloname.len);
-	WRITE(fd, " (" VERSIONSTRING ")", 3 + strlen(VERSIONSTRING));
-	WRITE(fd, " with ", 6);
+	WRITE(fd, " (" VERSIONSTRING ") with ", 9 + strlen(VERSIONSTRING));
 	WRITE(fd, protocol, strlen(protocol));
 	WRITE(fd, "\n\tfor <", 7);
 	WRITE(fd, head.tqh_first->to.s, head.tqh_first->to.len);
-	WRITE(fd, ">; ", 3);
 	ti = time(NULL);
-	i = strftime(datebuf, sizeof(datebuf), "%a, %d %b %Y %H:%M:%S %z", localtime(&ti));
+	i = strftime(datebuf, sizeof(datebuf), ">; %a, %d %b %Y %H:%M:%S %z\n", localtime(&ti));
 	WRITE(fd, datebuf, i);
-	WRITE(fd, "\n", 1);
 /* write "Received-SPF: " line */
 	if (!(xmitstat.authname.len || xmitstat.tlsclient)) {
 		if ( (rc = spfreceived(fd, xmitstat.spf)) )
