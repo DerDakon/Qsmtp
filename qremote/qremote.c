@@ -282,12 +282,11 @@ main(int argc, char *argv[])
 
 	getmxlist(argv[1], &mx);
 
-	dup2(socketd,0);
-
 /* for all MX entries we got: try to enable connection, check if the SMTP server wants us (sends 220 response) and
  * or EHLO/HELO succeeds. If not, try next. If none left, exit. */
 	do {
 		tryconn(mx);
+		dup2(socketd, 0);
 		if (netget() != 220) {
 			quitmsg();
 			continue;
