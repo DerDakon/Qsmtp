@@ -16,7 +16,7 @@
  *          2: address contains @domain
  *          3: address is a full email address
  */
-static int
+static int __attribute__ ((pure))
 parseaddr(const char *addr)
 {
 	const char *t, *at = strchr(addr, '@');
@@ -68,7 +68,7 @@ parseaddr(const char *addr)
  *
  * @addr: the address to check
  */
-int
+int __attribute__ ((pure))
 checkaddr(const char *addr)
 {
 	return !parseaddr(addr);
