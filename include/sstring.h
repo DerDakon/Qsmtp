@@ -6,13 +6,13 @@
 
 typedef struct string {
 	char *s;
-	unsigned int len;
+	size_t len;
 } string;
 
 #define STREMPTY(x) {(x).s = NULL; (x).len = 0; }
 
 static inline int
-newstr(string *s, const unsigned int len)
+newstr(string *s, const size_t len)
 {
 	s->len = len;
 	s->s = malloc(len);

@@ -9,9 +9,9 @@
 
 char linein[1002];			/* buffer for the line to read: max 1000 chars including CRLF,
 					 * leading extra '.', closing '\0' */
-unsigned int linelen;			/* length of the line */
+size_t linelen;				/* length of the line */
 static char lineinn[sizeof(linein)];	/* if more than one line was in linein the rest is stored here */
-unsigned int linenlen;			/* length of the lineinn */
+size_t linenlen;			/* length of the lineinn */
 unsigned long timeout;			/* how long to wait for data */
 
 /**
@@ -23,7 +23,7 @@ unsigned long timeout;			/* how long to wait for data */
  * returns: -1 on error (errno is set), number of bytes read otherwise
  */
 static int
-readinput(char *buffer, const unsigned int len)
+readinput(char *buffer, const size_t len)
 {
 	int retval;
 	fd_set rfds;
@@ -66,7 +66,7 @@ int
 net_read(void)
 {
 	int datain;
-	unsigned int readoffset = 0;
+	size_t readoffset = 0;
 	unsigned int i;
 	char *p;
 
@@ -146,10 +146,10 @@ loop_long:
 	/* if readoffset is set the last character in the previous buffer was '\r' */
 	linenlen = 0;
 	do {
-		int j = readinput(linein, sizeof(linein));
+		size_t j = readinput(linein, sizeof(linein));
 
-		if (j < 0)
-			return j;
+		if (j == (size_t) -1)
+			return -1;
 		if (readoffset && (linein[0] == '\n')) {
 			p = linein + 1;
 			break;
@@ -201,7 +201,7 @@ netwrite(const char *s)
  *          does not return on timeout, programm will be cancelled
  */
 int
-netnwrite(const char *s, const unsigned int l)
+netnwrite(const char *s, const size_t l)
 {
 	fd_set wfds;
 	struct timeval tv = {
@@ -246,7 +246,8 @@ netnwrite(const char *s, const unsigned int l)
 int
 net_writen(const char *const *s)
 {
-	unsigned int i, len = 0;
+	unsigned int i;
+	size_t len = 0;
 	/* RfC 2821, section 4.5.3: reply line
 	 *   The maximum total length of a reply line including the reply code
 	 *   and the <CRLF> is 512 characters.  More information may be
@@ -254,7 +255,7 @@ net_writen(const char *const *s)
 	char msg[511];
 
 	for (i = 0; s[i]; i++) {
-		unsigned int l = strlen(s[i]);
+		size_t l = strlen(s[i]);
 
 		/* silently ignore the case if s[i] itself is too big */
 		if (len + l > sizeof(msg) - 1) {
@@ -263,7 +264,7 @@ net_writen(const char *const *s)
 			msg[3] = '-';
 			memcpy(msg + len, "\r\n\0", 3);
 			/* ignore if this fails: if the last on succeeds this must be enough for the client */
-			net_write(msg);
+			(void) net_write(msg);
 			msg[3] = c;
 			len = 4;
 		}
@@ -306,10 +307,10 @@ ultostr(const unsigned long u, char *res)
  *
  * returns: number of bytes read, -1 on error
  */
-int
-net_readbin(unsigned int num, char *buf)
+size_t
+net_readbin(size_t num, char *buf)
 {
-	unsigned int offs = 0;
+	size_t offs = 0;
 
 	if (linenlen) {
 		if (linenlen > num) {
@@ -344,16 +345,16 @@ net_readbin(unsigned int num, char *buf)
  *
  * returns: number of bytes read, -1 on error
  */
-int
-net_readline(unsigned int num, char *buf)
+size_t
+net_readline(size_t num, char *buf)
 {
-	unsigned int offs = 0;
+	size_t offs = 0;
 
 	if (linenlen) {
 		char *n = memchr(lineinn, '\n', linenlen);
 
 		if (n) {
-			unsigned int m = (n - lineinn);
+			size_t m = (n - lineinn);
 
 			if (m < num)
 				num = m;
@@ -377,11 +378,11 @@ net_readline(unsigned int num, char *buf)
 
 		r = readinput(buf + offs, num);
 		if (r < 0)
-			return r;
+			return -1;
 		n = memchr(buf + offs, '\n', r);
 		/* if there is a LF in the buffer copy everything behind it to lineinn */
 		if (n) {
-			unsigned int rest = buf + offs + r - n - 1;
+			size_t rest = buf + offs + r - n - 1;
 
 			memcpy(lineinn, n + 1, rest);
 			linenlen = rest;

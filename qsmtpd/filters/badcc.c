@@ -55,7 +55,7 @@ cb_badcc(const struct userconf *ds, char **logmsg, int *t)
 					break;
 				}
 			} else if (!strchr(a[i],'@')) {
-				unsigned int k = strlen(a[i]);
+				size_t k = strlen(a[i]);
 	
 				if (k < np->to.len) {
 					char *c = np->to.s + (np->to.len - k);

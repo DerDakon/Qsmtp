@@ -45,10 +45,10 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 	/* Beware: rc has opposite meaning (0 == match) ! */
 	while (a[i] && rc) {
 		char *d = fromdomain;
-		unsigned int alen = strlen(a[i]) + 1;
+		size_t alen = strlen(a[i]) + 1;
 
 		while (d && rc) {
-			unsigned int dlen = strlen(d);
+			size_t dlen = strlen(d);
 			char blname[256];
 
 			if (dlen + alen < 256) {

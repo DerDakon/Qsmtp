@@ -22,9 +22,9 @@ int
 getfile(const struct userconf *ds, const char *fn, int *type)
 {
 	char *filename = NULL;
-	unsigned int l;
+	size_t l;
 	int fd;
-	unsigned int len = strlen(fn);
+	size_t len = strlen(fn);
 
 	/* maybe there is no userpath because user only exists as .qmail-foo? */
 	if (ds->userpath.len) {
@@ -83,7 +83,7 @@ int
 getfileglobal(const struct userconf *ds, const char *fn, int *type)
 {
 	int fd = getfile(ds, fn, type);
-	unsigned int len;
+	size_t len;
 	char *t;
 
 	if ((fd != -1) || (errno != ENOENT))
@@ -113,7 +113,7 @@ getfileglobal(const struct userconf *ds, const char *fn, int *type)
  * @l: strlen(flag)
  */
 static long
-checkconfig(char *const *config, const char *flag, const unsigned int l)
+checkconfig(char *const *config, const char *flag, const size_t l)
 {
 	int i = 0;
 
@@ -157,7 +157,7 @@ checkconfig(char *const *config, const char *flag, const unsigned int l)
 long
 getsetting(const struct userconf *ds, const char *flag, int *type)
 {
-	unsigned int l = strlen(flag);
+	size_t l = strlen(flag);
 	long r;
 
 	*type = 0;
@@ -189,7 +189,7 @@ getsetting(const struct userconf *ds, const char *flag, int *type)
 long
 getsettingglobal(const struct userconf *ds, const char *flag, int *type)
 {
-	unsigned int l = strlen(flag);
+	size_t l = strlen(flag);
 	long r;
 
 	*type = 0;

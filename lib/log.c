@@ -8,7 +8,8 @@
 void
 log_writen(int priority, const char **s)
 {
-	unsigned int i = 0, j;
+	unsigned int j;
+	size_t i = 0;
 	char *buf;
 
 	for (j = 0; s[j]; j++)

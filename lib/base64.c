@@ -10,9 +10,9 @@ static unsigned char *b64alpha =
 
 /* returns 0 ok, >0 illegal, -1 problem */
 
-int b64decode(const unsigned char *in, unsigned int l, string *out)
+int b64decode(const unsigned char *in, size_t l, string *out)
 {
-	unsigned int i, j;
+	size_t i, j;
 	unsigned char a[4];
 	unsigned char b[3];
 	char *s;
@@ -28,8 +28,8 @@ int b64decode(const unsigned char *in, unsigned int l, string *out)
 	}
 	s = out->s;
 
-	for (i = 0;i < l;i += 4) {
-		for (j = 0;j < 4;j++) {
+	for (i = 0; i < l; i += 4) {
+		for (j = 0; j < 4; j++) {
 			if (((i + j) < l) && (in[i + j] != B64PAD)) {
 				unsigned char *c = strchr(b64alpha, in[i + j]);
 		
@@ -66,7 +66,7 @@ int b64decode(const unsigned char *in, unsigned int l, string *out)
 int b64encode(string *in, string *out)
 {
 	unsigned char a, b, c;
-	unsigned int i;
+	size_t i;
 	char *s;
 
 	if (in->len == 0) {

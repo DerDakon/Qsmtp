@@ -82,11 +82,9 @@ ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsign
  * returns: 1 on match, 0 otherwise
  */
 int
-matchdomain(const char *domain, const unsigned int dl, const char *expr)
+matchdomain(const char *domain, const size_t dl, const char *expr)
 {
-	unsigned int el;
-
-	el = strlen(expr);
+	size_t el = strlen(expr);
 
 	if (el > dl)
 		return 0;

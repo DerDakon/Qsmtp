@@ -26,11 +26,12 @@
  * if the file is empty (size 0 or only comments and blank lines) 0
  * is returned and buf is set to NULL
  */
-int
+size_t
 lloadfilefd(int fd, char **buf, const int striptab)
 {
 	char *inbuf;
-	int oldlen, j, i;
+	size_t oldlen, j;
+	int i;
 	struct stat st;
 
 	if (fd < 0) {
@@ -48,7 +49,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		}
 	}
 	if ( (i = fstat(fd, &st)) )
-		return i;
+		return -1;
 	if (!st.st_size) {
 		*buf = NULL;
 		while ( (i = close(fd)) && (errno == EINTR));
@@ -60,7 +61,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		return -1;
 	j = 0;
 	while (j < oldlen - 1) {
-		if ( ((i = read(fd, inbuf + j, oldlen - 1 - j)) < 0) && (errno != EINTR) ) {
+		if ( ((i = read(fd, inbuf + j, oldlen - 1 - j)) == -1) && (errno != EINTR) ) {
 			int e = errno;
 
 			while (close(fd) && (errno == EINTR));
@@ -71,7 +72,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	}
 	while ( (i = close(fd)) ) {
 		if (errno != EINTR)
-			return i;
+			return -1;
 	}
 	inbuf[--oldlen] = '\0'; /* if file has no newline at the end */
 	if (!striptab) {
@@ -79,48 +80,49 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		return oldlen;
 	}
 
-	i = 0;
-	while (i < oldlen) {
-		if ((inbuf[i] == '#') && (!i || (inbuf[i - 1] != '\\'))) {
+	j = 0;
+	while (j < oldlen) {
+		if ((inbuf[j] == '#') && (!j || (inbuf[j - 1] != '\\'))) {
 			/* this line contains a comment: strip it */
-			while ( (inbuf[i] != '\0') && (inbuf[i] != '\n') )
-				inbuf[i++] = '\0';
-		} else if ((striptab  & 2) && ((inbuf[i] == ' ') || (inbuf[i] == '\t') )) {
+			while ( (inbuf[j] != '\0') && (inbuf[j] != '\n') )
+				inbuf[j++] = '\0';
+		} else if ((striptab  & 2) && ((inbuf[j] == ' ') || (inbuf[j] == '\t') )) {
 			/* if there is a space or tab from here to the end of the line
 			 * should not be anything else */
 			do {
-				inbuf[i++] = '\0';
-			} while ((inbuf[i] == ' ') || (inbuf[i] == '\t'));
-			if ((inbuf[i] != '\0') || (inbuf[i] != '\n')) {
+				inbuf[j++] = '\0';
+			} while ((inbuf[j] == ' ') || (inbuf[j] == '\t'));
+			if ((inbuf[j] != '\0') || (inbuf[j] != '\n')) {
 				errno = EINVAL;
 				return -1;
 			}
-		} else if (inbuf[i] == '\n') {
-			inbuf[i++] = '\0';
+		} else if (inbuf[j] == '\n') {
+			inbuf[j++] = '\0';
 		} else
-			i++;
+			j++;
 		/* maybe checking for \r and friends? */
 	}
 
 	if (striptab & 1) {
+		size_t k;
 		/* compact the buffer */
-		j = i = 0;
-		while ((i < oldlen) && !inbuf[i])
-			i++;
-		while (i < oldlen) {
-			while (inbuf[i])
-				inbuf[j++] = inbuf[i++];
-			inbuf[j++] = '\0';
-			while ((i < oldlen) && !inbuf[i])
-				i++;
+		j = k = 0;
+		while ((j < oldlen) && !inbuf[j])
+			j++;
+		while (j < oldlen) {
+			while (inbuf[j])
+				inbuf[k++] = inbuf[j++];
+			inbuf[k++] = '\0';
+			while ((j < oldlen) && !inbuf[j])
+				j++;
 		}
-		if (!j) {
+		if (!k) {
 			free(inbuf);
 			*buf = NULL;
 			return 0;
 		}
 		/* free the now useless memory at the end */
-		*buf = realloc(inbuf, j);
+		*buf = realloc(inbuf, k);
 		if (!*buf) {
 			free(inbuf);
 			j = -1;
@@ -152,10 +154,10 @@ int
 loadintfd(int fd, unsigned long *result, const unsigned long def)
 {
 	char *tmpbuf, *l;
-	int i;
+	size_t i;
 
-	if ( ( i = lloadfilefd(fd, &tmpbuf, 2)) < 0)
-		return i;
+	if ( (i = lloadfilefd(fd, &tmpbuf, 2)) == (size_t) -1)
+		return -1;
 
 	if (!i) {
 		*result = def;
@@ -180,12 +182,12 @@ loadintfd(int fd, unsigned long *result, const unsigned long def)
  *
  * returns: length of the string, -1 on error
  */
-int
+size_t
 loadoneliner(const char *filename, char **buf, int optional)
 {
-	int j;
+	size_t j;
 
-	if ( ( j = lloadfilefd(open(filename, O_RDONLY), buf, 3) ) < 0)
+	if ( (j = lloadfilefd(open(filename, O_RDONLY), buf, 3)) == (size_t) -1)
 		return j;
 
 	if (!*buf) {
@@ -197,7 +199,7 @@ loadoneliner(const char *filename, char **buf, int optional)
 		errno = ENOENT;
 		return -1;
 	}
-	if (strlen(*buf) + 1 != (unsigned int) j) {
+	if (strlen(*buf) + 1 != j) {
 		const char *logmsg[] = {"more than one line in ", filename, NULL};
 
 		log_writen(LOG_ERR, logmsg);
@@ -215,15 +217,17 @@ loadoneliner(const char *filename, char **buf, int optional)
  * @bufa: array to be build from buf (memory will be malloced)
  * @cf: function to check if an entry is valid or NULL if not to
  *
+ * returns: 0 on success, -1 on error
+ *
  * if the file does not exist or has no content *buf and *bufa will be set to NULL
  */
 int
 loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
 {
-	int i, j, k;
+	size_t i, j, k;
 
-	if ( (j = lloadfilefd(fd, buf, 3)) < 0)
-		return j;
+	if ( (j = lloadfilefd(fd, buf, 3)) == (size_t) -1)
+		return -1;
 
 	if (!j) {
 		*bufa = NULL;
@@ -285,7 +289,7 @@ finddomainmm(int fd, const char *domain)
 	struct stat st;
 	char *map, *cur;
 	int rc = 0, i;
-	unsigned int dl = strlen(domain);
+	size_t dl = strlen(domain);
 
 	if (fd < 0) {
 		return (errno == ENOENT) ? 0 : fd;
@@ -317,7 +321,7 @@ finddomainmm(int fd, const char *domain)
 	cur = map;
 	do {
 		char *cure = strchr(cur, '\n');
-		unsigned int len;
+		size_t len;
 
 		if (cure) {
 			len = cure - cur;

@@ -34,7 +34,7 @@ lookupbmf(char *at, char **a)
 				break;
 			}
 		} else if (!strchr(a[i],'@')) {
-			unsigned int k = strlen(a[i]);
+			size_t k = strlen(a[i]);
 
 			if (k < xmitstat.mailfrom.len) {
 				char *c = xmitstat.mailfrom.s + (xmitstat.mailfrom.len - k);

@@ -104,7 +104,7 @@ queue_header(void)
 	int rc;
 	char datebuf[36];			/* the date for the Received-line */
 	time_t ti;
-	int i;
+	size_t i;
 	const char *afterprot = "A\n\tfor <";	/* the string to be written after the protocol */
 
 /* write the "Received: " line to mail header */

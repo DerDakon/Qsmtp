@@ -45,7 +45,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 	if (spfs == SPF_NONE) {
 		int v = 0, fd;
 		char **a, *b, spfname[256];
-		unsigned int fromlen;	/* strlen(fromdomain) */
+		size_t fromlen;	/* strlen(fromdomain) */
 
 		if ( (fd = getfileglobal(ds, "rspf", t)) < 0)
 			return (errno == ENOENT) ? 0 : -1;
