@@ -271,6 +271,7 @@ smtp_ehlo(void)
 	if (helovalid(linein + 5) < 0)
 		return errno;
 	if (auth_host && (!sslauth || (sslauth && ssl))) {
+#warning FIXME: read AUTH types to announce from config file
 #ifdef AUTHCRAM
 		msg[next++] = "250-AUTH PLAIN LOGIN CRAMMD5\r\n";
 #else
@@ -1018,7 +1019,7 @@ smtp_temperror(void)
  * >
  * > RSET
  *
- * This function is only there to handle this connections and drop them as early as possible to save our bandwidth.
+ * This function is only there to handle this connections and drop them as early as possible to save our traffic.
  */
 int
 http_post(void)
