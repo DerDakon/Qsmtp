@@ -564,7 +564,7 @@ err_write:
 				return EDONE;
 		/* This errors happen if client sends invalid data (e.g. bad <CRLF> sequences). 
 		 * Let them pass, this will kick the client some lines later. */
-		case EINVAL:
+		case EINVAL:	return netwrite("500 5.5.2 bad <CRLF> sequence\r\n") ? errno : EBOGUS;
 		case E2BIG:	return rc;
 		/* normally none of the other errors may ever occur. But who knows what I'm missing here? */
 		default:	{
