@@ -2,11 +2,13 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 #include "qsmtpd.h"
 #include "antispam.h"
 #include "sstring.h"
 #include "dns.h"
 #include "match.h"
+#include "netio.h"
 
 #define WSPACE(x) (((x) == ' ') || ((x) == '\t') || ((x) == '\r') || ((x) == '\n'))
 
