@@ -45,7 +45,7 @@ static void
 err(const char *s)
 {
 	printf("ERROR: %s\n", s);
-	dolog(s);
+	syslog(LOG_ERR, "%s\n", s);
 }
 
 static void
