@@ -18,7 +18,7 @@ auth.o: qsmtpd.h sstring.h netio.h base64.h log.h
 
 starttls.o: tls.h netio.h control.h dns.h ssl_timeoutio.h qsmtpd.h
 
-antispam.o: antispam.h dns.h log.h match.h
+antispam.o: antispam.h dns.h log.h match.h netio.h
 
 spf.o: dns.h sstring.h antispam.h match.h
 

@@ -17,6 +17,7 @@
 #include "control.h"
 #include "tls.h"
 #include "match.h"
+#include "netio.h"
 
 /**
  * nibbletohex - take a nibble and output it as hex to a buffer, followed by '.'
