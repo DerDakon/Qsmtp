@@ -12,7 +12,7 @@ cb_forcessl(const struct userconf *ds, char **logmsg, int *t)
 	/* This rule violates RfC 3207, section 4:
 	 *     A publicly-referenced SMTP server MUST NOT require use of the
 	 *     STARTTLS extension in order to deliver mail locally.
-	 * We offer it for paranoid users but don't use getfileglobal here so
+	 * We offer it for paranoid users but don't use getsettingglobal here so
 	 * it can't be turned on for everyone by accident (or stupid postmaster) */
 	if (!getsetting(ds, "forcestarttls", t))
 		return 0;
