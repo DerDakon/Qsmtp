@@ -36,7 +36,6 @@ cb_soberg(const struct userconf *ds, char **logmsg, int *t)
 	tldl = strlen(tld);
 	soberhelo = malloc(userl + tldl);
 	if (!soberhelo) {
-		errno = ENOMEM;
 		return -1;
 	}
 	memcpy(soberhelo, xmitstat.mailfrom.s, userl - 1);
