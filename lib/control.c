@@ -23,7 +23,8 @@
  *
  * returns: length of buffer on success, -1 on error (errno is set)
  *
- * if the file is empty (size 0 or only comments and blank lines) ENOENT is returned
+ * if the file is empty (size 0 or only comments and blank lines) 0
+ * is returned and buf is set to NULL
  */
 int
 lloadfilefd(int fd, char **buf, const int striptab)
