@@ -15,10 +15,12 @@
  * 2) @domain: from domain must match string, "@aol.com" would block "foo@aol.com" but not "foo@bar.aol.com"
  * 3) no '@' at all: block everything from this domain and subdomains, the character in MAIL FROM before the match
  *    must be '.' or '@' so "aol.com" would reject "foo@aol.com" and "foo@bar.aol.com" but not "foo@no-aol.com"
+ * 4) beginning with '.': block everything ending with string, so ".aol.com" would block every subdomain of aol.com,
+ *    but not aol.com itself
  */
 
 static int
-lookupbmf(char *at, const char **a)
+lookupbmf(char *at, char **a)
 {
 	unsigned int i = 0;
 	int rc = 0;
@@ -36,9 +38,11 @@ lookupbmf(char *at, const char **a)
 				char *c = xmitstat.mailfrom.s + (xmitstat.mailfrom.len - k);
 
 				/* compare a[i] with the last k bytes of xmitstat.mailfrom.s */
-				if (!strcasecmp(c, a[i]) && ((*(c - 1) == '.') || (*(c - 1) == '@'))) {
-					rc = 2;
-					break;
+				if (!strcasecmp(c, a[i])) {
+					if ((*a[i] == '.') || (*(c - 1) == '.') || (*(c - 1) == '@')) {
+						rc = 2;
+						break;
+					}
 				}
 			}
 		} else if (!strcasecmp(a[i], xmitstat.mailfrom.s)) {
@@ -62,10 +66,14 @@ cb_badmailfrom(const struct userconf *ds, char **logmsg, int *t)
 	int fd;		/* file descriptor of the policy file */
 	char *at;
 
+	if (!xmitstat.mailfrom.len)
+		return 0;
+
 	if ( (fd = getfileglobal(ds, "badmailfrom", t)) < 0)
 		return (errno != ENOENT) ? fd : 0;
 
-	if ( ( rc = loadlistfd(fd, &b, &a, checkaddr, 2) ) < 0 )
+	/* don't check syntax of entries here: there might be things like ".cn" and so on that would fail the test */
+	if ( ( rc = loadlistfd(fd, &b, &a, NULL, 0) ) < 0 )
 		return rc;
 
 	at = strchr(xmitstat.mailfrom.s, '@');
