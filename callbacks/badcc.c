@@ -46,14 +46,14 @@ cb_badcc(const struct userconf *ds, char **logmsg, int *t)
 	*logmsg = "bad CC";
 
 	/* look through the list of recipients but ignore the last one: this is the actual one */
-	for (np = head.tqh_first; np != *head.tqh_last; np = np->entries.tqe_next) {
+	for (np = head.tqh_first; np != thisrecip; np = np->entries.tqe_next) {
 		char *at = strchr(np->to.s, '@');
 		unsigned int i = 0;
 
 		while (a[i]) {
 			if (*a[i] == '@') {
 				if (at && !strcasecmp(a[i], at)) {
-					rc = 1;
+					rc = 2;
 					break;
 				}
 			} else if (!strchr(a[i],'@')) {
@@ -64,17 +64,19 @@ cb_badcc(const struct userconf *ds, char **logmsg, int *t)
 	
 					/* compare a[i] with the last k bytes of recipient address */
 					if (!strcasecmp(c, a[i]) && ((*(c - 1) == '.') || (*(c - 1) == '@'))) {
-						rc = 1;
+						rc = 2;
 						break;
 					}
 				}
 			} else if (!strcasecmp(a[i], np->to.s)) {
-				rc = 1;
+				rc = 2;
 				break;
 			}
 
 			i++;
 		}
+		if (rc)
+			break;
 	}
 	free(a);
 	free(b);
