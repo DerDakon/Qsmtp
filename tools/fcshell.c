@@ -1,3 +1,4 @@
+#include <sys/queue.h>
 #include <stdio.h>
 #include <syslog.h>
 #include <errno.h>
@@ -224,6 +225,22 @@ wr(void)
 	writefc();
 }
 
+struct addrlist {
+	TAILQ_ENTRY(addrlist) entries;	/* List. */
+	char *address;
+};
+
+struct edbuf {
+	const char *name;
+	union {
+		struct {
+			char *mem;				/* for IPv4/IPv6 maps */
+			unsigned int len;			/* length of map */
+		} map;
+		TAILQ_HEAD(addrlhead, addrlist) lhead;	/* list of addresses/domain/blacklists */
+	} buf;
+} editbuffer;
+
 static void
 editquit(void)
 {
@@ -302,6 +319,8 @@ edit(void)
 	}
 
 	active = efiles + index;
+
+	editbuffer.name = active->name;
 
 	do {
 		fprintf(stdout, "fc <%s> > ", active->name);
