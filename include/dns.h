@@ -15,6 +15,7 @@ struct ips {
 extern int ask_dnsmx(const char *, struct ips **);
 extern int ask_dnsaaaa(const char *, struct ips **);
 extern int ask_dnsa(const char *, struct ips **);
+extern int ask_dnsname(const struct in6_addr *, char **);
 extern void freeips(struct ips *);
 extern int __attribute__ ((pure)) domainvalid(const char *);
 
@@ -30,7 +31,7 @@ extern int __attribute__ ((pure)) addrsyntax(char *in, const int flags, string *
 	 2: helo is my IP address
 	 3: helo is syntactically invalid
 	 4: currently undefined
-	 5: 2+3 (helo is my IP address, but not enclosed in '[]' which is broken
+	 5: 2+3 (helo is my IP address, but not enclosed in '[]')
 	 6, 7: currently undefined
 */
 extern int helovalid(const char *);
@@ -41,5 +42,6 @@ extern int dnsip4(char **, unsigned int *, const char *);
 extern int dnsip6(char **, unsigned int *, const char *);
 extern int dnstxt(char **, const char *);
 extern int dnsmx(char **, unsigned int *, const char *);
+extern int dnsname(char **, const char *);
 
 #endif

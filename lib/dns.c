@@ -260,6 +260,38 @@ domainvalid(const char *host)
 	return 1 - dot;
 }
 
+/**
+ * ask_dnsname - get host name for IP address
+ *
+ * @ip: the IP to look up
+ * @result: name will be stored here
+ *
+ * returns: 0 on success
+ *          1 if host is not existent
+ *          2 if temporary DNS error
+ *          3 if permanent DNS error
+ *         -1 on error
+ */
+int
+ask_dnsname(const struct in6_addr *ip, char **result)
+{
+	int r;
+
+	r = dnsname(result, ip->s6_addr);
+	if (!r)
+		return *result ? 0 : 1;
+	switch (errno) {
+		case ETIMEDOUT:
+		case EAGAIN:	return 2;
+		case ENFILE:
+		case EMFILE:
+		case ENOBUFS:	errno = ENOMEM;
+		case ENOMEM:	return -1;
+		case ENOENT:	return 1;
+		default:	return 3;
+	}
+}
+
 void
 freeips(struct ips *p)
 {
