@@ -1,4 +1,6 @@
 #include <netinet/in.h>
+#include <string.h>
+#include <strings.h>
 
 /**
  * ip4_matchnet - check if an IPv4 address is in a given network
