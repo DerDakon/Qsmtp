@@ -10,16 +10,16 @@ AUTOQMAIL=/var/qmail
 
 export SHELL CC CFLAGS LD LDFLAGS AUTOQMAIL
 
-SUBDIRS = lib callbacks qsmtpd qremote tools
+SUBDIRS = lib callbacks qsmtpd qremote
 
 TARGETS = targets/Qsmtpd targets/Qremote
 TOOLS = targets/addipbl targets/testspf
 
-.phony: all clean subdirs install normal
+.phony: all clean subdirs toolsub install normal
 
 default: normal
 
-all: subdirs $(TARGETS) $(TOOLS)
+all: subdirs toolsub $(TARGETS) $(TOOLS)
 
 normal: subdirs $(TARGETS)
 
@@ -28,11 +28,14 @@ subdirs:
 		$(MAKE) -C $$dir; \
 	done
 
+toolsub:
+	$(MAKE) -C tools
+
 vpath %.h ./include
 
 clean:
 	rm -f *.o *~ \#* $(TARGETS)
-	for dir in $(SUBDIRS); do\
+	for dir in $(SUBDIRS) tools; do\
 		$(MAKE) -C $$dir clean; \
 	done
 
