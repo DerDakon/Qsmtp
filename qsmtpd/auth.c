@@ -91,13 +91,13 @@ authgetl(void) {
 	if (--authin.len)
 		if (authin.s[authin.len - 1] == '\r')
 			--authin.len;
-	authin.s[authin.len] = '\0';
 
-	if ((*authin.s == '*') && !(*(authin.s + 1))) {
+	if ((*authin.s == '*') && (authin.len == 1)) {
 		free(authin.s);
 		errno = err_authabrt();
 		return -1;
 	}
+	authin.s[authin.len] = '\0';
 	if (authin.len == 0) {
 		free(authin.s);
 		return err_input();
@@ -194,36 +194,37 @@ auth_login(void)
 			return -1;
 		if (authgetl() < 0)
 			return -1;
-		if ( (r = b64decode(authin.s,authin.len,&user) > 0) )
-			goto err;
+		if ( (r = b64decode(authin.s, authin.len, &user) > 0) )
+			goto err_input;
 		free(authin.s);
 	}
-	if (r < 0) {
+	if (r < 0)
 		return r;
-	}
 
 	if (netwrite("334 UGFzc3dvcmQ6\r\n")) /* Password: */
-		return -1;
-
-	if (authgetl() < 0) {
-		free(user.s);
-		return -1;
-	}
-	if ( (r = b64decode(authin.s, authin.len, &pass) > 0) )
 		goto err;
+
+	if (authgetl() < 0)
+		goto err;
+	r = b64decode(authin.s, authin.len, &pass);
+	memset(authin.s, 0, authin.len);
 	free(authin.s);
-	if (r < 0) {
-		return r;
+	if (r > 0) {
+		goto err_input;
+	} else if (r < 0) {
+		goto err;
 	}
 
 	if (!user.len || !pass.len)
 		goto err;
 	return authenticate();  
+err_input:
+	err_input();
 err:
-	free(authin.s);
 	free(user.s);
+	memset(pass.s, 0, pass.len);
 	free(pass.s);
-	return err_input();
+	return -1;
 }
 
 static int
@@ -255,43 +256,38 @@ auth_plain(void)
 		id++; /* ignore authorize-id */
 
 	if (slop.len > id + 1) {
+		char *s = slop.s + id + 1;
 		/* one byte longer so we can also copy the trailing '\0' */
-		r = newstr(&user, strlen(slop.s + id + 1) + 1 );
-		if (r) {
-			free(authin.s);
-			free(slop.s);
-			return -1;
-		}
-		memcpy(user.s, slop.s + id + 1, user.len);
-		user.len--;
-		if (slop.len > id + user.len + 2) {
-			char *s = slop.s + id + user.len + 2;
+		r = newstr(&user, strlen(s) + 1);
+		if (r)
+			goto err;
+		memcpy(user.s, s, user.len);
+		if (slop.len > id + user.len + 1) {
+			s += user.len;
 
 			r = newstr(&pass, strlen(s) + 1);
-			if (r) {
-				free(authin.s);
-				free(user.s);
-				free(slop.s);
-				return -1;
-			}
+			if (r)
+				goto err;
 			memcpy(pass.s, s, pass.len);
 			pass.len--;
 		}
+		user.len--;
 	}
 	if (!user.len || !pass.len) {
-		free(authin.s);
-		free(user.s);
+		memset(pass.s, 0, pass.len);
 		free(pass.s);
-		free(slop.s);
-		return err_input();
+		err_input();
+		goto err;
 	}
 
 	return authenticate();
+err:
+	free(user.s);
+	free(slop.s);
+	return -1;
 }
 
 #ifdef AUTHCRAM
-static char unique[83];
-
 static int
 auth_cram(void)
 {
@@ -300,68 +296,90 @@ auth_cram(void)
 	char *s, *t;
 	const char *netmsg[] = { "334 ", NULL, NULL };
 	string slop;
+	char unique[83];
 
-	s = unique;
 	t = ultostr(getpid());
 	if (!t)
 		return -1;
 	m = strlen(t);
-	memcpy(s, t, m);
-	s += m;
-	*s++ = '.';
+	memcpy(unique, t, m);
 	free(t);
+	unique[m++] = '.';
+	s = unique + m;
 	t = ultostr(time(NULL));
 	if (!t)
 		return -1;
 	m = strlen(t);
 	memcpy(s, t, m);
+	free(t);
 	s += m;
 	*s++ = '@';
-	*s++ = '\0';
 
-	/* (s - unique) is strlen(unique) but faster */
+	/* (s - unique) is strlen(unique) but faster (and unique is not '\0'-terminated here!) */
 	k = (s - unique);
 	m = strlen(auth_host);
-	l = 1 + k + m + 1;
+	/* '<' + unique + auth_host + '>'+ '\0' */
+	l = 1 + k + m + 1 + 1;
 	if ( (r = newstr(&pass, l)) )
 		return r;
 	pass.s[0] = '<';
 	memcpy(pass.s + 1, unique, k);
 	memcpy(pass.s + 1 + k, auth_host, m);
 	pass.s[1 + k + m] = '>';
-	pass.s[1 + k + m + 1 ] = '\0';
-	if (b64encode(&pass,&slop) < 0)
-		return -1;
+	pass.s[1 + k + m + 1] = '\0';
+	if (b64encode(&pass, &slop) < 0)
+		goto err;
 
 	netmsg[1] = slop.s;
 	if (net_writen(netmsg))
-		return -1;
+		goto err;
+	free(slop.s);
+	STREMPTY(slop);
 
 	if (authgetl() < 0)
-		return -1;
-	if ( (r = b64decode(authin.s,authin.len,&slop) > 0))
-		return err_input();
+		goto err;
+	r = b64decode(authin.s, authin.len, &slop);
 	free(authin.s);
-	if (r < 0)
-		return -1;
+	if (r > 0) {
+		err_input();
+		goto err;
+	} else if (r < 0) {
+		goto err;
+	}
 
-	s = strchr(slop.s,' ');
+	s = strchr(slop.s, ' ');
+	if (!s) {
+		err_input();
+		goto err;
+	}
 	i = (s - slop.s);
 	while (*s == ' ')
 		s++;
 	slop.s[i] = 0;
 
-	if ((r = newstr(&user, i)))
-		return r;
+	if (newstr(&user, i))
+		goto err;
 	k = strlen(s);
-	if ((r = newstr(&resp, k)))
-		return r;
+	if ((r = newstr(&resp, k))) {
+		free(user.s);
+		goto err;
+	}
 	memcpy(user.s, slop.s, i + 1);
 	memcpy(resp.s, s, k + 1);
 
-	if (!user.len || !resp.len)
-		return err_input();
+	if (!user.len || !resp.len) {
+		free(resp.s);
+		err_input();
+		goto err;
+	}
+	free(slop.s);
 	return authenticate();
+err:
+	memset(slop.s, 0, slop.len);
+	free(slop.s);
+	/* don't need to memset pass here: it contains only our random challenge */
+	free(pass.s);
+	return -1;
 }
 #endif
 
