@@ -907,12 +907,13 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 			if (*p != '%') {
 				oldp = p;
 				p = strchr(p, '%');
-				if (p)
+				if (p) {
 					APPEND(p - oldp, oldp);
+				} else {
+					APPEND(strlen(oldp) + 1, oldp);
+				}				
 			}
 		} while (p);
-		if (p)
-			APPEND(strlen(p) + 1, p);
 	}
 	*result = res;
 	return 0;
