@@ -139,35 +139,41 @@ error:
  * status must be at least 3 bytes long but only the first 3 will have any effect. The first
  * one is the status code writen on success (server response is 2xx), the second on on temporary
  * error (4xx) and the third on permanent error (5xx). If no status code should be written status
- * must be set to NULL.
+ * must be set to NULL. If the first character in status is ' ' no message will be printed for
+ * success messages.
  */
 static int
 checkreply(const char *status)
 {
 	int res;
+	int ignore = 0;
 
 	res = netget();
 	if (status) {
 		if ((res >= 200) && (res < 300)) {
-			write(1, status, 1);
+			if (status[0] == ' ') {
+				ignore = 1;
+			} else {
+				write(1, status, 1);
+			}
 		} else if ((res >= 400) && (res < 500)) {
 			write(1, status + 1, 1);
 		} else {
 			write(1, status + 2, 1);
 		}
-		write(5, linein, linelen);
+		write(1, linein, linelen);
 	}
 	while (linein[3] == '-') {
 		if (netget() != res) {
 			// handle error case
 		}
-		if (status) {
+		if (status && !ignore) {
 			write(1, linein, linelen);
 			write(1, "\n", 1);
 		}
 	}
 
-	if (status)
+	if (status && !ignore)
 		write(1, "", 1);
 	return res;
 }
