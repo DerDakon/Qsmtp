@@ -543,6 +543,7 @@ err_write:
 	while (close(fd1[1]) && (errno == EINTR));
 	freedata();
 
+/* first check, then read: if the error happens on the last line nothing will be read here */
 	while (!((linelen == 1) && (linein[0] == '.'))) {
 		if (net_read())
 			break;
