@@ -63,7 +63,7 @@ struct smtpcomm commands[] = {
 	_C("EHLO",	 4, 0xfffd, smtp_ehlo,  0, 1),  /* 0x010 */
 	_C("MAIL FROM:",10, 0x0018, smtp_from,  0, 3),  /* 0x020 */
 	_C("RCPT TO:",	 8, 0x0060, smtp_rcpt,  0, 1),  /* 0x040 */
-	_C("DATA",	 4, 0x0040, smtp_data, 10, 0),  /* 0x080 */ /* the status to change to is changed in smtp_data */
+	_C("DATA",	 4, 0x0040, smtp_data, 0x10, 0),  /* 0x080 */ /* the status to change to is changed in smtp_data */
 	_C("STARTTLS",	 8, 0x0010, smtp_starttls, -1, 0),  /* 0x100 */
 	_C("AUTH",	 4, 0x0010, smtp_auth, -1, 1),  /* 0x200 */
 	_C("VRFY",	 4, 0xffff, smtp_vrfy, -1, 0)   /* 0x400 */
