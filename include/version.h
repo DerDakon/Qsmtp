@@ -1,1 +1,1 @@
-#define VERSIONSTRING " 0.2"
+#define VERSIONSTRING "Qsmtpd 0.3pre"
