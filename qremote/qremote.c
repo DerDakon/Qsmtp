@@ -114,14 +114,14 @@ error:
 /**
  * checkreply - check the reply of the server
  *
- * @status: status codes to print or '\0' if not to
+ * @status: status codes to print or NULL if not to
  *
  * returns: the SMTP result code
  *
  * status must be at least 3 bytes long but only the first 3 will have any effect. The first
  * one is the status code writen on success (server response is 2xx), the second on on temporary
- * error (4xx) and the third on permanent error (5xx). If no status code should be written the
- * first character of status must be '\0', in this case the length be 1.
+ * error (4xx) and the third on permanent error (5xx). If no status code should be written status
+ * must be set to NULL.
  */
 int
 checkreply(const char *status)
@@ -129,7 +129,7 @@ checkreply(const char *status)
 	int res;
 
 	res = netget();
-	if (*status) {
+	if (status) {
 		if ((res >= 200) && (res < 300)) {
 			write(1, status, 1);
 		} else if ((res >= 400) && (res < 500)) {
@@ -143,7 +143,7 @@ checkreply(const char *status)
 		if (netget() != res) {
 			// handle error case
 		}
-		if (*status) {
+		if (status) {
 			write(1, linein, linelen);
 			write(1, "\n", 1);
 		}
@@ -290,10 +290,10 @@ main(int argc, char *argv[])
 			net_writen(netmsg);
 		}
 /* MAIL FROM: reply */
-		if (checkreply("") >= 300) {
+		if (checkreply(NULL) >= 300) {
 #warning FIXME: write error message to stdout
 			for (i = 4; i < argc; i++)
-				checkreply("");
+				checkreply(NULL);
 			quit();
 		}
 		for (i = 4; i < argc; i++) {
