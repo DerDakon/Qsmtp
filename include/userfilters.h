@@ -1,5 +1,5 @@
-#ifndef USERCALLBACK_H
-#define USERCALLBACK_H
+#ifndef USERFILTERS_H
+#define USERFILTERS_H
 #include "sstring.h"
 #include "qsmtpd.h"
 
