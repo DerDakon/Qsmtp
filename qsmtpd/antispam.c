@@ -128,30 +128,35 @@ static unsigned int tarpitcount = 0;	/* number of extra seconds from tarpit */
  * delay him so he can't send so much spams.
  *
  * tarpit does not sleep if there is input pending. If the client is using pipelining or (more likely) a worm or spambot
- * don't ignoring our replies we kick him earlier and save some traffic.
+ * ignoring our replies we kick him earlier and save some traffic.
  */
 void
 tarpit(void)
 {
-	int i;
-
 	if (ssl) {
+		int i;
+
+		/* SSL encoding is too much overhead for worms and friends, so at the other side we can expect a real
+		 * mail server. We just have to check here if there is data pending (he's using PIPELINING) or not. */
 		i = SSL_pending(ssl);
+		if (i > 0) {
+			sleep(5 + tarpitcount);
+		}
 	} else {
 		fd_set rfds;
 		struct timeval tv = {
-			.tv_sec = 0,
+			.tv_sec = 5 + tarpitcount,
 			.tv_usec = 0,
 		};
 
 		FD_ZERO(&rfds);
 		FD_SET(0, &rfds);
-		i = select(1, &rfds, NULL, NULL, &tv);
+		/* don't care about the return value here: if something goes wrong we will only not
+		 * sleep long enough here. If something is really bad (ENOMEM or something) the error
+		 * will happen again and will be caught at another place */
+		select(1, &rfds, NULL, NULL, &tv);
 	}
 
-	if (i > 0) {
-		sleep(5 + tarpitcount);
-	}
 	/* maximum sleep time is 4 minutes */
 	if (tarpitcount < 235)
 		tarpitcount++;
