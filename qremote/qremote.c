@@ -102,8 +102,9 @@ netget(void)
 	if (net_read())
 		goto error;
 	if (linelen < 4) {
-		if (write(1, "server reply too short\n", 23) < 0)
-			quit();
+		/* if this fails we're already in bad trouble */
+		(void) write(1, "Zserver reply too short\n", 25);
+		quit();
 	}
 	if ((linein[3] != ' ') && (linein[3] != '-'))
 		goto syntax;
