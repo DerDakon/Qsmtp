@@ -29,7 +29,6 @@
 int
 cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 {
-	int u;				/* if it is the user or domain policy */
 	int r = 0, rc = 1;		/* return code */
 	long p;				/* spf policy */
 	char *fromdomain = NULL;	/* pointer to the beginning of the domain in xmitstat.mailfrom.s */
@@ -45,11 +44,11 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 
 /* there is no official SPF entry: go and check if someone else provided one, e.g. rspf.rhsbl.docsnyder.de. */
 	if (spfs == SPF_NONE) {
-		int u, v = 0, fd;
+		int v = 0, fd;
 		char **a, *b, spfname[256];
 		unsigned int fromlen;	/* strlen(fromdomain) */
 
-		if ( (fd = getfileglobal(ds, "rspf", &u)) < 0)
+		if ( (fd = getfileglobal(ds, "rspf", t)) < 0)
 			return (errno == ENOENT) ? 0 : -1;
 
 		if ( ( rc = loadlistfd(fd, &b, &a, domainvalid, 0) ) < 0 )
@@ -110,6 +109,8 @@ strict:
 		return rc;
 block:
 	if (xmitstat.remotehost.len) {
+		int u;				/* if it is the user or domain policy */
+
 		rc = finddomainmm(getfileglobal(ds, "ignorespf", &u), xmitstat.remotehost.s);
 		if (rc > 0) {
 			logwhitelisted("SPF", *t, u);
