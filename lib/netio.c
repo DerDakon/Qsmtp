@@ -56,6 +56,24 @@ int readinput(char *buffer, const unsigned int len)
 }
 
 /**
+ * strchrl - like strchr, but ignore '\0' and use len instead
+ *
+ * @s: the string to search in
+ * @c: the char to find
+ * @len: length of s
+ */
+static char*
+strchrl(char *s, const char c, unsigned int len)
+{
+	while (len--) {
+		if (*s == c)
+			return s;
+		s++;
+	}
+	return NULL;
+}
+
+/**
  * net_read - read one line from the network
  *
  * returns: 0 on success
@@ -76,7 +94,8 @@ net_read(void)
 
 		memcpy(linein, lineinn, linenlen);
 		linein[linenlen] = '\0';
-		c = strchr(linein, '\n');
+
+		c = strchrl(linein, '\n', linenlen);
 		if (c) {
 			if (*(c - 1) != '\r') {
 				errno = EINVAL;
@@ -97,18 +116,19 @@ net_read(void)
 			memcpy(linein, lineinn, linenlen);
 			linenlen = 0;
 		}
-		
 	}
 readin:
 	datain = readinput(linein + readoffset, sizeof(linein) - readoffset);
+	/* now the first readoffset characters of linein are filled with the stuff from the last buffer (if any),
+	 * the next datain characters are filled with the data just read, then there is a '\0' */
 
 	/* RfC 2821, section 2.3.7:
 	 * "Conforming implementations MUST NOT recognize or generate any other
 	 * character or character sequence [than <CRLF>] as a line terminator" */
 
-	p = strchr(linein, '\r');
+	readoffset += datain;
+	p = strchrl(linein, '\r', readoffset);
 	if (!p) {
-		readoffset += datain;
 		if (readoffset > sizeof(linein) - 2) {
 		    readoffset = 0;
 		    goto loop_long;
@@ -127,11 +147,10 @@ readin:
 		return -1;
 	}
 
-	
 	linelen = p - linein;
 	*p = '\0';
 
-	i = datain + readoffset - linelen - 2;
+	i = readoffset - linelen - 2;
 	if (i) {
 		memcpy(lineinn + linenlen, p + 2, i);
 		linenlen += i;
@@ -143,27 +162,27 @@ readin:
 	 * is broken once why not twice? */
 	return 0;
 loop_long:
+	/* if readoffset is set the last character in the previous buffer was '\r' */
 	linenlen = 0;
 	do {
-		readinput(linein, sizeof(linein));
+		i = readinput(linein, sizeof(linein));
 		if (readoffset && (linein[0] == '\n')) {
 			p = linein + 1;
 			break;
 		}
 		p = linein;
 		if ((linein[0] != '\r') && (linein[1] == '\n'))
-			linein[1] = 'x';
-		while (p && (*(p+1) != '\n')) {
+			linein[1] = '\0';
+		while (p && (*(p + 1) != '\n')) {
 			if (p == linein + sizeof(linein) - 1) {
 				readoffset = 1;
 				goto loop_long;
 			}
-			p = strchr(p, '\r');
+			p = strchrl(p, '\r', i);
+			i -= (p - linein);
 		}
-		if (p)
-			break;
 		readoffset = 0;
-	} while (1);
+	} while (!p);
 	linenlen = linein + datain - p - 2;
 	memcpy(lineinn, p + 2, linenlen);
 	errno = E2BIG;
@@ -171,7 +190,7 @@ loop_long:
 }
 
 /**
- * net_write - write one line from the network
+ * net_write - write one line to the network
  *
  * @s: line to be written (nothing else it written so it should contain <CRLF>)
  *
@@ -214,7 +233,7 @@ netwrite(const char *s)
 }
 
 /**
- * net_writen - write one line from the network
+ * net_writen - write one line to the network
  *
  * returns: 0 on success
  *          -1 on error (errno is set)
@@ -253,7 +272,7 @@ net_writen(const char *const *s)
 }
 
 /**
- * ultostr - return a dynamically alloced buffer with the string represantation of an unsigned long
+ * ultostr - return a dynamically alloced buffer with the string representation of an unsigned long
  *
  * @u: number to convert
  *
