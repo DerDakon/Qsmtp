@@ -31,8 +31,6 @@
 #include "dns.h"
 #include "vpopmail.h"
 
-static const char auto_qmail[] = "/var/qmail";
-
 typedef struct smtpcomm {
 	char		*name;		/* the SMTP command */
 	int		len;		/* strlen(name) */
@@ -141,7 +139,7 @@ setup(void)
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
 #endif
 
-	if (chdir(auto_qmail)) {
+	if (chdir(AUTOQMAIL)) {
 		log_write(LOG_ERR, "cannot chdir to qmail directory");
 		return EINVAL;
 	}

@@ -6,8 +6,9 @@ CFLAGS=-O2 -c -Wall -W -I$(shell pwd)/include -DIPV4ONLY -g
 LD=gcc
 LDFLAGS= #-lefence
 LDFLAGSSSL=-lssl -lcrypto
+AUTOQMAIL=/var/qmail
 
-export SHELL CC CFLAGS LD LDFLAGS
+export SHELL CC CFLAGS LD LDFLAGS AUTOQMAIL
 
 SUBDIRS = lib callbacks qsmtpd qremote tools
 
@@ -58,5 +59,5 @@ targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/ma
 
 #FIXME: the destination directory must be fixed in case someone modifies qsmtpd.c::auto_qmail
 install:
-	install -s -g qmail -o qmaild targets/Qsmtpd /var/qmail/bin
-#	install -s -g qmail -o qmailr targets/Qremote /var/qmail/bin
+	install -s -g qmail -o qmaild targets/Qsmtpd $(AUTOQMAIL)/bin
+#	install -s -g qmail -o qmailr targets/Qremote $(AUTOQMAIL)/bin
