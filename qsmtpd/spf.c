@@ -12,7 +12,7 @@
 
 int spfmx(const char *domain, char *token);
 int spfa(const char *domain, char *token);
-int spfip4(const char *domain);
+int spfip4(char *domain);
 int spfip6(char *domain);
 int spflookup(const char *domain, const int rec);
 int spfptr(const char *domain, char *token);
