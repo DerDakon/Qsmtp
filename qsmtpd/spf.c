@@ -746,6 +746,28 @@ spf_domainspec(char *token, char **domain, int *ip4cidr, int *ip6cidr)
 			}
 			*t = o;
 			token = t;
+/* Maximum length of the domain spec is 255.
+ * If it is longer remove subdomains from the left side until it is <255 bytes long. */
+			if (strlen(*domain) > 255) {
+				char *d = *domain;
+
+				do {
+					d = strchr(d, '.');
+				} while (d && (strlen(d) > 255));
+				if (!d) {
+					free(domain);
+					return SPF_HARD_ERROR;
+				} else {
+					unsigned int l = strlen(d) + 1;
+					char *nd = malloc(l);
+					
+					if (!nd)
+						return -1;
+					memcpy(nd, d, l);
+					free(*domain);
+					*domain = nd;
+				}
+			}
 		}
 	}
 /* check if there is a cidr length given */
