@@ -1304,7 +1304,7 @@ smtp_data(void)
 	} else {
 		bytes[6] = ')';
 		bytes[7] = '\0';
-		/* logmsg[11] is already NULL so that logging will stop here */
+		/* logmail[13] is already NULL so that logging will stop here */
 	}
 
 /* write the envelope information to qmail-queue */
@@ -1335,7 +1335,7 @@ smtp_data(void)
 	}
 	if (s[0] != 'u')
 		free(s);
-	if (t[0] != 'u')
+	if (logmail[13] && (t[0] != 'u'))
 		free(t);
 	freedata();
 	free(authmsg);
