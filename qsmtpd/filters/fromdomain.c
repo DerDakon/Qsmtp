@@ -44,9 +44,9 @@ cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
 	if (u & 2) {
 /* check if all MX entries are loopbacks */
 		int flaghit = 1;
-		struct ips *thisip;
+		struct ips *thisip = xmitstat.frommx;
 
-		while (flaghit && (thisip = xmitstat.frommx)) {
+		while (flaghit && thisip) {
 			if (IN6_IS_ADDR_V4MAPPED(&(thisip->addr))) {
 				unsigned int net = (thisip->addr.s6_addr32[3] & htonl(0xff000000));
 
@@ -57,6 +57,7 @@ cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
 				if (!IN6_IS_ADDR_LOOPBACK(&(thisip->addr)))
 					flaghit = 0;
 			}
+			thisip = thisip->next;
 		}
 		if (flaghit) {
 			*logmsg = "DNS loop";
@@ -66,9 +67,9 @@ cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
 	if (u & 4) {
 /* check if all MX entries resolve to private networks */
 		int flaghit = 1;
-		struct ips *thisip;
+		struct ips *thisip = xmitstat.frommx;
 
-		while (flaghit && (thisip = xmitstat.frommx)) {
+		while (flaghit && thisip) {
 			if (IN6_IS_ADDR_V4MAPPED(&(thisip->addr))) {
 				int flagtmp = 0;
 				const struct in_addr priva =   { .s_addr = htonl(0x0a000000) }; /* 10/8 */
@@ -101,6 +102,7 @@ cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
 			} else {
 				flaghit = IN6_IS_ADDR_LINKLOCAL(&(thisip->addr)) || IN6_IS_ADDR_SITELOCAL(&(thisip->addr));
 			}
+			thisip = thisip->next;
 		}
 		if (flaghit) {
 			*logmsg = "MX in private network";
@@ -116,7 +118,7 @@ cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
 		if ( (flaghit = getsettingglobal(ds, "reject_ipv6only", t)) <= 0)
 			return 0;
 
-		while (flaghit && (thisip = xmitstat.frommx)) {
+		for (thisip = xmitstat.frommx; flaghit && thisip; thisip = thisip->next) {
 			if (IN6_IS_ADDR_V4MAPPED(&(thisip->addr)))
 				flaghit = 0;
 		}
