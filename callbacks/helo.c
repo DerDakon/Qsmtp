@@ -16,7 +16,6 @@ int
 cb_helo(const struct userconf *ds, char **logmsg, int *t)
 {
 	int rc = 0;	/* return code */
-	const char *helo;
 	long l;
 
 	if (xmitstat.helostatus) {
@@ -32,13 +31,7 @@ cb_helo(const struct userconf *ds, char **logmsg, int *t)
 		}
 	}
 
-	/* be careful: helostr is only set if it differs from the reverse lookup */
-	if (xmitstat.helostr.len)
-		helo = xmitstat.helostr.s;
-	else
-		helo = xmitstat.remotehost.s;
-
-	rc = finddomainmm(getfileglobal(ds, "badhelo", t), helo);
+	rc = finddomainmm(getfileglobal(ds, "badhelo", t), HELOSTR);
 	if (rc <= 0)
 		return rc;
 

@@ -51,4 +51,7 @@ typedef struct recip {
 
 extern struct recip *thisrecip;
 
+#define HELOSTR (xmitstat.helostr.len ? xmitstat.helostr.s : xmitstat.remotehost.s)
+#define HELOSTR (xmitstat.helostr.len ? xmitstat.helostr.len : xmitstat.remotehost.len)
+
 #endif
