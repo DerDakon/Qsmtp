@@ -22,10 +22,10 @@ unsigned long timeout;			/* how long to wait for data */
  *
  * returns: -1 on error (errno is set), number of bytes read otherwise
  */
-static int
+static size_t
 readinput(char *buffer, const size_t len)
 {
-	int retval;
+	size_t retval;
 	fd_set rfds;
 	struct timeval tv = {
 		.tv_sec = timeout,
@@ -40,16 +40,17 @@ readinput(char *buffer, const size_t len)
 
 		retval = select(1, &rfds, NULL, NULL, &tv);
 
-		if (!retval)
+		if (!retval) {
 			dieerror(ETIMEDOUT);
-		if (retval < 0)
+		} else if (retval == (size_t) -1) {
 			return retval;
+		}
 		retval = read(0, buffer, len - 1);
 	}
-	if (retval > 0) {
-		buffer[retval] = '\0';
-	} else if (!retval) {
+	if (!retval) {
 		dieerror(ECONNRESET);
+	} else if (retval != (size_t) -1) {
+		buffer[retval] = '\0';
 	}
 	return retval;
 }
@@ -65,9 +66,9 @@ readinput(char *buffer, const size_t len)
 int
 net_read(void)
 {
-	int datain;
+	size_t datain;
 	size_t readoffset = 0;
-	unsigned int i;
+	size_t i;
 	char *p;
 
 	if (linenlen) {
@@ -102,6 +103,9 @@ readin:
 	datain = readinput(linein + readoffset, sizeof(linein) - readoffset);
 	/* now the first readoffset characters of linein are filled with the stuff from the last buffer (if any),
 	 * the next datain characters are filled with the data just read, then there is a '\0' */
+
+	if (datain == (size_t) -1)
+		return -1;
 
 	/* RfC 2821, section 2.3.7:
 	 * "Conforming implementations MUST NOT recognize or generate any other
@@ -326,11 +330,11 @@ net_readbin(size_t num, char *buf)
 		}
 	}
 	while (num) {
-		int r;
+		size_t r;
 
 		r = readinput(buf + offs, num);
-		if (r < 0)
-			return r;
+		if (r == (size_t) -1)
+			return -1;
 		offs += r;
 		num -= r;
 	}
@@ -373,11 +377,11 @@ net_readline(size_t num, char *buf)
 		}
 	}
 	while (num) {
-		int r;
+		size_t r;
 		char *n;
 
 		r = readinput(buf + offs, num);
-		if (r < 0)
+		if (r == (size_t) -1)
 			return -1;
 		n = memchr(buf + offs, '\n', r);
 		/* if there is a LF in the buffer copy everything behind it to lineinn */
