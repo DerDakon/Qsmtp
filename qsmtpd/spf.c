@@ -48,7 +48,7 @@ spflookup(const char *domain, const int rec)
 	return SPF_NEUTRAL;
 }
 
-#define WRITE(fd, s, l) if ( (rc = write((fd), (s), (l))) ) return rc
+#define WRITE(fd, s, l) if ( (rc = write((fd), (s), (l))) < 0 ) return rc
 
 int
 spfreceived(const int fd, const int spf) {
