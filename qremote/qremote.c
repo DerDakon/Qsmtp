@@ -503,12 +503,14 @@ main(int argc, char *argv[])
 
 	if (rcptcount <= 0) {
 		log_write(LOG_CRIT, "too few arguments");
+		write(1, "Zinternal error: Qremote called with invalid arguments\n", 56);
 		return 0;
 	}
 
 	for (i = strlen(argv[3]) - 1; i >= 0; i--) {
 		if ((argv[3][i] < '0') || (argv[3][i] > '9')) {
 			log_write(LOG_CRIT, "third argument is not a number");
+			write(1, "Zinternal error: Qremote called with invalid arguments\n", 56);
 			return 0;
 		}
 	}
