@@ -60,10 +60,8 @@ spflookup(const char *domain, const int rec)
 
  	i = dnstxt(&txt, domain);
 	if (i) {
-		free(txt);
-		txt = NULL;
 		switch (errno) {
-			case ENOENT:	break;
+			case ENOENT:	return SPF_NONE;
 			case ETIMEDOUT:
 			case EIO:
 			case ECONNREFUSED:
