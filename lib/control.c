@@ -148,26 +148,23 @@ lloadfilefd(int fd, char **buf, const int striptab)
 int
 loadintfd(int fd, unsigned long *result, const unsigned long def)
 {
-	char *tmpbuf;
+	char *tmpbuf, *l;
 	int i;
 
 	if ( ( i = lloadfilefd(fd, &tmpbuf, 2)) < 0)
 		return i;
 
-	if (tmpbuf) {
-		char *l;
-		*result = strtoul(tmpbuf, &l, 10);
-		if (*l) {
-			/* skip trailing spaces and tabs */
-			while  ( (*l == ' ') || (*l == '\t') || (*l == '\n') )
-				*l++;
-			if (*l) {
-				errno = EINVAL;
-				return -1;
-			}
-		}
-	} else
+	if (!i) {
 		*result = def;
+		return 0;
+	}
+
+	*result = strtoul(tmpbuf, &l, 10);
+	if (*l) {
+		errno = EINVAL;
+		return -1;
+	}
+
 	return 0;
 }
 
