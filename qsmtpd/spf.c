@@ -10,14 +10,14 @@
 
 #define WSPACE(x) (((x) == ' ') || ((x) == '\t') || ((x) == '\r') || ((x) == '\n'))
 
-int spfmx(const char *domain, char *token);
-int spfa(const char *domain, char *token);
-int spfip4(char *domain);
-int spfip6(char *domain);
-int spflookup(const char *domain, const int rec);
-int spfptr(const char *domain, char *token);
-int spfexists(const char *domain, char *token);
-int spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr, int *ip6cidr);
+static int spfmx(const char *domain, char *token);
+static int spfa(const char *domain, char *token);
+static int spfip4(char *domain);
+static int spfip6(char *domain);
+static int spflookup(const char *domain, const int rec);
+static int spfptr(const char *domain, char *token);
+static int spfexists(const char *domain, char *token);
+static int spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr, int *ip6cidr);
 
 /**
  * check_host - look up SPF records for domain
@@ -46,7 +46,7 @@ check_host(const char *domain)
  *
  * returns: one of the SPF_* constants defined in include/antispam.h or -1 on ENOMEM
  */
-int
+static int
 spflookup(const char *domain, const int rec)
 {
 	char *txt, *token, *valid = NULL, *redirect = NULL;
@@ -211,7 +211,7 @@ spflookup(const char *domain, const int rec)
 #define WRITE(fd, s, l) if ( (rc = write((fd), (s), (l))) < 0 ) return rc
 
 int
-spfreceived(const int fd, const int spf) {
+spfreceived(int fd, const int spf) {
 	int rc;
 	char *fromdomain;
 
@@ -260,7 +260,7 @@ spfreceived(const int fd, const int spf) {
  *  SPF_HARD_ERROR: parse error
  * -1: error (ENOMEM)
  */
-int
+static int
 spfmx(const char *domain, char *token)
 {
 	int ip6l, ip4l, i;
@@ -313,7 +313,7 @@ spfmx(const char *domain, char *token)
 	return SPF_NONE;
 }
 
-int
+static int
 spfa(const char *domain, char *token)
 {
 	int ip6l, ip4l, i, r = 0;
@@ -359,7 +359,7 @@ spfa(const char *domain, char *token)
 	return r;
 }
 
-int
+static int
 spfexists(const char *domain, char *token)
 {
 	int ip6l, ip4l, i, r = 0;
@@ -388,7 +388,7 @@ spfexists(const char *domain, char *token)
 	return r;
 }
 
-int
+static int
 spfptr(const char *domain, char *token)
 {
 	int ip6l, ip4l, i, r = 0;
@@ -435,7 +435,7 @@ spfptr(const char *domain, char *token)
 	return r;
 }
 
-int
+static int
 spfip4(char *domain)
 {
 	char *sl = domain;
@@ -467,7 +467,7 @@ spfip4(char *domain)
 	return ip4_matchnet(&xmitstat.sremoteip, &net, u) ? SPF_PASS : SPF_NONE;
 }
 
-int
+static int
 spfip6(char *domain)
 {
 	char *sl = domain;
@@ -512,7 +512,7 @@ spfip6(char *domain)
  *
  * returns: number of bytes parsed, -1 on error
  */
-int
+static int
 spf_makroparam(char *token, int *num, int *r, int *delim)
 {
 	int res = 0;
@@ -570,7 +570,7 @@ spf_makroparam(char *token, int *num, int *r, int *delim)
  *
  * returns: 0 on success, -1 on error
  */
-int
+static int
 spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned int sl, int num, const int r, const int delim)
 {
 	int dc = 0;	/* how many delimiters we find */
@@ -705,7 +705,7 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
  *
  * returns: number of bytes parsed, -1 on error
  */
-int
+static int
 spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l)
 {
 	char *q = p, ch;
@@ -857,6 +857,8 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
  * @result: the resulting string is stored here
  *
  * returns: 0 on success, -1 on ENOMEM, SPF_{HARD,TEMP}_ERROR on problems
+ *
+ * not static, is called from targets/testspf.c
  */
 int
 spf_makro(char *token, const char *domain, int ex, char **result)
@@ -932,7 +934,7 @@ spf_makro(char *token, const char *domain, int ex, char **result)
  *		-1 on error (ENOMEM)
  *		SPF_TEMP_ERROR, SPF_HARD_ERROR
  */
-int
+static int
 spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr, int *ip6cidr)
 {
 	*ip4cidr = -1;
