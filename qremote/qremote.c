@@ -264,7 +264,7 @@ main(int argc, char *argv[])
 {
 	const char *netmsg[6];
 	int i, rcptstat;
-	struct ips *mx;
+	struct ips *mx = NULL;
 
 	setup();
 
