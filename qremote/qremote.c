@@ -120,8 +120,13 @@ quit(void)
 static inline void
 getrhost(const struct ips *mx)
 {
-	if (ask_dnsname(&mx->addr, &partner_fqdn)) {
+	const struct ips *m = mx;
 
+	/* find active mx */
+	while (m->priority)
+		m = m->next;
+
+	if (ask_dnsname(&m->addr, &partner_fqdn)) {
 		if (errno != ENOMEM) {
 			rhost = malloc(INET6_ADDRSTRLEN + 2);
 		}
@@ -130,7 +135,7 @@ getrhost(const struct ips *mx)
 		}
 		rhost[0] = '[';
 		/* there can't be any errors here ;) */
-		(void) inet_ntop(AF_INET6, &mx->addr, rhost + 1, INET6_ADDRSTRLEN);
+		(void) inet_ntop(AF_INET6, &m->addr, rhost + 1, INET6_ADDRSTRLEN);
 		rhostlen = strlen(rhost);
 		rhost[rhostlen++] = ']';
 		rhost[rhostlen] = '\0';
@@ -146,7 +151,7 @@ getrhost(const struct ips *mx)
 		rhost[rhostlen++] = ' ';
 		rhost[rhostlen++] = '[';
 		/* there can't be any errors here ;) */
-		(void) inet_ntop(AF_INET6, &mx->addr, rhost + rhostlen, INET6_ADDRSTRLEN);
+		(void) inet_ntop(AF_INET6, &m->addr, rhost + rhostlen, INET6_ADDRSTRLEN);
 		rhostlen = strlen(rhost);
 		rhost[rhostlen++] = ']';
 		rhost[rhostlen] = '\0';

@@ -99,10 +99,12 @@ tryconn(struct ips *mx)
 		}
 		for (thisip = mx; thisip; thisip = thisip->next) {
 			if (thisip->priority == minpri) {
-				thisip->priority = 65537;
+				/* set priority to 0 to allow getrhost() to find active MX */
+				thisip->priority = 0;
 
 				if (!conn(thisip->addr))
 					return;
+				thisip->priority = 65537;
 			}
 		}
 	}
