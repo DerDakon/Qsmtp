@@ -17,7 +17,7 @@ int spfip6(char *domain);
 int spflookup(const char *domain, const int rec);
 int spfptr(const char *domain, char *token);
 int spfexists(const char *domain, char *token);
-int spf_domainspec(char *token, char **domain, int *ip4cidr, int *ip6cidr);
+int spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr, int *ip6cidr);
 
 /**
  * check_host - look up SPF records for domain
@@ -189,7 +189,7 @@ spflookup(const char *domain, const int rec)
 			if ((ex = strstr(txt, "exp="))) {
 				int ip4, ip6;
 
-				if ((i = spf_domainspec(ex, &xmitstat.spfexp, &ip4, &ip6))) {
+				if ((i = spf_domainspec(domain, ex, &xmitstat.spfexp, &ip4, &ip6))) {
 					xmitstat.spfexp = NULL;
 				}
 			}
@@ -267,7 +267,7 @@ spfmx(const char *domain, char *token)
 	struct ips *mx;
 	char *domainspec;
 
-	if ( (i = spf_domainspec(token, &domainspec, &ip4l, &ip6l)) ) {
+	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
 		return i;
 	}
 	if (ip4l < 0) {
@@ -320,7 +320,7 @@ spfa(const char *domain, char *token)
 	struct ips *ip, *thisip;
 	char *domainspec;
 
-	if ( (i = spf_domainspec(token, &domainspec, &ip4l, &ip6l)) ) {
+	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
 		return i;
 	}
 	if (ip4l < 0) {
@@ -365,7 +365,7 @@ spfexists(const char *domain, char *token)
 	int ip6l, ip4l, i, r = 0;
 	char *domainspec;
 
-	if ( (i = spf_domainspec(token, &domainspec, &ip4l, &ip6l)) ) {
+	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
 		return i;
 	}
 	if ((ip4l > 0) || (ip6l > 0) || !domainspec) {
@@ -398,7 +398,7 @@ spfptr(const char *domain, char *token)
 	if (!xmitstat.remotehost.len) {
 		return SPF_NONE;
 	}
-	if ( (i = spf_domainspec(token, &domainspec, &ip4l, &ip6l)) ) {
+	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
 		return i;
 	}
 	if ((ip4l > 0) || (ip6l > 0)) {
@@ -933,13 +933,13 @@ spf_makro(char *token, const char *domain, int ex, char **result)
  *		SPF_TEMP_ERROR, SPF_HARD_ERROR
  */
 int
-spf_domainspec(char *token, char **domain, int *ip4cidr, int *ip6cidr)
+spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr, int *ip6cidr)
 {
 	*ip4cidr = -1;
 	*ip6cidr = -1;
 /* if there is nothing we don't need to do anything */
 	if (!*token || WSPACE(*token)) {
-		*domain = NULL;
+		*domainspec = NULL;
 		return 0;
 /* search for a domain in token */
 	} else if (*token != '/') {
@@ -973,21 +973,21 @@ spf_domainspec(char *token, char **domain, int *ip4cidr, int *ip6cidr)
 
 			o = *t;
 			*t = '\0';
-			if ((i = spf_makro(t, token, 0, domain))) {
+			if ((i = spf_makro(t, token, 0, domainspec))) {
 				return i;
 			}
 			*t = o;
 			token = t;
-/* Maximum length of the domain spec is 255.
+/* Maximum length of the domainspec is 255.
  * If it is longer remove subdomains from the left side until it is <255 bytes long. */
-			if (strlen(*domain) > 255) {
-				char *d = *domain;
+			if (strlen(*domainspec) > 255) {
+				char *d = *domainspec;
 
 				do {
 					d = strchr(d, '.');
 				} while (d && (strlen(d) > 255));
 				if (!d) {
-					free(*domain);
+					free(*domainspec);
 					return SPF_HARD_ERROR;
 				} else {
 					unsigned int l = strlen(d) + 1;
@@ -996,8 +996,8 @@ spf_domainspec(char *token, char **domain, int *ip4cidr, int *ip6cidr)
 					if (!nd)
 						return -1;
 					memcpy(nd, d, l);
-					free(*domain);
-					*domain = nd;
+					free(*domainspec);
+					*domainspec = nd;
 				}
 			}
 		}
