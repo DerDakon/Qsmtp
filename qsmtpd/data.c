@@ -14,7 +14,7 @@
 
 static const char *noqueue = "451 4.3.2 can not connect to queue\r\n";
 static int fd0[2], fd1[2];		/* the fds to communicate with qmail-queue */
-static pid_t qpid;
+static pid_t qpid;			/* the pid of qmail-queue */
 
 static int
 err_pipe(void)
@@ -164,25 +164,21 @@ queue_envelope(const unsigned long msgsize)
 					"> ", "", "from ip [", xmitstat.remoteip, "] (", NULL, bytes,
 					NULL, " recipients)", NULL};
 	char *authmsg = NULL;
-	int rc;
+	int rc, e;
 	int fd = fd1[1];
 
 	if (ssl)
 		logmail[1] = "encrypted ";
 	s = ultostr(msgsize);
-	if (!s)
-		s = "unknown";
-	logmail[11] = s;
+	logmail[11] = s ? s : "unknown";
 	logmail[5] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
 	if (head.tqh_first == *head.tqh_last) {
 		t = ultostr(goodrcpt);
-		if (!t)
-			t = "unknown";
-		logmail[13] = t;
+		logmail[13] = t ? t : "unknown";
 	} else {
 		bytes[6] = ')';
 		bytes[7] = '\0';
-		/* logmail[13] is already NULL so that logging will stop here */
+		/* logmail[13] is already NULL so that logging will stop there */
 	}
 /* print the authname.s into a buffer for the log message */
 	if (xmitstat.authname.len) {
@@ -221,30 +217,105 @@ queue_envelope(const unsigned long msgsize)
 		free(l);
 	}
 	WRITE(fd, "", 1);
+err_write:
+	e = errno;
 	while ( (rc = close(fd)) ) {
 		if (errno != EINTR) {
-			goto err_write;
+			e = errno;
+			break;
 		}
 	}
-	if (s[0] != 'u')
-		free(s);
-	if (logmail[13] && (t[0] != 'u'))
-		free(t);
+	while (head.tqh_first != NULL) {
+		struct recip *l = head.tqh_first;
 
-	rc = 0;
-err_write:
+		TAILQ_REMOVE(&head, head.tqh_first, entries);
+		free(l->to.s);
+		free(l);
+	}
+	free(s);
+	free(t);
 	freedata();
 	free(authmsg);
+	errno = e;
 	return rc;
+}
+
+static int
+queue_result(void)
+{
+	int status;
+
+	while(waitpid(qpid, &status, 0) == -1) {
+		/* don't know why this could ever happen, but we want to be sure */
+		if (errno == EINTR) {
+			log_write(LOG_ERR, "waitpid(qmail-queue) went wrong");
+			return netwrite("451 4.3.2 error while writing mail to queue\r\n") ? errno : EDONE;
+		}
+	}
+	if (WIFEXITED(status)) {
+		int exitcode = WEXITSTATUS(status);
+
+		if (!exitcode) {
+			if (netwrite("250 2.5.0 accepted message for delivery\r\n")) {
+				return errno;
+			} else {
+				commands[7].state = (0x008 << xmitstat.esmtp);
+				return 0;
+			}
+		} else {
+			const char *logmess[] = {"qmail-queue failed with exitcode ", NULL, NULL};
+			const char *netmsg;
+			char *ec = ultostr(exitcode);
+
+			logmess[1] = ec ? ec : "unknown";
+			log_writen(LOG_ERR, logmess);
+			if (ec[0] != 'u')
+				free(ec);
+ 
+			/* stolen from qmail.c::qmail_close */
+			switch(exitcode) {
+				case 11: netmsg = "554 5.1.3 envelope address too long for qq\r\n"; break;
+				case 31: netmsg = "554 5.3.0 mail server permanently rejected message\r\n"; break;
+				case 51: netmsg = "451 4.3.0 qq out of memory\r\n"; break;
+				case 52: netmsg = "451 4.3.0 qq timeout\r\n"; break;
+				case 53: netmsg = "451 4.3.0 qq write error or disk full\r\n"; break;
+				case 54: netmsg = "451 4.3.0 qq read error\r\n"; break;
+/*				case 55: netmsg = "451 4.3.0 qq unable to read configuration\r\n"; break;*/
+/*				case 56: netmsg = "451 4.3.0 qq trouble making network connection\r\n"; break;*/
+				case 61: netmsg = "451 4.3.0 qq trouble in home directory\r\n"; break;
+				case 63:
+				case 64:
+				case 65:
+				case 66:
+				case 62: netmsg = "451 4.3.0 qq trouble creating files in queue\r\n"; break;
+/*				case 71: netmsg = "451 4.3.0 mail server temporarily rejected message\r\n"; break;
+				case 72: netmsg = "451 4.4.1 connection to mail server timed out\r\n"; break;
+				case 73: netmsg = "451 4.4.1 connection to mail server rejected\r\n"; break;
+				case 74: netmsg = "451 4.4.2 communication with mail server failed\r\n"; break;*/
+				case 91: /* this happens when the 'F' and 'T' are not correctly sent.
+					  * This is either a bug in qq but most probably a bug here */
+				case 81: netmsg = "451 4.3.0 qq internal bug\r\n"; break;
+				default:
+					if ((exitcode >= 11) && (exitcode <= 40))
+						netmsg = "554 5.3.0 qq permanent problem\r\n";
+				else
+					netmsg = "451 4.3.0 qq temporary problem\r\n";
+			}
+			return netwrite(netmsg) ? errno : 0;
+		}
+	} else {
+		log_write(LOG_ERR, "WIFEXITED(qmail-queue) went wrong");
+		return netwrite("451 4.3.2 error while writing mail to queue\r\n") ? errno : EDONE;
+	}
 }
 
 int
 smtp_data(void)
 {
-	const char *logmail[] = {"rejected message to <", NULL, "> from <", xmitstat.mailfrom.s,
+	const char *logmail[] = {"rejected message to <", NULL, "> from <", NULL,
 					"> from ip [", xmitstat.remoteip, "] (", NULL, " bytes) {",
 					NULL, NULL};
-	int i, status, rc;
+	int i, rc;
 	unsigned long msgsize = 0, maxbytes;
 	int fd;
 	int flagdate = 0, flagfrom = 0;	/* Date: and From: are required in header,
@@ -266,7 +337,7 @@ smtp_data(void)
 	if ( (rc = hasinput()) ) {
 		while (close(fd0[1]) && (errno == EINTR));
 		while (close(fd1[1]) && (errno == EINTR));
-		while ((waitpid(qpid, &status, 0) == -1) && (errno == EINTR));
+		while ((waitpid(qpid, NULL, 0) == -1) && (errno == EINTR));
 		return rc;
 	}
 
@@ -275,7 +346,7 @@ smtp_data(void)
 
 		while (close(fd0[1]) && (errno == EINTR));
 		while (close(fd1[1]) && (errno == EINTR));
-		while ((waitpid(qpid, &status, 0) == -1) && (errno == EINTR));
+		while ((waitpid(qpid, NULL, 0) == -1) && (errno == EINTR));
 		return e;
 	}
 	if (databytes) {
@@ -431,68 +502,7 @@ smtp_data(void)
 	if (queue_envelope(msgsize))
 		goto err_write;
 
-	while(waitpid(qpid, &status, 0) == -1) {
-		/* don't know why this could ever happen, but we want to be sure */
-		if (errno == EINTR) {
-			log_write(LOG_ERR, "waitpid(qmail-queue) went wrong");
-			return netwrite("451 4.3.2 error while writing mail to queue\r\n") ? errno : EDONE;
-		}
-	}
-	if (WIFEXITED(status)) {
-		int exitcode = WEXITSTATUS(status);
-
-		if (!exitcode) {
-			if (netwrite("250 2.5.0 accepted message for delivery\r\n")) {
-				return errno;
-			} else {
-				commands[7].state = (0x008 << xmitstat.esmtp);
-				return 0;
-			}
-		} else {
-			const char *logmess[] = {"qmail-queue failed with exitcode ", NULL, NULL};
-			const char *netmsg;
-			char *ec = ultostr(exitcode);
-
-			logmess[1] = ec ? ec : "unknown";
-			log_writen(LOG_ERR, logmess);
-			if (ec[0] != 'u')
-				free(ec);
- 
-			/* stolen from qmail.c::qmail_close */
-			switch(exitcode) {
-				case 11: netmsg = "554 5.1.3 envelope address too long for qq\r\n"; break;
-				case 31: netmsg = "554 5.3.0 mail server permanently rejected message\r\n"; break;
-				case 51: netmsg = "451 4.3.0 qq out of memory\r\n"; break;
-				case 52: netmsg = "451 4.3.0 qq timeout\r\n"; break;
-				case 53: netmsg = "451 4.3.0 qq write error or disk full\r\n"; break;
-				case 54: netmsg = "451 4.3.0 qq read error\r\n"; break;
-/*				case 55: netmsg = "451 4.3.0 qq unable to read configuration\r\n"; break;*/
-/*				case 56: netmsg = "451 4.3.0 qq trouble making network connection\r\n"; break;*/
-				case 61: netmsg = "451 4.3.0 qq trouble in home directory\r\n"; break;
-				case 63:
-				case 64:
-				case 65:
-				case 66:
-				case 62: netmsg = "451 4.3.0 qq trouble creating files in queue\r\n"; break;
-/*				case 71: netmsg = "451 4.3.0 mail server temporarily rejected message\r\n"; break;
-				case 72: netmsg = "451 4.4.1 connection to mail server timed out\r\n"; break;
-				case 73: netmsg = "451 4.4.1 connection to mail server rejected\r\n"; break;
-				case 74: netmsg = "451 4.4.2 communication with mail server failed\r\n"; break;*/
-				case 91: /* this happens when the 'F' and 'T' are not correctly sent.
-					  * This is either a bug in qq but most probably a bug here */
-				case 81: netmsg = "451 4.3.0 qq internal bug\r\n"; break;
-				default:
-					if ((exitcode >= 11) && (exitcode <= 40))
-						netmsg = "554 5.3.0 qq permanent problem\r\n";
-				else
-					netmsg = "451 4.3.0 qq temporary problem\r\n";
-			}
-			return netwrite(netmsg) ? errno : 0;
-		}
-	} else {
-		log_write(LOG_ERR, "WIFEXITED(qmail-queue) went wrong");
-		return netwrite("451 4.3.2 error while writing mail to queue\r\n") ? errno : EDONE;
-	}
+	return queue_result();
 loop_data:
 	while (close(fd1[1]) && (errno == EINTR));
 	while (close(fd0[1]) && (errno == EINTR));
@@ -501,7 +511,7 @@ loop_data:
 	do {
 		msgsize += linelen + 2;
 		if (linein[0] == '.')
-		    msgsize--;
+			msgsize--;
 		if (net_read()) {
 			int e = errno;
 
@@ -510,9 +520,8 @@ loop_data:
 		}
 	} while ((linelen != 1) && (linein[0] != '.'));
 	s = ultostr(msgsize);
-	if (!s)
-		s = "unknown";
-	logmail[7] = s;
+	logmail[7] = s ? s : "unknown";
+	logmail[3] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
@@ -525,8 +534,7 @@ loop_data:
 		free(l->to.s);
 		free(l);
 	}
-	if (s[0] != 'u')
-		free(s);
+	free(s);
 	freedata();
 
 	if (errmsg)
