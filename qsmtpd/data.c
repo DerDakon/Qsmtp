@@ -261,10 +261,20 @@ smtp_data(void)
 		return i;
 
 	if ((rc = hasinput())) {
+		while (close(fd0[1]) && (errno == EINTR));
+		while (close(fd1[1]) && (errno == EINTR));
+		while ((waitpid(qpid, &status, 0) == -1) && (errno == EINTR));
 		return rc;
+	}
 
-	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n"))
-		return errno;
+	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n")) {
+		int e = errno;
+
+		while (close(fd0[1]) && (errno == EINTR));
+		while (close(fd1[1]) && (errno == EINTR));
+		while ((waitpid(qpid, &status, 0) == -1) && (errno == EINTR));
+		return e;
+	}
 	if (databytes) {
 		maxbytes = databytes;
 	} else {
