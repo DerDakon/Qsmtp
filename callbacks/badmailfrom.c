@@ -90,7 +90,7 @@ cb_badmailfrom(const struct userconf *ds, char **logmsg, int *t)
 		if (loadlistfd(fd, &b, &a, checkaddr, 2) < 0)
 			return -1;
 		if (lookupbmf(at, a)) {
-			logwhitelisted("bad mail from", *t, u);
+			logwhitelisted(*logmsg, *t, u);
 			rc = 0;
 		}
 		free(b);
