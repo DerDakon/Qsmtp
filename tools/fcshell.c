@@ -16,6 +16,16 @@ static struct params {
 } params[] = {
 	{ .name = "whitelistauth", .len = 13, .value = 0 },
 	{ .name = "forcestarttls", .len = 13, .value = 0 },
+	{ .name = "nobounce", .len = 8, .value = 0 },
+	{ .name = "check_strict_rfc2822", .len = 20, .value = 0 },
+	{ .name = "fromdomain", .len = 10, .value = 0 },
+	{ .name = "reject_ipv6only", .len = 15, .value = 0 },
+	{ .name = "helovalid", .len = 9, .value = 0 },
+	{ .name = "block_SoberG", .len = 12, .value = 0 },
+	{ .name = "spfpolicy", .len = 9, .value = 0 },
+	{ .name = "usersize", .len = 8, .value = 0 },
+	{ .name = "fail_hard_on_temp", .len = 17, .value = 0 },
+	{ .name = "nonexist_on_block", .len = 17, .value = 0 },
 	{ .name = NULL }
 };
 
