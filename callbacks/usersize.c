@@ -11,7 +11,7 @@ cb_usersize(const struct userconf *ds, char **logmsg, int *t)
 	if ((usize = getsetting(ds, "usersize", t)) <= 0)
 		return 0;
 
-	if (xmitstat.thisbytes <= usize)
+	if (xmitstat.thisbytes <= (unsigned long) usize)
 		return 0;
 
 	if ((rc = netwrite("552 Requested mail action aborted: exceeded storage allocation")))
