@@ -54,28 +54,30 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 		if ( ( rc = loadlistfd(fd, &b, &a, domainvalid, 0) ) < 0 )
 			return rc;
 
-		fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
-		fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
-		memcpy(spfname, fromdomain, fromlen);
-		spfname[fromlen++] = '.';
+		if (b) {
+			fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+			fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
+			memcpy(spfname, fromdomain, fromlen);
+			spfname[fromlen++] = '.';
 
-		/* First match wins. */
-		while (a[v] && (spfs >= 0) &&
-					((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR) ||
-					(spfs == SPF_FAIL_NONEX))) {
-			memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
-			spfs = check_host(spfname);
-			v++;
-		}
-		free(a);
-		free(b);
-		if ((spfs == SPF_PASS) || (spfs < 0)) {
-			return 0;
-		}
-		if (spfs == SPF_HARD_ERROR) {
-			spfs = SPF_NONE;
-		} else {
-			*logmsg = "rSPF";
+			/* First match wins. */
+			while (a[v] && (spfs >= 0) &&
+						((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR) ||
+						(spfs == SPF_FAIL_NONEX))) {
+				memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
+				spfs = check_host(spfname);
+				v++;
+			}
+			free(a);
+			free(b);
+			if ((spfs == SPF_PASS) || (spfs < 0)) {
+				return 0;
+			}
+			if (spfs == SPF_HARD_ERROR) {
+				spfs = SPF_NONE;
+			} else {
+				*logmsg = "rSPF";
+			}
 		}
 	}
 
