@@ -1,3 +1,4 @@
+#include <openssl/ssl.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <string.h>
@@ -10,12 +11,13 @@
 #include "dns.h"
 #include "qsmtpd.h"
 #include "control.h"
+#include "tls.h"
 
 /**
  * nibbletohex - take a nibble and output it as hex to a buffer, followed by '.'
  *
- * dest: pointer where the output should go to
- * n: the input value. Must really be a nibble, anything else makes strange output
+ * @dest: pointer where the output should go to
+ * @n: the input value. Must really be a nibble, anything else makes strange output
  */
 static inline void
 nibbletohex(char *dest, const char n)
@@ -45,7 +47,7 @@ check_rbl(char *const *rbls, char **txt)
 		struct in_addr r;
 
 		r.s_addr = (xmitstat.sremoteip.s6_addr[12] << 24) + (xmitstat.sremoteip.s6_addr[13] << 16) +
-					(xmitstat.sremoteip.s6_addr[14] << 8) + xmitstat.sremoteip.s6_addr[15];
+				(xmitstat.sremoteip.s6_addr[14] << 8) + xmitstat.sremoteip.s6_addr[15];
 		inet_ntop(AF_INET, &r, lookup, sizeof(lookup));
 		l = strlen(lookup);
 		lookup[l++] = '.';
@@ -101,11 +103,32 @@ static unsigned int tarpitcount = 0;	/* number of extra seconds from tarpit */
  *
  * This should be used in all places where the client seems to be a spammer. This will
  * delay him so he can't send so much spams.
+ *
+ * tarpit does not sleep if there is input pending. If the client is using pipelining or (more likely) a worm or spambot
+ * don't ignoring our replies we kick him earlier and save some traffic.
  */
-inline void
+void
 tarpit(void)
 {
-	sleep(5 +  tarpitcount);
+	int i;
+
+	if (ssl) {
+		i = SSL_pending(ssl);
+	} else {
+		fd_set rfds;
+		struct timeval tv = {
+			.tv_sec = 0,
+			.tv_usec = 0,
+		};
+
+		FD_ZERO(&rfds);
+		FD_SET(0, &rfds);
+		i = select(1, &rfds, NULL, NULL, &tv);
+	}
+
+	if (i > 0) {
+		sleep(5 + tarpitcount);
+	}
 	/* maximum sleep time is 4 minutes */
 	if (tarpitcount < 235)
 		tarpitcount++;

@@ -7,7 +7,7 @@
 /* qsmtpd/antispam.c */
 
 extern int check_rbl(char *const *, char **);
-extern inline void tarpit(void);
+extern void tarpit(void);
 extern int domainmatch(const char *, const unsigned int, const char **);
 extern int ip4_matchnet(const struct in_addr *, const struct in_addr *, const int);
 extern int lookupipbl(int);
