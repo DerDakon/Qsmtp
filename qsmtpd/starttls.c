@@ -63,12 +63,6 @@ DH *tmp_dh_cb(SSL *ssl __attribute__ ((unused)), int export, int keylen)
 	return DH_generate_parameters(keylen, DH_GENERATOR_2, NULL, NULL);
 }
 
-/* don't want to fail handshake if cert isn't verifiable */
-int verify_cb(int preverify_ok __attribute__ ((unused)), X509_STORE_CTX *ctx __attribute__ ((unused)))
-{
-	return 1;
-}
-
 void tls_out(const char *s1, const char *s2)
 {
 	const char *msg[] = {"454 TLS ", s1, "", "", " (#4.3.0)", NULL};
@@ -223,7 +217,7 @@ int tls_init()
 #endif
 
 	/* set the callback here; SSL_set_verify didn't work before 0.9.6c */
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, verify_cb);
+	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 
 	/* a new SSL object, with the rest added to it directly to avoid copying */
 	myssl = SSL_new(ctx);
@@ -244,12 +238,13 @@ int tls_init()
 	if (!ciphers) {
 		const char *ciphfn = "control/tlsserverciphers";
 		int e = lloadfilefd(open(ciphfn, O_RDONLY), &(saciphers.s), 1);
+
 		if ((e < 0) && (errno != ENOENT)) {
-			int e = errno;
+			e = errno;
 
 			SSL_free(myssl);
 			err_control(ciphfn);
-			e = errno;
+			errno = e;
 			return -1;
 		}
 		if ( e >= 0) {
