@@ -1,6 +1,7 @@
 #include <netinet/in.h>
 #include <errno.h>
 #include <string.h>
+#include <strings.h>
 #include <stdlib.h>
 #include <syslog.h>
 #include "antispam.h"

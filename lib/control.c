@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include <string.h>
+#include <strings.h>
 #include "log.h"
 #include "dns.h"
 #include "control.h"

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include "usercallback.h"
 #include "netio.h"
 #include "qsmtpd.h"
