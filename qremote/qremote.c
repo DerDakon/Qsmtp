@@ -477,6 +477,7 @@ send_bdat(void)
 			goto readerr;
 		} else if (!last) {
 			netmsg[2] = " LAST";
+			last = 1;
 		} else {
 			num += 1;
 			last = 0;
