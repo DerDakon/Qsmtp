@@ -8,7 +8,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
@@ -59,20 +58,19 @@ extern int smtp_auth(void);
 extern int smtp_starttls(void);
 
 struct smtpcomm commands[] = {
-	{ "NOOP",	4, 0xffff, smtp_noop, -1, 0},  /* 0x001 */
-	{ "QUIT",	4, 0xfffd, smtp_quit,  0, 0},  /* 0x002 */
-	{ "RSET",	4, 0xfffd, smtp_rset,  1, 0},  /* 0x004 */ /* the status to change to is set in smtp_rset */
-	{ "HELO",	4, 0xfffd, smtp_helo,  0, 1},  /* 0x008 */
-	{ "EHLO",	4, 0xfffd, smtp_ehlo,  0, 1},  /* 0x010 */
-	{ "MAIL FROM:",	10, 0x0018, smtp_from,  0, 3}, /* 0x020 */
-	{ "RCPT TO:",	8, 0x0060, smtp_rcpt,  0, 1},  /* 0x040 */
-	{ "DATA",	4, 0x0040, smtp_data, 10, 0},  /* 0x080 */ /* the status to change to is changed in smtp_data */
-	{ "STARTTLS",	8, 0x0010, smtp_starttls, -1, 0},  /* 0x100 */
-	{ "AUTH",	4, 0x0010, smtp_auth, -1, 1},  /* 0x200 */
-	{ "VRFY",	4, 0xffff, smtp_vrfy, -1, 0}   /* 0x400 */
+	{ "NOOP",	 4, 0xffff, smtp_noop, -1, 0},  /* 0x001 */
+	{ "QUIT",	 4, 0xfffd, smtp_quit,  0, 0},  /* 0x002 */
+	{ "RSET",	 4, 0xfffd, smtp_rset,  1, 0},  /* 0x004 */ /* the status to change to is set in smtp_rset */
+	{ "HELO",	 4, 0xfffd, smtp_helo,  0, 1},  /* 0x008 */
+	{ "EHLO",	 4, 0xfffd, smtp_ehlo,  0, 1},  /* 0x010 */
+	{ "MAIL FROM:",	10, 0x0018, smtp_from,  0, 3},  /* 0x020 */
+	{ "RCPT TO:",	 8, 0x0060, smtp_rcpt,  0, 1},  /* 0x040 */
+	{ "DATA",	 4, 0x0040, smtp_data, 10, 0},  /* 0x080 */ /* the status to change to is changed in smtp_data */
+	{ "STARTTLS",	 8, 0x0010, smtp_starttls, -1, 0},  /* 0x100 */
+	{ "AUTH",	 4, 0x0010, smtp_auth, -1, 1},  /* 0x200 */
+	{ "VRFY",	 4, 0xffff, smtp_vrfy, -1, 0}   /* 0x400 */
 };
 
-static char *heloname;			/* the fqdn to show in helo */
 static char *rcpth;			/* string of rcpthosts */
 static char **rcpthosts;		/* array of hosts to accept mail for */
 static char *filterd;			/* string of filterdom */
@@ -80,10 +78,12 @@ static char **filterdom;		/* domains where NOT to look for existing users */
 static unsigned long databytes;		/* maximum message size */
 static unsigned long sslauth;		/* if SMTP AUTH is only allowed after STARTTLS */
 static char *vpopbounce;		/* the bounce command in vpopmails .qmail-default */
-static unsigned int rcptcount;		/* number of valid recipients */
+static unsigned int goodrcpt;		/* number of valid recipients */
+static unsigned int rcptcount;		/* number of recipients in lists including rejected */
 static int datatype;			/* the type of the data to come: 7bit or 8bit */
-static string spfline;			/* the SPF status string */
 static char *gcbuf;			/* buffer for globalconf array (see below) */
+static int relayclient;			/* flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
+static int badbounce;			/* bounce message with more than one recipient */
 
 struct xmitstat xmitstat;		/* This contains some flags describing the transmission and it's status. */
 char *protocol;				/* the protocol string to use (e.g. "ESMTP") */
@@ -91,6 +91,7 @@ char *auth_host;			/* hostname for auth */
 char *auth_check;			/* checkpassword or one of his friends for auth */
 char **auth_sub;			/* subprogram to be invoked by auth_check (usually /bin/true) */
 char **globalconf;			/* see usercallback.h */
+char *heloname;				/* the fqdn to show in helo */
 
 static long comstate = 0x001;		/* status of the command state machine, initialized to noop */
 
@@ -99,10 +100,13 @@ struct recip *thisrecip;
 
 static int badcmds = 0;			/* bad commands in a row */
 
-#define MAXBADCMDS	5		/* ,aximum number of illegal commands in a row */
+#define MAXBADCMDS	5		/* maximum number of illegal commands in a row */
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
+#define MAXRCPT		500		/* maximum number of recipients in a single mail */
 
 /* KILLME: debugging functions */
+#if 0
+#include <stdio.h>
 
 void dump(const char *name, char *buf, unsigned int size)
 {
@@ -120,6 +124,7 @@ void dump(const char *name, char *buf, unsigned int size)
  putc('\n', stderr);
 }
 
+#endif
 /* end KILLME */
 
 inline int
@@ -189,8 +194,11 @@ setup(void)
 	} else {
 		/* is this just too paranoid? */
 		if (inet_pton(AF_INET6, xmitstat.remoteip, &(xmitstat.sremoteip)) <= 0) {
+			xmitstat.remoteip = "unknown";
 			log_write(LOG_ERR, "TCP6REMOTEIP does not contain a valid AF_INET6 addres");
 			memset(xmitstat.sremoteip.s6_addr, 0, sizeof(xmitstat.sremoteip));
+		} else {
+			xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr) ? 1 : 0;
 		}
 	}
 	xmitstat.remotehost.s = getenv("TCPREMOTEHOST");
@@ -224,65 +232,9 @@ setup(void)
 	 * will see a connection drop on error (which is bad and violates RfC) */
 	sa.sa_handler = SIG_IGN;
 	j = sigaction(SIGPIPE, &sa, NULL);
+	relayclient = 0;
 
 	return j;
-}
-
-/**
- * helovalid - check if the argument given to HELO/EHLO is syntactically correct
- *
- */
-int
-helovalid(void)
-{
-	char *s;
-	int diffh;	/* is the given helo different from the reverse lookup */
-
-	if (!strcasecmp(linein + 5, heloname)) {
-			return netwrite("571 5.5.4 LIAR! This is _my_ name, go away\r\n");
-	}
-	s = getenv("TCPLOCALIP");
-	if (s)
-		if (!strcmp(linein + 5, s))
-			return netwrite("571 5.5.4 This is my IP address, not your one. Go away, spammer!\r\n");
-	/* if the length differs the strings are different. We have the length of
-	 * both strings anyway so we might be able to see the difference without
-	 * looking at every single character in them */
-	diffh = (xmitstat.remotehost.len != (linelen - 5)) || strcasecmp(linein + 5, xmitstat.remotehost.s);
-	xmitstat.helostr.s = NULL;
-	xmitstat.helostr.len = 0;
-	/* check if the argument is a valid domain name */
-	if (!domainvalid(linein + 5,0)) {
-		if (diffh)
-			goto copyhelo;
-		else
-			return 1;
-	}
-	/* it's not: it must be a IP literal enclosed in [] */
-	if (linein[5] != '[')
-		goto nope;
-	if (! (s = strchr(linein + 6,']')))
-		goto nope;
-	/* there must not be any characters after the ']' */
-	if (*(s+1))
-		goto nope;
-	else {
-		struct in_addr ia;
-
-		/* make the address string end where the ']' is so that inet_pton works */
-		*s = '\0';
-		if (!inet_pton(AF_INET, linein + 6, &ia))
-			goto nope;
-		*s = ']';
-	}
-copyhelo:
-	if ((errno = newstr(&xmitstat.helostr, linelen - 5)))
-		return -1;
-	/* +5-4=+1: also copy the '\0' to the new string */
-	memcpy(xmitstat.helostr.s, linein + 5, linelen - 4);
-	return 1;
-nope:
-	return netwrite("571 5.5.4 your helo is syntactically invalid\r\n");
 }
 
 /**
@@ -291,11 +243,10 @@ nope:
 void
 freedata(void)
 {
-	free(spfline.s);
-	STREMPTY(spfline);
 	free(xmitstat.mailfrom.s);
 	STREMPTY(xmitstat.mailfrom);
 	freeips(xmitstat.frommx);
+	xmitstat.frommx = NULL;
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
 
@@ -303,14 +254,17 @@ freedata(void)
 		free(l->to.s);
 		free(l);
 	}
+	rcptcount = 0;
+	goodrcpt = 0;
+	badbounce = 0;
 }
 
 int
 smtp_helo(void)
 {
 	const char *s[] = {"250 ", heloname, NULL};
-	int rc;
 
+	freedata();
 	protocol = realloc(protocol, 5);
 	if (!protocol)
 		return ENOMEM;
@@ -320,11 +274,8 @@ smtp_helo(void)
 	xmitstat.authname = NULL;
 	xmitstat.spf = 0;
 	datatype = 0;
-	rc = helovalid();
-	if (rc < 0)
+	if (helovalid(linein + 5) < 0)
 		return errno;
-	else if (!rc)
-		return EBOGUS;
 	return net_writen(s) ? errno : 0;
 }
 
@@ -344,11 +295,8 @@ smtp_ehlo(void)
 			return ENOMEM;
 		memcpy(protocol, "ESMTP", 6);	/* also copy trailing '\0' */
 	}
-	rc = helovalid();
-	if (rc < 0)
+	if (helovalid(linein + 5) < 0)
 		return errno;
-	else if (!rc)
-		return EBOGUS;
 	if (auth_host && (!sslauth || (sslauth && ssl))) {
 #ifdef CRAMMD5
 		msg[next++] = "250-AUTH PLAIN LOGIN CRAMMD5\r\n";
@@ -356,8 +304,15 @@ smtp_ehlo(void)
 		msg[next++] = "250-AUTH PLAIN LOGIN\r\n";
 #endif
 	}
-	if (!ssl)
-		msg[next++] = "250-STARTTLS\r\n";
+/* check if STARTTLS should be announced. Don't announce if already in SSL-Mode or if certificate can't be opened */
+	if (!ssl) {
+		int fd = open("control/servercert.pem", O_RDONLY);
+
+		if (fd >= 0) {
+			close(fd);
+			msg[next++] = "250-STARTTLS\r\n";
+		}
+	}
 
 	/* this must stay last: it begins with "250 " and does not have "\r\n" at the end so net_writen works */
 	if (databytes) {
@@ -463,7 +418,6 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 		tmpfile[i] = '\0';
 		dotqm.s = malloc(i);
 		if (!dotqm.s) {
-			errno = ENOMEM;
 			return -1;
 		}
 		memcpy(dotqm.s, tmpfile, i);
@@ -614,13 +568,17 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 
 /* get the localpart out of the RCPT TO */
 	le = (at - addr->s);
-	if ( (result = newstr(&localpart, le + 1) ) )
+	if ( (j = newstr(&localpart, le + 1) ) ) {
+		result = errno;
 		goto free_and_out;
+	}
 	memcpy(localpart.s, addr->s, le);
 	localpart.s[--localpart.len] = '\0';
 /* now the userpath : userpatth.s = domainpath.s + [localpart of RCPT TO] + '/' */
-	if ( (result = newstr(&(ds->userpath), ds->domainpath.len + 2 + localpart.len ) ) )
+	if ( (j = newstr(&(ds->userpath), ds->domainpath.len + 2 + localpart.len ) ) ) {
+		result = errno;
 		goto free_and_out;
+	}
 	memcpy(ds->userpath.s, ds->domainpath.s, ds->domainpath.len);
 	memcpy(ds->userpath.s + ds->domainpath.len, localpart.s, localpart.len);
 	ds->userpath.s[--ds->userpath.len - 1] = '\0';
@@ -652,8 +610,6 @@ free_and_out:
 	return result;
 }
 
-static int badbounce;
-
 int
 smtp_rcpt(void)
 {
@@ -674,23 +630,57 @@ smtp_rcpt(void)
 	} else if (i == -1) {
 		return EBOGUS;
 	} else if ((i == -2) && !xmitstat.authname && !xmitstat.tlsclient) {
-		const char *logmsg[] = {"rejected message to <", tmp.s, "> from <", xmitstat.mailfrom.s,
-						"> from IP [", xmitstat.remoteip, "] {relaying denied}", NULL};
-		log_writen(LOG_INFO, logmsg);
-		free(tmp.s);
-		free(ds.userpath.s);
-		free(ds.domainpath.s);
+/* check if client is allowed to relay by IP */
+		if (!relayclient) {
+			int fd;
+			const char *fn = xmitstat.ipv4conn ? "control/relayclients" : "control/relayclients6";
 
-		tarpit();
-		return netwrite("551 5.7.1 relaying denied\r\n") ? errno : EBOGUS;
+			relayclient = 2;
+			if ( (fd = open(fn, O_RDONLY)) < 0) {
+				if (errno != ENOENT) {
+					return err_control(fn) ? errno : EDONE;
+				}
+			} else {
+				int ipbl;
+
+				if ((ipbl = lookupipbl(fd)) < 0) {
+					const char *logmess[] = {"parse error in ", fn, NULL};
+
+					/* reject everything on parse error, else this
+					 * would turn into an open relay by accident */
+					log_writen(LOG_ERR, logmess);
+				} else if (ipbl) {
+					relayclient = 1;
+				}
+			 }
+		}
+		if (relayclient & 2) {
+			const char *logmess[] = {"rejected message to <", tmp.s, "> from <", xmitstat.mailfrom.s,
+							"> from IP [", xmitstat.remoteip, "] {relaying denied}", NULL};
+
+			log_writen(LOG_INFO, logmess);
+			free(tmp.s);
+			free(ds.userpath.s);
+			free(ds.domainpath.s);
+			tarpit();
+			return netwrite("551 5.7.1 relaying denied\r\n") ? errno : EBOGUS;
+		}
 	}
 	/* we do not support any ESMTP extensions adding data behind the RCPT TO (now)
-	 * so any data behind the '>' is a bug */
+	 * so any data behind the '>' is a bug in the client */
 	if (more) {
 		free(ds.userpath.s);
 		free(ds.domainpath.s);
 		free(tmp.s);
 		return EINVAL;
+	}
+	if (rcptcount >= MAXRCPT) {
+		free(ds.userpath.s);
+		free(ds.domainpath.s);
+		free(tmp.s);
+		if (netwrite("452 4.5.3 Too many recipients"))
+			return errno;
+		return EDONE;
 	}
 	r = malloc(sizeof(*r));
 	if (!r) {
@@ -704,14 +694,15 @@ smtp_rcpt(void)
 	r->ok = 0;	/* user will be rejected until we change this explicitely */
 	thisrecip = r;
 	TAILQ_INSERT_TAIL(&head, r, entries);
+	rcptcount++;
 
 /* load user and domain "filterconf" file */
 	if ((j = loadlistfd(getfile(&ds, "filterconf", &i), &ucbuf, &(ds.userconf), NULL, 0)) < 0) {
 		if (errno == ENOENT) {
 			ds.userconf = NULL;
 			ds.domainconf = NULL;
-			ucbuf = NULL;
 			dcbuf = NULL;
+			/* ucbuf is already set to NULL by lloadfilefd, called from loadlistfd */
 		} else {
 			int e = errno;
 
@@ -721,7 +712,7 @@ smtp_rcpt(void)
 		}
 	} else {
 		if (i) {
-			ds.domainconf = NULL;
+			ds.domainconf = ds.userconf;
 			ds.userconf = NULL;
 			dcbuf = NULL;	/* no matter which buffer we use */
 		} else {
@@ -733,7 +724,6 @@ smtp_rcpt(void)
 			if ( (j = loadlistfd(getfile(&ds, "filterconf", &j), &dcbuf, &(ds.domainconf), NULL, 0)) ) {
 				if (errno == ENOENT) {
 					ds.domainconf = NULL;
-					dcbuf = NULL;
 				} else {
 					int e = errno;
 
@@ -783,7 +773,7 @@ smtp_rcpt(void)
 
 	if (comstate != 0x20) {
 		if (!xmitstat.mailfrom.len) {
-			const char *logmsg[] = {"rejected message to <", NULL, "> from IP [", xmitstat.remoteip,
+			const char *logmess[] = {"rejected message to <", NULL, "> from IP [", xmitstat.remoteip,
 							"] {bad bounce}", NULL};
 			if (err_badbounce() < 0)
 				return errno;
@@ -791,21 +781,22 @@ smtp_rcpt(void)
 				/* there are only two recipients in list until now */
 				struct recip *l = head.tqh_first;
 
-				logmsg[1] = l->to.s;
-				log_writen(LOG_INFO, logmsg);
+				logmess[1] = l->to.s;
+				log_writen(LOG_INFO, logmess);
 				TAILQ_REMOVE(&head, head.tqh_first, entries);
 				badbounce = 1;
 				l->ok = 0;
 			}
-			logmsg[1] = r->to.s;
-			log_writen(LOG_INFO, logmsg);
+			logmess[1] = r->to.s;
+			log_writen(LOG_INFO, logmess);
 			free(ds.userpath.s);
 			free(ds.domainpath.s);
+			goodrcpt = 0;
 			rcptcount = 0;
 			return EBOGUS;
 		}
 	}
-	rcptcount++;
+	goodrcpt++;
 	r->ok = 1;
 
 	return netwrite("250 2.1.0 ok\r\n") ? errno : 0;
@@ -815,6 +806,8 @@ userdenied:
 		logmsg[7] = errmsg;
 		logmsg[9] = blocktype[bt];
 		logmsg[1] = r->to.s;
+		if (!xmitstat.mailfrom.len)
+			logmsg[3] = "";
 		log_writen(LOG_INFO, logmsg);
 	}
 	switch (i) {
@@ -938,13 +931,12 @@ smtp_from(void)
 	/* no need to check existence of sender domain on bounce message */
 	if (xmitstat.mailfrom.len) {
 		/* strchr can't return NULL here, we have checked xmitstat.mailfrom.s before */
-#warning FIXME: here is a bug
 		xmitstat.fromdomain = ask_dnsmx(strchr(xmitstat.mailfrom.s, '@') + 1, &xmitstat.frommx);
 		/* if this fails it's no problem */
 		if (xmitstat.fromdomain < 0)
 			return errno;
 		if (!xmitstat.fromdomain) {
-			xmitstat.spf = spflookup(strchr(xmitstat.mailfrom.s, '@'), &spfline);
+			xmitstat.spf = spflookup(strchr(xmitstat.mailfrom.s, '@') + 1, 0);
 			if (xmitstat.spf < 0)
 				return errno;
 		}
@@ -953,7 +945,7 @@ smtp_from(void)
 		xmitstat.frommx = NULL;
 	}
 	badbounce = 0;
-	rcptcount = 0;
+	goodrcpt = 0;
 	return netwrite("250 2.1.5 ok\r\n") ? errno : 0;
 }
 
@@ -1022,11 +1014,11 @@ smtp_data(void)
 		.tv_usec = 0,
 	};
 	char *s = NULL;			/* msgsize */
-	char *t = NULL;			/* rcptcount */
+	char *t = NULL;			/* goodrcpt */
 	char datebuf[32];		/* the date for the Received-line */
 	time_t ti;
 
-	if (badbounce || !rcptcount) {
+	if (badbounce || !goodrcpt) {
 		tarpit();
 		return netwrite("554 5.1.1 no valid recipients\r\n") ? errno : EINVAL;
 	}
@@ -1122,7 +1114,7 @@ smtp_data(void)
 	}
 	WRITE(fd, "\n\tby ", 5);
 	WRITE(fd, heloname, strlen(heloname));
-	WRITE(fd, VERSIONSTRING, strlen(VERSIONSTRING));
+	WRITE(fd, " (" VERSIONSTRING ")", 3 + strlen(VERSIONSTRING));
 	WRITE(fd, " with ", 6);
 	WRITE(fd, protocol, strlen(protocol));
 	WRITE(fd, "\n\tfor <", 7);
@@ -1132,11 +1124,8 @@ smtp_data(void)
 	i = strftime(datebuf,sizeof(datebuf),"%a, %d %b %Y %H:%M:%S %z",localtime(&ti));
 	WRITE(fd, datebuf, i);
 	WRITE(fd, "\n", 1);
-	if (spfline.s) {
-		WRITE(fd, "Received-SPF: ", 14);
-		WRITE(fd, spfline.s, spfline.len);
-		WRITE(fd, "\n", 1);
-	}
+	if ( (rc = spfreceived(fd, xmitstat.spf)) )
+		goto err_write;
 
 	/* loop until:
 	 * -the message is bigger than allowed
@@ -1280,8 +1269,9 @@ smtp_data(void)
 	if (ssl)
 		logmail[1] = "encrypted ";
 	logmail[9] = s;
+	logmail[5] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
 	if (head.tqh_first == *head.tqh_last) {
-		t = ultostr(rcptcount);
+		t = ultostr(goodrcpt);
 		logmail[10] = t;
 	} else {
 		bytes[6] = ')';
@@ -1443,12 +1433,6 @@ smtp_noop(void)
 }
 
 int
-smtp_null(void)
-{
-	return 1;
-}
-
-int
 smtp_rset(void)
 {
 	freedata();
@@ -1500,7 +1484,7 @@ main(int argc, char *argv[]) {
 		TAILQ_INIT(&head);		/* Initialize the recipient list. */
 	}
 	if (!getenv("BANNER")) {
-		const char *msg[] = {"220 ", heloname, " Qsmtpd" VERSIONSTRING " ESMTP", NULL};
+		const char *msg[] = {"220 ", heloname, " " VERSIONSTRING " ESMTP", NULL};
 
 		flagbogus = net_writen(msg) ? errno : 0;
 	}
@@ -1512,6 +1496,7 @@ main(int argc, char *argv[]) {
 		auth_sub = argv + 3;
 		if (domainvalid(argv[1],0)) {
 			const char *msg[] = {"domainname for auth invalid", auth_host, NULL};
+
 			log_writen(LOG_WARNING, msg);
 		} else {
 			int fd = open(auth_check, O_RDONLY);
@@ -1524,13 +1509,14 @@ main(int argc, char *argv[]) {
 				auth_host = argv[1];
 			}
 		}
-	} else if (argc != 1)
+	} else if (argc != 1) {
 		log_write(LOG_ERR, "invalid number of parameters given");
+	}
 
-	/* the state machine */
+/* the state machine */
 	while (1) {
 		unsigned int i;
-/* read the line */
+/* read the line (but only if there is not already an error condition, in this case handle the error first) */
 		if (!flagbogus) {
 			flagbogus = net_read();
 
@@ -1539,6 +1525,7 @@ main(int argc, char *argv[]) {
 			* '\0' is also bogus */
 			if (!flagbogus) {
 				for (i = 0; i < linelen; i++)
+					/* linein is signed char, so non-ASCII characters are <0 */
 					if (linein[i] <= 0) {
 						flagbogus = EINVAL;
 						break;
@@ -1553,9 +1540,10 @@ main(int argc, char *argv[]) {
 				const char *msg[] = {"dropped connection from [", xmitstat.remoteip,
 							"] {too many bad commands}", NULL };
 
-				/* ignore possible errors here, we exit anyway */
+				/* -ignore possible errors here, we exit anyway
+				 * -don't use tarpit: this might be a virus or something going wild,
+				 *  tarpit would allow him to waste even more bandwidth */
 				netwrite("550-5.7.1 too many bad commands\r\n");
-				tarpit();
 				log_writen(LOG_INFO, msg);
 				netwrite("550 5.7.1 die slow and painful\r\n");
 				exit(0);
@@ -1598,7 +1586,7 @@ main(int argc, char *argv[]) {
 				case EDONE:	badcmds = 0;	/* fallthrough */
 				case EBOGUS:	flagbogus = 0;
 						break;
-				case EINTR:	log_write(LOG_WARNING, "interrupted while reading input");
+				case EINTR:	log_write(LOG_WARNING, "interrupted by signal");
 #warning FIXME: do something better on EINTR
 						exit(EINTR);
 				default:	log_write(LOG_ERR, "writer error. kick me.");
@@ -1613,7 +1601,7 @@ main(int argc, char *argv[]) {
 
 /* set flagbogus to catch if client writes crap. Will be overwritten if a good command comes in */
 		flagbogus = EINVAL;
-/* the state machine */
+/* handle the commands */
 		for (i = 0; i < sizeof(commands) / sizeof(struct smtpcomm); i++) {
 			if (!strncasecmp(linein, commands[i].name, commands[i].len)) {
 				if (comstate & commands[i].mask) {
