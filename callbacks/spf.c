@@ -21,15 +21,20 @@
  *
  * If there is a domain "spfstrict" all mails from this domains must be a valid mail forwarder of this domain, so
  * a mail with SPF_NEUTRAL and spfpolicy == 2 from this domain will be blocked if client is not in ignorespf
- */  
+ *
+ * If no SPF record is found in DNS then the locally given sources will be searched for SPF records. This might set
+ * a secondary SPF record for domains often abused for phishing.
+ */
 int
 cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 {
-	int u;			/* if it is the user or domain policy */
-	int rc = 1;		/* return code */
-	long p;			/* spf policy */
+	int u;				/* if it is the user or domain policy */
+	int r = 0, rc = 1;		/* return code */
+	long p;				/* spf policy */
+	char *fromdomain = NULL;	/* pointer to the beginning of the domain in xmitstat.mailfrom.s */
+	int spfs = xmitstat.spf;	/* the spf status to check, either global or local one */
 
-	if ((xmitstat.spf == SPF_PASS) || !xmitstat.mailfrom.len)
+	if ((spfs == SPF_PASS) || !xmitstat.mailfrom.len)
 		return 0;
 
 	p = getsettingglobal(ds, "spfpolicy", t);
@@ -37,38 +42,84 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 	if (p <= 0)
 		return 0;
 
-	if (xmitstat.spf == SPF_TEMP_ERROR) {
-		rc = 4;
+/* there is no official SPF entry: go and check if someone else provided one, e.g. rspf.rhsbl.docsnyder.de. */
+	if (spfs == SPF_NONE) {
+		int u, v = 0, fd;
+		char **a, *b, spfname[256];
+		unsigned int fromlen;	/* strlen(fromdomain) */
+
+		if ( (fd = getfileglobal(ds, "rspf", &u)) < 0)
+			return (errno == ENOENT) ? 0 : -1;
+
+		if ( ( rc = loadlistfd(fd, &b, &a, domainvalid, 0) ) < 0 )
+			return rc;
+
+		fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+		fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
+		memcpy(spfname, fromdomain, fromlen);
+		spfname[fromlen++] = '.';
+
+		/* First match wins. */
+		while (a[v] && (spfs >= 0) &&
+					((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR))) {
+			memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
+			spfs = spflookup(spfname, 0);
+			v++;
+		}
+		free(a);
+		free(b);
+		if ((spfs == SPF_PASS) || (spfs < 0)) {
+			return 0;
+		}
+	}
+	if ((spfs == SPF_HARD_ERROR) || (spfs == SPF_LOOP)) {
+		return 0;
+	}
+
+	if (spfs == SPF_TEMP_ERROR) {
+		r = 4;
 		goto block;
 	}
 	if (p == 1)
 		goto strict;
-	if (xmitstat.spf == SPF_FAIL)
+	if (spfs == SPF_FAIL)
 		goto block;
 	if (p == 2)
 		goto strict;
-	if (xmitstat.spf == SPF_SOFTFAIL)
+	if (spfs == SPF_SOFTFAIL)
 		goto block;
 	if (p == 3)
 		goto strict;
-	if (xmitstat.spf == SPF_NEUTRAL)
+	if (spfs == SPF_NEUTRAL)
 		goto block;
+/* spfs can only be SPF_HARD_ERROR or SPF_NONE now (or something is seriously broken) */
+	/* if (p == 4)
+		goto strict;
+	if (spfs == SPF_HARD_ERROR)
+		goto block; */
+	if (p != 4)
+		goto block;
+
 strict:
-	rc = finddomainmm(getfileglobal(ds, "spfstrict", t), strchr(xmitstat.mailfrom.s, '@') + 1);
+	if (!fromdomain) {
+		fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+	}
+	rc = finddomainmm(getfileglobal(ds, "spfstrict", t), fromdomain);
 	if (rc <= 0)
 		return rc;
 block:
-	if (!xmitstat.remotehost.len)
-		return 1;
-	rc = finddomainmm(getfileglobal(ds, "ignorespf", &u), xmitstat.remotehost.s);
-	if (!rc) {
-		logwhitelisted("SPF", *t, u);
-		return 0;
-	} else if (rc < 0) {
-		return rc;
+	if (xmitstat.remotehost.len) {
+		rc = finddomainmm(getfileglobal(ds, "ignorespf", &u), xmitstat.remotehost.s);
+		if (!rc) {
+			logwhitelisted("SPF", *t, u);
+			return 0;
+		} else if (rc < 0) {
+			return rc;
+		}
 	}
 	if ((rc = netwrite("501 5.7.1 mail denied by SPF policy\r\n")))
 		return rc;
-	*logmsg = "SPF";
-	return 1;
+	if (!*logmsg)
+		*logmsg = "SPF";
+	return r ? r : 1;
 }
