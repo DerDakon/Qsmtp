@@ -10,9 +10,12 @@
 #include "control.h"
 #include "match.h"
 #include "log.h"
+#include "qremote.h"
 
 extern int socketd;
 static unsigned long targetport = 25;
+static char *user;
+static char *pass;
 
 static int
 conn(const struct in6_addr remoteip)
@@ -135,8 +138,21 @@ getmxlist(char *rhost, struct ips **mx)
 
 					*port++ = '\0';
 					if ((more = strchr(port, ':'))) {
-						*more = '\0';
-						// add username and passwort here later
+						char *tmp;
+
+						*more++ = '\0';
+						tmp = strchr(more, ':');
+						if (tmp && *(tmp + 1)) {
+							user = malloc(tmp - more + 1);
+							pass = malloc(strlen(tmp));
+							if (!pass || !user) {
+								err_mem();
+							}
+							memcpy(user, more, tmp - more);
+							user[tmp - more] = '\0';
+							memcpy(pass, tmp + 1, strlen(tmp + 1));
+							pass[strlen(tmp + 1)] = '\0';
+						}
 					}
 					targetport = strtoul(port, &more, 10);
 					if (*more || (targetport >= 65536)) {
