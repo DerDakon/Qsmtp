@@ -9,7 +9,7 @@
 
 static char linein[256];
 
-struct params {
+static struct params {
 	char *name;
 	unsigned int len;
 	long value;
@@ -21,27 +21,27 @@ struct params {
 
 static int commstat;		/* status of the last command, for use in "echo $?" */
 
-void
+static void
 dolog(const char *s)
 {
 	syslog(LOG_INFO, "%s\n", s);
 }
 
-void
+static void
 err(const char *s)
 {
 	printf("ERROR: %s\n", s);
 	dolog(s);
 }
 
-void __attribute__ ((noreturn))
+static void __attribute__ ((noreturn))
 eXit(void)
 {
 	closelog();
 	exit(0);
 }
 
-void
+static void
 readfc(void)
 {
 	FILE *fcfd;
@@ -90,7 +90,7 @@ out:
 
 #define WRITE(name, var) if ((var)) {if (fprintf(fcfd, "%s=%li\n", name, var) < 0) goto err; len = 1;}
 
-void
+static void
 writefc(void)
 {
 	FILE *fcfd;
@@ -141,14 +141,14 @@ err:
 
 #undef WRITE
 
-void __attribute__ ((noreturn))
+static void __attribute__ ((noreturn))
 quit(void)
 {
 	writefc();
 	eXit();
 }
 
-void
+static void
 echo(void)
 {
 	if (!linein[4]) {
@@ -176,7 +176,7 @@ echo(void)
 
 #define SHOW(name, val) if (printf("%s=%li\n", name, val) < 0) goto err
 
-void
+static void
 show(void)
 {
 	for (int i = 0; params[i].name; i++) {
@@ -196,7 +196,7 @@ struct commands {
 	void (*func)(void);
 };
 
-void
+static void
 wr(void)
 {
 	if (linein[5] != '\n') {
@@ -207,7 +207,7 @@ wr(void)
 	writefc();
 }
 
-void
+static void
 editquit(void) {
 	if (linein[4] != '\n') {
 		puts("unrecognized command");
@@ -224,7 +224,7 @@ static struct commands edcmds[] = {
 	{ .name = NULL }
 };
 
-void
+static void
 edit(void)
 {
 	char fn[32];
@@ -275,7 +275,7 @@ edit(void)
 	} while (strcmp(linein, "quit\n"));
 }
 
-void
+static void
 set(void)
 {
 	int error = 1;
