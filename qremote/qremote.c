@@ -339,8 +339,8 @@ send_data(void)
 			if ((sendbuf[idx] != '\r') && (sendbuf[idx] != '\n')) {
 				if (!(smtpext & 0x08) && (sendbuf[idx] < 0)) {
 /* this message has to be recoded to 7BIT somehow... */
-					write(1, "Zmessage has 8 Bit characters but next server "
-							"does not accept 8BITMIME", 71);
+					write(1, "Z5.6.3 message has 8 Bit characters but next server "
+							"does not accept 8BITMIME", 77);
 					_exit(0);
 				}
 				if (sendbuf[idx] == '.') {
