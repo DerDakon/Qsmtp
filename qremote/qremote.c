@@ -13,7 +13,7 @@
 #include "log.h"
 #include "match.h"
 
-int sd;
+int socketd;
 struct string heloname;
 static unsigned int smtpext;
 static unsigned long targetport = 25;
@@ -24,9 +24,9 @@ conn(const struct in6_addr remoteip)
 	struct sockaddr_in6 sock;
 	int rc;
 
-	sd = socket(PF_INET6, SOCK_STREAM, 0);
+	socketd = socket(PF_INET6, SOCK_STREAM, 0);
 
-	if (sd < 0)
+	if (socketd < 0)
 		return errno;
 
 	sock.sin6_family = AF_INET6;
@@ -35,7 +35,7 @@ conn(const struct in6_addr remoteip)
 	sock.sin6_addr = in6addr_any;
 //	sock.sin6_scope_id = 0;
 
-	rc = bind(sd, &sock, sizeof(sock));
+	rc = bind(socketd, &sock, sizeof(sock));
 
 	if (rc)
 		return errno;
@@ -43,7 +43,7 @@ conn(const struct in6_addr remoteip)
 	sock.sin6_port = htons(targetport);
 	sock.sin6_addr = remoteip;
 
-	rc = connect(sd, &sock, sizeof(sock));
+	rc = connect(socketd, &sock, sizeof(sock));
 	if (rc)
 		return errno;
 
@@ -71,7 +71,7 @@ tryconn(struct ips *mx)
 		}
 		if (minpri == 65537) {
 			write(5, "can't connect to any server\n", 14);
-			close(sd);
+			close(socketd);
 			exit(0);
 		}
 		for (thisip = mx; thisip; thisip = thisip->next) {
@@ -136,7 +136,7 @@ quitmsg(void)
 			// error handling
 		}
 	} while ((linelen >= 4) && (linein[3] == '-'));
-	close(sd);
+	close(socketd);
 }
 
 void __attribute__ ((noreturn))
@@ -387,8 +387,8 @@ main(int argc, char *argv[])
 	}
 
 	dup2(1,5);
-	dup2(sd,1);
-	dup2(sd,0);
+	dup2(socketd,1);
+	dup2(socketd,0);
 
 /* for all MX entries we got: try to enable connection, check if the SMTP server wants us (sends 220 response) and
  * or EHLO/HELO succeeds. If not, try next. If none left, exit. */
