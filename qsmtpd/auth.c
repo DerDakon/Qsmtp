@@ -79,7 +79,6 @@ authgetl(void) {
 
 		if (!s) {
 			free(authin.s);
-			errno = ENOMEM;
 			return -1;
 		}
 		authin.s = s;
@@ -188,7 +187,6 @@ static int auth_login(void)
 		free(authin.s);
 	}
 	if (r < 0) {
-		errno = ENOMEM;
 		return r;
 	}
 
@@ -203,7 +201,6 @@ static int auth_login(void)
 		goto err;
 	free(authin.s);
 	if (r < 0) {
-		errno = ENOMEM;
 		return r;
 	}
 
@@ -239,7 +236,6 @@ static int auth_plain(void)
 			return err_input();
 	}
 	if (r < 0) {
-		errno = ENOMEM;
 		return r;
 	}
 	while (slop.s[id])
@@ -247,8 +243,8 @@ static int auth_plain(void)
 
 	if (slop.len > id + 1) {
 		/* one byte longer so we can also copy the trailing '\0' */
-		errno = newstr(&user, strlen(slop.s + id + 1) + 1 );
-		if (errno) {
+		r = newstr(&user, strlen(slop.s + id + 1) + 1 );
+		if (r) {
 			free(authin.s);
 			free(slop.s);
 			return -1;
@@ -258,8 +254,8 @@ static int auth_plain(void)
 		if (slop.len > id + user.len + 2) {
 			char *s = slop.s + id + user.len + 2;
 
-			errno = newstr(&pass, strlen(s) + 1);
-			if (errno) {
+			r = newstr(&pass, strlen(s) + 1);
+			if (r) {
 				free(authin.s);
 				free(user.s);
 				free(slop.s);
@@ -307,8 +303,8 @@ static int auth_cram(void)
 	k = (s - unique);
 	m = strlen(auth_host);
 	l = 1 + k + m + 1;
-	if ( (errno = newstr(&pass, l)) )
-		return -1;
+	if ( (r = newstr(&pass, l)) )
+		return r;
 	pass.s[0] = '<';
 	memcpy(pass.s + 1, unique, k);
 	memcpy(pass.s + 1 + k, auth_host, m);
@@ -335,11 +331,11 @@ static int auth_cram(void)
 		s++;
 	slop.s[i] = 0;
 
-	if ((errno = newstr(&user, i)))
-		return -1;
+	if ((r = newstr(&user, i)))
+		return r;
 	k = strlen(s);
-	if ((errno = newstr(&resp, k)))
-		return -1;
+	if ((r = newstr(&resp, k)))
+		return r;
 	memcpy(user.s, slop.s, i + 1);
 	memcpy(resp.s, s, k + 1);
 
