@@ -16,9 +16,12 @@ log_writen(int priority, const char **s)
 	buf = malloc(i + 2);
 	if (!buf) {
 #ifdef USESYSLOG
-		priority = LOG_ERR;
+		syslog(LOG_ERR, "out of memory\n");
 #endif
-		buf = "not enough memory for log message";
+#ifndef NOSTDERR
+		write(2, "not enough memory for log message\n", 34);
+#endif
+		return;
 	} else {
 		i = 0;
 		for (j = 0; s[j]; j++) {
@@ -31,7 +34,9 @@ log_writen(int priority, const char **s)
 #ifdef USESYSLOG
 	syslog(priority, "%s", buf);
 #endif
+#ifndef NOSTDERR
 	write(2, buf, strlen(buf));
+#endif
 	free(buf);
 }
 
