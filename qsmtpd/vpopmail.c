@@ -81,14 +81,15 @@ int vget_assign(const char *domain, string *domaindir)
 		len = strlen(ptr);
 		while (*(ptr + len - 1) == '/')
 			--len;
-		errno = newstr(domaindir, len + 2);
-		if (errno)
+		i = newstr(domaindir, len + 2);
+		if (i)
 			return -1;
 		memcpy(domaindir->s, ptr, len);
 		domaindir->s[len] = '/';
-		domaindir->s[domaindir->len--] = '\0';
+		domaindir->s[--domaindir->len] = '\0';
 	
 		free(cdb_buf);
+		i++;
 	}
 	close(fd);
 	return i;
