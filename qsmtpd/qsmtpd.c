@@ -1110,10 +1110,10 @@ main(int argc, char *argv[]) {
 			 * we are very short of resources or the client is really really broken */
 			switch (flagbogus) {
 				case EBADRQC:	tarpit();
-						flagbogus = netwrite("555 5.5.2 unrecognized command parameter\r\n") ? errno : 0;
+						flagbogus = netwrite("501 5.5.2 unrecognized command parameter\r\n") ? errno : 0;
 						break;
 				case EINVAL:	tarpit();
-						flagbogus = netwrite("550 5.5.2 command syntax error\r\n") ? errno : 0;
+						flagbogus = netwrite("500 5.5.2 command syntax error\r\n") ? errno : 0;
 						break;
 				case E2BIG:	tarpit();
 						flagbogus = netwrite("500 5.5.2 line too long\r\n") ? errno : 0;
