@@ -196,7 +196,7 @@ diff -Naur libowfat-0.20/dns/dns_txt.c libowfat-0.20-eike/dns/dns_txt.c
  	txtlen = 0;
  	for (i = 0;i < datalen;++i) {
  	  ch = buf[pos + i];
-@@ -57,3 +59,17 @@
+@@ -57,3 +59,18 @@
    dns_domain_free(&q);
    return 0;
  }
@@ -210,8 +210,9 @@ diff -Naur libowfat-0.20/dns/dns_txt.c libowfat-0.20-eike/dns/dns_txt.c
 +  if (dns_txt_packet(&sa,dns_resolve_tx.packet,dns_resolve_tx.packetlen) == -1) return -1;
 +  dns_transmit_free(&dns_resolve_tx);
 +  dns_domain_free(&q);
++  if (!sa.len) { *out = 0; return 0; }
 +  if (!stralloc_0(&sa)) { free(sa.s); return -1; }
-+  *out = sa.len ? sa.s : 0;
++  *out = sa.s;
 +  return 0;
 +}
 diff -Naur libowfat-0.20/dns.h libowfat-0.20-eike/dns.h
