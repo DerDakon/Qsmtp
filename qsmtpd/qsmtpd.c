@@ -794,7 +794,7 @@ userdenied:
 			logmsg[3] = "";
 		log_writen(LOG_INFO, logmsg);
 	}
-	if (j > 0)
+	if (i > 0)
 		tarpit();
 	switch (i) {
 		case -1:j = 1; break;
