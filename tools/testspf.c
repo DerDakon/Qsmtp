@@ -12,6 +12,8 @@ int log_write() {return 0;}
 int log_writen() {return 0;}
 int dieerror() {return 0;}
 
+extern int spf_makro(char *token, const char *domain, int ex, char **result);
+
 int
 main(int argc, char *argv[])
 {
