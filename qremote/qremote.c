@@ -16,10 +16,10 @@
 #include "conn.h"
 
 int socketd;
-struct string heloname;
+static struct string heloname;
 static unsigned int smtpext;
 
-void
+static void
 setup(void)
 {
 	int j;
@@ -56,7 +56,7 @@ setup(void)
 	heloname.len = j;
 }
 
-void
+static void
 quitmsg(void)
 {
 	netwrite("QUIT\r\n");
@@ -69,7 +69,7 @@ quitmsg(void)
 	close(socketd);
 }
 
-void __attribute__ ((noreturn))
+static void __attribute__ ((noreturn))
 quit(void)
 {
 	quitmsg();
@@ -81,7 +81,7 @@ quit(void)
  *
  * returns: SMTP return code of the message
  */
-int
+static int
 netget(void)
 {
 	int q, r;
@@ -123,7 +123,7 @@ error:
  * error (4xx) and the third on permanent error (5xx). If no status code should be written status
  * must be set to NULL.
  */
-int
+static int
 checkreply(const char *status)
 {
 	int res;
@@ -155,7 +155,7 @@ checkreply(const char *status)
 
 static unsigned long remotesize;
 
-int
+static int
 cb_size(void)
 {
 	char *s;
@@ -172,7 +172,7 @@ cb_size(void)
  *
  * returns: 0 if greeting succeeded or 1 on error
  */
-int
+static int
 greeting(void)
 {
 	struct smtpexts {
