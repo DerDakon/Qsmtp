@@ -74,6 +74,8 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 		}
 		if (spfs == SPF_HARD_ERROR) {
 			spfs = SPF_NONE;
+		} else {
+			*logmsg = "rSPF";
 		}
 	}
 
