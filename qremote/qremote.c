@@ -147,13 +147,22 @@ netget(void)
 {
 	int q, r;
 
-	if (net_read())
-		goto error;
-	if (linelen < 4) {
-		/* if this fails we're already in bad trouble */
-		(void) write(1, "Zserver reply too short\n", 25);
-		quit();
+	if (net_read()) {
+		switch (errno) {
+			case ENOMEM:	err_mem(1);
+			case EINVAL:
+			case E2BIG:	goto syntax;
+			default:	{
+						char *tmp = strerror(errno);
+
+						write(1, "Z", 1);
+						write(1, tmp, strlen(tmp) + 1);
+						quit();
+			}
+		}
 	}
+	if (linelen < 4)
+		goto syntax;
 	if ((linein[3] != ' ') && (linein[3] != '-'))
 		goto syntax;
 	r = linein[0] - '0';
@@ -168,13 +177,9 @@ netget(void)
 		goto syntax;
 	return r * 10 + q;
 syntax:
-error:
-	switch (errno) {
-		case ENOMEM:	err_mem(1);
-		default:
-#warning FIXME: add error handling
-				quit();
-	}
+	/* if this fails we're already in bad trouble */
+	(void) write(1, "Zsyntax error in server reply\n", 31);
+	quit();
 }
 
 /**
