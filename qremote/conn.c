@@ -55,7 +55,7 @@ tryconn(struct ips *mx)
 
 	thisip = mx;
 	while (1) {
-		int minpri = 65537;
+		unsigned int minpri = 65537;
 
 		for (thisip = mx; thisip; thisip = thisip->next) {
 			if (thisip->priority < minpri)
