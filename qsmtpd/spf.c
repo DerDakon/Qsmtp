@@ -513,6 +513,7 @@ spfip6(char *domain)
 		l += addlen;\
 		r2 = realloc(res, l);\
 		if (!r2) { free(res); return -1;}\
+		res = r2;\
 		memcpy(res + oldl, addstr, addlen);\
 	}
 #define PARSEERR	{free(res); return SPF_HARD_ERROR;}
