@@ -146,7 +146,8 @@ authenticate(void)
 	WRITE(pass.s, pass.len + 1);
 	/* make sure not to leak password */
 	memset(pass.s, 0, pass.len);
-	WRITE(resp.s, resp.len + 1);
+	WRITE(resp.s, resp.len);
+	WRITE("", 1);
 	while (close(pi[1])) {
 		if (errno != EINTR)
 			goto out;
