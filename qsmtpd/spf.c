@@ -973,7 +973,7 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 
 			o = *t;
 			*t = '\0';
-			if ((i = spf_makro(t, token, 0, domainspec))) {
+			if ((i = spf_makro(token, domain, 0, domainspec))) {
 				return i;
 			}
 			*t = o;
