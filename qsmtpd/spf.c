@@ -216,6 +216,9 @@ spfreceived(int fd, const int spf) {
 	int rc;
 	char *fromdomain;
 
+	if (spf == SPF_IGNORE)
+		return 0;
+
 	if (xmitstat.mailfrom.len) {
 		fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
 	} else {

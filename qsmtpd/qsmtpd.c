@@ -911,10 +911,20 @@ next:
 		xmitstat.frommx = NULL;
 		s = HELOSTR;
 	}
-	i = check_host(s);
-	if (i < 0)
-		return errno;
-	xmitstat.spf = (i & 0x0f);
+	if ( !xmitstat.remotehost.len || !(i = finddomainmm(open("control/spffriends", O_RDONLY), xmitstat.remotehost.s))) {
+		i = check_host(s);
+		if (i < 0)
+			return errno;
+		xmitstat.spf = (i & 0x0f);
+	} else if (i > 0) {
+		xmitstat.spf = SPF_IGNORE;
+	} else {
+		if (errno == ENOMEM) {
+			return errno;
+		} else {
+			return err_control("control/spffriends") ? errno : EDONE;
+		}
+	}
 	badbounce = 0;
 	goodrcpt = 0;
 	okmsg[1] = MAILFROM;

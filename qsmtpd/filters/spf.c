@@ -33,7 +33,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 	char *fromdomain = NULL;	/* pointer to the beginning of the domain in xmitstat.mailfrom.s */
 	int spfs = xmitstat.spf;	/* the spf status to check, either global or local one */
 
-	if (spfs == SPF_PASS)
+	if ((spfs == SPF_PASS) || (spfs == SPF_IGNORE))
 		return 0;
 
 	p = getsettingglobal(ds, "spfpolicy", t);

@@ -25,6 +25,7 @@ extern int spfreceived(int, const int);
 #define SPF_UNKNOWN	7
 #define SPF_TEMP_ERROR	8
 #define SPF_HARD_ERROR	9
+#define SPF_IGNORE	15
 
 #define SPF_FAIL(x) (((x) == SPF_FAIL_PERM) || ((x) == SPF_FAIL_MALF) || ((x) == SPF_FAIL_NONEX))
 
