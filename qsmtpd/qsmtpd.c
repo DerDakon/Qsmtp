@@ -137,7 +137,7 @@ setup(void)
 	}
 
 	if ( (j = loadlistfd(open("control/rcpthosts", O_RDONLY), &rcpth, &rcpthosts, domainvalid, 0))) {
-		if (errno == ENOENT)
+		if ((errno == ENOENT) || !rcpth)
 			log_write(LOG_ERR, "control/rcpthosts not found");
 		return errno;
 	}
@@ -186,7 +186,7 @@ setup(void)
 	}
 
 	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY), &gcbuf, &globalconf, NULL, 0)) ) {
-		if (errno == ENOENT) {
+		if ((errno == ENOENT) || !gcbuf) {
 			gcbuf = NULL;
 			globalconf = NULL;
 		} else {
@@ -678,6 +678,7 @@ smtp_rcpt(void)
 	rcptcount++;
 
 /* load user and domain "filterconf" file */
+	/* if the file is empty there is no problem, NULL is a legal value for the buffers */
 	if ((j = loadlistfd(getfile(&ds, "filterconf", &i), &ucbuf, &(ds.userconf), NULL, 0)) < 0) {
 		if (errno == ENOENT) {
 			ds.userconf = NULL;
