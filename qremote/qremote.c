@@ -14,10 +14,28 @@
 #include "match.h"
 #include "sstring.h"
 #include "conn.h"
+#include "qremote.h"
 
 int socketd;
 static struct string heloname;
 static unsigned int smtpext;
+
+void __attribute__ ((noreturn))
+err_mem(void)
+{
+/* write text including 0 byte */
+	write(1, "ZOut of memory. (#4.3.0)\n", 26);
+	_exit(0);
+}
+
+static void __attribute__ ((noreturn))
+err_conf(const char *errmsg)
+{
+	log_write(LOG_ERR, errmsg);
+/* write text including 0 byte */
+	write(1, "ZConfiguration error. (#4.3.0)\n", 32);
+	_exit(0);
+}
 
 static void
 setup(void)
@@ -29,28 +47,23 @@ setup(void)
 #endif
 
 	if (chdir(AUTOQMAIL)) {
-		log_write(LOG_ERR, "cannot chdir to qmail directory");
-		_exit(0);
+		err_conf("cannot chdir to qmail directory");
 	}
 
 	if ( (j = loadoneliner("control/helohost", &heloname.s, 1) ) < 0 ) {
 		if ( ( j = loadoneliner("control/me", &heloname.s, 0) ) < 0 ) {
-			log_write(LOG_ERR, "can open neither control/helohost nor control/me");
-			_exit(0);
+			err_conf("can open neither control/helohost nor control/me");
 		}
 		if (domainvalid(heloname.s)) {
-			log_write(LOG_ERR, "control/me contains invalid name");
-			_exit(0);
+			err_conf("control/me contains invalid name");
 		}
 	} else {
 		if (domainvalid(heloname.s)) {
-			log_write(LOG_ERR, "control/helohost contains invalid name");
-			_exit(0);
+			err_conf("control/helohost contains invalid name");
 		}
 	}
 	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY), &timeout, 320)) < 0) {
-		log_write(LOG_ERR, "parse error in control/timeoutremote");
-		_exit(0);
+		err_conf("parse error in control/timeoutremote");
 	}
 
 	heloname.len = j;
@@ -107,8 +120,12 @@ netget(void)
 	return r * 10 + q;
 syntax:
 error:
-	// add error handling
-	quit();
+	switch (errno) {
+		case ENOMEM:	err_mem();
+		default:
+#warning FIXME: add error handling
+				quit();
+	}
 }
 
 /**
