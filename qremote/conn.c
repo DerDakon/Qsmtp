@@ -138,7 +138,7 @@ getmxlist(char *rhost, struct ips **mx)
 						*more = '\0';
 						// add username and passwort here later
 					}
-					targetport = strtol(port, &more, 10);
+					targetport = strtoul(port, &more, 10);
 					if (*more || (targetport >= 65536)) {
 						const char *logmsg[] = {"invalid port number given for \"",
 									target, "\" given as target for \"",
