@@ -174,7 +174,7 @@ loop_long:
 }
 
 /**
- * net_write - write one line to the network
+ * netwrite - write one line to the network
  *
  * @s: line to be written (nothing else it written so it should contain <CRLF>)
  *
@@ -183,8 +183,25 @@ loop_long:
  *
  *          does not return on timeout, programm will be cancelled
  */
-int
+inline int
 netwrite(const char *s)
+{
+	return netnwrite(s, strlen(s));
+}
+
+/**
+ * netnwrite - write one line to the network
+ *
+ * @s: line to be written (nothing else it written so it should contain <CRLF>)
+ * @l: length of s
+ *
+ * returns: 0 on success
+ *          -1 on error (errno is set)
+ *
+ *          does not return on timeout, programm will be cancelled
+ */
+int
+netnwrite(const char *s, const unsigned int l)
 {
 	fd_set wfds;
 	struct timeval tv = {
@@ -192,7 +209,6 @@ netwrite(const char *s)
 		.tv_usec = 0,
 	};
 	int retval;
-	unsigned int l = strlen(s);
 
 	if (ssl) {
 		if (ssl_timeoutwrite(tv.tv_sec, s, l) <= 0) {
