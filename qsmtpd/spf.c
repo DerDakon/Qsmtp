@@ -109,10 +109,14 @@ spflookup(const char *domain, const int rec)
 		if (!strncasecmp(token, "mx", 2) &&
 				(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':') || (*(token + 2) == '/'))) {
 			token += 2;
+			if (*token == ':')
+				token++;
 			result = spfmx(domain, token);
 		} else if (!strncasecmp(token, "ptr", 3) &&
 				(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':'))) {
 			token += 3;
+			if (*token == ':')
+				token++;
 			result = spfptr(domain, token);
 		} else if (!strncasecmp(token, "exists:", 7)) {
 			token += 7;
@@ -121,7 +125,8 @@ spflookup(const char *domain, const int rec)
 			result = SPF_PASS;
 		} else if (((*token == 'a') || (*token == 'A')) &&
 					(WSPACE(*(token + 1)) || !*(token + 1) || (*(token + 1) == ':'))) {
-			token++;
+			if (*(++token) == ':')
+				token++;
 			result = spfa(domain, token);
 		} else if (!strncasecmp(token, "ip4:", 4)) {
 			token += 4;
@@ -937,7 +942,7 @@ spf_domainspec(char *token, char **domain, int *ip4cidr, int *ip6cidr)
 		*domain = NULL;
 		return 0;
 /* search for a domain in token */
-	} else if (*token == ':') {
+	} else if (*token != '/') {
 		int i = 0;
 		char *t = token;
 
