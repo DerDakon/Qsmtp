@@ -110,7 +110,8 @@ authgetl(void) {
 
 #define WRITE(a,b) if (write(pi[1], (a), (b)) < 0) { fun = err_write; goto out; }
 
-static int authenticate(void)
+static int
+authenticate(void)
 {
 	pid_t child;
 	int wstat;
@@ -185,7 +186,8 @@ out:
 	return 0; /* yes */
 }
 
-static int auth_login(void)
+static int
+auth_login(void)
 {
 	int r;
 
@@ -229,7 +231,8 @@ err:
 	return err_input();
 }
 
-static int auth_plain(void)
+static int
+auth_plain(void)
 {
 	int r;
 	unsigned int id = 0;
@@ -292,7 +295,8 @@ static int auth_plain(void)
 }
 
 #ifdef AUTHCRAM
-static int auth_cram(void)
+static int
+auth_cram(void)
 {
 	int i, r;
 	unsigned int k, l, m;
@@ -376,13 +380,17 @@ static struct authcmd {
 	{	.text = NULL,}
 };
 
-int smtp_auth(void)
+int
+smtp_auth(void)
 {
 	int i;
 	char *type = linein + 5;
 
 	if (xmitstat.authname.len)
 		return 1;
+
+	if (!auth_host)
+		return netwrite(tempnoauth) ? -1 : EBOGUS;
 
 	STREMPTY(user);
 	STREMPTY(pass);
