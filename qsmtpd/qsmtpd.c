@@ -805,7 +805,7 @@ userdenied:
 				/* this is _so_ ugly. I just want a local variable for this case */
 				const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
 
-				if ((j = net_writen(rcptmsg)))
+				if ( (j = net_writen(rcptmsg)) )
 					e = errno;
 			}
 			break;
