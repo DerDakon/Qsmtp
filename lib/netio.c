@@ -192,7 +192,6 @@ netwrite(const char *s)
 	unsigned int l = strlen(s);
 
 	if (ssl) {
-		sleep(30);
 		if (ssl_timeoutwrite(tv.tv_sec, s, l) <= 0) {
 			errno = EBADE;
 			return -1;
