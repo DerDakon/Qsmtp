@@ -238,7 +238,6 @@ err_write:
 int
 smtp_data(void)
 {
-	char *authmsg = NULL;
 	const char *logmail[] = {"rejected message to <", NULL, "> from <", xmitstat.mailfrom.s,
 					"> from ip [", xmitstat.remoteip, "] (", NULL, " bytes) {",
 					NULL, NULL};
@@ -261,7 +260,7 @@ smtp_data(void)
 	if ( (i = queue_init()) )
 		return i;
 
-	if ((rc = hasinput()))
+	if ((rc = hasinput())) {
 		return rc;
 
 	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n"))
@@ -516,7 +515,6 @@ loop_data:
 	}
 	if (s[0] != 'u')
 		free(s);
-	free(authmsg);
 	freedata();
 
 	if (errmsg)
@@ -525,7 +523,6 @@ loop_data:
 err_write:
 	rc = errno;
 	free(s);
-	free(authmsg);
 	if (fd0[1]) {
 		while (close(fd0[1]) && (errno == EINTR));
 	}
