@@ -102,8 +102,10 @@ check_rbl(char *const *rbls, char **txt)
 				k = dnstxt(txt, lookup);
 				/* if there is any error here we just write the generic message to the client
 				 * so that's no real problem for us */
-				if (k)
+				if (k) {
+					free(*txt);
 					*txt = NULL;
+				}
 				return i;
 			} else if (j == 2) {
 				/* This lookup failed with temporary error. We continue and check the other RBLs first, if
