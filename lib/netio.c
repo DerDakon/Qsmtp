@@ -276,7 +276,7 @@ net_writen(const char *const *s)
  *
  * @u: number to convert
  *
- * returns: pointer to buffer on success, "nomem" otherwise
+ * returns: pointer to buffer on success or NULL
  */
 char *
 ultostr(const unsigned long u)
@@ -291,7 +291,7 @@ ultostr(const unsigned long u)
 
 	res = malloc(j + 1);
 	if (!res)
-		return "nomem";
+		return res;
 
 	res[j] = '\0';
 	v = u;
