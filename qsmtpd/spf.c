@@ -451,11 +451,14 @@ spfip4(char *domain)
 		sl++;
 	}
 	if (*sl == '/') {
+		char *q = sl;
+
 		osl = *sl;
 		*sl = '\0';
 		u = strtoul(sl + 1, &sl, 10);
 		if ((u < 8) || (u > 32) || !WSPACE(*sl))
 			return SPF_HARD_ERROR;
+		sl = q;
 	} else if (WSPACE(*sl) || !*sl) {
 		osl = *sl;
 		*sl = '\0';
@@ -484,11 +487,14 @@ spfip6(char *domain)
 		sl++;
 	}
 	if (*sl == '/') {
+		char *q = sl;
+
 		osl = *sl;
 		*sl = '\0';
 		u = strtoul(sl + 1, &sl, 10);
 		if ((u < 8) || (u > 128) || !WSPACE(*sl))
 			return SPF_HARD_ERROR;
+		sl = q;
 	} else if (WSPACE(*sl) || !*sl) {
 		osl = *sl;
 		*sl = '\0';
