@@ -29,6 +29,62 @@ err_fork(void)
 }
 
 #define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
+					return rc
+
+static int
+queue_header(int fd)
+{
+	int rc;
+	char datebuf[32];		/* the date for the Received-line */
+	time_t ti;
+	int i;
+
+/* write the "Received: " line to mail header */
+	WRITE(fd, "Received: from ", 15);
+	if (xmitstat.remotehost.s) {
+		WRITE(fd, xmitstat.remotehost.s, xmitstat.remotehost.len);
+	} else {
+		WRITE(fd, "unknown", 7);
+	}
+	WRITE(fd, " ([", 3);
+	WRITE(fd, xmitstat.remoteip, strlen(xmitstat.remoteip));
+	WRITE(fd, "]", 1);
+	if (xmitstat.helostr.len) {
+		WRITE(fd, " HELO ", 6);
+		WRITE(fd, xmitstat.helostr.s, xmitstat.helostr.len);
+	}
+	WRITE(fd, ")", 1);
+	if (xmitstat.authname.len) {
+		WRITE(fd, " (auth=", 7);
+		WRITE(fd, xmitstat.authname.s, xmitstat.authname.len);
+		WRITE(fd, ")", 1);
+	} else if (xmitstat.remoteinfo) {
+		WRITE(fd, " (", 2);
+		WRITE(fd, xmitstat.remoteinfo, strlen(xmitstat.remoteinfo));
+		WRITE(fd, ")", 1);
+	}
+	WRITE(fd, "\n\tby ", 5);
+	WRITE(fd, heloname.s, heloname.len);
+	WRITE(fd, " (" VERSIONSTRING ")", 3 + strlen(VERSIONSTRING));
+	WRITE(fd, " with ", 6);
+	WRITE(fd, protocol, strlen(protocol));
+	WRITE(fd, "\n\tfor <", 7);
+	WRITE(fd, head.tqh_first->to.s, head.tqh_first->to.len);
+	WRITE(fd, ">; ", 3);
+	ti = time(NULL);
+	i = strftime(datebuf, sizeof(datebuf), "%a, %d %b %Y %H:%M:%S %z", localtime(&ti));
+	WRITE(fd, datebuf, i);
+	WRITE(fd, "\n", 1);
+/* write "Received-SPF: " line */
+	if (!(xmitstat.authname.len || xmitstat.tlsclient)) {
+		if ( (rc = spfreceived(fd, xmitstat.spf)) )
+			return rc;
+	}
+	return 0;
+}
+
+#undef WRITE
+#define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
 					goto err_write
 
 int
@@ -51,8 +107,6 @@ smtp_data(void)
 	unsigned int hops = 0;		/* number of "Received:"-lines */
 	char *s = NULL;			/* msgsize */
 	char *t = NULL;			/* goodrcpt */
-	char datebuf[32];		/* the date for the Received-line */
-	time_t ti;
 
 	if (badbounce || !goodrcpt) {
 		tarpit();
@@ -148,47 +202,8 @@ smtp_data(void)
 	/* fd is now the file descriptor we are writing to. This is better than always
 	 * calculating the offset to fd0[1] */
 	fd = fd0[1];
-/* write the "Received: " line to mail header */
-	WRITE(fd, "Received: from ", 15);
-	if (xmitstat.remotehost.s) {
-		WRITE(fd, xmitstat.remotehost.s, xmitstat.remotehost.len);
-	} else {
-		WRITE(fd, "unknown", 7);
-	}
-	WRITE(fd, " ([", 3);
-	WRITE(fd, xmitstat.remoteip, strlen(xmitstat.remoteip));
-	WRITE(fd, "]", 1);
-	if (xmitstat.helostr.len) {
-		WRITE(fd, " HELO ", 6);
-		WRITE(fd, xmitstat.helostr.s, xmitstat.helostr.len);
-	}
-	WRITE(fd, ")", 1);
-	if (xmitstat.authname.len) {
-		WRITE(fd, " (auth=", 7);
-		WRITE(fd, xmitstat.authname.s, xmitstat.authname.len);
-		WRITE(fd, ")", 1);
-	} else if (xmitstat.remoteinfo) {
-		WRITE(fd, " (", 2);
-		WRITE(fd, xmitstat.remoteinfo, strlen(xmitstat.remoteinfo));
-		WRITE(fd, ")", 1);
-	}
-	WRITE(fd, "\n\tby ", 5);
-	WRITE(fd, heloname.s, heloname.len);
-	WRITE(fd, " (" VERSIONSTRING ")", 3 + strlen(VERSIONSTRING));
-	WRITE(fd, " with ", 6);
-	WRITE(fd, protocol, strlen(protocol));
-	WRITE(fd, "\n\tfor <", 7);
-	WRITE(fd, head.tqh_first->to.s, head.tqh_first->to.len);
-	WRITE(fd, ">; ", 3);
-	ti = time(NULL);
-	i = strftime(datebuf, sizeof(datebuf), "%a, %d %b %Y %H:%M:%S %z", localtime(&ti));
-	WRITE(fd, datebuf, i);
-	WRITE(fd, "\n", 1);
-/* write "Received-SPF: " line */
-	if (!(xmitstat.authname.len || xmitstat.tlsclient)) {
-		if ( (rc = spfreceived(fd, xmitstat.spf)) )
-			goto err_write;
-	}
+	if ( (rc = queue_header(fd)) )
+		goto err_write;
 
 	/* loop until:
 	 * -the message is bigger than allowed
