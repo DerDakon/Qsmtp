@@ -74,6 +74,4 @@ extern struct recip *thisrecip;
 #define HELOSTR (xmitstat.helostr.len ? xmitstat.helostr.s : xmitstat.remotehost.s)
 #define HELOLEN (xmitstat.helostr.len ? xmitstat.helostr.len : xmitstat.remotehost.len)
 
-#define MAILFROM (xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "")
-
 #endif
