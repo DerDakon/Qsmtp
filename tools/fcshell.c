@@ -127,7 +127,6 @@ writefc(void)
 {
 	FILE *fcfd;
 	char fn[25];
-	int e;
 	int len = 0;
 
 	snprintf(fn, sizeof(fn), "filterconf.%i", getpid());
@@ -145,8 +144,7 @@ writefc(void)
 			len = 1;
 		}
 	}
-	while ( (e = fclose(fcfd)) && (errno == EINTR));
-	if (e)
+	if (fclose(fcfd))
 		goto err;
 	if (!len) {
 		/* nothing in the file */
