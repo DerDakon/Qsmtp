@@ -66,7 +66,7 @@ tryconn(struct ips *mx)
 				minpri = thisip->priority;
 		}
 		if (minpri == 65537) {
-			write(5, "can't connect to any server\n", 14);
+			write(1, "can't connect to any server\n", 14);
 			close(socketd);
 			exit(0);
 		}
@@ -153,7 +153,7 @@ netget(void)
 	if (net_read())
 		goto error;
 	if (linelen < 4) {
-		if (write(5, "server reply too short\n", 23) < 0)
+		if (write(1, "server reply too short\n", 23) < 0)
 			quit();
 	}
 	if ((linein[3] != ' ') && (linein[3] != '-'))
@@ -195,11 +195,11 @@ checkreply(const char *status)
 	res = netget();
 	if (*status) {
 		if ((res >= 200) && (res < 300)) {
-			write(5, status, 1);
+			write(1, status, 1);
 		} else if ((res >= 400) && (res < 500)) {
-			write(5, status + 1, 1);
+			write(1, status + 1, 1);
 		} else {
-			write(5, status + 2, 1);
+			write(1, status + 2, 1);
 		}
 		write(5, linein, linelen);
 	}
@@ -208,12 +208,12 @@ checkreply(const char *status)
 			// handle error case
 		}
 		if (*status) {
-			write(5, linein, linelen);
-			write(5, "\n", 1);
+			write(1, linein, linelen);
+			write(1, "\n", 1);
 		}
 	}
 
-	write(5, "", 1);
+	write(1, "", 1);
 	return res;
 }
 
@@ -383,7 +383,6 @@ main(int argc, char *argv[])
 		}
 	}
 
-	dup2(1,5);
 	dup2(socketd,0);
 
 /* for all MX entries we got: try to enable connection, check if the SMTP server wants us (sends 220 response) and
@@ -410,7 +409,7 @@ main(int argc, char *argv[])
 	net_writen(netmsg);
 	if (smtpext & 2) {
 /* server allows PIPELINING: first send all the messages, then check the replies. This allows to hide network latency */
-		write(5, linein, linelen);write(5,"\n",1);
+		write(1, linein, linelen);write(5,"\n",1);
 		netmsg[0] = "RCPT TO:<";
 		rcptstat = 1;	/* this means: all recipients have been rejected */
 		for (i = 4; i < argc; i++) {
@@ -433,7 +432,7 @@ main(int argc, char *argv[])
 	} else {
 /* server does not allow pipelining: we must do this one by one */
 		net_read();
-		write(5, linein, linelen);write(5,"\n",1);
+		write(1, linein, linelen);write(1,"\n",1);
 		netmsg[0] = "RCPT TO:<";
 		rcptstat = 1;	/* this means: all recipients have been rejected */
 		for (i = 4; i < argc; i++) {
