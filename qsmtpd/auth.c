@@ -83,7 +83,7 @@ authgetl(void) {
 		authin.s = s;
 
 		/* read the next 64 (or 65) bytes */
-		i = net_readbin(64 + nfirst, authin.s + authin.len - nfirst, 0);
+		i = net_readline(64 + nfirst, authin.s + authin.len - nfirst);
 		if (i < 0) {
 			free(authin.s);
 			return -1;
@@ -103,6 +103,7 @@ authgetl(void) {
 		}
 		authin.s[authin.len] = '\0';
 	}
+
 	if (authin.len == 0) {
 		free(authin.s);
 		return err_input();

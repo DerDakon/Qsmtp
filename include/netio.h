@@ -9,7 +9,8 @@ extern int net_writen(const char *const *);
 extern int netwrite(const char *);	/* same as net_write but expects that line is <= 512 characters
 					 * and includes <CRLF> */
 extern char *ultostr(const unsigned long u);
-extern int net_readbin(unsigned int, char *, const int);
+extern int net_readbin(unsigned int, char *);
+extern int net_readline(unsigned int, char *);
 extern int data_pending(void);
 
 static inline int

@@ -306,12 +306,11 @@ ultostr(const unsigned long u)
  *
  * @num: number of bytes to read
  * @buf: buffer to store data (must have enough space)
- * @force: 0: read up to num bytes, do not block; 1: read exactly num bytes even if this will block
  *
  * returns: number of bytes read, -1 on error
  */
 int
-net_readbin(unsigned int num, char *buf, const int force)
+net_readbin(unsigned int num, char *buf)
 {
 	unsigned int offs = 0;
 
@@ -331,22 +330,71 @@ net_readbin(unsigned int num, char *buf, const int force)
 	while (num) {
 		int r;
 
-		if (!force) {
-			r = data_pending();
-
-			if (r < 0) {
-				return r;
-			} else if (!r) {
-				return offs;
-			}
-		}
 		r = readinput(buf + offs, num);
 		if (r < 0)
 			return r;
 		offs += r;
 		num -= r;
 	}
-	return 0;
+	return offs;
+}
+
+/**
+ * net_readline - read up to a given number of bytes from network but stop at the first CRLF
+ *
+ * @num: number of bytes to read, must be < 1002 so everything behind the CRLF can be copied back to lineinn
+ * @buf: buffer to store data (must have enough space)
+ *
+ * returns: number of bytes read, -1 on error
+ */
+int
+net_readline(unsigned int num, char *buf)
+{
+	unsigned int offs = 0;
+
+	if (linenlen) {
+		char *n = strchrl(lineinn, '\n', linenlen);
+
+		if (n) {
+			unsigned int m = (n - lineinn);
+
+			if (m < num)
+				num = m;
+		}
+		/* now num is the number of bytes to copy from lineinn */
+		if (linenlen > num) {
+			memcpy(buf, lineinn, num);
+			memmove(lineinn, lineinn + num, linenlen - num);
+			linenlen -= num;
+			return 0;
+		} else {
+			memcpy(buf, lineinn, linenlen);
+			num -= linenlen;
+			offs = linenlen;
+			linenlen = 0;
+		}
+	}
+	while (num) {
+		int r;
+		char *n;
+
+		r = readinput(buf + offs, num);
+		if (r < 0)
+			return r;
+		n = strchrl(buf + offs, '\n', r);
+		/* if there is a LF in the buffer copy everything behind it to lineinn */
+		if (n) {
+			unsigned int rest = buf + offs + r - n - 1;
+
+			memcpy(lineinn, n + 1, rest);
+			linenlen = rest;
+			offs += r - rest;
+			return offs;
+		}
+		offs += r;
+		num -= r;
+	}
+	return offs;
 }
 
 /**
