@@ -956,6 +956,31 @@ err_fork(void)
 	return netwrite(noqueue) ? errno : 0;
 }
 
+static int
+hasinput(void)
+{
+	fd_set rfds;
+	int rc;
+	struct timeval tv = {
+		.tv_sec = 0,
+		.tv_usec = 0,
+	};
+
+	FD_ZERO(&rfds);
+	FD_SET(0, &rfds);
+
+	rc = select(1, &rfds, NULL, NULL, &tv);
+
+	if (rc == -1)
+		return errno;
+	else if (rc) {
+		/* there is input data pending. This means the client sent some before our
+		 * reply. His SMTP engine is broken so we don't let him send the mail */
+		return netwrite("550 5.5.0 you must wait for my reply\r\n") ? errno : EBOGUS;
+	}
+	return 0;
+}
+
 #define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
 					goto err_write
 
@@ -971,17 +996,12 @@ smtp_data(void)
 	unsigned long msgsize = 0, maxbytes;
 	int fd0[2], fd1[2], fd;	/* the fds to communicate with qmail-queue */
 	pid_t qpid;
-	fd_set rfds;
 	int flagdate = 0, flagfrom = 0;	/* Date: and From: are required in header,
 					 * else message is bogus (RfC 2822, section 3.6).
 					 * RfC 2821 says server SHOULD NOT check for this,
 					 * but we let the user decide */
 	const char *errmsg = NULL, *logmsg = NULL;
 	unsigned int hops = 0;		/* number of "Received:"-lines */
-	struct timeval tv = {
-		.tv_sec = 0,
-		.tv_usec = 0,
-	};
 	char *s = NULL;			/* msgsize */
 	char *t = NULL;			/* goodrcpt */
 	char datebuf[32];		/* the date for the Received-line */
@@ -1039,19 +1059,8 @@ smtp_data(void)
 				while (close(fd1[0]) && (errno == EINTR));
 	}
 
-	/* Watch stdin (fd 0) to see if it has input (see below why). */
-	FD_ZERO(&rfds);
-	FD_SET(0, &rfds);
-
-	rc = select(1, &rfds, NULL, NULL, &tv);
-
-	if (rc == -1)
-		return errno;
-	else if (rc) {
-		/* there is data pending. This means the client sent some before our
-		 * reply. His SMTP engine is broken so we don't let him send the mail */
-		return netwrite("550 5.5.0 you must wait for my data reply\r\n") ? errno : EBOGUS;
-	}
+	if ((rc = hasinput()))
+		return rc;
 /* check if the child already returned, which means something went wrong */
 	if (waitpid(qpid, &status, WNOHANG)) {
 		/* error here may just happen, we are already in trouble */
@@ -1508,7 +1517,9 @@ main(int argc, char *argv[]) {
 	if (!getenv("BANNER")) {
 		const char *msg[] = {"220 ", heloname.s, " " VERSIONSTRING " ESMTP", NULL};
 
-		flagbogus = net_writen(msg) ? errno : 0;
+		if (! (flagbogus = hasinput()) ) {
+			flagbogus = net_writen(msg) ? errno : 0;
+		}
 	}
 
 	/* Check if parameters given. If they are given assume they are for auth checking*/
