@@ -21,7 +21,7 @@ extern long getsetting(const struct userconf *, const char *, int *);
 /* like getsetting, but fall back to global file if no match */
 extern long getsettingglobal(const struct userconf *, const char *, int *);
 
-/* this is a function for a user policy callback
+/* this is a function for a user filter
  *
  * ds:     the struct with the paths of domain- and userpath
  * logmsg: store here a reference to the message to write into logfile or NULL if you logged yourself

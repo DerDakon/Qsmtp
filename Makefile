@@ -10,7 +10,7 @@ AUTOQMAIL=/var/qmail
 
 export SHELL CC CFLAGS LD LDFLAGS AUTOQMAIL
 
-SUBDIRS = lib callbacks qsmtpd qremote
+SUBDIRS = lib qsmtpd qsmtpd/filters qremote
 
 TARGETS = targets/Qsmtpd targets/Qremote
 TOOLS = targets/addipbl targets/testspf targets/fcshell
@@ -41,10 +41,9 @@ clean:
 	done
 
 targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.o qsmtpd/spf.o \
-		qsmtpd/vpopmail.o qsmtpd/data.o qsmtpd/addrsyntax.o \
+		qsmtpd/vpopmail.o qsmtpd/data.o qsmtpd/addrsyntax.o qsmtpd/filters/rcptfilters.a \
 		lib/dns.o lib/control.o lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o \
 		lib/match.o lib/log.o lib/netio.o \
-		callbacks/rcptfilters.a \
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
@@ -57,7 +56,7 @@ targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/ma
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 	strip $@
 
-lib/%.o callbacks/%.o qsmtpd/%.o qremote/%.o tools/%.o:
+lib/%.o qsmtpd/filters/%.o qsmtpd/%.o qremote/%.o tools/%.o:
 	$(MAKE) -C $(@D) $(@F)
 
 targets/%: tools/%.o

@@ -7,7 +7,7 @@ OBJS = rcpt_filters.o badmailfrom.o check2822.o dnsbl.o ipbl.o badcc.o fromdomai
 
 default: all
 
-vpath %.h ../include/
+vpath %.h ../../include/
 
 all: $(OBJS) $(TARGETS)
 

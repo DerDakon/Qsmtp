@@ -2,7 +2,7 @@
 #include "log.h"
 #include "usercallback.h"
 
-/* add all your user callbacks here */
+/* add all your filters here */
 
 extern int cb_boolean(const struct userconf *, char **, int *);
 extern int cb_badmailfrom(const struct userconf *, char **, int *);
@@ -18,7 +18,7 @@ extern int cb_usersize(const struct userconf *, char **, int *);
 extern int cb_forceesmtp(const struct userconf *, char **, int *);
 extern int cb_namebl(const struct userconf *, char **, int *);
 
-/* the callbacks will be called in the order in this array */
+/* the filters will be called in the order in this array */
 
 /* offline checks first */
 rcpt_cb rcpt_cbs[] = {	cb_boolean,

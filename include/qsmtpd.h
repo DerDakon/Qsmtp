@@ -16,7 +16,7 @@ struct smtpcomm {
 };
 
 struct xmitstat {			/* This contains some flags describing the transmission and it's status.
-					 * This can be passed to the usercallbacks */
+					 * This is used e.g. by the user filters. */
 	unsigned int esmtp:1;		/* if we are using ESMTP extensions */
 	unsigned int check2822:2;	/* if or not to check the message to strict compliance to RfC 2822 */
 	unsigned int helostatus:3;	/* status of the given HELO/EHLO, see antispam.h for the meaning */

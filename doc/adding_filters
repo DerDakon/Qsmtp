@@ -5,7 +5,7 @@ To add your own recipient spamfilter function just follow this steps:
    it.
 
 2. Write your function. It must have the same signature like the others defined
-   in callbacks/rcpt_cbs.c. Here are some things you should know:
+   in qsmtpd/filters/rcpt_filters.c. Here are some things you should know:
 
    -use getfile or getfileglobal to load a config file from the user directory
     with fallbacks to domain directory and global config
@@ -24,20 +24,20 @@ To add your own recipient spamfilter function just follow this steps:
    -the possible return values of the function are documented in
     include/usercallback.h
    -the logmsg parameter is NULL at the beginning of each function
-   -if your callbacks checks the parameter of the "MAIL FROM:" or it's reverse
+   -if your filter checks the parameter of the "MAIL FROM:" or it's reverse
     lookup don't forget to handle the case of a bounce message
-    (xmitstat.mailfrom.len == 0)
+    (xmitstat.mailfrom.len == 0).
    -the logmsg parameter will not be freed so this has to be a constant. If you
     want to log something dynamically or not fitting in the given logmsg use
     log_write{,n} yourself and leave *logmsg alone
-3. add your function to callbacks/rcpt_filters.c at two points: add it to the
-   list at the top of the file (preferably as the last entry) and add it to the
-   array at the bottom of the file. Here you should choose a point you find
+3. add your function to qsmtpd/filters/rcpt_filters.c at two points: add it to
+   the list at the top of the file (preferably as the last entry) and add it to
+   the array at the bottom of the file. Here you should choose a point you find
    useful. It should be good practise to do all offline checks before the first
    online check. All checks that do not make any network traffic themself (not
    counting writing an error message) are offline checks. DNS lookups, asking
    other mailserver and so on are online checks.
-4. add your file to OBJS in callbacks/Makefile
+4. add your file to OBJS in qsmtpd/filters/Makefile
 5. test it
 6. if it really works write a bit of documentation and send it to me so I can
    review it and include it if I find it useful.
