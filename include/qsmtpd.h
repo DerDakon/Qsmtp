@@ -24,6 +24,7 @@ struct xmitstat {			/* This contains some flags describing the transmission and 
 					 * if the helo is identical to remotehost this is {NULL, 0} */
 	struct in6_addr sremoteip;	/* parsed remoteip */
 	struct ips *frommx;		/* MX IPs of from domain */
+	char *spfexp;			/* the SPF explanation if provided by the domain or NULL if none */
 };
 
 extern struct xmitstat xmitstat;

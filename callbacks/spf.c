@@ -118,8 +118,15 @@ block:
 			return rc;
 		}
 	}
-	if ((rc = netwrite("501 5.7.1 mail denied by SPF policy\r\n")))
-		return rc;
+	if (xmitstat.spfexp) {
+		const char *netmsg[] = {"501 5.7.1 ", xmitstat.spfexp, NULL};
+
+		if ((rc = net_writen(netmsg)))
+			return rc;
+	} else {
+		if ((rc = netwrite("501 5.7.1 mail denied by SPF policy\r\n")))
+			return rc;
+	}
 	if (!*logmsg)
 		*logmsg = "SPF";
 	return r ? r : 1;
