@@ -217,7 +217,7 @@ auth_login(void)
 
 	if (!user.len || !pass.len)
 		goto err;
-	return authenticate();  
+	return authenticate();
 err_input:
 	err_input();
 err:
