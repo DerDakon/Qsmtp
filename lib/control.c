@@ -222,7 +222,7 @@ finddomainmm(int fd, const char *domain)
 {
 	struct stat st;
 	char *map, *cur;
-	int rc = 0;
+	int rc = 0, i;
 	unsigned int dl = strlen(domain);
 
 	if (fd < 0) {
@@ -294,10 +294,10 @@ finddomainmm(int fd, const char *domain)
 	} while (cur);
 
 	munmap(map, st.st_size);
-	while ((rc = close(fd))) {
+	while ((i = close(fd))) {
 		if (errno != EINTR) {
 			break;
 		}
 	}
-	return rc;
+	return i ? i : rc;
 }
