@@ -245,7 +245,8 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
 	if (!j) {
 		/* only invalid entries in file */
 		free(*buf);
-		*buf = *bufa = NULL;
+		*bufa = NULL;
+		*buf = NULL;
 		return 0;
 	}
 	*bufa = malloc((j + 1) * sizeof(char*));
