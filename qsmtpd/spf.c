@@ -788,7 +788,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 					} else {
 						char a[INET6_ADDRSTRLEN];
 
-						inet_pton(AF_INET6, xmitstat.sremoteip, a, sizeof(a));
+						inet_ntop(AF_INET6, &xmitstat.sremoteip, a, sizeof(a));
 						APPEND(strlen(a), a);
 					}
 				}
