@@ -51,8 +51,6 @@ extern int badbounce;			/* bounce message with more than one recipient */
 extern unsigned long sslauth;		/* if SMTP AUTH is only allowed after STARTTLS */
 extern unsigned long databytes;		/* maximum message size */
 
-extern long comstate;			/* status of the SMTP state machine */
-
 extern int err_control(const char *);
 extern void freedata(void);
 extern int hasinput(void);
@@ -61,7 +59,6 @@ extern int hasinput(void);
 #define EDONE 1003
 
 TAILQ_HEAD(tailhead, recip) head;
-extern struct tailhead *headp;		/* List head. */
 
 struct recip {
 	TAILQ_ENTRY(recip) entries;	/* List. */
