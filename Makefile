@@ -52,7 +52,8 @@ targets/addipbl: tools/addipbl.o
 tools/addipbl.o: tools/addipbl.c
 
 targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o $(OWFATPATH)/libowfat.a
-	$(LD) $(LDFLAGS) -o $@ $^
+	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
+	strip $@
 
 #FIXME: the destination directory must be fixed in case someone modifies qsmtpd.c::auto_qmail
 install:
