@@ -102,9 +102,10 @@ queue_header(void)
 {
 	int fd = fd0[1];
 	int rc;
-	char datebuf[36];		/* the date for the Received-line */
+	char datebuf[36];			/* the date for the Received-line */
 	time_t ti;
 	int i;
+	const char *afterprot = "A\n\tfor <";	/* the string to be written after the protocol */
 
 /* write the "Received: " line to mail header */
 	WRITE(fd, "Received: from ", 15);
@@ -131,7 +132,9 @@ queue_header(void)
 	WRITE(fd, heloname.s, heloname.len);
 	WRITE(fd, " (" VERSIONSTRING ") with ", 9 + strlen(VERSIONSTRING));
 	WRITE(fd, protocol, strlen(protocol));
-	WRITE(fd, "\n\tfor <", 7);
+	/* add the 'A' to the end of ESMTP or ESMTPS as described in RfC 3848 */
+	i = xmitstat.authname.len ? 0 : 1;
+	WRITE(fd, afterprot + i, 8 - i);
 	WRITE(fd, head.tqh_first->to.s, head.tqh_first->to.len);
 	ti = time(NULL);
 	i = strftime(datebuf, sizeof(datebuf), ">; %a, %d %b %Y %H:%M:%S %z\n", localtime(&ti));
