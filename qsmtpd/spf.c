@@ -717,7 +717,17 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 										num, r, delim))
 						return -1;
 				} else {
-#warning FIXME: default sender missing
+					unsigned int senderlen = 12 + HELOLEN;
+					char *sender = malloc(senderlen--);
+
+					if (!sender)
+						return -1;
+					memcpy(sender, "postmaster@", 11);
+					memcpy(sender + 11, HELOSTR, HELOLEN + 1);
+					r = spf_appendmakro(res, l, sender, senderlen, num, r, delim);
+					free(sender);
+					if (r)
+						return -1;
 				}
 				break;
 		case 'l':	if (xmitstat.mailfrom.len) {
