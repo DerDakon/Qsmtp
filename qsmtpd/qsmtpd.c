@@ -169,6 +169,9 @@ setup(void)
 		xmitstat.remotehost.len = 0;
 	xmitstat.remoteinfo = getenv("TCPREMOTEINFO");
 
+	/* RfC 2821, section 4.5.3.2: "Timeouts"
+	 * An SMTP server SHOULD have a timeout of at least 5 minutes while it
+	 * is awaiting the next command from the sender. */
 	if ( ( j = loadintfd(open("control/timeoutsmtpd", O_RDONLY), &timeout, 320) ) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/timeoutsmtpd");
@@ -605,6 +608,7 @@ smtp_rcpt(void)
 	int bt;			/* which policy matched */
 	const char *logmsg[] = {"rejected message to <", NULL, "> from <", xmitstat.mailfrom.s,
 					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL};
+	const char *okmsg[] = {"250 2.1.0 recipient <", NULL, "> OK", NULL};
 
 	i = addrparse(1, &tmp, &more, &ds);
 	if  (i > 0) {
@@ -780,8 +784,9 @@ smtp_rcpt(void)
 	}
 	goodrcpt++;
 	r->ok = 1;
+	okmsg[1] = r->to.s;
 
-	return netwrite("250 2.1.0 ok\r\n") ? errno : 0;
+	return net_writen(okmsg) ? errno : 0;
 userdenied:
 	e = errno;
 	if (errmsg && (i > 0)) {
@@ -829,6 +834,7 @@ smtp_from(void)
 	int seenbody = 0;	/* if we found a "BODY=" after mail, there may only be one */
 	struct userconf ds;
 	struct statvfs sbuf;
+	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> syntactically correct", NULL};
 
 	i = addrparse(0, &(xmitstat.mailfrom), &more, &ds);
 	xmitstat.frommx = NULL;
@@ -934,7 +940,8 @@ next:
 	xmitstat.spf = (i & 0x0f);
 	badbounce = 0;
 	goodrcpt = 0;
-	return netwrite("250 2.1.5 ok\r\n") ? errno : 0;
+	okmsg[1] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
+	return net_writen(okmsg) ? errno : 0;
 }
 
 int
