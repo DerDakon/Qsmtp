@@ -255,9 +255,9 @@ queue_result(void)
 				return 0;
 			}
 		} else {
-			const char *logmess[] = {"qmail-queue failed with exitcode ", NULL, NULL};
-			const char *netmsg;
 			char ec[ULSTRLEN];
+			const char *logmess[] = {"qmail-queue failed with exitcode ", ec, NULL};
+			const char *netmsg;
 
 			ultostr(exitcode, ec);
 			log_writen(LOG_ERR, logmess);
