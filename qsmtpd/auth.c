@@ -87,7 +87,7 @@ authgetl(void) {
 		i = readinput(authin.s + authin.len - nfirst, 64 + nfirst);
 		nfirst = 1;
 		authin.len += i;
-	} while (authin.s[authin.len - 1] == '\n');
+	} while (authin.s[authin.len - 1] != '\n');
 
 	if (--authin.len)
 		if (authin.s[authin.len - 1] == '\r')
