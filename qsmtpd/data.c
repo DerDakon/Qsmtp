@@ -562,7 +562,16 @@ err_write:
 				return EDONE;
 		case EINTR:	log_write(LOG_ERR, "interrupt while writing to qmail-queue");
 				return EDONE;
+		/* This errors happen if client sends invalid data (e.g. bad <CRLF> sequences). 
+		 * Let them pass, this will kick the client some lines later. */
+		case EINVAL:
+		case E2BIG:	return rc;
 		/* normally none of the other errors may ever occur. But who knows what I'm missing here? */
-		default:	return EBADFD; // will not be caught in main
+		default:	{
+					const char *logmsg[] = {"error in DATA: ", strerror(rc), NULL};
+
+					log_writen(LOG_ERR, logmsg);
+					return EDONE; // will not be caught in main
+				}
 	}
 }
