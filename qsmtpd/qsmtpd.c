@@ -144,7 +144,7 @@ setup(void)
 
 	if ( ( j = loadoneliner("control/me", &heloname.s, 0) ) < 0 )
 		return errno;
-	heloname.len = j;
+	heloname.len = strlen(heloname.s);
 	/* we ignore the other DNS errors here, the rest is fault of the admin */
 	if (domainvalid(heloname.s, 0) == 1) {
 		log_write(LOG_ERR, "control/me contains invalid name");
