@@ -319,32 +319,32 @@ smtp_ehlo(void)
 int
 qmexists(const string *dirtempl, const char *suff1, const unsigned int len, const int def)
 {
-	char tmpfile[PATH_MAX];
+	char filetmp[PATH_MAX];
 	int fd;
 	unsigned int l = dirtempl->len;
 
 	if (l >= PATH_MAX)
 		return -1;
-	memcpy(tmpfile, dirtempl->s, l);
+	memcpy(filetmp, dirtempl->s, l);
 	if (def & 2) {
 		if (l + len >= PATH_MAX)
 			return -1;
-		memcpy(tmpfile + l, suff1, len);
+		memcpy(filetmp + l, suff1, len);
 		l += len;
 	}
 
 	if (def & 1) {
 		if (l + 7 >= PATH_MAX)
 			return -1;
-		memcpy(tmpfile + l, "default", 7);
+		memcpy(filetmp + l, "default", 7);
 		l += 7;
 	}
-	tmpfile[l] = 0;
+	filetmp[l] = 0;
 
-	fd = open(tmpfile, O_RDONLY);
+	fd = open(filetmp, O_RDONLY);
 	if (fd == -1)
 		if (errno != ENOENT)
-			err_control(tmpfile);
+			err_control(filetmp);
 	return fd;
 }
 
@@ -360,7 +360,7 @@ qmexists(const string *dirtempl, const char *suff1, const unsigned int len, cons
 int
 user_exists(const string *localpart, const char *domainpart, struct userconf *ds)
 {
-	char tmpfile[PATH_MAX];
+	char filetmp[PATH_MAX];
 	DIR *dirp;
 	unsigned int i = 0;
 
@@ -370,11 +370,11 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 		i++;
 	}
 
-	memcpy(tmpfile, ds->userpath.s, ds->userpath.len);
-	tmpfile[ds->userpath.len] = '\0';
+	memcpy(filetmp, ds->userpath.s, ds->userpath.len);
+	filetmp[ds->userpath.len] = '\0';
 
 	/* does directory USERPATH/DOMAIN/USER exist? */
-	dirp = opendir(tmpfile);
+	dirp = opendir(filetmp);
 	if (dirp == NULL) {
 		int e = errno;
 		int fd;
@@ -385,19 +385,19 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 		ds->userpath.len = 0;
 		/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
 		if (e != ENOENT) {
-			if (!err_control(tmpfile))
+			if (!err_control(filetmp))
 				errno = e;
 			return -1;
 		}
 		i = ds->domainpath.len;
-		memcpy(tmpfile, ds->domainpath.s, i);
-		memcpy(tmpfile + i, ".qmail-", 7);
+		memcpy(filetmp, ds->domainpath.s, i);
+		memcpy(filetmp + i, ".qmail-", 7);
 		i += 7;
-		tmpfile[i] = '\0';
+		filetmp[i] = '\0';
 		if ( (fd = newstr(&dotqm, i + 1)) ) {
 			return fd;
 		}
-		memcpy(dotqm.s, tmpfile, dotqm.len--);
+		memcpy(dotqm.s, filetmp, dotqm.len--);
 		fd = qmexists(&dotqm, localpart->s, localpart->len, 2);
 		/* try .qmail-user-default instead */
 		if (fd < 0) {
@@ -446,7 +446,7 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 				r = read(fd, buff, sizeof(buff)-1);
 				if (r == -1) {
 					e = errno;
-					if (!err_control(tmpfile))
+					if (!err_control(filetmp))
 						errno = e;
 					return -1;
 				}
@@ -689,7 +689,7 @@ smtp_rcpt(void)
 			dcbuf = NULL;
 			/* ucbuf is already set to NULL by lloadfilefd, called from loadlistfd */
 		} else {
-			int e = errno;
+			e = errno;
 
 			free(ds.userpath.s);
 			free(ds.domainpath.s);
@@ -710,7 +710,7 @@ smtp_rcpt(void)
 				if (errno == ENOENT) {
 					ds.domainconf = NULL;
 				} else {
-					int e = errno;
+					e = errno;
 
 					free(ucbuf);
 					free(ds.userconf);
@@ -1358,12 +1358,12 @@ smtp_data(void)
 				return 0;
 			}
 		} else {
-			const char *logmsg[] = {"qmail-queue failed with exitcode ", NULL, NULL};
+			const char *logmess[] = {"qmail-queue failed with exitcode ", NULL, NULL};
 			const char *netmsg;
 			char *ec = ultostr(exitcode);
 
-			logmsg[1] = ec ? ec : "unknown";
-			log_writen(LOG_ERR, logmsg);
+			logmess[1] = ec ? ec : "unknown";
+			log_writen(LOG_ERR, logmess);
 			if (ec[0] != 'u')
 				free(ec);
  
@@ -1624,20 +1624,20 @@ main(int argc, char *argv[]) {
 						sleep(30);
 						netwrite("452-4.3.0 give me some time to recover\r\n");
 						sleep(30);
+						badcmds = 0;
 						flagbogus = netwrite("452 4.3.0 please try again later\r\n") ? errno : 0;
-						badcmds = 0;
 						break;
-				case EIO:	flagbogus = netwrite("451 4.3.0 IO error, please try again later\r\n") ? errno : 0;
-						badcmds = 0;
+				case EIO:	badcmds = 0;
+						flagbogus = netwrite("451 4.3.0 IO error, please try again later\r\n") ? errno : 0;
 						break;
-				case EMSGSIZE:	flagbogus = netwrite("552 4.3.1 Too much mail data\r\n") ? errno : 0;
-						badcmds = 0;
+				case EMSGSIZE:	badcmds = 0;
+						flagbogus = netwrite("552 4.3.1 Too much mail data\r\n") ? errno : 0;
 						break;
 				case EBADE:	flagbogus = netwrite("550 5.7.5 data encryption error\r\n") ? errno : 0;
 						break;
 				case EROFS:	log_write(LOG_ERR, "HELP! queue filesystem looks read only!");
-						flagbogus = netwrite("452 4.3.5 cannot write to queue\r\n") ? errno : 0;
 						badcmds = 0;
+						flagbogus = netwrite("452 4.3.5 cannot write to queue\r\n") ? errno : 0;
 						break;
 				case 1:		tarpit();
 						flagbogus = netwrite("503 5.5.1 Bad sequence of commands\r\n") ? errno : 0;
@@ -1649,8 +1649,8 @@ main(int argc, char *argv[]) {
 						_exit(EINTR);
 				default:	log_write(LOG_ERR, "writer error. kick me.");
 						log_write(LOG_ERR, strerror(flagbogus));
-						flagbogus = netwrite("500 5.3.0 unknown error\r\n") ? errno : 0;
 						badcmds = 0;
+						flagbogus = netwrite("500 5.3.0 unknown error\r\n") ? errno : 0;
 			}
 			/* do not work on the command now: it was either not read or was bogus.
 			 * Start again and try to read one new to see if it get's better */
