@@ -58,9 +58,6 @@ static int err_input(void)
 	return -1;
 }
 
-#ifdef AUTHCRAM
-static char unique[83];
-#endif
 static string authin;
 static string user;
 static string pass;
@@ -145,14 +142,11 @@ authenticate(void)
 			goto out;
 	}
 
-	WRITE(user.s, user.len);
-	WRITE("", 1);
-	WRITE(pass.s, pass.len);
+	WRITE(user.s, user.len + 1);
+	WRITE(pass.s, pass.len + 1);
 	/* make sure not to leak password */
 	memset(pass.s, 0, pass.len);
-	WRITE("", 1);
-	WRITE(resp.s, resp.len);
-	WRITE("", 1);
+	WRITE(resp.s, resp.len + 1);
 	while (close(pi[1])) {
 		if (errno != EINTR)
 			goto out;
@@ -295,6 +289,8 @@ auth_plain(void)
 }
 
 #ifdef AUTHCRAM
+static char unique[83];
+
 static int
 auth_cram(void)
 {
