@@ -2,7 +2,7 @@ OWFATPATH=/mnt/misc/qmail/libowfat-0.20-eike
 CDBPATH=/mnt/misc/qmail/vpopmail-5.4.0/cdb
 SHELL=/bin/sh
 CC=gcc
-CFLAGS=-O2 -c -Wall -W -I$(shell pwd)/include -DIPV4ONLY -DAUTHCRAM -s #-g
+CFLAGS=-O2 -c -Wall -W -I$(shell pwd)/include -DIPV4ONLY -DAUTHCRAM -g
 LD=gcc
 LDFLAGS=-lssl -lcrypto #-lefence
 
@@ -12,7 +12,7 @@ SUBDIRS = lib callbacks qsmtpd
 
 TARGETS = targets/Qsmtpd targets/addipbl
 
-.phony: all clean subdirs
+.phony: all clean subdirs install
 
 default: all
 
@@ -26,7 +26,7 @@ subdirs:
 vpath %.h ./include
 
 clean:
-	rm -f *.o *~ \#* $(TARGETS)
+	rm -f *.o *~ \#* $(TARGETS) targets/addipbl.o
 	for dir in $(SUBDIRS); do\
 		$(MAKE) -C $$dir clean; \
 	done
@@ -46,3 +46,7 @@ targets/addipbl: targets/addipbl.o
 	$(LD) $(LDFLAGS) -o $@ $^
 
 targets/addipbl.o: targets/addipbl.c
+
+#FIXME: the destination directory must be fixed in case someone modifies qsmtpd.c::auto_qmail
+install:
+	install -s -g qmail -o qmaild targets/Qsmtpd /var/qmail/bin
