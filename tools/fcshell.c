@@ -254,9 +254,12 @@ set(void)
 				if (linein[4 + params[i].len] != ' ') {
 					break;
 				}
-				tmp = strtol(linein + 17, &r, 0);
-				if (*r != '\n')
-					goto err;
+				tmp = strtol(linein + 5 + params[i].len, &r, 0);
+				if (*r != '\n') {
+					printf("ERROR: can't parse second argument as integer\n");
+					commstat = EINVAL;
+					return;
+				}
 			}
 			params[i].value = tmp;
 			printf("setting %s to %i (hex 0x%x)\n", params[i].name, tmp, tmp);
@@ -269,9 +272,6 @@ set(void)
 		commstat = EINVAL;
 	}
 	return;
-err:
-	printf("ERROR: can't parse second argument as integer\n");
-	commstat = EINVAL;
 }
 
 struct addrlist {
