@@ -181,9 +181,9 @@ queue_envelope(const unsigned long msgsize)
 
 			if (!authmsg)
 				return errno;
-			memcpy(authmsg, "> (authenticated as ", 18);
-			memcpy(authmsg + 18, xmitstat.authname.s, xmitstat.authname.len);
-			memcpy(authmsg + 18 + xmitstat.authname.len, ") ", 3);
+			memcpy(authmsg, "> (authenticated as ", 20);
+			memcpy(authmsg + 20, xmitstat.authname.s, xmitstat.authname.len);
+			memcpy(authmsg + 20 + xmitstat.authname.len, ") ", 3);
 			logmail[6] = authmsg;
 		} else {
 			logmail[6] = "> (authenticated) ";
