@@ -35,12 +35,19 @@ err_mem(const int doquit)
 	_exit(0);
 }
 
-static void __attribute__ ((noreturn))
+void __attribute__ ((noreturn))
 err_conf(const char *errmsg)
 {
-	log_write(LOG_ERR, errmsg);
-/* write text including 0 byte */
-	write(1, "ZConfiguration error. (#4.3.0)\n", 32);
+	const char *msg[] = {errmsg, NULL};
+	err_confn(msg);
+}
+
+void __attribute__ ((noreturn))
+err_confn(const char **errmsg)
+{
+	log_writen(LOG_ERR, errmsg);
+	/* write text including 0 byte */
+	write(1, "Z4.3.0 Configuration error.\n", 29);
 	_exit(0);
 }
 
@@ -89,7 +96,7 @@ quitmsg(void)
 	close(socketd);
 }
 
-static void __attribute__ ((noreturn))
+void __attribute__ ((noreturn))
 quit(void)
 {
 	quitmsg();
@@ -142,7 +149,7 @@ getrhost(const struct ips *mx)
  *
  * returns: SMTP return code of the message
  */
-static int
+int
 netget(void)
 {
 	int q, r;
