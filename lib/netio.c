@@ -188,7 +188,7 @@ netwrite(const char *s)
 {
 	fd_set wfds;
 	struct timeval tv = {
-		.tv_sec = 120,
+		.tv_sec = timeout,
 		.tv_usec = 0,
 	};
 	int retval;
