@@ -40,4 +40,4 @@ cb_boolean(const struct userconf *ds, char **logmsg __attribute__ ((unused)), in
 		return rc ? rc : 1;
 	}
 	return 0;
- }
+}

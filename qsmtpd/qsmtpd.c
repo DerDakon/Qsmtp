@@ -474,7 +474,7 @@ user_exists(const string *localpart, struct userconf *ds)
  *
  * @flags:   1: rcpt to checks (e.g. source route is allowed), 0: mail from checks
  * @addr:    struct string to contain the address (memory will be malloced)
- * @more:    here starts the data behind the first > behind the first < (or 0 if none)
+ * @more:    here starts the data behind the first '>' behind the first '<' (or NULL if none)
  * @ds:      store the userconf of the user here
  *
  * returns: 0 on success, >0 on error (e.g. ENOMEM), -2 if address not local
@@ -500,7 +500,7 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 
 	/* empty mail address is valid in MAIL FROM:, this is checked by addrsyntax before
 	 * if we find an empty address here it's ok */
-	if (!addr->s)
+	if (!addr->len)
 		return 0;
 	at = strchr(addr->s, '@');
 	/* check if mail goes to global postmaster */
@@ -528,7 +528,6 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 		} else if (!rc) {
 			return -2;
 		}
-
 	}
 
 /* get the domain directory from "users/cdb" */
