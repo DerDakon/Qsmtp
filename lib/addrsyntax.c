@@ -199,7 +199,7 @@ helovalid(const char *helo)
 	/* +5-4=+1: also copy the '\0' to the new string */
 	memcpy(xmitstat.helostr.s, helo, xmitstat.helostr.len--);
 
-	if (!strcasecmp(helo, heloname)) {
+	if (!strcasecmp(helo, heloname.s)) {
 		xmitstat.helostatus = 0;
 		return 0;
 	}

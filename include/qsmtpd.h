@@ -31,7 +31,7 @@ extern char *protocol;
 extern char *auth_host;			/* hostname for auth */
 extern char *auth_check;		/* checkpassword or one of his friends for auth */
 extern char **auth_sub;			/* subprogram and arguments to be invoked by auth_check (usually /bin/true) */
-extern char *heloname;			/* the fqdn to show in helo */
+extern string heloname;			/* the fqdn to show in helo */
 
 extern int err_control(const char *);
 

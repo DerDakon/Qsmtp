@@ -89,7 +89,7 @@ char *auth_host;			/* hostname for auth */
 char *auth_check;			/* checkpassword or one of his friends for auth */
 char **auth_sub;			/* subprogram to be invoked by auth_check (usually /bin/true) */
 char **globalconf;			/* see usercallback.h */
-char *heloname;				/* the fqdn to show in helo */
+string heloname;			/* the fqdn to show in helo */
 
 static long comstate = 0x001;		/* status of the command state machine, initialized to noop */
 
@@ -142,10 +142,11 @@ setup(void)
 		return EINVAL;
 	}
 
-	if ( ( j = loadoneliner("control/me", &heloname, 0) ) < 0 )
+	if ( ( j = loadoneliner("control/me", &heloname.s, 0) ) < 0 )
 		return errno;
+	heloname.len = j;
 	/* we ignore the other DNS errors here, the rest is fault of the admin */
-	if (domainvalid(heloname,0) == 1) {
+	if (domainvalid(heloname.s, 0) == 1) {
 		log_write(LOG_ERR, "control/me contains invalid name");
 		return EINVAL;
 	}
@@ -237,7 +238,7 @@ freedata(void)
 int
 smtp_helo(void)
 {
-	const char *s[] = {"250 ", heloname, NULL};
+	const char *s[] = {"250 ", heloname.s, NULL};
 
 	freedata();
 	protocol = realloc(protocol, 5);
@@ -257,7 +258,7 @@ int
 smtp_ehlo(void)
 {
 	/* can this be self-growing? */
-	const char *msg[] = {"250-", heloname, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n",
+	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n",
 				NULL, NULL, NULL, NULL, NULL};
 	unsigned int next = 3;	/* next index in to be used */
 	char *sizebuf = NULL;
@@ -1087,7 +1088,7 @@ smtp_data(void)
 		WRITE(fd, ")", 1);
 	}
 	WRITE(fd, "\n\tby ", 5);
-	WRITE(fd, heloname, strlen(heloname));
+	WRITE(fd, heloname.s, heloname.len);
 	WRITE(fd, " (" VERSIONSTRING ")", 3 + strlen(VERSIONSTRING));
 	WRITE(fd, " with ", 6);
 	WRITE(fd, protocol, strlen(protocol));
@@ -1430,7 +1431,7 @@ smtp_rset(void)
 int
 smtp_quit(void)
 {
-	const char *msg[] = {"221 2.0.0 ",heloname," service closing transmission channel", NULL};
+	const char *msg[] = {"221 2.0.0 ", heloname.s, " service closing transmission channel", NULL};
 	int rc;
 
 	freedata();
@@ -1468,7 +1469,7 @@ main(int argc, char *argv[]) {
 		TAILQ_INIT(&head);		/* Initialize the recipient list. */
 	}
 	if (!getenv("BANNER")) {
-		const char *msg[] = {"220 ", heloname, " " VERSIONSTRING " ESMTP", NULL};
+		const char *msg[] = {"220 ", heloname.s, " " VERSIONSTRING " ESMTP", NULL};
 
 		flagbogus = net_writen(msg) ? errno : 0;
 	}
