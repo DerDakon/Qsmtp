@@ -953,31 +953,19 @@ smtp_vrfy(void)
 int
 hasinput(void)
 {
-	fd_set rfds;
 	int rc;
-	struct timeval tv = {
-		.tv_sec = 0,
-		.tv_usec = 0,
-	};
 
-	FD_ZERO(&rfds);
-	FD_SET(0, &rfds);
-
-	rc = select(1, &rfds, NULL, NULL, &tv);
-
-	if (rc == -1)
+	if ( (rc = data_pending()) <= 0)
 		return errno;
-	else if (rc) {
-		/* there is input data pending. This means the client sent some before our
-		 * reply. His SMTP engine is broken so we don't let him send the mail */
-		/* first: consume the first line of input so client will trigger the bad
-		 * commands counter if he ignores everything we send */
-		rc = net_read() ? errno : 0;
-		if (rc)
-			return rc;
-		return netwrite("550 5.5.0 you must wait for my reply\r\n") ? errno : EBOGUS;
-	}
-	return 0;
+
+	/* there is input data pending. This means the client sent some before our
+	 * reply. His SMTP engine is broken so we don't let him send the mail */
+	/* first: consume the first line of input so client will trigger the bad
+	 * commands counter if he ignores everything we send */
+	rc = net_read() ? errno : 0;
+	if (rc)
+		return rc;
+	return netwrite("550 5.5.0 you must wait for my reply\r\n") ? errno : EBOGUS;
 }
 
 int

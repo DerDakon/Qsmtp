@@ -302,3 +302,29 @@ ultostr(const unsigned long u)
 	} while (j);
 	return res;
 }
+
+/**
+ * data_pending - check if there is data ready to be read without blocking
+ *
+ * returns: 0 if no data, 1 if data, -1 on error
+ */
+int
+data_pending(void)
+{
+	if (linenlen)
+		return 1;
+	if (ssl) {
+		return SSL_pending(ssl);
+	} else {
+		fd_set rfds;
+		struct timeval tv = {
+			.tv_sec = 0,
+			.tv_usec = 0,
+		};
+	
+		FD_ZERO(&rfds);
+		FD_SET(0, &rfds);
+	
+		return select(1, &rfds, NULL, NULL, &tv);
+	}
+}

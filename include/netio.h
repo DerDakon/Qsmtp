@@ -10,6 +10,7 @@ extern int net_writen(const char *const *);
 extern int netwrite(const char *);	/* same as net_write but expects that line is <= 512 characters
 					 * and includes <CRLF> */
 extern char *ultostr(const unsigned long u);
+extern int data_pending(void);
 
 static inline int
 net_write(const char *s)
