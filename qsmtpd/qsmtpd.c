@@ -982,6 +982,11 @@ hasinput(void)
 	else if (rc) {
 		/* there is input data pending. This means the client sent some before our
 		 * reply. His SMTP engine is broken so we don't let him send the mail */
+		/* first: consume the first line of input so client will trigger the bad
+		 * commands counter if he ignores everything we send */
+		rc = net_read() ? errno : 0;
+		if (rc)
+			return rc;
 		return netwrite("550 5.5.0 you must wait for my reply\r\n") ? errno : EBOGUS;
 	}
 	return 0;
