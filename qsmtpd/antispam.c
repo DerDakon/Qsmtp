@@ -88,17 +88,16 @@ check_rbl(char *const *rbls, char **txt)
 			logmsg[1] = rbls[i];
 			log_writen(LOG_ERR, logmsg);
 		} else {
-			char *r;
-			unsigned int ul;
+			struct ips *ip;
 
 			strcpy(lookup + l, rbls[i]);
-			j = dnsip4(&r, &ul, lookup);
-			if ( (j < 0) && (errno == ENOMEM) )
+			j = ask_dnsa(lookup, &ips);
+			if (j < 0) {
 				return j;
-			if (!j) {
+			} else if (!j) {
 				int k;
 
-				free(r);
+				freeips(ip);
 				k = dnstxt(txt, lookup);
 				/* if there is any error here we just write the generic message to the client
 				 * so that's no real problem for us */
