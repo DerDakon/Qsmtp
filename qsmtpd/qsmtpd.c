@@ -257,7 +257,7 @@ smtp_ehlo(void)
 	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n",
 				NULL, NULL, NULL, NULL, NULL};
 	unsigned int next = 3;	/* next index in to be used */
-	char *sizebuf = NULL;
+	char sizebuf[ULSTRLEN];
 	int rc;
 
 	if (!ssl) {
@@ -288,15 +288,12 @@ smtp_ehlo(void)
 /* this must stay last: it begins with "250 " and does not have "\r\n" at the end so net_writen works */
 	if (databytes) {
 		msg[next++] = "250 SIZE ";
-		sizebuf = ultostr(databytes);
-		if (!sizebuf)
-			return -1;
+		ultostr(databytes, sizebuf);
 		msg[next] = sizebuf;
 	} else {
 		msg[next] = "250 SIZE";
 	}
 	rc = (net_writen(msg) < 0) ? errno : 0;
-	free(sizebuf);
 	xmitstat.spf = 0;
 	xmitstat.esmtp = 1;
 	xmitstat.datatype = 1;

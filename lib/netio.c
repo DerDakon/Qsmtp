@@ -259,16 +259,14 @@ net_writen(const char *const *s)
 }
 
 /**
- * ultostr - return a dynamically alloced buffer with the string representation of an unsigned long
+ * ultostr - print unsigned long into a given buffer
  *
  * @u: number to convert
- *
- * returns: pointer to buffer on success or NULL
+ * @res: pointer to memory where result is stored, should be ULSTRLEN bytes long
  */
-char *
-ultostr(const unsigned long u)
+void
+ultostr(const unsigned long u, char *res)
 {
-	char *res;
 	int j = 1;
 	unsigned long v = u;
 
@@ -276,17 +274,12 @@ ultostr(const unsigned long u)
 		j++;
 	}
 
-	res = malloc(j + 1);
-	if (!res)
-		return res;
-
 	res[j] = '\0';
 	v = u;
 	do {
 		res[--j] = '0' + v % 10;
 		v /= 10;
 	} while (j);
-	return res;
 }
 
 /**

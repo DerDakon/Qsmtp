@@ -154,11 +154,11 @@ queue_header(void)
 static int
 queue_envelope(const unsigned long msgsize)
 {
-	char *s = NULL;			/* msgsize */
-	char *t = NULL;			/* goodrcpt */
+	char s[ULSTRLEN];		/* msgsize */
+	char t[ULSTRLEN];		/* goodrcpt */
 	char bytes[] = " bytes, ";
 	const char *logmail[] = {"received ", "", "message to <", NULL, "> from <", MAILFROM,
-					"> ", "from ip [", xmitstat.remoteip, "] (", NULL, bytes,
+					"> ", "from ip [", xmitstat.remoteip, "] (", s, bytes,
 					NULL, " recipients)", NULL};
 	char *authmsg = NULL;
 	int rc, e;
@@ -166,11 +166,10 @@ queue_envelope(const unsigned long msgsize)
 
 	if (ssl)
 		logmail[1] = "encrypted ";
-	s = ultostr(msgsize);
-	logmail[10] = s ? s : "unknown";
+	ultostr(msgsize, s);
 	if (goodrcpt > 1) {
-		t = ultostr(goodrcpt);
-		logmail[12] = t ? t : "unknown";
+		ultostr(goodrcpt, t);
+		logmail[12] = t;
 	} else {
 		bytes[6] = ')';
 		bytes[7] = '\0';
@@ -227,8 +226,6 @@ err_write:
 		free(l->to.s);
 		free(l);
 	}
-	free(s);
-	free(t);
 	freedata();
 	free(authmsg);
 	errno = e;
@@ -260,12 +257,10 @@ queue_result(void)
 		} else {
 			const char *logmess[] = {"qmail-queue failed with exitcode ", NULL, NULL};
 			const char *netmsg;
-			char *ec = ultostr(exitcode);
+			char ec[ULSTRLEN];
 
-			logmess[1] = ec ? ec : "unknown";
+			ultostr(exitcode, ec);
 			log_writen(LOG_ERR, logmess);
-			if (ec[0] != 'u')
-				free(ec);
  
 			/* stolen from qmail.c::qmail_close */
 			switch(exitcode) {
@@ -307,8 +302,9 @@ queue_result(void)
 int
 smtp_data(void)
 {
+	char s[ULSTRLEN];		/* msgsize */
 	const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
-					"> from ip [", xmitstat.remoteip, "] (", NULL, " bytes) {",
+					"> from ip [", xmitstat.remoteip, "] (", s, " bytes) {",
 					NULL, NULL};
 	int i, rc;
 	unsigned long msgsize = 0, maxbytes;
@@ -319,7 +315,6 @@ smtp_data(void)
 					 * but we let the user decide */
 	const char *errmsg = NULL;
 	unsigned int hops = 0;		/* number of "Received:"-lines */
-	char *s = NULL;			/* msgsize */
 
 	if (badbounce || !goodrcpt) {
 		tarpit();
@@ -511,8 +506,7 @@ loop_data:
 			goto err_write;
 	} while ((linelen != 1) && (linein[0] != '.'));
 	while (close(fd1[1]) && (errno == EINTR));
-	s = ultostr(msgsize);
-	logmail[7] = s ? s : "unknown";
+	ultostr(msgsize, s);
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
@@ -525,7 +519,6 @@ loop_data:
 		free(l->to.s);
 		free(l);
 	}
-	free(s);
 	freedata();
 
 	if (errmsg)
@@ -533,7 +526,6 @@ loop_data:
 	return rc;
 err_write:
 	rc = errno;
-	free(s);
 	if (fd0[1]) {
 		while (close(fd0[1]) && (errno == EINTR));
 	}

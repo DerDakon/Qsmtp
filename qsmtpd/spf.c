@@ -882,12 +882,10 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 		case 't':	if (!ex) {
 					PARSEERR;
 				} else {
-					char *t = ultostr(time(NULL));
+					char t[ULSTRLEN];
 
-					if (!t)
-						return -1;
+					ultostr(time(NULL), t);
 					APPEND(strlen(t), t);
-					free(t);
 				}
 				break;
 		case 'P':

@@ -300,25 +300,19 @@ auth_cram(void)
 {
 	int i, r;
 	unsigned int k, l, m;
-	char *s, *t;
+	char *s, t[ULSTRLEN];
 	const char *netmsg[] = { "334 ", NULL, NULL };
 	string slop;
 	char unique[83];
 
-	t = ultostr(getpid());
-	if (!t)
-		return -1;
+	ultostr(getpid(), t);
 	m = strlen(t);
 	memcpy(unique, t, m);
-	free(t);
 	unique[m++] = '.';
 	s = unique + m;
-	t = ultostr(time(NULL));
-	if (!t)
-		return -1;
+	ultostr(time(NULL), t);
 	m = strlen(t);
 	memcpy(s, t, m);
-	free(t);
 	s += m;
 	*s++ = '@';
 
