@@ -81,6 +81,13 @@ setup(void)
 	}
 
 	heloname.len = j;
+
+#ifdef DEBUG_IO
+	j = open("control/Qremote_debug", O_RDONLY);
+	do_debug_io = (j > 0);
+	if (j > 0)
+		close(j);
+#endif
 }
 
 static void
