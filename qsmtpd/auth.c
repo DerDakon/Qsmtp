@@ -58,7 +58,6 @@ static int err_input(void)
 	return -1;
 }
 
-static char unique[83];
 static string authin;
 static string user;
 static string pass;
@@ -290,6 +289,8 @@ static int auth_plain(void)
 }
 
 #ifdef AUTHCRAM
+static char unique[83];
+
 static int auth_cram(void)
 {
 	int i, r;
