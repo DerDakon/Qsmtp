@@ -168,7 +168,7 @@ queue_envelope(const unsigned long msgsize)
 		logmail[1] = "encrypted ";
 	s = ultostr(msgsize);
 	logmail[10] = s ? s : "unknown";
-	logmail[5] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
+	logmail[5] = MAILFROM;
 	if (goodrcpt > 1) {
 		t = ultostr(goodrcpt);
 		logmail[12] = t ? t : "unknown";
@@ -515,7 +515,7 @@ loop_data:
 	while (close(fd1[1]) && (errno == EINTR));
 	s = ultostr(msgsize);
 	logmail[7] = s ? s : "unknown";
-	logmail[3] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
+	logmail[3] = MAILFROM;
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
