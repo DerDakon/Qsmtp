@@ -71,6 +71,26 @@ int ssl_timeoutaccept(long t)
 	return r;
 }
 
+int ssl_timeoutconn(long t)
+{
+	int r;
+
+	/* if connection is established, keep NDELAY */
+	if ( (ndelay_on(ssl_rfd) == -1) || (ndelay_on(ssl_wfd) == -1) )
+		return -1;
+	r = ssl_timeoutio(SSL_connect, t, NULL, 0);
+
+	if (r <= 0) {
+		r = ndelay_off(ssl_rfd);
+		if (!r)
+			r = ndelay_off(ssl_wfd);
+	} else {
+		SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
+	}
+
+	return r;
+}
+
 int ssl_timeoutrehandshake(long t)
 {
 	int r;
