@@ -40,7 +40,6 @@ targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.
 		callbacks/helo.o callbacks/forceesmtp.o \
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
 	$(LD) $(LDFLAGS) -o $@ $^
-	#chown qmaild:qmail $@
 
 targets/addipbl: targets/addipbl.o
 	$(LD) $(LDFLAGS) -o $@ $^
