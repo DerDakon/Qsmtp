@@ -237,12 +237,12 @@ spfreceived(const int fd, const int spf) {
 		WRITE(fd, fromdomain, strlen(fromdomain));
 		WRITE(fd, " is ", 4);
 		switch(spf) {
-			case SPF_PASS:		WRITE(fd, "pass", 4); break;
-			case SPF_SOFTFAIL:	WRITE(fd, "softfail", 8); break;
-			case SPF_NEUTRAL:	WRITE(fd, "neutral", 7); break;
+			case SPF_PASS:		WRITE(fd, "PASS", 4); break;
+			case SPF_SOFTFAIL:	WRITE(fd, "SOFTFAIL", 8); break;
+			case SPF_NEUTRAL:	WRITE(fd, "NEUTRAL", 7); break;
 			case SPF_FAIL_NONEX:
 			case SPF_FAIL_MALF:
-			case SPF_FAIL_PERM:	WRITE(fd, "fail", 4); break;
+			case SPF_FAIL_PERM:	WRITE(fd, "FAIL", 4); break;
 		}
 	}
 	WRITE(fd, "\n", 1);
