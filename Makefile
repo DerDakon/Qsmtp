@@ -1,8 +1,8 @@
-OWFATPATH=../libowfat-0.20-eike
-CDBPATH=../vpopmail-5.4.0/cdb
+OWFATPATH=../libowfat-0.20
+CDBPATH=../vpopmail-5.4.2/cdb
 SHELL=/bin/sh
 CC=gcc
-CFLAGS=-O2 -c -Wall -W -I$(shell pwd)/include -DIPV4ONLY -g
+CFLAGS=-O2 -c -Wall -W -Wshadow -I$(shell pwd)/include -DIPV4ONLY -DNOSTDERR -DUSESYSLOG -g
 LD=gcc
 LDFLAGS= #-lefence
 LDFLAGSSSL=-lssl -lcrypto
@@ -40,8 +40,8 @@ clean:
 	done
 
 targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.o qsmtpd/spf.o \
-		qsmtpd/vpopmail.o qsmtpd/data.o lib/log.o lib/netio.o lib/dns.o lib/control.o \
-		lib/addrsyntax.o lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o \
+		qsmtpd/vpopmail.o qsmtpd/data.o qsmtpd/addrsyntax.o lib/log.o lib/netio.o \
+		lib/dns.o lib/control.o lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o \
 		lib/match.o \
 		callbacks/badmailfrom.o callbacks/dnsbl.o callbacks/badcc.o callbacks/usersize.o \
 		callbacks/rcpt_cbs.o callbacks/boolean.o callbacks/fromdomain.o \

@@ -11,8 +11,6 @@ vpath %.h ../include
 clean:
 	rm -f $(TARGETS) *.o *~ \#*
 
-addrsyntax.o: sstring.h dns.h
-
 base64.o: sstring.h
 
 control.o: log.h dns.h

@@ -26,5 +26,7 @@ vpopmail.o: vpopmail.h sstring.h
 
 data.o: netio.h log.h qsmtpd.h antispam.h version.h tls.h
 
+addrsyntax.o: qsmtpd.h sstring.h dns.h
+
 %.o: %.c
 	$(CC) $(CFLAGS) $<
