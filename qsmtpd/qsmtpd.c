@@ -53,7 +53,7 @@ struct smtpcomm commands[] = {
 	_C("DATA",	 4, 0x0040, smtp_data,   0x10, 0),  /* 0x080 */ /* the status to change to is changed in smtp_data */
 	_C("STARTTLS",	 8, 0x0010, smtp_starttls, 0x1, 0),  /* 0x100 */
 	_C("AUTH",	 4, 0x0010, smtp_auth,     -1, 1),  /* 0x200 */
-	_C("VRFY",	 4, 0xffff, smtp_vrfy,     -1, 0)   /* 0x400 */
+	_C("VRFY",	 4, 0xffff, smtp_vrfy,     -1, 1)   /* 0x400 */
 };
 
 #undef _C
@@ -1193,5 +1193,6 @@ main(int argc, char *argv[]) {
 	} else if (argc != 1) {
 		log_write(LOG_ERR, "invalid number of parameters given");
 	}
+//sleep(15);
 	smtploop();
 }
