@@ -155,7 +155,7 @@ queue_envelope(const unsigned long msgsize)
 	char *t = NULL;			/* goodrcpt */
 	char bytes[] = " bytes, ";
 	const char *logmail[] = {"received ", "", "message to <", NULL, "> from <", xmitstat.mailfrom.s,
-					"> ", "", "from ip [", xmitstat.remoteip, "] (", NULL, bytes,
+					"> ", "from ip [", xmitstat.remoteip, "] (", NULL, bytes,
 					NULL, " recipients)", NULL};
 	char *authmsg = NULL;
 	int rc, e;
@@ -164,11 +164,11 @@ queue_envelope(const unsigned long msgsize)
 	if (ssl)
 		logmail[1] = "encrypted ";
 	s = ultostr(msgsize);
-	logmail[11] = s ? s : "unknown";
+	logmail[10] = s ? s : "unknown";
 	logmail[5] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
-	if (head.tqh_first == *head.tqh_last) {
+	if (goodrcpt > 1) {
 		t = ultostr(goodrcpt);
-		logmail[13] = t ? t : "unknown";
+		logmail[12] = t ? t : "unknown";
 	} else {
 		bytes[6] = ')';
 		bytes[7] = '\0';
@@ -181,12 +181,12 @@ queue_envelope(const unsigned long msgsize)
 
 			if (!authmsg)
 				return errno;
-			memcpy(authmsg, "(authenticated as ", 18);
+			memcpy(authmsg, "> (authenticated as ", 18);
 			memcpy(authmsg + 18, xmitstat.authname.s, xmitstat.authname.len);
 			memcpy(authmsg + 18 + xmitstat.authname.len, ") ", 3);
-			logmail[7] = authmsg;
+			logmail[6] = authmsg;
 		} else {
-			logmail[7] = "(authenticated) ";
+			logmail[6] = "> (authenticated) ";
 		}
 	}
 
