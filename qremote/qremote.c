@@ -465,7 +465,6 @@ main(int argc, char *argv[])
 			quit();
 	} else {
 /* server does not allow pipelining: we must do this one by one */
-		net_read();
 		if (checkreply(" ZD", mailerrmsg, 6) >= 300)
 			quit();
 		netmsg[0] = "RCPT TO:<";
