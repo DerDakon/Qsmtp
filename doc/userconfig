@@ -51,7 +51,7 @@ spfpolicy:		(global) Filter mail by the policy given by a DNS TXT record of the 
 			* 5: reject mail when the SPF record says 'neutral'
 			* 6 (or more): rejects mail when no SPF records are found
 
-			=> see also: rspf (file), spfstrict (file), spfignore (file)
+			=> see also: rspf (file), spfstrict (file), ignorespf (file)
 
 nobounce:		Don't accept bounce messages to this recipients. This is useful if this address is never
 			used to send mail (e.g. contact addresses on websites).
