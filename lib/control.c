@@ -169,7 +169,7 @@ loadoneliner(const char *filename, char **buf, int optional)
  * fd: file descriptor to read from (is closed on exit!)
  * buf: the buffer where the data should be stored (memory will be malloced)
  * bufa: array to be build from buf (memory will be malloced)
- * cf: function to check if an entry is valid
+ * cf: function to check if an entry is valid or NULL if not to
  * f: second parameter of cf
  */
 int
