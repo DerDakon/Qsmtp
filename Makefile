@@ -47,9 +47,9 @@ targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
-targets/Qremote: qremote/qremote.o qremote/conn.o qremote/starttlsr.o lib/dns.o lib/netio.o \
-		lib/ssl_timeoutio.o lib/log.o lib/tls.o lib/control.o lib/log.o lib/match.o \
-		lib/ssl_timeoutio.o lib/tls.o $(OWFATPATH)/libowfat.a
+targets/Qremote: qremote/qremote.o qremote/conn.o qremote/starttlsr.o qremote/qrdata.o lib/dns.o \
+		lib/netio.o lib/ssl_timeoutio.o lib/log.o lib/tls.o lib/control.o lib/log.o \
+		lib/match.o lib/ssl_timeoutio.o lib/tls.o $(OWFATPATH)/libowfat.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
 targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/match.o \

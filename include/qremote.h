@@ -6,9 +6,11 @@ extern void __attribute__ ((noreturn)) err_conf(const char *);
 extern void __attribute__ ((noreturn)) err_confn(const char **);
 extern void __attribute__ ((noreturn)) quit(void);
 extern int netget(void);
+extern int checkreply(const char *, const char **, const int);
 
 extern char *rhost;
 extern size_t rhostlen;
 extern char *partner_fqdn;
+extern unsigned int smtpext;
 
 #endif
