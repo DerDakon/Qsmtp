@@ -133,6 +133,7 @@ ask_dnsaaaa(const char *name, struct ips **result)
 		free(r);
 		return 0;
 	}
+	free(r);
 	switch (errno) {
 		case ETIMEDOUT:
 		case EAGAIN:	return 2;
@@ -197,6 +198,7 @@ ask_dnsa(const char *name, struct ips **result)
 		free(r);
 		return 0;
 	}
+	free(r);
 	switch (errno) {
 		case ETIMEDOUT:
 		case EAGAIN:	return 2;
