@@ -10,13 +10,13 @@
 
 #define WSPACE(x) (((x) == ' ') || ((x) == '\t') || ((x) == '\r') || ((x) == '\n'))
 
-int spfmx(const char *, char *);
-int spfa(const char *, char *);
-int spfip4(char *);
-int spfip6(char *);
-int spflookup(const char *, const int);
-int spfptr(const char *, char *);
-int spfexists(char *);
+int spfmx(const char *domain, char *token);
+int spfa(const char *domain, char *token);
+int spfip4(const char *domain);
+int spfip6(char *domain);
+int spflookup(const char *domain, const int rec);
+int spfptr(const char *domain, char *token);
+int spfexists(char *token);
 int spf_domainspec(char *token, char **domain, int *ip4cidr, int *ip6cidr);
 
 /**
