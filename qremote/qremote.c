@@ -403,8 +403,10 @@ send_data(void)
 	sendbuf[idx++] = '\n';
 	netnwrite(sendbuf, idx);
 	checkreply("KZD");
+	return;
 readerr:
-#warning FIXME: add error handling for read errors
+	write(1, "Zerror reading mail, aborting transfer.\n", 41);
+	exit(0);
 }
 
 static void
@@ -441,8 +443,10 @@ send_bdat(void)
 	if (!last)
 		netwrite("BDAT 0 LAST\r\n");
 	checkreply("KZD");
+	return;
 readerr:
-#warning FIXME: add error handling for read errors
+	write(1, "Zerror reading mail, aborting transfer.\n", 41);
+	exit(0);
 }
 
 /**
