@@ -1236,9 +1236,3 @@ main(int argc, char *argv[]) {
 //sleep(15);
 	smtploop();
 }
-#ifdef DEBUG_IO
-	j = open("control/Qremote_debug", O_RDONLY);
-	do_debug_io = (j > 0);
-	if (j > 0)
-		close(j);
-#endif
