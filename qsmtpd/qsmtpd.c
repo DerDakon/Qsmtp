@@ -559,7 +559,7 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 	}
 	memcpy(ds->userpath.s, ds->domainpath.s, ds->domainpath.len);
 	memcpy(ds->userpath.s + ds->domainpath.len, localpart.s, localpart.len);
-	ds->userpath.s[--ds->userpath.len - 1] = '\0';
+	ds->userpath.s[--ds->userpath.len] = '\0';
 	ds->userpath.s[ds->userpath.len - 1] = '/';
 
 	j = user_exists(&localpart, ds);
