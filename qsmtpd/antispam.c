@@ -157,7 +157,7 @@ check_ip4(const unsigned char *buf, const unsigned int len)
 
 		if ((*(buf + 4) < 8) || (*(buf + 4) > 32))
 			return -1;
-		if (ip4_matchnet((struct in_addr *) &(xmitstat.sremoteip.s6_addr32[3]), ip, *(buf + 4)))
+		if (ip4_matchnet(&xmitstat.sremoteip, ip, *(buf + 4)))
 			return 1;
 		buf += 5;
 	}
@@ -181,44 +181,10 @@ check_ip6(const unsigned char *buf, const unsigned int len)
 		return -1;
 	for (i = 0; i < len; i += 9) {
 		const struct in6_addr *ip = (struct in6_addr *) buf;
-		struct in6_addr mask;
-		int i, flag = 4;
 
-		if ((*(buf + 9) < 8) || (*(buf + 4) > 128))
+		if ((*(buf + 9) < 8) || (*(buf + 9) > 128))
 			return -1;
-		/* construct a bit mask out of the net length */
-		if (*(buf + 9) < 32) {
-			mask.s6_addr32[0] = 0xffffffff;
-			mask.s6_addr32[1] = 0xffffffff;
-			mask.s6_addr32[2] = 0xffffffff;
-			/* remoteip and ip are network byte order, it's easier
-			 * to convert mask to network byte order than both
-			 * to host order. We do it at this point because we only
-			 * need to change one word per mask, the other 3 will stay
-			 * the same before and after htonl() */
-			mask.s6_addr32[3] = htonl(-1 - (1 << ((32 - *(buf + 4)) - 1)));
-		} else {
-			mask.s6_addr32[3] = 0;
-			if (*(buf + 9) < 64) {
-				mask.s6_addr32[0] = 0xffffffff;
-				mask.s6_addr32[1] = 0xffffffff;
-				mask.s6_addr32[2] = htonl(-1 - (1 << ((64 - *(buf + 4)) - 1)));
-			} else {
-				mask.s6_addr32[2] = 0;
-				if (*(buf + 9) < 96) {
-					mask.s6_addr32[0] = 0xffffffff;
-					mask.s6_addr32[1] = htonl(-1 - (1 << ((96 - *(buf + 4)) - 1)));
-				} else {
-					mask.s6_addr32[0] = htonl(-1 - (1 << ((128 - *(buf + 4)) - 1)));
-					mask.s6_addr32[1] = 0;
-				}
-			}
-		}
-
-		for (i = 3; i >= 0; i--)
-			if ((xmitstat.sremoteip.s6_addr32[i] & mask.s6_addr32[i]) == ip->s6_addr32[i])
-				flag--;
-		if (!flag)
+		if (ip6_matchnet(&xmitstat.sremoteip, ip, *(buf + 9)))
 			return 1;
 		buf += 9;
 	}
@@ -272,16 +238,66 @@ domainmatch(const char *fqdn, const unsigned int len, const char **list)
  * @mask: the network mask, must be 8 <= netmask <= 32
  */
 int
-ip4_matchnet(const struct in_addr *ip, const struct in_addr *net, const int mask)
+ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigned char mask)
 {
 	struct in_addr m;
 	/* constuct a bit mask out of the net length.
-		* remoteip and ip are network byte order, it's easier
-		* to convert mask to network byte order than both
-		* to host order. It's ugly, isn't it? */
+	 * remoteip and ip are network byte order, it's easier
+	 * to convert mask to network byte order than both
+	 * to host order. It's ugly, isn't it? */
 	m.s_addr = htonl(-1 - ((1 << (32 - mask)) - 1));
 
-	return ((ip->s_addr & m.s_addr) == net->s_addr);
+	return ((ip->s6_addr32[3] & m.s_addr) == net->s_addr);
+}
+
+/**
+ * ip6_matchnet - check if an IPv6 address is in a given network
+ *
+ * @ip: the IP address to check (network byte order)
+ * @net: the network to check (network byte order)
+ * @mask: the network mask, must be 8 <= netmask <= 128
+ */
+int
+ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsigned char mask)
+{
+	struct in6_addr maskv6;
+	int flag = 4, i;
+
+	/* construct a bit mask out of the net length */
+	if (mask < 32) {
+		maskv6.s6_addr32[0] = 0xffffffff;
+		maskv6.s6_addr32[1] = 0xffffffff;
+		maskv6.s6_addr32[2] = 0xffffffff;
+		/* remoteip and ip are network byte order, it's easier
+			* to convert mask to network byte order than both
+			* to host order. We do it at this point because we only
+			* need to change one word per mask, the other 3 will stay
+			* the same before and after htonl() */
+		maskv6.s6_addr32[3] = htonl(-1 - (1 << ((32 - mask) - 1)));
+	} else {
+		maskv6.s6_addr32[3] = 0;
+		if (mask < 64) {
+			maskv6.s6_addr32[0] = 0xffffffff;
+			maskv6.s6_addr32[1] = 0xffffffff;
+			maskv6.s6_addr32[2] = htonl(-1 - (1 << ((64 - mask) - 1)));
+		} else {
+			maskv6.s6_addr32[2] = 0;
+			if (mask < 96) {
+				maskv6.s6_addr32[0] = 0xffffffff;
+				maskv6.s6_addr32[1] = htonl(-1 - (1 << ((96 - mask) - 1)));
+			} else {
+				maskv6.s6_addr32[0] = htonl(-1 - (1 << ((128 - mask) - 1)));
+				maskv6.s6_addr32[1] = 0;
+			}
+		}
+	}
+
+	for (i = 3; i >= 0; i--) {
+		if ((ip->s6_addr32[i] & maskv6.s6_addr32[i]) == net->s6_addr32[i]) {
+			flag--;
+		}
+	}
+	return !flag;
 }
 
 /**
@@ -295,6 +311,7 @@ lookupipbl(int fd)
 	int i;
 	char *a;		/* buffer to read file into */
 
+#warning FIXME: do not load file into memory, use mmap
 	if ( ( i = lloadfilefd(fd, &a, 0) ) < 0 )
 		return i;
 	
