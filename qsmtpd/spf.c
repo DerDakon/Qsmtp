@@ -505,6 +505,305 @@ spfip6(char *domain)
 	return ip6_matchnet(&xmitstat.sremoteip, &net, (unsigned char) (u & 0xff)) ? SPF_PASS : SPF_NONE;
 }
 
+/**
+ * spf_makroparam - parse the options in an SPF macro
+ *
+ * @token: token to parse
+ * @num: DIGIT
+ * @r: if reverse is given
+ * @delim: bitmask of delimiters
+ *
+ * returns: number of bytes parsed, -1 on error
+ */
+int
+spf_makroparam(char *token, int *num, int *r, int *delim)
+{
+	int res = 0;
+	const char *t;
+
+	*r = 0;
+	*num = -1;
+	*delim = 1;	/* '.' is the default delimiter */
+
+	if ((*token >= '0') && (*token <= '9')) {
+		*num = 0;
+		while ((*token >= '0') && (*token <= '9')) {
+			*num = *num * 10 + (*token++ - '0');
+			res++;
+		}
+		if (!*num) {
+			errno = EINVAL;
+			return -1;
+		}
+	} else {
+		*num = 255;
+	}
+	if (*token == 'r') {
+		token++;
+		res++;
+		*r = 1;
+	}
+	do {
+		int k;
+		const char *delims = ".-+,/_=";
+
+		t = token;
+		for (k = 0; k < 7; k++) {
+			if (delims[k] == *token) {
+				*delim |= (1 << k);
+				token++;
+				res++;
+			}
+		}
+	} while (t != token);
+
+	return res;
+}
+
+/**
+ * spf_appendmakro - append a makro content to the result
+ *
+ * @res: result string
+ * @l: current length of res
+ * @s: the raw string to append (does not have to be '\0'-terminated)
+ * @sl: strlen(s), must not be 0
+ * @num: DIGIT
+ * @r: reverse of not
+ * @delim: bit mask of delimiters
+ *
+ * returns: 0 on success, -1 on error
+ */
+int
+spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned int sl, int num, const int r, const int delim)
+{
+	int dc = 0;	/* how many delimiters we find */
+	unsigned int nl;
+	char *start;
+	char *r2;
+	unsigned int oldl = *l;
+	char *news = malloc(sl + 1);
+
+	if (!news)
+		return -1;
+	memcpy(news, s, sl);
+/* first: go and replace all delimiters with '.' */
+	/* delim == 1 means only '.' is delimiter so we only have to count them */
+	if (delim == 1) {
+		unsigned int j = sl;
+
+		while (--j) {
+			 if (s[j] == '.') {
+			 	dc++;
+			 }
+		}
+	} else {
+		const char *delims = ".-+,/_=";
+		unsigned int k;
+		int maxdelim = 0, mindelim = 0;
+
+/* find out the first and last delimiter in delim mask so we can avoid useless loops */
+		while ((1 << maxdelim) <= delim)
+			maxdelim++;
+		maxdelim--;
+		while (!((1 << mindelim) & delim))
+			mindelim++;
+
+		for (k = 0; k < sl; k++) {
+			int j;
+
+			for (j = mindelim; j <= maxdelim; j++) {
+				if (((1 << j) & delim) && (s[k] == delims[j])) {
+					news[k] = '.';
+					dc++;
+					break;
+				}
+			}
+		}
+	}
+	if (r) {
+#warning FIXME: add reverse support here
+		nl = 0;
+	} else {
+		start = news;
+		if (dc >= num) {
+			while (dc-- >= num) {
+				start = strchr(start, '.') + 1;
+			}
+			nl = strlen(start);
+		} else {
+			nl = sl;
+		}
+	}
+
+	*l += nl;
+	r2 = realloc(*res, *l);
+	if (!r2) {
+		free(*res);
+		free(news);
+		return -1;
+	}
+	*res = r2;
+	memcpy(*res + oldl, start, nl);
+	free(news);
+
+	return 0;
+}
+
+#define APPEND(addlen, addstr) \
+	{\
+		char *r2;\
+		unsigned int oldl = *l;\
+		\
+		*l += addlen;\
+		r2 = realloc(*res, *l);\
+		if (!r2) { free(*res); return -1;}\
+		*res = r2;\
+		memcpy(*res + oldl, addstr, addlen);\
+	}
+
+#define PARSEERR	{free(res); return SPF_HARD_ERROR;}
+
+#define PARAMCHK	\
+	{\
+		offs = spf_makroparam(++p, &num, &r, &delim);\
+		p += offs;\
+		if ((offs < 0) || (*p != '}'))\
+			PARSEERR;\
+	}
+
+/**
+ * spf_makroletter - expand a SPF makro letter
+ *
+ * @p: the token to parse
+ * @domain: the current domain string
+ * @exp: if this is an exp string
+ * @res: the resulting string is stored here
+ * @l: offset into res
+ *
+ * returns: number of bytes parsed, -1 on error
+ */
+int
+spf_makroletter(char *p, const char *domain, int exp, char **res, unsigned int *l)
+{
+	char *q = p;
+	int offs, num, r, delim;
+
+	switch (*p) {
+		case 's':	PARAMCHK;
+				if (xmitstat.mailfrom.len) {
+					if (spf_appendmakro(res, l, xmitstat.mailfrom.s, xmitstat.mailfrom.len,
+										num, r, delim))
+						return -1;
+				} else {
+#warning FIXME: default sender missing
+				}
+				break;
+		case 'l':	PARAMCHK;
+				if (xmitstat.mailfrom.len) {
+					char *at = strchr(xmitstat.mailfrom.s, '@');
+
+					if (spf_appendmakro(res, l, xmitstat.mailfrom.s, at - xmitstat.mailfrom.s,
+										num, r, delim)) {
+						return -1;
+					}
+				} else {
+					/* we can do it the short way here, this can't be changed by any combination of
+					 * makro flags */
+					APPEND(10, "postmaster");
+				}
+				break;
+		case 'o':	PARAMCHK;
+				if (xmitstat.mailfrom.len) {
+					char *at = strchr(xmitstat.mailfrom.s, '@');
+					unsigned int offset =
+							at - xmitstat.mailfrom.s + 1;
+
+					if (spf_appendmakro(res, l, at + 1, xmitstat.mailfrom.len - offset, num, r, delim))
+						return -1;
+				} else {
+					if (spf_appendmakro(res, l, xmitstat.helostr.s, xmitstat.helostr.len, num, r, delim))
+						return -1;
+				}
+				break;
+		case 'd':	PARAMCHK;
+				if (spf_appendmakro(res, l, domain, strlen(domain), num, r, delim))
+					return -1;
+				break;
+		case 'c':	if (!exp)
+					PARSEERR;
+				/* fallthrough */
+		case 'i':	PARAMCHK;
+				if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
+					char ip[INET_ADDRSTRLEN];
+
+					inet_ntop(AF_INET,
+							&(xmitstat.sremoteip.s6_addr32[3]),
+							ip, sizeof(ip));
+
+					if (spf_appendmakro(res, l, ip, strlen(ip), num, r, delim))
+						return -1;
+				} else {
+					char ip[64];
+
+					dotip6(ip);
+					ip[63] = '\0';
+					if (spf_appendmakro(res, l, ip, 63, num, r, delim))
+						return -1;
+				}
+				break;
+		case 't':	if (!exp) {
+					PARSEERR;
+				}
+				/* fallthrough */
+		case 'p':	PARAMCHK;
+				if (xmitstat.remotehost.len) {
+					if (spf_appendmakro(res, l, xmitstat.remotehost.s, xmitstat.remotehost.len,
+								num, r, delim))
+						return -1;
+				} else {
+					APPEND(7, "unknown");
+				}
+				break;
+		case 'r':	if (!exp) {
+					PARSEERR;
+				}
+				PARAMCHK;
+				p++;
+				APPEND(heloname.len, heloname.s);
+				break;
+		case 'v':	PARAMCHK;
+				if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
+					if (delim & 2) {
+						if (r) {
+							if (num == 1) {
+								APPEND(2, "in");
+							} else {
+								APPEND(7, "addr.in");
+							}
+						} else {
+							if (num == 1) {
+								APPEND(4, "addr");
+							} else {
+								APPEND(7, "in.addr");
+							}
+						}
+					} else {
+						APPEND(7, "in-addr");
+					}
+				} else {
+					APPEND(3, "ip6");
+				}
+				break;
+		case 'h':	PARAMCHK;
+				APPEND(10, "deprecated");
+				break;
+		default:	PARAMCHK;
+				APPEND(7, "unknown");
+	}
+	return p - q;
+}
+
+#undef APPEND
 #define APPEND(addlen, addstr) \
 	{\
 		char *r2;\
@@ -516,7 +815,6 @@ spfip6(char *domain)
 		res = r2;\
 		memcpy(res + oldl, addstr, addlen);\
 	}
-#define PARSEERR	{free(res); return SPF_HARD_ERROR;}
 
 /**
  * spf_makro - expand a SPF makro
@@ -535,11 +833,13 @@ spf_makro(char *token, const char *domain, int exp, char **result)
 	char *p;
 
 	if (!(p = strchr(token, '%'))) {
-		res = malloc(strlen(token));
+		unsigned int l = strlen(token) + 1;
+
+		res = malloc(l);
 		if (!res) {
 			return -1;
 		}
-		memcpy(res, token, strlen(token));
+		memcpy(res, token, l);
 	} else {
 		unsigned int l = p - token;
 
@@ -550,6 +850,7 @@ spf_makro(char *token, const char *domain, int exp, char **result)
 		memcpy(res, token, l);
 		do {
 			char *oldp;
+			int z;
 
 			switch (*++p) {
 				case '-':	APPEND(3, "%20");
@@ -561,131 +862,28 @@ spf_makro(char *token, const char *domain, int exp, char **result)
 				case '%':	APPEND(1, "%");
 						p++;
 						break;
-				case '{':	switch (*++p) {
-							case 's':	if (*++p != '}') {
-										PARSEERR;
-									}
-									if (xmitstat.mailfrom.len) {
-										APPEND(xmitstat.mailfrom.len,
-												xmitstat.mailfrom.s);
-									} else {
-									}
-									p++;
-									break;
-							case 'l':	if (*++p != '}') {
-										PARSEERR;
-									}
-									if (xmitstat.mailfrom.len) {
-										char *at = strchr(xmitstat.mailfrom.s, '@');
-	
-										APPEND(at - xmitstat.mailfrom.s,
-												xmitstat.mailfrom.s);
-									} else {
-										APPEND(10, "postmaster");
-									}
-									p++;
-									break;
-							case 'o':	if (*++p != '}') {
-										PARSEERR;
-									}
-									if (xmitstat.mailfrom.len) {
-										char *at = strchr(xmitstat.mailfrom.s, '@');
-										unsigned int offset =
-												at - xmitstat.mailfrom.s + 1;
-	
-										APPEND(xmitstat.mailfrom.len - offset,
-												at + 1);
-									} else {
-										APPEND(xmitstat.helostr.len,
-												xmitstat.helostr.s);
-									}
-									p++;
-									break;
-							case 'd':	switch (*++p) {
-										case '}':	APPEND(strlen(domain), domain);
-												break;
-										default:	PARSEERR;
-									}
-									break;
-							case 'c':
-							case 'i':	if ((*p == 'c') && !exp) {
-										PARSEERR;
-									}
-									if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
-										char *r;
-
-										r = realloc(res, l + INET_ADDRSTRLEN);
-										if (!r) {
-											free(res);
-											return -1;
-										}
-										if (*++p == 'r') {
-											if (*++p != '}') {
-												PARSEERR;
-											}
-											l += reverseip4(res + l);
-										} else if (*p == '}') {
-											inet_ntop(AF_INET,
-												&(xmitstat.sremoteip.s6_addr32[3]),
-												res, INET_ADDRSTRLEN);
-											l += reverseip4(res + l);
-										} else {
-											PARSEERR;
-										}
-									} else {
-									}
-							case 't':	if (!exp) {
-										PARSEERR;
-									}
-							case 'p':	if (*++p != '}') {
-										PARSEERR;
-									}
-									p++;
-									if (xmitstat.remotehost.len) {
-										APPEND(xmitstat.remotehost.len,
-												xmitstat.remotehost.s);
-									} else {
-										APPEND(7, "unknown");
-									}
-									break;
-							case 'r':	if (!exp) {
-										PARSEERR;
-									}
-									if (*++p != '}') {
-										PARSEERR;
-									}
-									p++;
-									APPEND(heloname.len, heloname.s);
-									break;
-							case 'v':	if (*++p != '}') {
-										PARSEERR;
-									}
-									p++;
-									if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
-										APPEND(7, "in-addr");
-									} else {
-										APPEND(3, "ip6");
-									}
-									break;
-							case 'h':	if (*++p != '}') {
-										PARSEERR;
-									}
-									p++;
-									APPEND(10,"deprecated");
-									break;
-							default:	APPEND(7,"unknown");
+				case '{':	z = spf_makroletter(++p, domain, exp, &res, &l);
+						if (z < 0) {
+							return z;
+						} else if (!z || (*(p + z) != '}')) {
+							PARSEERR;
 						}
+						p += z + 1;
 						break;
 				default:	APPEND(1, "%");
 						/* no p++ here! */
 			}
-			oldp = p;
-			p = strchr(p, '%');
-			APPEND(p - oldp - 1, oldp);
+			if (*p != '%') {
+				oldp = p;
+				p = strchr(p, '%');
+				if (p)
+					APPEND(p - oldp, oldp);
+			}
 		} while (p);
-		APPEND(strlen(p) + 1, p);
+		if (p)
+			APPEND(strlen(p) + 1, p);
 	}
-	* result = res;
+	*result = res;
 	return 0;
 }
 
