@@ -8,7 +8,7 @@ LDFLAGS=-lssl -lcrypto #-lefence
 
 export SHELL CC CFLAGS LD LDFLAGS
 
-SUBDIRS = lib callbacks qsmtpd
+SUBDIRS = lib callbacks qsmtpd tools
 
 TARGETS = targets/Qsmtpd targets/addipbl
 
@@ -26,7 +26,7 @@ subdirs:
 vpath %.h ./include
 
 clean:
-	rm -f *.o *~ \#* $(TARGETS) targets/addipbl.o
+	rm -f *.o *~ \#* $(TARGETS)
 	for dir in $(SUBDIRS); do\
 		$(MAKE) -C $$dir clean; \
 	done
@@ -41,10 +41,10 @@ targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
 	$(LD) $(LDFLAGS) -o $@ $^
 
-targets/addipbl: targets/addipbl.o
+targets/addipbl: tools/addipbl.o
 	$(LD) $(LDFLAGS) -o $@ $^
 
-targets/addipbl.o: targets/addipbl.c
+tools/addipbl.o: tools/addipbl.c
 
 #FIXME: the destination directory must be fixed in case someone modifies qsmtpd.c::auto_qmail
 install:
