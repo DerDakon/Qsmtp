@@ -88,8 +88,6 @@ out:
 	commstat = 0;
 }
 
-#define WRITE(name, var) if ((var)) {if (fprintf(fcfd, "%s=%li\n", name, var) < 0) goto err; len = 1;}
-
 static void
 writefc(void)
 {
@@ -107,7 +105,11 @@ writefc(void)
 	}
 
 	for (int i = 0; params[i].name; i++) {
-		WRITE(params[i].name, params[i].value);
+		if (params[i].value) {
+			if (fprintf(fcfd, "%s=%li\n", params[i].name, params[i].value) < 0)
+				goto err;
+			len = 1;
+		}
 	}
 	while ( (e = fclose(fcfd)) && (errno == EINTR));
 	if (e)
@@ -138,8 +140,6 @@ err:
 	fclose(fcfd);
 	err("error writing to filterconf tempfile");
 }
-
-#undef WRITE
 
 static void __attribute__ ((noreturn))
 quit(void)
@@ -174,13 +174,12 @@ echo(void)
 	}
 }
 
-#define SHOW(name, val) if (printf("%s=%li\n", name, val) < 0) goto err
-
 static void
 show(void)
 {
 	for (int i = 0; params[i].name; i++) {
-		SHOW(params[i].name, params[i].value);
+		if (printf("%s=%li\n", params[i].name, params[i].value) < 0)
+			goto err;
 	}
 	commstat = 0;
 	return;
