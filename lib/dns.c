@@ -46,7 +46,7 @@ ask_dnsmx(const char *name, struct ips **result)
 
 		while (r + l > s) {
 			struct ips *p;
-			int pri, rc;
+			int rc;
 
 			rc = ask_dnsaaaa(s + 2, &p);
 			if (rc < 0) {
@@ -57,8 +57,8 @@ ask_dnsmx(const char *name, struct ips **result)
 				return 2;
 			} else if (!rc) {
 				struct ips *u;
+				int pri = ntohs(*((unsigned short *) s));
 
-				pri = ntohs(*((unsigned short *) s));
 				/* add the new results to the list */
 				*q = p;
 				/* set priority for each of the new entries */
