@@ -933,7 +933,7 @@ next:
 	} else {
 		xmitstat.fromdomain = 0;
 		xmitstat.frommx = NULL;
-		i = check_host(xmitstat.helostr.s);
+		i = check_host(xmitstat.helostr.len ? xmitstat.helostr.s : xmitstat.remotehost);
 	}
 	if (i < 0)
 		return errno;
