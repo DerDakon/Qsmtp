@@ -1,5 +1,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
@@ -88,9 +89,34 @@ hascolon(const char *s)
 }
 
 void
-getmxlist(const char *rhost, struct ips **mx)
+getmxlist(char *rhost, struct ips **mx)
 {
 	char **smtproutes, *smtproutbuf;
+
+	if (rhost[0] == '[') {
+		size_t l = strlen(rhost);
+
+		if (rhost[l - 1] == ']') {
+			*mx = malloc(sizeof(**mx));
+			if (!*mx) {
+				err_mem();
+			}
+
+			rhost[l - 1] = '\0';
+			if (inet_pton(AF_INET6, rhost + 1, &((*mx)->addr)) > 0) {
+				(*mx)->priority = 0;
+				(*mx)->next = NULL;
+				return;
+			} else if (inet_pton(AF_INET, rhost + 1, &((*mx)->addr.s6_addr32[3])) > 0) {
+				memset((*mx)->addr.s6_addr32, 0, 12);
+				(*mx)->priority = 0;
+				(*mx)->next = NULL;
+				return;
+			}
+		}
+		log_write(LOG_ERR, "parse error in first argument");
+		exit(0);
+	}
 
 	if (!loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutbuf, &smtproutes, hascolon) && smtproutbuf) {
 		char *target;
@@ -142,7 +168,7 @@ getmxlist(const char *rhost, struct ips **mx)
 	if (!*mx) {
 		if (ask_dnsmx(rhost, mx)) {
 			const char *logmsg[] = {"cannot find a mail exchanger for ", rhost, NULL};
-	
+
 			log_writen(LOG_ERR, logmsg);
 			exit(0);
 		}

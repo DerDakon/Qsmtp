@@ -4,6 +4,6 @@
 #include "dns.h"
 
 extern void tryconn(struct ips *);
-extern void getmxlist(const char *, struct ips **);
+extern void getmxlist(char *, struct ips **);
 
 #endif
