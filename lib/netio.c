@@ -226,8 +226,11 @@ netwrite(const char *s)
 	else if (!retval)
 		dieerror(ETIMEDOUT);
 
-	if (write(1, s, l) < 0)
+	if (write(1, s, l) < 0) {
+		if (errno == EPIPE)
+			dieerror(ECONNRESET);
 		return -1;
+	}
 	return 0;
 }
 
