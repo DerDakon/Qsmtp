@@ -186,7 +186,7 @@ spflookup(const char *domain, const int rec)
 			char *ex;
 
 #warning FIXME: this must be case insensitive
-			if ((ex = strstr(txt, "exp="))) {
+			if ( (ex = strstr(txt, "exp=")) ) {
 				int ip4, ip6;
 
 				if ((i = spf_domainspec(domain, ex, &xmitstat.spfexp, &ip4, &ip6))) {
@@ -223,7 +223,7 @@ spfreceived(const int fd, const int spf) {
 	WRITE(fd, "Received-SPF: ", 14);
 	WRITE(fd, heloname.s, heloname.len);
 	if (spf == SPF_HARD_ERROR) {
-		WRITE(fd, ": syntax error while parsing SPF entry for", 42);
+		WRITE(fd, ": syntax error while parsing SPF entry for ", 43);
 		WRITE(fd, fromdomain, strlen(fromdomain));
 	} else if (spf == SPF_TEMP_ERROR) {
 		WRITE(fd, ": can't get SPF entry for ", 26);
