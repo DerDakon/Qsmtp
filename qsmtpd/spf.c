@@ -784,10 +784,18 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 						return -1;
 				}
 				break;
+		case 'T':
 		case 't':	if (!ex) {
 					PARSEERR;
+				} else {
+					char *t = ultostr(time(NULL));
+
+					if (!t)
+						return -1;
+					APPEND(strlen(t), t);
+					free(t);
 				}
-				/* fallthrough */
+				break;
 		case 'p':	if (xmitstat.remotehost.len) {
 					if (spf_appendmakro(res, l, xmitstat.remotehost.s, xmitstat.remotehost.len,
 								num, r, delim))
