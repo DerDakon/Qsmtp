@@ -401,7 +401,7 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 			fd = qmexists(&dotqm, localpart->s, localpart->len, 3);
 		}
 
-		if (fd == -1) {
+		if (fd < 0) {
 			char *p;
 			/* if username contains '-' there may be
 			  .qmail-partofusername-default */
@@ -452,11 +452,8 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 				buff[r] = 0;
 				while (r && (buff[r - 1] == '\n'))
 					buff[--r] = 0;
-				if (!strcmp(buff, vpopbounce))
-					/* mail would be bounced by .qmail-default */
-					return 0;
-				/* mail would be catched by .qmail-default */
-				return 2;
+				/* mail would be bounced or catched by .qmail-default */
+				return strcmp(buff, vpopbounce) ? 2 : 0;
 			} else {
 				/* we can't tell if this is a bounce .qmail-default -> accept the mail */
 				return 2;
@@ -919,18 +916,17 @@ next:
 	if (xmitstat.mailfrom.len) {
 		/* strchr can't return NULL here, we have checked xmitstat.mailfrom.s before */
 		xmitstat.fromdomain = ask_dnsmx(strchr(xmitstat.mailfrom.s, '@') + 1, &xmitstat.frommx);
-		/* if this fails it's no problem */
 		if (xmitstat.fromdomain < 0)
 			return errno;
-		if (!xmitstat.fromdomain) {
-			xmitstat.spf = spflookup(strchr(xmitstat.mailfrom.s, '@') + 1, 0);
-			if (xmitstat.spf < 0)
-				return errno;
-		}
+		i = check_host(strchr(xmitstat.mailfrom.s, '@') + 1);
 	} else {
 		xmitstat.fromdomain = 0;
 		xmitstat.frommx = NULL;
+		i = check_host(xmitstat.helostr.s);
 	}
+	if (i < 0)
+		return errno;
+	xmitstat.spf = (i & 0x0f);
 	badbounce = 0;
 	goodrcpt = 0;
 	return netwrite("250 2.1.5 ok\r\n") ? errno : 0;
@@ -939,24 +935,7 @@ next:
 int
 smtp_vrfy(void)
 {
-/*	int i = 0;
-	char *more = NULL;
-
-	i = addrparse(1, &(xmitstat.mailfrom), &more, NULL);
-	if (i > 0)
-		return i;
-	} else if (!i && xmitstat.authname && !more) {
-		const char *msg[] = "250 user <", xmitstat.mailfrom.s, "> exists", NULL};
-		if (net_writen(msg))
-			return errno;
-	} else if (!i && xmitstat.authname && !more) {
-		const char *msg[] = "250 user <", xmitstat.mailfrom.s, "> exists", NULL};
-		if (net_writen(msg))
-			return errno;
-	} else */
-		if (netwrite("252 send some mail, I'll do my very best\r\n"))
-			return errno;
-	return 0;
+	return netwrite("252 send some mail, I'll do my very best\r\n") ? errno : 0;
 }
 
 const char *noqueue = "451 4.3.2 can not connect to queue\r\n";
