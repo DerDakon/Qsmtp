@@ -194,7 +194,7 @@ helovalid(const char *helo)
 		}
 	}
 
-	if ( (rc = newstr(&xmitstat.helostr, strlen(helo))) )
+	if ( (rc = newstr(&xmitstat.helostr, strlen(helo) + 1)) )
 		return rc;
 	/* +5-4=+1: also copy the '\0' to the new string */
 	memcpy(xmitstat.helostr.s, helo, xmitstat.helostr.len--);
