@@ -182,7 +182,7 @@ spflookup(const char *domain, const int rec)
 		if (SPF_FAIL(prefix)) {
 			char *ex;
 
-#warning FIXME: this must be case invalid
+#warning FIXME: this must be case insensitive
 			if ((ex = strstr(txt, "exp="))) {
 				int ip4, ip6;
 
