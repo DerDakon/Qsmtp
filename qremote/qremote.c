@@ -19,6 +19,8 @@
 int socketd;
 static struct string heloname;
 static unsigned int smtpext;
+static char *rhost;
+static size_t rhostlen;
 
 void __attribute__ ((noreturn))
 err_mem(void)
@@ -392,6 +394,21 @@ readerr:
 #warning FIXME: add error handling for read errors
 }
 
+/**
+ * err_mail - handle error reply to MAIL FROM command
+ *
+ * @s: status code returned by server
+ */
+static void
+err_mail(const int s)
+{
+	write(1, s > 500 ? "D" : "Z", 1);
+	write(1, "Connected to ", 13);
+	write(1, rhost, rhostlen);
+	/* write text including 0 byte */
+	write(1, " but sender was rejected", 25);
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -428,6 +445,17 @@ main(int argc, char *argv[])
 		}
 	} while (greeting());
 
+	if (ask_dnsname(&mx->addr, &rhost)) {
+		if (errno != ENOMEM) {
+			rhost = malloc(INET6_ADDRSTRLEN);
+		}
+		if (errno == ENOMEM) {
+			err_mem();
+		}
+		/* there can't be any errors here ;) */
+		(void) inet_ntop(AF_INET6, &mx->addr, rhost, INET6_ADDRSTRLEN);
+	}
+	rhostlen = strlen(rhost);
 	freeips(mx);
 
 	netmsg[0] = "MAIL FROM:<";
@@ -456,12 +484,14 @@ main(int argc, char *argv[])
 			net_writen(netmsg);
 		}
 /* MAIL FROM: reply */
-		if (checkreply(NULL) >= 300) {
-#warning FIXME: write error message to stdout
-			for (i = 4; i < argc; i++)
+		if ( (i = checkreply(NULL)) >= 300) {
+			err_mail(i);
+
+			for (i = rcptcount; i > 0; i--)
 				checkreply(NULL);
 			quit();
 		}
+/* RCPT TO: replies */
 		for (i = 4; i < argc; i++) {
 			if (checkreply("rsh") < 300)
 				rcptstat = 0;
@@ -471,7 +501,8 @@ main(int argc, char *argv[])
 	} else {
 /* server does not allow pipelining: we must do this one by one */
 		net_read();
-		write(1, linein, linelen);write(1,"\n",1);
+		if ( (i = checkreply(NULL)) >= 300)
+			err_mail(i);
 		netmsg[0] = "RCPT TO:<";
 		rcptstat = 1;	/* this means: all recipients have been rejected */
 		for (i = 4; i < argc; i++) {
