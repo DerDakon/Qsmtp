@@ -13,5 +13,8 @@ clean:
 
 testspf.o: qsmtpd.h antispam.h sstring.h
 
+fcshell.o: fcshell.c
+	$(CC) $(CFLAGS) --std=c99 $<
+
 %.o: %.c
 	$(CC) $(CFLAGS) $<
