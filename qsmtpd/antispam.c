@@ -178,7 +178,7 @@ check_ip4(const unsigned char *buf, const unsigned int len)
 /**
  * check_ip6 - check an IPv6 address against a local blocklist
  *
- * @buf: buffer of local blocklist, each entry is ? bytes long
+ * @buf: buffer of local blocklist, each entry is 9 bytes long
  * @len: length of the buffer
  *
  * returns: 1 if match, 0 if not, -1 if data malformed
@@ -188,14 +188,14 @@ check_ip6(const unsigned char *buf, const unsigned int len)
 {
 	unsigned int i;
 
-	if (len % 9)
+	if (len % 17)
 		return -1;
-	for (i = 0; i < len; i += 9) {
+	for (i = 0; i < len; i += 17) {
 		const struct in6_addr *ip = (struct in6_addr *) buf;
 
-		if ((*(buf + 9) < 8) || (*(buf + 9) > 128))
+		if ((*(buf + 16) < 8) || (*(buf + 16) > 128))
 			return -1;
-		if (ip6_matchnet(&xmitstat.sremoteip, ip, *(buf + 9)))
+		if (ip6_matchnet(&xmitstat.sremoteip, ip, *(buf + 16)))
 			return 1;
 		buf += 9;
 	}
