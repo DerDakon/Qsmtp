@@ -542,6 +542,12 @@ err_write:
 	}
 	while (close(fd1[1]) && (errno == EINTR));
 	freedata();
+
+	while (!((linelen == 1) && (linein[0] == '.'))) {
+		if (net_read())
+			break;
+	}
+
 	if ((rc == ENOSPC) || (rc == EFBIG)) {
 		rc = EMSGSIZE;
 	} else if ((errno != ENOMEM) && (errno != EMSGSIZE)) {
