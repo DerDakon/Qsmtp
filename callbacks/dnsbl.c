@@ -47,9 +47,9 @@ cb_dnsbl(const struct userconf *ds, char **logmsg, int *t)
 				free(a);
 				free(b);
 				free(txt);
-				return -1;
+				return fd;
 			}
-			j = 0;
+			j = fd;
 			errno = 0;
 		} else {
 			char *wtxt;
