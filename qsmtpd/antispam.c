@@ -133,15 +133,12 @@ static unsigned int tarpitcount = 0;	/* number of extra seconds from tarpit */
 void
 tarpit(void)
 {
+	if (data_pending())
+		return;
 	if (ssl) {
-		int i;
-
 		/* SSL encoding is too much overhead for worms and friends, so at the other side we can expect a real
 		 * mail server. We just have to check here if there is data pending (he's using PIPELINING) or not. */
-		i = SSL_pending(ssl);
-		if (i > 0) {
-			sleep(5 + tarpitcount);
-		}
+		sleep(5 + tarpitcount);
 	} else {
 		fd_set rfds;
 		struct timeval tv = {
