@@ -675,13 +675,13 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		const char *delims = ".-+,/_=";
 		char actdelim[8];
 		unsigned int k = 0;
-		int l;
+		int m;
 		char *d = news;
 
 		/* This constructs the list of actually used delimiters. */
-		for (l = 7; l >= 0; l--) {
-			if (delim & (1 << l))
-				actdelim[k++] = delims[l];
+		for (m = 7; m >= 0; m--) {
+			if (delim & (1 << m))
+				actdelim[k++] = delims[m];
 		}
 		actdelim[k] = '\0';
 
