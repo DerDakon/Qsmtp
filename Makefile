@@ -44,10 +44,7 @@ targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.
 		qsmtpd/vpopmail.o qsmtpd/data.o qsmtpd/addrsyntax.o \
 		lib/dns.o lib/control.o lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o \
 		lib/match.o lib/log.o lib/netio.o \
-		callbacks/badmailfrom.o callbacks/dnsbl.o callbacks/badcc.o callbacks/usersize.o \
-		callbacks/rcpt_cbs.o callbacks/boolean.o callbacks/fromdomain.o \
-		callbacks/check2822.o callbacks/ipbl.o callbacks/spf.o callbacks/soberg.o \
-		callbacks/helo.o callbacks/forceesmtp.o callbacks/namebl.o \
+		callbacks/rcptfilters.a \
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 

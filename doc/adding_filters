@@ -30,15 +30,14 @@ To add your own recipient spamfilter function just follow this steps:
    -the logmsg parameter will not be freed so this has to be a constant. If you
     want to log something dynamically or not fitting in the given logmsg use
     log_write{,n} yourself and leave *logmsg alone
-3. add your function to callbackst/rcpt_cbs.c at two points: add it to the list
-   at the top of the file (preferably as the last entry) and add it to the
+3. add your function to callbacks/rcpt_filters.c at two points: add it to the
+   list at the top of the file (preferably as the last entry) and add it to the
    array at the bottom of the file. Here you should choose a point you find
    useful. It should be good practise to do all offline checks before the first
-   only check. All checks that do not make any network traffic themself (not
+   online check. All checks that do not make any network traffic themself (not
    counting writing an error message) are offline checks. DNS lookups, asking
    other mailserver and so on are online checks.
-4. add your file to TARGETS in callbacks/Makefile
-5. add your file to the dependencies of targets/qsmtpd in Makefile
-6. test it
-7. if it really works write a bit of documentation and send it to me so I can
+4. add your file to OBJS in callbacks/Makefile
+5. test it
+6. if it really works write a bit of documentation and send it to me so I can
    review it and include it if I find it useful.

@@ -1,4 +1,6 @@
-TARGETS = rcpt_cbs.o badmailfrom.o check2822.o dnsbl.o ipbl.o badcc.o fromdomain.o spf.o boolean.o soberg.o \
+TARGETS = rcptfilters.a
+
+OBJS = rcpt_filters.o badmailfrom.o check2822.o dnsbl.o ipbl.o badcc.o fromdomain.o spf.o boolean.o soberg.o \
 	  helo.o usersize.o forceesmtp.o namebl.o
 
 .phony: all clean
@@ -7,10 +9,10 @@ default: all
 
 vpath %.h ../include/
 
-all: $(TARGETS)
+all: $(OBJS) $(TARGETS)
 
 clean:
-	rm -f $(TARGETS) *~ \#*
+	rm -f $(TARGETS) $(OBJS) *~ \#*
 
 badmailfrom.o: control.h qsmtpd.h log.h
 
@@ -34,7 +36,7 @@ soberg.o: netio.h qsmtpd.h
 
 usersize.o: netio.h qsmtpd.h
 
-rcpt_cbs.o: log.h
+rcpt_filters.o: log.h
 
 forceesmtp.o: antispam.h control.h qsmtpd.h
 
@@ -42,3 +44,5 @@ namebl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
 %.o: %.c usercallback.h
 	$(CC) $(CFLAGS) $<
+
+rcptfilters.a: rcptfilters.a($(OBJS))
