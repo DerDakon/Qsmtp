@@ -1,4 +1,6 @@
 #include <sys/queue.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <stdio.h>
