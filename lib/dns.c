@@ -1,4 +1,3 @@
-#include <resolv.h>
 #include <errno.h>
 #include <string.h>
 #include "dns.h"
