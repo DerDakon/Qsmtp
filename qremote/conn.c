@@ -20,8 +20,28 @@ static char *pass;
 static int
 conn(const struct in6_addr remoteip)
 {
-	struct sockaddr_in6 sock;
 	int rc;
+#ifdef IPV4ONLY
+	struct sockaddr_in sock;
+
+	socketd = socket(PF_INET, SOCK_STREAM, 0);
+
+	if (socketd < 0)
+		return errno;
+
+	sock.sin_family = AF_INET;
+	sock.sin_port = 0;
+	sock.sin_addr.s_addr = INADDR_ANY;
+
+	rc = bind(socketd, (struct sockaddr *) &sock, sizeof(sock));
+
+	if (rc)
+		return errno;
+
+	sock.sin_port = htons(targetport);
+	sock.sin_addr.s_addr = remoteip.s6_addr32[3];
+#else
+	struct sockaddr_in6 sock;
 
 	socketd = socket(PF_INET6, SOCK_STREAM, 0);
 
@@ -41,6 +61,7 @@ conn(const struct in6_addr remoteip)
 
 	sock.sin6_port = htons(targetport);
 	sock.sin6_addr = remoteip;
+#endif
 
 	return connect(socketd, (struct sockaddr *) &sock, sizeof(sock)) ? errno : 0;
 }
@@ -61,6 +82,12 @@ tryconn(struct ips *mx)
 	while (1) {
 		unsigned int minpri = 65537;
 
+#ifdef IPV4ONLY
+		for (thisip = mx; thisip; thisip = thisip->next) {
+			if (!IN6_IS_ADDR_V4MAPPED(&thisip->addr))
+				thisip->priority = 65537;
+		}
+#endif
 		for (thisip = mx; thisip; thisip = thisip->next) {
 			if (thisip->priority < minpri)
 				minpri = thisip->priority;
