@@ -59,7 +59,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	if (!inbuf)
 		return -1;
 	j = 0;
-	while (j < oldlen) {
+	while (j < oldlen - 1) {
 		if ( ((i = read(fd, inbuf + j, oldlen - j)) < 0) && (errno != EINTR)) {
 			int e = errno;
 
