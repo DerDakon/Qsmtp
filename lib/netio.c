@@ -226,7 +226,7 @@ netwrite(const char *s)
  *          does not return on timeout, programm will be cancelled
  */
 int
-net_writen(const char **s)
+net_writen(const char *const *s)
 {
 	unsigned int i, len = 0;
 	/* RfC 2821, section 4.5.3: reply line
