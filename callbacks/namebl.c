@@ -55,9 +55,9 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 				memcpy(blname + dlen, a[i], alen);
 
 				rc = ask_dnsa(blname, NULL);
-				if (rc < 0)
+				if (rc < 0) {
 					goto out;
-				if (!rc) {
+				} else if (!rc) {
 					/* if there is any error here we just write the generic message to the client
 					* so that's no real problem for us */
 					dnstxt(&txt, blname);
