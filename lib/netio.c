@@ -202,16 +202,16 @@ netwrite(const char *s)
 		return 0;
 	}
 	FD_ZERO(&wfds);
-	FD_SET(1, &wfds);
+	FD_SET(socketd, &wfds);
 
-	retval = select(2, NULL, &wfds, NULL, &tv);
+	retval = select(socketd + 1, NULL, &wfds, NULL, &tv);
 
 	if (retval == -1)
 		return retval;
 	else if (!retval)
 		dieerror(ETIMEDOUT);
 
-	if (write(1, s, l) < 0) {
+	if (write(socketd, s, l) < 0) {
 		if (errno == EPIPE)
 			dieerror(ECONNRESET);
 		return -1;

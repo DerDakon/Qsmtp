@@ -263,7 +263,7 @@ int tls_init()
 
 	SSL_set_tmp_rsa_callback(myssl, tmp_rsa_cb);
 	SSL_set_tmp_dh_callback(myssl, tmp_dh_cb);
-	SSL_set_rfd(myssl, ssl_rfd = 0);
+	SSL_set_rfd(myssl, ssl_rfd = socketd);
 	SSL_set_wfd(myssl, ssl_wfd = 1);
 
 	if (netwrite("220 ready for tls\r\n"))

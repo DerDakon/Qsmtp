@@ -381,7 +381,6 @@ main(int argc, char *argv[])
 	}
 
 	dup2(1,5);
-	dup2(socketd,1);
 	dup2(socketd,0);
 
 /* for all MX entries we got: try to enable connection, check if the SMTP server wants us (sends 220 response) and

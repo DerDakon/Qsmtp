@@ -76,6 +76,7 @@ char *auth_check;			/* checkpassword or one of his friends for auth */
 char **auth_sub;			/* subprogram to be invoked by auth_check (usually /bin/true) */
 char **globalconf;			/* see usercallback.h */
 string heloname;			/* the fqdn to show in helo */
+int socketd = 1;			/* the descriptor where messages to network are written to */
 
 static long comstate = 0x001;		/* status of the command state machine, initialized to noop */
 
