@@ -81,7 +81,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 
 	i = 0;
 	while (i < oldlen) {
-		if (inbuf[i] == '#') {
+		if ((inbuf[i] == '#') && (!i || (inbuf[i - 1] != '\'))) {
 			/* this line contains a comment: strip it */
 			while ( (inbuf[i] != '0') && (inbuf[i] != '\n') )
 				inbuf[i++] = '\0';
