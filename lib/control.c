@@ -207,6 +207,16 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
 	return 0;
 }
 
+/**
+ * finddomainmm - mmap a file and search a domain entry in it
+ *
+ * @fd: file descriptor
+ * @domain: domain name to find
+ *
+ * returns: 1 on match, 0 if none, -1 on error
+ *
+ * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, '\r' in file will cause trouble
+ */
 int
 finddomainmm(int fd, const char *domain)
 {
@@ -279,9 +289,8 @@ finddomainmm(int fd, const char *domain)
 	} while (cur);
 
 	munmap(map, st.st_size);
-	while (close(fd)) {
+	while ((rc = close(fd))) {
 		if (errno != EINTR) {
-			rc = -1;
 			break;
 		}
 	}
