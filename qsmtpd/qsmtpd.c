@@ -65,7 +65,7 @@ static char **rcpthosts;		/* array of hosts to accept mail for */
 static char *vpopbounce;		/* the bounce command in vpopmails .qmail-default */
 static unsigned int rcptcount;		/* number of recipients in lists including rejected */
 static char *gcbuf;			/* buffer for globalconf array (see below) */
-static int relayclient;			/* flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
+int relayclient;			/* flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
 
 unsigned long sslauth;			/* if SMTP AUTH is only allowed after STARTTLS */
 unsigned long databytes;		/* maximum message size */
@@ -926,7 +926,7 @@ next:
 		xmitstat.frommx = NULL;
 		s = HELOSTR;
 	}
-	if ( !xmitstat.remotehost.len || !(i = finddomainmm(open("control/spffriends", O_RDONLY), xmitstat.remotehost.s))) {
+	if (!xmitstat.remotehost.len || !(i = finddomainmm(open("control/spffriends", O_RDONLY), xmitstat.remotehost.s))) {
 		i = check_host(s);
 		if (i < 0)
 			return errno;

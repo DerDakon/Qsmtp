@@ -140,7 +140,7 @@ queue_header(void)
 	i = strftime(datebuf, sizeof(datebuf), ">; %a, %d %b %Y %H:%M:%S %z\n", localtime(&ti));
 	WRITE(fd, datebuf, i);
 /* write "Received-SPF: " line */
-	if (!(xmitstat.authname.len || xmitstat.tlsclient)) {
+	if (!(xmitstat.authname.len || xmitstat.tlsclient) && (relayclient != 1)) {
 		if ( (rc = spfreceived(fd, xmitstat.spf)) )
 			return rc;
 	}
