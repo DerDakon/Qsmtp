@@ -434,13 +434,112 @@ editquit(const int type)
 	editwrite(type);
 }
 
+static void
+editadd(const int type)
+{
+	if (strchr(linein + 4, ' ')) {
+		puts("ERROR: command \"add\" only takes one parameter");
+		commstat = EINVAL;
+		return;
+	}
+
+	switch (type) {
+		case 0:
+		case 1:
+		case 2:	{
+				struct addrlist *newad = malloc(sizeof(*newad));
+
+				if (!newad)
+					goto nomem;
+#warning FIXME: all error handling for parameter is missing here
+				newad->address = malloc(strlen(linein + 4));
+				if (!newad->address) {
+					free(newad);
+					goto nomem;
+				}
+				memcpy(newad->address, linein + 4, strlen(linein + 4));
+				TAILQ_INSERT_TAIL(&editbuffer.buf.lhead, newad, entries);
+			}
+			break;
+		case 3: {
+				char *newbuf;
+				char *net;
+				struct in_addr ip;
+				unsigned char netlen;
+
+				net = strchr(linein + 4, '/');
+				if (net) {
+					unsigned int ui;
+
+					*net++ = '\0';
+					ui = strtoul(net, &net, 10);
+					if ((*net != '\n') || (ui < 8) || (ui > 32))
+						goto parse;
+					netlen = (ui & 0xff);
+				} else {
+					*(strchr(linein + 4, '\n')) = '\0';
+					netlen = 0;
+				}
+				if (!inet_pton(AF_INET, linein + 4, &ip))
+					goto parse;
+
+				newbuf  = realloc(editbuffer.buf.map.mem, editbuffer.buf.map.len + 5);
+				if (!newbuf)
+					goto nomem;
+				editbuffer.buf.map.mem = newbuf;
+				memcpy(newbuf + editbuffer.buf.map.len, &ip, 4);
+				memcpy(newbuf + editbuffer.buf.map.len + 4, &netlen, 1);
+				editbuffer.buf.map.len += 5;
+			}
+			break;
+		case 4: {
+				char *newbuf;
+				char *net;
+				struct in6_addr ip;
+				unsigned char netlen;
+
+				net = strchr(linein + 4, '/');
+				if (net) {
+					unsigned int ui;
+
+					*net++ = '\0';
+					ui = strtoul(net, &net, 10);
+					if ((*net != '\n') || (ui < 8) || (ui > 128))
+						goto parse;
+					netlen = (ui & 0xff);
+				} else {
+					netlen = 0;
+				}
+				if (!inet_pton(AF_INET6, linein + 4, &ip))
+					goto parse;
+
+				newbuf  = realloc(editbuffer.buf.map.mem, editbuffer.buf.map.len + 17);
+				if (!newbuf)
+					goto nomem;
+				editbuffer.buf.map.mem = newbuf;
+				memcpy(newbuf + editbuffer.buf.map.len, &ip, 16);
+				memcpy(newbuf + editbuffer.buf.map.len + 16, &netlen, 1);
+				editbuffer.buf.map.len += 17;
+			}
+			break;
+	}
+	return;
+nomem:
+	commstat = ENOMEM;
+	err("out of memory");
+	return;
+parse:
+	commstat = EINVAL;
+	puts("ERROR: cannot parse parameter");
+}
+
 static struct ecommands {
 	const char *name;
 	const unsigned int len;
 	void (*func)(const int);
 } edcmds[] = {
 	{ .name = "write", .len = 5, .func = editwrite },
-	{ .name = "add", .len = 3, .func = NULL },
+	{ .name = "add", .len = 3, .func = editadd },
 	{ .name = "exit", .len = 4, .func = eXit },
 	{ .name = "quit", .len = 4, .func = editquit },
 	{ .name = NULL }
