@@ -46,7 +46,7 @@ void
 logwhitelisted(const char *reason, const int t, const int u)
 {
 	const char *logmess[] = {"not rejected message to <", THISRCPT, "> from <",
-				xmitstat.mailfrom.s, "> from IP [", xmitstat.remoteip,
+				MAILFROM, "> from IP [", xmitstat.remoteip,
 				"] {", reason, " blocked by ", blocktype[t],
 				" policy, whitelisted by ", blocktype[u],
 				" policy}", NULL};
