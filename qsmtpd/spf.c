@@ -212,8 +212,10 @@ spfreceived(const int fd, const int spf) {
 
 	if (xmitstat.mailfrom.len) {
 		fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
-	} else {
+	} else if (xmitstat.helostr.len) {
 		fromdomain = xmitstat.helostr.s;
+	} else {
+		fromdomain = xmitstat.remotehost;
 	}
 	WRITE(fd, "Received-SPF: ", 14);
 	WRITE(fd, heloname.s, heloname.len);
@@ -740,8 +742,11 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 
 					if (spf_appendmakro(res, l, at + 1, xmitstat.mailfrom.len - offset, num, r, delim))
 						return -1;
-				} else {
+				} else if (xmitstat.helostr.len) {
 					if (spf_appendmakro(res, l, xmitstat.helostr.s, xmitstat.helostr.len, num, r, delim))
+						return -1;
+				} else {
+					if (spf_appendmakro(res, l, xmitstat.remotehost, strlen(xmitstat.remotehost), num, r, delim))
 						return -1;
 				}
 				break;
