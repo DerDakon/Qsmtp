@@ -55,24 +55,6 @@ readinput(char *buffer, const unsigned int len)
 }
 
 /**
- * strchrl - like strchr, but ignore '\0' and use len instead
- *
- * @s: the string to search in
- * @c: the char to find
- * @len: length of s
- */
-static char*
-strchrl(char *s, const char c, unsigned int len)
-{
-	while (len--) {
-		if (*s == c)
-			return s;
-		s++;
-	}
-	return NULL;
-}
-
-/**
  * net_read - read one line from the network
  *
  * returns: 0 on success
@@ -94,7 +76,7 @@ net_read(void)
 		memcpy(linein, lineinn, linenlen);
 		linein[linenlen] = '\0';
 
-		c = strchrl(linein, '\n', linenlen);
+		c = memchr(linein, '\n', linenlen);
 		if (c) {
 			if (*(c - 1) != '\r') {
 				errno = EINVAL;
@@ -126,7 +108,7 @@ readin:
 	 * character or character sequence [than <CRLF>] as a line terminator" */
 
 	readoffset += datain;
-	p = strchrl(linein, '\r', readoffset);
+	p = memchr(linein, '\r', readoffset);
 	if (!p) {
 		if (readoffset > sizeof(linein) - 2) {
 		    readoffset = 0;
@@ -177,7 +159,7 @@ loop_long:
 				readoffset = 1;
 				goto loop_long;
 			}
-			p = strchrl(p, '\r', i);
+			p = memchr(p, '\r', i);
 			i -= (p - linein);
 		}
 		readoffset = 0;
@@ -356,7 +338,7 @@ net_readline(unsigned int num, char *buf)
 	unsigned int offs = 0;
 
 	if (linenlen) {
-		char *n = strchrl(lineinn, '\n', linenlen);
+		char *n = memchr(lineinn, '\n', linenlen);
 
 		if (n) {
 			unsigned int m = (n - lineinn);
@@ -384,7 +366,7 @@ net_readline(unsigned int num, char *buf)
 		r = readinput(buf + offs, num);
 		if (r < 0)
 			return r;
-		n = strchrl(buf + offs, '\n', r);
+		n = memchr(buf + offs, '\n', r);
 		/* if there is a LF in the buffer copy everything behind it to lineinn */
 		if (n) {
 			unsigned int rest = buf + offs + r - n - 1;
@@ -408,9 +390,9 @@ net_readline(unsigned int num, char *buf)
 int
 data_pending(void)
 {
-	if (linenlen)
+	if (linenlen) {
 		return 1;
-	if (ssl) {
+	} else if (ssl) {
 		return SSL_pending(ssl);
 	} else {
 		fd_set rfds;
