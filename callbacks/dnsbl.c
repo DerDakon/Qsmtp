@@ -23,7 +23,7 @@ cb_dnsbl(const struct userconf *ds, char **logmsg, int *t)
 	const char *fnw;	/* filename of the whitelist file */
 	char *txt = NULL;	/* TXT record of the rbl entry */
 
-	if (IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr)) {
+	if (xmitstat.ipv4conn) {
 		fnb = "dnsbl";
 		fnw = "whitednsbl";
 	} else {
@@ -37,7 +37,7 @@ cb_dnsbl(const struct userconf *ds, char **logmsg, int *t)
 	if ( ( rc = loadlistfd(fd, &b, &a, domainvalid, 0) ) < 0 )
 		return rc;
 
-	i = check_rbl(&(xmitstat.sremoteip), a, &txt);
+	i = check_rbl(a, &txt);
 	if (i >= 0) {
 		int j, u;
 		char *d, **c;		/* same like *a and **b, just for whitelist */
@@ -61,7 +61,7 @@ cb_dnsbl(const struct userconf *ds, char **logmsg, int *t)
 				return rc;
 			}
 
-			j = check_rbl(&(xmitstat.sremoteip), c, &wtxt);
+			j = check_rbl(c, &wtxt);
 			free(wtxt);
 		}
 		if (j >= 0) {
