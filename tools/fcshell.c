@@ -248,7 +248,31 @@ static struct commands edcmds[] = {
 static void
 edit(void)
 {
-	char fn[32];
+	struct editfiles {
+		char *name;
+		unsigned int len;
+		int type;	/* 0: address 1: domain 2: blacklist 3: IPv4 match 4: IPv6 match */
+	} efiles[] = {
+		{ .name = "badcc", .len = 5, .type = 0 },
+		{ .name = "badmailfrom", .len = 11, .type = 0 },
+		{ .name = "goodmailfrom", .len = 12, .type = 0 },
+		{ .name = "dnsbl", .len = 5, .type = 2 },
+		{ .name = "whitednsbl", .len = 10, .type = 2 },
+		{ .name = "dnsblv6", .len = 7, .type = 2 },
+		{ .name = "whitednsblv6", .len = 12, .type = 2 },
+		{ .name = "badhelo", .len = 7, .type = 1 },
+		{ .name = "ipbl", .len = 4, .type = 3 },
+		{ .name = "ipwl", .len = 4, .type = 3 },
+		{ .name = "ipblv6", .len = 6, .type = 4 },
+		{ .name = "ipwlv6", .len = 6, .type = 4 },
+		{ .name = "rspf", .len = 4, .type = 2 },
+		{ .name = "spfstrict", .len = 9, .type = 1 },
+		{ .name = "ignorespf", .len = 9, .type = 1 },
+		{ .name = "namebl", .len = 6, .type = 2 },
+		{ .name = NULL }
+	};
+	int index;
+	struct editfiles *active;
 
 	if (linein[4] == '\n') {
 		puts("Syntax: edit <FILENAME>");
@@ -257,11 +281,32 @@ edit(void)
 	}
 
 	unsigned int l = strlen(linein + 5) - 1;
-	memcpy(fn, linein + 5, l);
-	fn[l] = '\0';
+
+	for (index = 0; efiles[index].name; index++) {
+		if (l != efiles[index].len)
+			continue;
+		if (!strncmp(linein + 5, efiles[index].name, l))
+			break;
+	}
+	if (!efiles[index].name) {
+		if ((l == 4) && !strncmp(linein + 5, "help", 4)) {
+			const char *typenames[] = { "address", "domain", "blacklist", "IPv4 match", "IPv6 match" };
+
+			for (index = 0; efiles[index].name; index++) {
+				printf("\t%s\t{type: %s}\n", efiles[index].name, typenames[efiles[index].type]);
+			}
+			commstat = 0;
+		} else {
+			puts("unknown file");
+			commstat = EINVAL;
+		}
+		return;
+	}
+
+	active = efiles + index;
 
 	do {
-		fprintf(stdout, "fc <%s> > ", fn);
+		fprintf(stdout, "fc <%s> > ", active->name);
 		if (!fgets(linein, sizeof(linein), stdin)) {
 			puts("");
 			eXit();
