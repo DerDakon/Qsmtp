@@ -30,8 +30,9 @@ ask_dnsmx(const char *name, struct ips **result)
 
 		/* there is no MX record, so we look for an AAAA record */
 		if (!l) {
-			int r = ask_dnsa(name, result);
-			if (!r) {
+			int rc = ask_dnsa(name, result);
+
+			if (!rc) {
 				struct ips *a = *result;
 
 				while (a) {
@@ -41,6 +42,7 @@ ask_dnsmx(const char *name, struct ips **result)
 					a = a->next;
 				}
 			}
+			return rc;
 		}
 
 		while (r + l > s) {
