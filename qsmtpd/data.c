@@ -98,8 +98,9 @@ queue_init(void)
 					return rc
 
 static int
-queue_header(int fd)
+queue_header(void)
 {
+	int fd = fd0[1];
 	int rc;
 	char datebuf[32];		/* the date for the Received-line */
 	time_t ti;
@@ -154,7 +155,7 @@ queue_header(int fd)
 					goto err_write
 
 static int
-queue_envelope(int fd, const unsigned long msgsize)
+queue_envelope(const unsigned long msgsize)
 {
 	char *s = NULL;			/* msgsize */
 	char *t = NULL;			/* goodrcpt */
@@ -164,6 +165,7 @@ queue_envelope(int fd, const unsigned long msgsize)
 					NULL, " recipients)", NULL};
 	char *authmsg = NULL;
 	int rc;
+	int fd = fd1[1];
 
 	if (ssl)
 		logmail[1] = "encrypted ";
@@ -261,7 +263,7 @@ smtp_data(void)
 	if ( (i = queue_init()) )
 		return i;
 
-	if ((rc = hasinput())) {
+	if ( (rc = hasinput()) ) {
 		while (close(fd0[1]) && (errno == EINTR));
 		while (close(fd1[1]) && (errno == EINTR));
 		while ((waitpid(qpid, &status, 0) == -1) && (errno == EINTR));
@@ -285,7 +287,7 @@ smtp_data(void)
 	/* fd is now the file descriptor we are writing to. This is better than always
 	 * calculating the offset to fd0[1] */
 	fd = fd0[1];
-	if ( (rc = queue_header(fd)) )
+	if ( (rc = queue_header()) )
 		goto err_write;
 
 	/* loop until:
@@ -426,8 +428,7 @@ smtp_data(void)
 			goto err_write;
 	}
 	fd0[1] = 0;
-	fd = fd1[1];
-	if (queue_envelope(fd, msgsize))
+	if (queue_envelope(msgsize))
 		goto err_write;
 
 	while(waitpid(qpid, &status, 0) == -1) {
