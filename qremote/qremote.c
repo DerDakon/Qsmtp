@@ -368,6 +368,7 @@ main(int argc, char *argv[])
 					return 0;
 				}
 			}
+			k++;
 		}
 		free(smtproutes);
 		free(smtproutbuf);
