@@ -1,17 +1,12 @@
 #ifndef ANTISPAM_H
 #define ANTISPAM_H
 
-#include <netinet/in.h>
-#include "sstring.h"
-
 /* qsmtpd/antispam.c */
 
 extern void dotip6(char *);
 extern int check_rbl(char *const *, char **);
 extern void tarpit(void);
 extern int domainmatch(const char *, const unsigned int, const char **);
-extern int ip4_matchnet(const struct in6_addr *, const struct in_addr *, const unsigned char);
-extern int ip6_matchnet(const struct in6_addr *, const struct in6_addr *, const unsigned char);
 extern int lookupipbl(int);
 extern int reverseip4(char *);
 

@@ -6,6 +6,7 @@
 #include "antispam.h"
 #include "sstring.h"
 #include "dns.h"
+#include "match.h"
 
 #define WSPACE(x) (((x) == ' ') || ((x) == '\t') || ((x) == '\r') || ((x) == '\n'))
 
