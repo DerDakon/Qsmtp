@@ -15,18 +15,19 @@ SUBDIRS = lib callbacks qsmtpd qremote
 TARGETS = targets/Qsmtpd targets/Qremote
 TOOLS = targets/addipbl targets/testspf targets/fcshell
 
-.phony: all clean subdirs toolsub install normal
+.PHONY: all clean toolsub install targets tools $(SUBDIRS)
+.SECONDARY:
 
-default: normal
+default: targets
 
-all: subdirs toolsub $(TARGETS) $(TOOLS)
+all: targets tools
 
-normal: subdirs $(TARGETS)
+targets: $(SUBDIRS) $(TARGETS)
 
-subdirs:
-	for dir in $(SUBDIRS); do\
-		$(MAKE) -C $$dir; \
-	done
+$(SUBDIRS):
+	$(MAKE) -C $@
+
+tools: toolsub $(TOOLS)
 
 toolsub:
 	$(MAKE) -C tools
@@ -34,15 +35,15 @@ toolsub:
 vpath %.h ./include
 
 clean:
-	rm -f *.o *~ \#* $(TARGETS)
-	for dir in $(SUBDIRS) tools; do\
+	rm -f *.o *~ \#* $(TARGETS) $(TOOLS)
+	for dir in $(SUBDIRS) tools; do \
 		$(MAKE) -C $$dir clean; \
 	done
 
 targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.o qsmtpd/spf.o \
-		qsmtpd/vpopmail.o qsmtpd/data.o qsmtpd/addrsyntax.o lib/log.o lib/netio.o \
+		qsmtpd/vpopmail.o qsmtpd/data.o qsmtpd/addrsyntax.o \
 		lib/dns.o lib/control.o lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o \
-		lib/match.o \
+		lib/match.o lib/log.o lib/netio.o \
 		callbacks/badmailfrom.o callbacks/dnsbl.o callbacks/badcc.o callbacks/usersize.o \
 		callbacks/rcpt_cbs.o callbacks/boolean.o callbacks/fromdomain.o \
 		callbacks/check2822.o callbacks/ipbl.o callbacks/spf.o callbacks/soberg.o \
@@ -54,13 +55,16 @@ targets/Qremote: qremote/qremote.o lib/dns.o lib/netio.o lib/ssl_timeoutio.o lib
 		lib/control.o lib/log.o lib/match.o $(OWFATPATH)/libowfat.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
-targets/addipbl: tools/addipbl.o
-	$(LD) $(LDFLAGS) -o $@ $^
-
 targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/match.o \
 		lib/netio.o lib/tls.o lib/ssl_timeoutio.o $(OWFATPATH)/libowfat.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 	strip $@
+
+lib/%.o callbacks/%.o qsmtpd/%.o qremote/%.o tools/%.o:
+	$(MAKE) -C $(@D) $(@F)
+
+targets/%: tools/%.o
+	$(LD) $(LDFLAGS) -o $@ $^
 
 install:
 	install -s -g qmail -o qmaild targets/Qsmtpd $(AUTOQMAIL)/bin
