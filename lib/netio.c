@@ -123,9 +123,6 @@ readin:
 		/* There was data, but not enough. Give it another chance */
 		goto readin;
 	} else if (*(p + 1) != '\n') {
-/*fprintf(stderr, "linein: %s\n", linein);
-fprintf(stderr, "== offset: %i\n", p - linein);
-dump("linein", linein, readoffset + datain);*/
 		errno = EINVAL;
 		return -1;
 	}
