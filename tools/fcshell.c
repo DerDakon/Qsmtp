@@ -365,7 +365,7 @@ editread(const int type)
 }
 
 static void
-editquit(void)
+editquit(int type)
 {
 	if (warn_noparam(4, "quit"))
 		return;
