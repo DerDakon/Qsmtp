@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include "tls.h"
 
 SSL *ssl = NULL;
 

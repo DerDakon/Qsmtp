@@ -12,21 +12,21 @@ all: $(TARGETS)
 clean:
 	rm -f $(TARGETS) *~ \#*
 
-badmailfrom.o: control.h dns.h qsmtpd.h log.h
+badmailfrom.o: control.h qsmtpd.h log.h
 
 check2822.o: qsmtpd.h
 
-dnsbl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
+dnsbl.o: antispam.h control.h log.h netio.h qsmtpd.h
 
 boolean.o: qsmtpd.h tls.h netio.h log.h
 
-ipbl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
+ipbl.o: antispam.h log.h qsmtpd.h
 
-badcc.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
+badcc.o: control.h qsmtpd.h
 
-fromdomain.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
+fromdomain.o: antispam.h control.h log.h netio.h qsmtpd.h match.h
 
-spf.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
+spf.o: antispam.h control.h log.h netio.h qsmtpd.h
 
 helo.o: control.h qsmtpd.h
 
@@ -36,7 +36,7 @@ usersize.o: netio.h qsmtpd.h
 
 rcpt_cbs.o: log.h
 
-forceesmtp.o: antispam.h control.h dns.h log.h qsmtpd.h
+forceesmtp.o: antispam.h control.h qsmtpd.h
 
 namebl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 

@@ -2,10 +2,8 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include <syslog.h>
 #include "usercallback.h"
 #include "control.h"
-#include "dns.h"
 #include "qsmtpd.h"
 #include "log.h"
 

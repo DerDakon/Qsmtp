@@ -1,15 +1,9 @@
-#include <netinet/in.h>
 #include <errno.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include <syslog.h>
-#include "antispam.h"
 #include "usercallback.h"
 #include "control.h"
-#include "dns.h"
-#include "log.h"
-#include "netio.h"
 #include "qsmtpd.h"
 
 /*

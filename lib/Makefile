@@ -19,7 +19,7 @@ getfile.o: usercallback.h control.h
 
 netio.o: log.h ssl_timeoutio.h tls.h
 
-ssl_timeoutio.o: log.h
+ssl_timeoutio.o: log.h tls.h
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) $<
