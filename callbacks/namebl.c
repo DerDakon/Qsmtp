@@ -36,6 +36,9 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 
 	if ( ( rc = loadlistfd(fd, &b, &a, domainvalid, 0) ) < 0 )
 		return rc;
+	
+	if (!b)
+		return 0;
 
 	fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
 
