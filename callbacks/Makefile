@@ -24,7 +24,7 @@ ipbl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
 badcc.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
-fromdomain.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
+fromdomain.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h match.h
 
 spf.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
