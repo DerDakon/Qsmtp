@@ -565,6 +565,73 @@ spf_makroparam(char *token, int *num, int *r, int *delim)
 	return res;
 }
 
+static int
+urlencode(char *token, char **result)
+{
+	char *res = NULL;
+	char *last = token;	/* the first unencoded character in the current chunk */
+	unsigned int len = 0;
+
+	while (*token) {
+		char *tmp;
+		unsigned int newlen;
+		char n;
+
+		if (!(((*token >= 'a') && (*token <= 'z')) || ((*token >= 'A') && (*token <= 'Z')) ||
+						((*token >= 'A') && (*token <= 'Z')))) {
+			switch (*token) {
+				case '-':
+				case '_':
+				case '.':
+				case '!':
+				case '~':
+				case '*':
+				case '\'':
+				case '(':
+				case ')':	break;
+				default:	newlen = len + 3 + (token - last);
+						tmp = realloc(res, newlen + 1);
+						if (!tmp) {
+							free(res);
+							return -1;
+						}
+						res = tmp;
+						memcpy(res + len, last, token - last);
+						len = newlen;
+						res[len - 3] = '%';
+						n = (*token & 0xf0) >> 4;
+						res[len - 2] = ((n > 9) ? 'A' - 10 : '0') + n;
+						n = (*token & 0x0f);
+						res[len - 1] = ((n > 9) ? 'A' - 10 : '0') + n;
+						last = token + 1;
+			}
+		}
+		token++;
+	}
+	if (!len) {
+		/* nothing has changed */
+		*result = token;
+		return 0;
+	}
+	if (token - last) {
+		/* there is data behind the last encoded char */
+		unsigned int newlen = len + 3 + (token - last);
+		char *tmp;
+
+		tmp = realloc(res, newlen + 1);
+		if (!tmp) {
+			free(res);
+			return -1;
+		}
+		res = tmp;
+		memcpy(res + len, last, token - last);
+		len = newlen;
+	}
+	res[len] = '\0';
+	*result = res;
+	return 0;
+}
+
 /**
  * spf_appendmakro - append a makro content to the result
  *
@@ -575,11 +642,13 @@ spf_makroparam(char *token, int *num, int *r, int *delim)
  * @num: DIGIT
  * @r: reverse of not
  * @delim: bit mask of delimiters
+ * @url: urlencode string
  *
  * returns: 0 on success, -1 on error
  */
 static int
-spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned int sl, int num, const int r, const int delim)
+spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned int sl, int num, const int r,
+				const int delim, const int url)
 {
 	int dc = 0;	/* how many delimiters we find */
 	unsigned int nl;
@@ -604,26 +673,21 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		}
 	} else {
 		const char *delims = ".-+,/_=";
-		unsigned int k;
-		int maxdelim = 0, mindelim = 0;
+		char actdelim[8];
+		unsigned int k = 0;
+		int l;
+		char *d = news;
 
-/* find out the first and last delimiter in delim mask so we can avoid useless loops */
-		while ((1 << maxdelim) <= delim)
-			maxdelim++;
-		maxdelim--;
-		while (!((1 << mindelim) & delim))
-			mindelim++;
+		/* This constructs the list of actually used delimiters. */
+		for (l = 7; l >= 0; l--) {
+			if (delim & (1 << l))
+				actdelim[k++] = delims[l];
+		}
+		actdelim[k] = '\0';
 
-		for (k = 0; k < sl; k++) {
-			int j;
-
-			for (j = mindelim; j <= maxdelim; j++) {
-				if (((1 << j) & delim) && (s[k] == delims[j])) {
-					news[k] = '.';
-					dc++;
-					break;
-				}
-			}
+		while ( (d = strpbrk(d, actdelim)) ) {
+			*d = '.';
+			dc++;
 		}
 	}
 	if (r) {
@@ -672,6 +736,15 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		} else {
 			nl = sl;
 		}
+	}
+
+	if (url) {
+		if (urlencode(start, &start)) {
+			free(*res);
+			free(news);
+			return -1;
+		}
+		nl = strlen(start);
 	}
 
 	*l += nl;
@@ -725,9 +798,10 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 	if ((offs < 0) || (*p != '}'))
 		PARSEERR;
 	switch (ch) {
+		case 'S':
 		case 's':	if (xmitstat.mailfrom.len) {
 					if (spf_appendmakro(res, l, xmitstat.mailfrom.s, xmitstat.mailfrom.len,
-										num, r, delim))
+										num, r, delim, (ch == 'S')))
 						return -1;
 				} else {
 					unsigned int senderlen = 12 + HELOLEN;
@@ -737,17 +811,18 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 						return -1;
 					memcpy(sender, "postmaster@", 11);
 					memcpy(sender + 11, HELOSTR, HELOLEN + 1);
-					r = spf_appendmakro(res, l, sender, senderlen, num, r, delim);
+					r = spf_appendmakro(res, l, sender, senderlen, num, r, delim, (ch == 'S'));
 					free(sender);
 					if (r)
 						return -1;
 				}
 				break;
+		case 'L':
 		case 'l':	if (xmitstat.mailfrom.len) {
 					char *at = strchr(xmitstat.mailfrom.s, '@');
 
 					if (spf_appendmakro(res, l, xmitstat.mailfrom.s, at - xmitstat.mailfrom.s,
-										num, r, delim)) {
+										num, r, delim, (ch == 'L'))) {
 						return -1;
 					}
 				} else {
@@ -756,19 +831,23 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 					APPEND(10, "postmaster");
 				}
 				break;
+		case 'O':
 		case 'o':	if (xmitstat.mailfrom.len) {
 					char *at = strchr(xmitstat.mailfrom.s, '@');
 					unsigned int offset =
 							at - xmitstat.mailfrom.s + 1;
 
-					if (spf_appendmakro(res, l, at + 1, xmitstat.mailfrom.len - offset, num, r, delim))
+					/* the domain name is always the same in normal and url-ified form */
+					if (spf_appendmakro(res, l, at + 1, xmitstat.mailfrom.len - offset, num, r,
+									delim, 0))
 						return -1;
 				} else {
-					if (spf_appendmakro(res, l, HELOSTR, HELOLEN, num, r, delim))
+					if (spf_appendmakro(res, l, HELOSTR, HELOLEN, num, r, delim, (ch == 'O')))
 						return -1;
 				}
 				break;
-		case 'd':	if (spf_appendmakro(res, l, domain, strlen(domain), num, r, delim))
+		case 'D':
+		case 'd':	if (spf_appendmakro(res, l, domain, strlen(domain), num, r, delim, (ch == 'D')))
 					return -1;
 				break;
 		case 'C':
@@ -783,7 +862,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 							&(xmitstat.sremoteip.s6_addr32[3]),
 							ip, sizeof(ip));
 
-					if (spf_appendmakro(res, l, ip, strlen(ip), num, r, delim))
+					if (spf_appendmakro(res, l, ip, strlen(ip), num, r, delim, 0))
 						return -1;
 				} else {
 					if ((ch == 'i') || (ch == 'I')) {
@@ -791,7 +870,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 	
 						dotip6(ip);
 						ip[63] = '\0';
-						if (spf_appendmakro(res, l, ip, 63, num, r, delim))
+						if (spf_appendmakro(res, l, ip, 63, num, r, delim, 0))
 							return -1;
 					} else {
 						char a[INET6_ADDRSTRLEN];
@@ -816,7 +895,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 		case 'P':
 		case 'p':	if (xmitstat.remotehost.len) {
 					if (spf_appendmakro(res, l, xmitstat.remotehost.s, xmitstat.remotehost.len,
-								num, r, delim))
+								num, r, delim, 0))
 						return -1;
 				} else {
 					APPEND(7, "unknown");
@@ -826,7 +905,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 		case 'r':	if (!ex) {
 					PARSEERR;
 				}
-				if (spf_appendmakro(res, l, heloname.s, heloname.len, num, r, delim))
+				if (spf_appendmakro(res, l, heloname.s, heloname.len, num, r, delim, 0))
 					return -1;
 				break;
 		case 'V':
