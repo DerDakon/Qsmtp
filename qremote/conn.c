@@ -88,7 +88,7 @@ hascolon(const char *s)
 
 	if (!*colon)
 		return 0;
-	return (*(colon + 1) != ':');
+	return (*(colon + 1) == ':');
 }
 
 void
