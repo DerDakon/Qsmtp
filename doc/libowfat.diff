@@ -219,7 +219,7 @@ diff -Naur libowfat-0.20/dns/dns_txt.c libowfat-0.20-eike/dns/dns_txt.c
 diff -Naur libowfat-0.20/dns.h libowfat-0.20-eike/dns.h
 --- libowfat-0.20/dns.h	2004-07-21 17:40:08.000000000 +0200
 +++ libowfat-0.20-eike/dns.h	2004-09-17 14:11:19.253847064 +0200
-@@ -70,16 +70,20 @@
+@@ -70,16 +70,21 @@
  
  int dns_ip4_packet(stralloc *,const char *,unsigned int);
  int dns_ip4(stralloc *,const stralloc *);
@@ -231,6 +231,7 @@ diff -Naur libowfat-0.20/dns.h libowfat-0.20-eike/dns.h
  void dns_name4_domain(char *,const char *);
  #define DNS_NAME4_DOMAIN 31
  int dns_name4(stralloc *,const char *);
++int dnsname(char **, const char *);
  int dns_txt_packet(stralloc *,const char *,unsigned int);
  int dns_txt(stralloc *,const stralloc *);
 +int dnstxt(char **,const char *);
@@ -240,3 +241,29 @@ diff -Naur libowfat-0.20/dns.h libowfat-0.20-eike/dns.h
  
  int dns_resolvconfrewrite(stralloc *);
  int dns_ip4_qualify_rules(stralloc *,stralloc *,const stralloc *,const stralloc *);
+diff -u libowfat-0.20-eike/dns/dns_name.c libowfat-0.20-eike/dns/dns_name.c
+--- libowfat-0.20/dns/dns_name.c	2004-06-03 18:26:18.000000000 +0200
++++ libowfat-0.20-eike/dns/dns_name.c	2005-03-08 19:15:16.000000000 +0100
+@@ -68,3 +68,22 @@
+   if (!out->len) return dns_name6_inner(out,ip,DNS_IP6_INT);
+   return 0;
+ }
++
++int dnsname(char **o,const char ip[16])
++{
++  stralloc out = {.len = 0, .a = 0, .s = 0};
++  int r = 0;
++
++  *o = 0;
++  if (ip6_isv4mapped(ip)) {
++    r = dns_name4(&out,ip+12);
++    goto result;
++  }
++  if (dns_name6_inner(&out,ip,DNS_IP6_ARPA)) return -1;
++  if (!out.len)
++    r = dns_name6_inner(&out,ip,DNS_IP6_INT);
++result:
++  if (!r && out.len)
++    *o = out.s;
++  return r;
++}
