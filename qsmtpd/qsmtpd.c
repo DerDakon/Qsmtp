@@ -1017,7 +1017,7 @@ smtp_data(void)
 
 					qqbin = getenv("QMAILQUEUE");
 					if (!qqbin) {
-						qqbin = "bin/qmail-queue");
+						qqbin = "bin/qmail-queue";
 					}
 					while ( (i = close(fd0[1])) ) {
 						if (errno != EINTR)
