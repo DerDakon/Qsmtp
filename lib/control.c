@@ -94,7 +94,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	}
 	/* free the now useless memory at the end */
 	*buf = realloc(inbuf, j);
-	if (!buf) {
+	if (!*buf) {
 		free(inbuf);
 		j = -1;
 	}
