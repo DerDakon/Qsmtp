@@ -38,7 +38,7 @@ cb_ipbl(const struct userconf *ds, char **logmsg, int *t)
 	if (i > 0) {
 		int u;
 
-		if ( (fd = getfile(ds, fnw, &u)) < 0) {
+		if ( (fd = getfileglobal(ds, fnw, &u)) < 0) {
 			if (errno != ENOENT)
 				return fd;
 			i = 0;
