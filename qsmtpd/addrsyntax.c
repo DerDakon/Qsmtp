@@ -109,9 +109,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	int len;			/* length of the recip address */
 	int x;
 
-	f = strchr(in, '<');
-	if (!f)
-		return 1;
+	f = in;
 	if (flags == 1) {
 		/* strip source route
 		 * source route has the form

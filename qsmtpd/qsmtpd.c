@@ -488,6 +488,7 @@ user_exists(const string *localpart, struct userconf *ds)
 /**
  * addrparse - check an email address for syntax errors and/or existence
  *
+ * @in:      input to parse
  * @flags:   1: rcpt to checks (e.g. source route is allowed), 0: mail from checks
  * @addr:    struct string to contain the address (memory will be malloced)
  * @more:    here starts the data behind the first '>' behind the first '<' (or NULL if none)
@@ -500,7 +501,7 @@ user_exists(const string *localpart, struct userconf *ds)
  *          before leaving)
  */
 static int
-addrparse(const int flags, string *addr, char **more, struct userconf *ds)
+addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds)
 {
 	char *at;			/* guess! ;) */
 	int result = 0;			/* return code */
@@ -511,7 +512,7 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 	STREMPTY(ds->domainpath);
 	STREMPTY(ds->userpath);
 
-	if (addrsyntax(linein, flags, addr, more))
+	if (addrsyntax(in, flags, addr, more))
 		return netwrite("501 5.1.3 domain of mail address is syntactically incorrect\r\n") ? errno : EBOGUS;
 
 	/* empty mail address is valid in MAIL FROM:, this is checked by addrsyntax before
@@ -616,7 +617,9 @@ smtp_rcpt(void)
 					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL};
 	const char *okmsg[] = {"250 2.1.0 recipient <", NULL, "> OK", NULL};
 
-	i = addrparse(1, &tmp, &more, &ds);
+	if (linein[8] != '<')
+		return EINVAL;
+	i = addrparse(linein + 9, 1, &tmp, &more, &ds);
 	if  (i > 0) {
 		return i;
 	} else if (i == -1) {
@@ -827,7 +830,9 @@ smtp_from(void)
 	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> is syntactically correct", NULL};
 	char *s;
 
-	i = addrparse(0, &(xmitstat.mailfrom), &more, &ds);
+	if (linein[10] != '<')
+		return EINVAL;
+	i = addrparse(linein + 11, 0, &(xmitstat.mailfrom), &more, &ds);
 	xmitstat.frommx = NULL;
 	xmitstat.fromdomain = 0;
 	free(ds.userpath.s);
