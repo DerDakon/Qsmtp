@@ -661,7 +661,7 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		memcpy(*res + oldl, addstr, addlen);\
 	}
 
-#define PARSEERR	{free(res); return SPF_HARD_ERROR;}
+#define PARSEERR	{free(*res); return -1;}
 
 #define PARAMCHK	\
 	{\
@@ -815,6 +815,9 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 		res = r2;\
 		memcpy(res + oldl, addstr, addlen);\
 	}
+
+#undef PARSEERR
+#define PARSEERR	{free(res); return SPF_HARD_ERROR;}
 
 /**
  * spf_makro - expand a SPF makro
