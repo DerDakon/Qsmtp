@@ -35,7 +35,7 @@ conn(const struct in6_addr remoteip)
 	sock.sin6_addr = in6addr_any;
 //	sock.sin6_scope_id = 0;
 
-	rc = bind(socketd, &sock, sizeof(sock));
+	rc = bind(socketd, (struct sockaddr *) &sock, sizeof(sock));
 
 	if (rc)
 		return errno;
@@ -43,11 +43,7 @@ conn(const struct in6_addr remoteip)
 	sock.sin6_port = htons(targetport);
 	sock.sin6_addr = remoteip;
 
-	rc = connect(socketd, &sock, sizeof(sock));
-	if (rc)
-		return errno;
-
-	return 0;
+	return connect(socketd, (struct sockaddr *) &sock, sizeof(sock)) ? errno : 0;
 }
 
 /**
