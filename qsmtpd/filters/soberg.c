@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "usercallback.h"
+#include "userfilters.h"
 #include "netio.h"
 #include "qsmtpd.h"
 

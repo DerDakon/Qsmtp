@@ -20,7 +20,7 @@
 #include "netio.h"
 #include "dns.h"
 #include "control.h"
-#include "usercallback.h"
+#include "userfilters.h"
 #include "tls.h"
 #include "sstring.h"
 #include "qsmtpd.h"
@@ -74,7 +74,7 @@ char *protocol;				/* the protocol string to use (e.g. "ESMTP") */
 char *auth_host;			/* hostname for auth */
 char *auth_check;			/* checkpassword or one of his friends for auth */
 char **auth_sub;			/* subprogram to be invoked by auth_check (usually /bin/true) */
-char **globalconf;			/* see usercallback.h */
+char **globalconf;			/* see userfilters.h */
 string heloname;			/* the fqdn to show in helo */
 int socketd = 1;			/* the descriptor where messages to network are written to */
 

@@ -1,5 +1,5 @@
 #include <syslog.h>
-#include "usercallback.h"
+#include "userfilters.h"
 #include "qsmtpd.h"
 #include "tls.h"
 #include "netio.h"

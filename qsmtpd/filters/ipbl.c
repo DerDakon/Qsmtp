@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include "antispam.h"
-#include "usercallback.h"
+#include "userfilters.h"
 #include "log.h"
 #include "qsmtpd.h"
 

@@ -42,7 +42,7 @@ forceesmtp.o: antispam.h control.h qsmtpd.h
 
 namebl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
 
-%.o: %.c usercallback.h
+%.o: %.c userfilters.h
 	$(CC) $(CFLAGS) $<
 
 rcptfilters.a: rcptfilters.a($(OBJS))

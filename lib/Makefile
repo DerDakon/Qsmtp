@@ -15,7 +15,7 @@ base64.o: sstring.h
 
 control.o: log.h dns.h
 
-getfile.o: usercallback.h control.h
+getfile.o: userfilters.h control.h
 
 netio.o: log.h ssl_timeoutio.h tls.h
 

@@ -22,7 +22,7 @@ To add your own recipient spamfilter function just follow this steps:
    -getsetting sets errno on exit. I prefer to see this as a sign that the user
     has deactivated the check (so he has to eat it's own dust).
    -the possible return values of the function are documented in
-    include/usercallback.h
+    include/userfilters.h
    -the logmsg parameter is NULL at the beginning of each function
    -if your filter checks the parameter of the "MAIL FROM:" or it's reverse
     lookup don't forget to handle the case of a bounce message

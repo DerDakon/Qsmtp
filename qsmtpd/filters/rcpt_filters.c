@@ -1,6 +1,6 @@
 #include <syslog.h>
 #include "log.h"
-#include "usercallback.h"
+#include "userfilters.h"
 
 /* add all your filters here */
 

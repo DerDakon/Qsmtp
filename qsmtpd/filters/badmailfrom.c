@@ -2,7 +2,7 @@
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "usercallback.h"
+#include "userfilters.h"
 #include "control.h"
 #include "qsmtpd.h"
 #include "log.h"

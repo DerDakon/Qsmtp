@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <syslog.h>
-#include "usercallback.h"
+#include "userfilters.h"
 #include "control.h"
 
 /* WARNING: if lloadfilfd can't get a lock on the input file (e.g. currently opened for

@@ -2,7 +2,7 @@
 #include <syslog.h>
 #include "control.h"
 #include "antispam.h"
-#include "usercallback.h"
+#include "userfilters.h"
 #include "log.h"
 #include "qsmtpd.h"
 #include "netio.h"
