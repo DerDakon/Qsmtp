@@ -778,12 +778,19 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 					if (spf_appendmakro(res, l, ip, strlen(ip), num, r, delim))
 						return -1;
 				} else {
-					char ip[64];
+					if ((ch == 'i') || (ch == 'I')) {
+						char ip[64];
+	
+						dotip6(ip);
+						ip[63] = '\0';
+						if (spf_appendmakro(res, l, ip, 63, num, r, delim))
+							return -1;
+					} else {
+						char a[INET6_ADDRSTRLEN];
 
-					dotip6(ip);
-					ip[63] = '\0';
-					if (spf_appendmakro(res, l, ip, 63, num, r, delim))
-						return -1;
+						inet_pton(AF_INET6, xmitstat.sremoteip, a, sizeof(a));
+						APPEND(strlen(a), a);
+					}
 				}
 				break;
 		case 'T':
