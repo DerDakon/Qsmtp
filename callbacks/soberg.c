@@ -26,9 +26,9 @@ cb_soberg(const struct userconf *ds, char **logmsg, int *t)
 	at = strchr(xmitstat.mailfrom.s, '@');
 
 	userl = at - xmitstat.mailfrom.s;
-	if (strncasecmp(xmitstat.helostr.s, xmitstat.mailfrom.s, userl))
+	if (strncasecmp(HELOSTR, xmitstat.mailfrom.s, userl))
 		return 0;
-	if (strcasecmp(xmitstat.helostr.s + userl, strrchr(xmitstat.mailfrom.s, '.')))
+	if (strcasecmp(HELOSTR + userl, strrchr(xmitstat.mailfrom.s, '.')))
 		return 0;
 
 	rc = netwrite("550 5.7.1 mail looks like SoberG worm\r\n");
