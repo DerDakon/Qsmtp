@@ -149,7 +149,8 @@ checkreply(const char *status)
 		}
 	}
 
-	write(1, "", 1);
+	if (status)
+		write(1, "", 1);
 	return res;
 }
 
