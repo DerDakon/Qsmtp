@@ -365,10 +365,73 @@ editread(const int type)
 }
 
 static void
+editwrite(const int type)
+{
+	FILE *fcfd;
+	char fn[12 + strlen(editbuffer.name)];
+
+	if (warn_noparam(5, "write"))
+		return;
+
+	if (((type <= 2) && (editbuffer.buf.lhead.tqh_first)) || ((type > 2) && editbuffer.buf.map.len)) {
+
+		snprintf(fn, sizeof(fn), "%s.%i", editbuffer.name, getpid());
+		fcfd = fopen(fn, "w");
+		if (!fcfd) {
+			commstat = errno;
+			err2("can't create tempfile ", fn);
+			return;
+		}
+	
+		switch (type) {
+			case 0:
+			case 1:
+			case 2:	for (struct addrlist *thisad = editbuffer.buf.lhead.tqh_first;
+							thisad; thisad = thisad->entries.tqe_next) {
+					if (fprintf(fcfd, "%s\n", thisad->address) < 0)
+						goto err;
+				}
+				break;
+			case 3:
+			case 4:	for (unsigned int i = 0; i < editbuffer.buf.map.len; i++) {
+					if (fprintf(fcfd, "%c", editbuffer.buf.map.mem[i]) != 1)
+						goto err;
+				}
+				break;
+		}
+	
+		if (fclose(fcfd))
+			goto err;
+		if (rename(fn, editbuffer.name)) {
+			commstat = errno;
+			err2("can't rename tempfile to ", editbuffer.name);
+			return;
+		}
+	} else {
+		/* nothing in the file */
+		if (unlink(editbuffer.name)) {
+			if (errno != ENOENT) {
+				commstat = errno;
+				err2("cannot remove old file", editbuffer.name);
+				return;
+			}
+		}
+	}
+	commstat = 0;
+	return;
+err:
+	commstat = errno;
+	fclose(fcfd);
+	err2("error writing to tempfile ", fn);
+}
+
+static void
 editquit(int type)
 {
 	if (warn_noparam(4, "quit"))
 		return;
+	linein[5] = '\n';
+	editwrite(type);
 }
 
 struct ecommands {
@@ -376,7 +439,7 @@ struct ecommands {
 	const unsigned int len;
 	void (*func)(int);
 } edcmds[] = {
-	{ .name = "write", .len = 5, .func = NULL },
+	{ .name = "write", .len = 5, .func = editwrite },
 	{ .name = "add", .len = 3, .func = NULL },
 	{ .name = "exit", .len = 4, .func = eXit },
 	{ .name = "quit", .len = 4, .func = editquit },
