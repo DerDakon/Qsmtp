@@ -57,7 +57,7 @@ ask_dnsmx(const char *name, struct ips **result)
 				return 2;
 			} else if (!rc) {
 				struct ips *u;
-				int pri = ntohs(*((unsigned short *) s));
+				unsigned int pri = ntohs(*((unsigned short *) s));
 
 				/* add the new results to the list */
 				*q = p;

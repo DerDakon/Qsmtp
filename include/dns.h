@@ -6,7 +6,7 @@
 
 struct ips {
 	struct in6_addr addr;
-	int	priority;	/* MX priority, undefined for A or AAAA */
+	unsigned int priority;	/* MX priority, undefined for A or AAAA */
 	struct ips *next;
 };
 
