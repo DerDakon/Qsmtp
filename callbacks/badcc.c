@@ -44,6 +44,9 @@ cb_badcc(const struct userconf *ds, char **logmsg, int *t)
 	if ( ( rc = loadlistfd(fd, &b, &a, checkaddr, 1) ) < 0 )
 		return rc;
 
+	if (!b)
+		return 0;
+
 	*logmsg = "bad CC";
 
 	/* look through the list of recipients but ignore the last one: this is the actual one */
