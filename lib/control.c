@@ -234,25 +234,35 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
 	i = j - 1;
 	k = j = 0;
 	while (k < i) {
+		if (!cf || !cf(*buf + k,f))
+			j++;
+		else {
+			const char *s[] = {"input file contains invalid entry '", *buf + k, "'", NULL};
+
+			log_writen(LOG_WARNING, s);
+			/* mark this entry as invalid */
+			(*buf)[k++] = '\0';
+		}
 		k += strlen(*buf + k) + 1;
-		j++;
 	}
-	/* store references to the beginning of each host in the array */
+	if (!j) {
+		/* only invalid entries in file */
+		free(*buf);
+		*buf = *bufa = NULL;
+		return 0;
+	}
 	*bufa = malloc((j + 1) * sizeof(char*));
 	if (!*bufa) {
 		free(*buf);
 		return -1;
 	}
-	k = j = 0;
-	while (k < i) {
-		(*bufa)[j] = *buf + k;
-		if (!cf || !cf(*buf + k,f))
-			j++;
-		else {
-			const char *s[] = {"input file contains invalid entry '",*buf + k, "'", NULL};
-
-			log_writen(LOG_WARNING, s);
+	i = k = 0;
+	/* store references to the beginning of each valid entry */
+	while (i < j) {
+		while (!(*buf)[k]) {
+			k += strlen(*buf + k + 1) + 2;
 		}
+		(*bufa)[i++] = *buf + k;
 		k += strlen(*buf + k) + 1;
 	}
 	(*bufa)[j] = NULL;
