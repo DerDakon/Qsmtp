@@ -80,7 +80,7 @@ nonexist_on_block:	If any filter returns with a reject code the mail server will
 
 List of files:
 
-There are 3 basic types of files:
+There are 4 basic types of files:
 -address files
 	These files can contain 4 types of entries:
 	1) complete mail addresses: entire from address must match this one
@@ -93,6 +93,10 @@ There are 3 basic types of files:
 	These files can contain 2 types of entries (which will look a bit familar *g*):
 	1) see #3 above
 	2) see #4 above
+-blocklist files
+	Every entry in this type of file is the name of one blocklist, not beginning with a '.'. These files are used
+	for various blocklists, e.g. an entry of "dsn.rfc-ignorant.org" in "namebl" would lead to a query of
+	"rossmann.de.dsn.rfc-ignorant.org" if the sender address is "something@rossmann.de"
 -IP match files
 	These files exist in 2 versions, one version for IPv4 addresses with record length 5 and the other for IPv6 addresses
 	with record length 17. The first 4 (16) bytes are a netmask for the IP address, the last byte is the length of the
@@ -104,18 +108,20 @@ badcc:			[address]
 badmailfrom:		(global) [address]
 goodmailfrom:		(global) [address]
 
-dnsbl:			(global)
-whitednsbl:		(global)
-dnsblv6:		(global)
-whitednsblv6:		(global)
+dnsbl:			(global) [blacklist]
+whitednsbl:		(global) [blacklist]
+dnsblv6:		(global) [blacklist]
+whitednsblv6:		(global) [blacklist]
 
-badhelo:		(global)
+badhelo:		(global) [domain]
 
 ipbl:			(global) [IPv4 match]
 ipwl:			(global) [IPv4 match]
 ipblv6:			(global) [IPv6 match]
 ipwlv6:			(global) [IPv6 match]
 
-rspf:			(global)
-spfstrict:		(global)
-ignorespf:		(global)
+rspf:			(global) [blacklist]
+spfstrict:		(global) [domain]
+ignorespf:		(global) [domain]
+
+namebl:			(global) [blacklist]
