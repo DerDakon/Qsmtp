@@ -19,8 +19,9 @@
 int socketd;
 static struct string heloname;
 static unsigned int smtpext;
-static char *rhost;
-static size_t rhostlen;
+char *rhost;
+size_t rhostlen;
+char *partner_fqdn;
 
 static void quitmsg(void);
 
@@ -94,6 +95,47 @@ quit(void)
 	quitmsg();
 	exit(0);
 }
+
+/**
+ *
+ *
+ *
+ */
+static inline void
+getrhost(const struct ips *mx)
+{
+	if (ask_dnsname(&mx->addr, &partner_fqdn)) {
+
+		if (errno != ENOMEM) {
+			rhost = malloc(INET6_ADDRSTRLEN + 2);
+		}
+		if (errno == ENOMEM) {
+			err_mem(1);
+		}
+		rhost[0] = '[';
+		/* there can't be any errors here ;) */
+		(void) inet_ntop(AF_INET6, &mx->addr, rhost + 1, INET6_ADDRSTRLEN);
+		rhostlen = strlen(rhost);
+		rhost[rhostlen++] = ']';
+		rhost[rhostlen] = '\0';
+	} else {
+		rhostlen = strlen(partner_fqdn);
+		rhost = malloc(rhostlen + INET6_ADDRSTRLEN + 3);
+
+		if (!rhost) {
+			err_mem(1);
+		}
+
+		rhost[rhostlen++] = ' ';
+		rhost[rhostlen++] = '[';
+		/* there can't be any errors here ;) */
+		(void) inet_ntop(AF_INET6, &mx->addr, rhost + rhostlen, INET6_ADDRSTRLEN);
+		rhostlen = strlen(rhost);
+		rhost[rhostlen++] = ']';
+		rhost[rhostlen] = '\0';
+	}
+}
+
 
 /**
  * netget - get one line from the network, handle all error cases
@@ -451,17 +493,7 @@ main(int argc, char *argv[])
 		}
 	} while (greeting());
 
-	if (ask_dnsname(&mx->addr, &rhost)) {
-		if (errno != ENOMEM) {
-			rhost = malloc(INET6_ADDRSTRLEN);
-		}
-		if (errno == ENOMEM) {
-			err_mem(1);
-		}
-		/* there can't be any errors here ;) */
-		(void) inet_ntop(AF_INET6, &mx->addr, rhost, INET6_ADDRSTRLEN);
-	}
-	rhostlen = strlen(rhost);
+	getrhost(mx);
 	freeips(mx);
 
 	netmsg[0] = "MAIL FROM:<";
