@@ -157,7 +157,7 @@ queue_envelope(const unsigned long msgsize)
 	char *s = NULL;			/* msgsize */
 	char *t = NULL;			/* goodrcpt */
 	char bytes[] = " bytes, ";
-	const char *logmail[] = {"received ", "", "message to <", NULL, "> from <", xmitstat.mailfrom.s,
+	const char *logmail[] = {"received ", "", "message to <", NULL, "> from <", MAILFROM,
 					"> ", "from ip [", xmitstat.remoteip, "] (", NULL, bytes,
 					NULL, " recipients)", NULL};
 	char *authmsg = NULL;
@@ -168,7 +168,6 @@ queue_envelope(const unsigned long msgsize)
 		logmail[1] = "encrypted ";
 	s = ultostr(msgsize);
 	logmail[10] = s ? s : "unknown";
-	logmail[5] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
 	if (goodrcpt > 1) {
 		t = ultostr(goodrcpt);
 		logmail[12] = t ? t : "unknown";
@@ -179,7 +178,7 @@ queue_envelope(const unsigned long msgsize)
 	}
 /* print the authname.s into a buffer for the log message */
 	if (xmitstat.authname.len) {
-		if (strcasecmp(xmitstat.authname.s, xmitstat.mailfrom.s)) {
+		if (strcasecmp(xmitstat.authname.s, MAILFROM)) {
 			authmsg = malloc(xmitstat.authname.len + 21);
 
 			if (!authmsg)
@@ -197,8 +196,7 @@ queue_envelope(const unsigned long msgsize)
 
 	/* write the return path to qmail-queue */
 	WRITE(fd, "F", 1);
-	WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
-	WRITE(fd, "", 1);
+	WRITE(fd, MAILFROM, xmitstat.mailfrom.len + 1);
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
@@ -309,7 +307,7 @@ queue_result(void)
 int
 smtp_data(void)
 {
-	const char *logmail[] = {"rejected message to <", NULL, "> from <", NULL,
+	const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
 					"> from ip [", xmitstat.remoteip, "] (", NULL, " bytes) {",
 					NULL, NULL};
 	int i, rc;
@@ -515,7 +513,6 @@ loop_data:
 	while (close(fd1[1]) && (errno == EINTR));
 	s = ultostr(msgsize);
 	logmail[7] = s ? s : "unknown";
-	logmail[3] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;

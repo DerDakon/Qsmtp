@@ -22,7 +22,7 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 	char *txt = NULL;	/* TXT record of the rbl entry */
 	const char *netmsg[] = {"501 5.7.1 message rejected, you are listed in ",
 				NULL, NULL, NULL, NULL};
-	const char *logmess[] = {"rejected message to <", THISRCPT, "> from <", xmitstat.mailfrom.s,
+	const char *logmess[] = {"rejected message to <", THISRCPT, "> from <", MAILFROM,
 				"> from IP [", xmitstat.remoteip, "] {listed in ", NULL, " from ",
 				blocktype[*t], " namebl}", NULL};
 	int flagtemp = 0;	/* true at least one list failed with temporary error */

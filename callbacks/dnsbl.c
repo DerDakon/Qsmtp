@@ -65,7 +65,7 @@ cb_dnsbl(const struct userconf *ds, char **logmsg, int *t)
 			free(wtxt);
 		}
 		if (j >= 0) {
-			const char *logmess[] = {"not rejected message to <", THISRCPT, "> from <", xmitstat.mailfrom.s,
+			const char *logmess[] = {"not rejected message to <", THISRCPT, "> from <", MAILFROM,
 						"> from IP [", xmitstat.remoteip, "] {listed in ", a[i], " from ",
 						blocktype[*t], " dnsbl, but whitelisted by ",
 						c[i], " from ", blocktype[u], " whitelist}", NULL};
@@ -81,7 +81,7 @@ cb_dnsbl(const struct userconf *ds, char **logmsg, int *t)
 			} else {
 				const char *netmsg[] = {"501 5.7.1 message rejected, you are listed in ",
 							a[i], NULL, NULL, NULL};
-				const char *logmess[] = {"rejected message to <", THISRCPT, "> from <", xmitstat.mailfrom.s,
+				const char *logmess[] = {"rejected message to <", THISRCPT, "> from <", MAILFROM,
 							"> from IP [", xmitstat.remoteip, "] {listed in ", a[i], " from ",
 							blocktype[*t], " dnsbl}", NULL};
 

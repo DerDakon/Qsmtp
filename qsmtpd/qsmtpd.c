@@ -603,7 +603,7 @@ smtp_rcpt(void)
 	char *errmsg;
 	char *ucbuf, *dcbuf;	/* buffer for user and domain "filterconf" file */
 	int bt;			/* which policy matched */
-	const char *logmsg[] = {"rejected message to <", NULL, "> from <", xmitstat.mailfrom.s,
+	const char *logmsg[] = {"rejected message to <", NULL, "> from <", MAILFROM,
 					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL};
 	const char *okmsg[] = {"250 2.1.0 recipient <", NULL, "> OK", NULL};
 
@@ -638,7 +638,7 @@ smtp_rcpt(void)
 			 }
 		}
 		if (relayclient & 2) {
-			const char *logmess[] = {"rejected message to <", tmp.s, "> from <", xmitstat.mailfrom.s,
+			const char *logmess[] = {"rejected message to <", tmp.s, "> from <", MAILFROM,
 							"> from IP [", xmitstat.remoteip, "] {relaying denied}", NULL};
 
 			log_writen(LOG_INFO, logmess);
@@ -778,8 +778,6 @@ userdenied:
 		logmsg[7] = errmsg;
 		logmsg[9] = blocktype[bt];
 		logmsg[1] = r->to.s;
-		if (!xmitstat.mailfrom.len)
-			logmsg[3] = "";
 		log_writen(LOG_INFO, logmsg);
 	}
 	if (i > 0)
@@ -923,7 +921,7 @@ next:
 	xmitstat.spf = (i & 0x0f);
 	badbounce = 0;
 	goodrcpt = 0;
-	okmsg[1] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
+	okmsg[1] = MAILFROM;
 	return net_writen(okmsg) ? errno : 0;
 }
 
