@@ -22,13 +22,11 @@ unsigned long timeout;			/* how long to wait for data */
  *
  * returns: -1 on error (errno is set), number of bytes read otherwise
  */
-int readinput(char *buffer, const unsigned int len)
+static int
+readinput(char *buffer, const unsigned int len)
 {
 	int retval;
 	fd_set rfds;
-	/* RfC 2821, section 4.5.3.2: "Timeouts"
-	 * An SMTP server SHOULD have a timeout of at least 5 minutes while it
-	 * is awaiting the next command from the sender. */
 	struct timeval tv = {
 		.tv_sec = timeout,
 		.tv_usec = 0,
@@ -301,6 +299,54 @@ ultostr(const unsigned long u)
 		v /= 10;
 	} while (j);
 	return res;
+}
+
+/**
+ * net_readbin - read a given number of bytes from network as binary data (i.e. without any mangling)
+ *
+ * @num: number of bytes to read
+ * @buf: buffer to store data (must have enough space)
+ * @force: 0: read up to num bytes, do not block; 1: read exactly num bytes even if this will block
+ *
+ * returns: number of bytes read, -1 on error
+ */
+int
+net_readbin(unsigned int num, char *buf, const int force)
+{
+	unsigned int offs = 0;
+
+	if (linenlen) {
+		if (linenlen > num) {
+			memcpy(buf, lineinn, num);
+			memmove(lineinn, lineinn + num, linenlen - num);
+			linenlen -= num;
+			return 0;
+		} else {
+			memcpy(buf, lineinn, linenlen);
+			num -= linenlen;
+			offs = linenlen;
+			linenlen = 0;
+		}
+	}
+	while (num) {
+		int r;
+
+		if (!force) {
+			r = data_pending();
+
+			if (r < 0) {
+				return r;
+			} else if (!r) {
+				return offs;
+			}
+		}
+		r = readinput(buf + offs, num);
+		if (r < 0)
+			return r;
+		offs += r;
+		num -= r;
+	}
+	return 0;
 }
 
 /**

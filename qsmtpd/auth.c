@@ -82,8 +82,13 @@ authgetl(void) {
 		}
 		authin.s = s;
 
-		/* read the next 64 bytes */
-		i = readinput(authin.s + authin.len - nfirst, 64 + nfirst);
+		/* read the next 64 (or 65) bytes */
+		i = net_readbin(64 + nfirst, authin.s + authin.len - nfirst, 0);
+		if (i < 0) {
+			free(authin.s);
+			STREMPTY(authin);
+			return -1;
+		}
 		nfirst = 1;
 		authin.len += i;
 	} while (authin.s[authin.len - 1] != '\n');
