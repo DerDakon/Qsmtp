@@ -11,7 +11,7 @@ export SHELL CC CFLAGS LD LDFLAGS
 
 SUBDIRS = lib callbacks qsmtpd tools
 
-TARGETS = targets/Qsmtpd targets/addipbl
+TARGETS = targets/Qsmtpd targets/addipbl targets/testspf
 
 .phony: all clean subdirs install
 
