@@ -83,6 +83,91 @@ queue_header(int fd)
 	return 0;
 }
 
+static int
+queue_envelope(int fd, const unsigned long msgsize)
+{
+	char *s = NULL;			/* msgsize */
+	char *t = NULL;			/* goodrcpt */
+	char bytes[] = " bytes, ";
+	const char *logmail[] = {"received ", "", "message to <", NULL, "> from <", xmitstat.mailfrom.s,
+					"> ", "", "from ip [", xmitstat.remoteip, "] (", NULL, bytes,
+					NULL, " recipients)",NULL};
+	char *authmsg = NULL;
+	int rc;
+
+	s = ultostr(msgsize);
+	if (!s)
+		s = "unknown";
+	if (ssl)
+		logmail[1] = "encrypted ";
+	logmail[11] = s;
+	logmail[5] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
+	if (head.tqh_first == *head.tqh_last) {
+		t = ultostr(goodrcpt);
+		if (!t)
+			t = "unknown";
+		logmail[13] = t;
+	} else {
+		bytes[6] = ')';
+		bytes[7] = '\0';
+		/* logmail[13] is already NULL so that logging will stop here */
+	}
+/* print the authname.s into a buffer for the log message */
+	if (xmitstat.authname.len) {
+		if (strcasecmp(xmitstat.authname.s, xmitstat.mailfrom.s)) {
+			authmsg = malloc(xmitstat.authname.len + 21);
+
+			if (!authmsg)
+				return errno;
+			memcpy(authmsg, "(authenticated as ", 18);
+			memcpy(authmsg + 18, xmitstat.authname.s, xmitstat.authname.len);
+			memcpy(authmsg + 18 + xmitstat.authname.len, ") ", 3);
+		} else {
+			authmsg = malloc(17);
+
+			if (!authmsg)
+				return errno;
+			memcpy(authmsg, "(authenticated) ", 17);
+		}
+		logmail[7] = authmsg;
+	}
+
+/* write the envelope information to qmail-queue */
+
+	/* write the return path to qmail-queue */
+	WRITE(fd, "F", 1);
+	WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+	WRITE(fd, "", 1);
+
+	while (head.tqh_first != NULL) {
+		struct recip *l = head.tqh_first;
+
+		logmail[3] = l->to.s;
+		if (l->ok) {
+			log_writen(LOG_INFO, logmail);
+			WRITE(fd, "T", 1);
+			WRITE(fd, l->to.s, l->to.len);
+			WRITE(fd, "", 1);
+		}
+		TAILQ_REMOVE(&head, head.tqh_first, entries);
+		free(l->to.s);
+		free(l);
+	}
+	WRITE(fd, "", 1);
+	while (close(fd)) {
+		if (errno != EINTR)
+			return errno;
+	}
+	if (s[0] != 'u')
+		free(s);
+	if (logmail[13] && (t[0] != 'u'))
+		free(t);
+	freedata();
+	free(authmsg);
+
+	return 0;
+}
+
 #undef WRITE
 #define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
 					goto err_write
@@ -90,11 +175,10 @@ queue_header(int fd)
 int
 smtp_data(void)
 {
-	char bytes[] = " bytes, ";
 	char *authmsg = NULL;
-	const char *logmail[] = {"received ", "", "message to <", NULL, "> from <", xmitstat.mailfrom.s,
-					"> ", "", "from ip [", xmitstat.remoteip, "] (", NULL, bytes,
-					NULL, " recipients)",NULL};
+	const char *logmail[] = {"rejected message to <", NULL, "> from <", xmitstat.mailfrom.s,
+					"> from ip [", xmitstat.remoteip, "] (", NULL, " bytes) {",
+					NULL, NULL};
 	int i, status, rc;
 	unsigned long msgsize = 0, maxbytes;
 	int fd0[2], fd1[2], fd;	/* the fds to communicate with qmail-queue */
@@ -103,10 +187,9 @@ smtp_data(void)
 					 * else message is bogus (RfC 2822, section 3.6).
 					 * RfC 2821 says server SHOULD NOT check for this,
 					 * but we let the user decide */
-	const char *errmsg = NULL, *logmsg = NULL;
+	const char *errmsg = NULL;
 	unsigned int hops = 0;		/* number of "Received:"-lines */
 	char *s = NULL;			/* msgsize */
-	char *t = NULL;			/* goodrcpt */
 
 	if (badbounce || !goodrcpt) {
 		tarpit();
@@ -172,25 +255,6 @@ smtp_data(void)
 		return EDONE;
 	}
 
-/* print the authname.s into a buffer for the logmsg */
-	if (xmitstat.authname.len) {
-		if (strcasecmp(xmitstat.authname.s, xmitstat.mailfrom.s)) {
-			authmsg = malloc(xmitstat.authname.len + 21);
-
-			if (!authmsg)
-				goto err_write;
-			memcpy(authmsg, "(authenticated as ", 18);
-			memcpy(authmsg + 18, xmitstat.authname.s, xmitstat.authname.len);
-			memcpy(authmsg + 18 + xmitstat.authname.len, ") ", 3);
-		} else {
-			authmsg = malloc(17);
-
-			if (!authmsg)
-				goto err_write;
-			memcpy(authmsg, "(authenticated) ", 17);
-		}
-		logmail[7] = authmsg;
-	}
 	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n"))
 		return errno;
 	if (databytes) {
@@ -226,7 +290,7 @@ smtp_data(void)
 			if (xmitstat.check2822 & 1) {
 				if (!strncasecmp("Date:", linein, 5)) {
 					if (flagdate) {
-						logmsg = " {more than one 'Date:' in header}";
+						logmail[9] = "more than one 'Date:' in header}";
 						errmsg = "550 5.6.0 message does not comply to RfC2822: "
 								"more than one 'Date:'\r\n";
 						goto loop_data;
@@ -236,7 +300,7 @@ smtp_data(void)
 					}
 				} else if (!strncasecmp("From:", linein, 5)) {
 					if (flagfrom) {
-						logmsg = " {more than one 'From:' in header}";
+						logmail[9] = "more than one 'From:' in header}";
 						errmsg = "550 5.6.0 message does not comply to RfC2822: "
 								"more than one 'From:'\r\n";
 						goto loop_data;
@@ -247,7 +311,7 @@ smtp_data(void)
 				}
 				for (i = linelen - 1; i >= 0; i--) {
 					if (linein[i] < 0) {
-						logmsg = " {8bit-character in message header}";
+						logmail[9] = "8bit-character in message header}";
 						errmsg = "550 5.6.0 message does not comply to RfC2822: "
 								"8bit character in message header\r\n";
 						goto loop_data;
@@ -257,7 +321,7 @@ smtp_data(void)
 			if (flagr) {
 				if (!strncasecmp("Received:", linein, 9)) {
 					if (++hops > MAXHOPS) {
-						logmsg = " {mail loop}";
+						logmail[9] = "mail loop}";
 						errmsg = "554 5.4.6 too many hops, this message is looping\r\n";
 						goto loop_data;
 					}
@@ -277,7 +341,7 @@ smtp_data(void)
 
 					for (np = head.tqh_first; np != NULL; np = np->entries.tqe_next) {
 						if (np->ok && !strcmp(linein + 14, np->to.s)) {
-							logmsg = " {mail loop}";
+							logmail[9] = "mail loop}";
 							errmsg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n";
 							goto loop_data;
 						}
@@ -297,11 +361,11 @@ smtp_data(void)
 	}
 	if (xmitstat.check2822 & 1) {
 		if (!flagdate) {
-			logmsg = " {no 'Date:' in header}";
+			logmail[9] = "no 'Date:' in header}";
 			errmsg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n";
 			goto loop_data;
 		} else if (!flagfrom) {
-			logmsg = " {no 'From:' in header}";
+			logmail[9] = "no 'From:' in header}";
 			errmsg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n";
 			goto loop_data;
 		}
@@ -317,7 +381,7 @@ smtp_data(void)
 			if ((xmitstat.check2822 & 1) && !xmitstat.datatype) {
 				for (i = linelen - 1; i >= 0; i--)
 					if (linein[i] < 0) {
-						logmsg = " {8bit-character in message body}";
+						logmail[9] = "8bit-character in message body}";
 						errmsg = "550 5.6.0 message contains 8bit characters\r\n";
 						goto loop_data;
 					}
@@ -344,57 +408,8 @@ smtp_data(void)
 	}
 	fd0[1] = 0;
 	fd = fd1[1];
-
-	s = ultostr(msgsize);
-	if (!s)
-		s = "unknown";
-	if (ssl)
-		logmail[1] = "encrypted ";
-	logmail[11] = s;
-	logmail[5] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
-	if (head.tqh_first == *head.tqh_last) {
-		t = ultostr(goodrcpt);
-		if (!t)
-			t = "unknown";
-		logmail[13] = t;
-	} else {
-		bytes[6] = ')';
-		bytes[7] = '\0';
-		/* logmail[13] is already NULL so that logging will stop here */
-	}
-
-/* write the envelope information to qmail-queue */
-
-	/* write the return path to qmail-queue */
-	WRITE(fd, "F", 1);
-	WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
-	WRITE(fd, "", 1);
-
-	while (head.tqh_first != NULL) {
-		struct recip *l = head.tqh_first;
-
-		logmail[3] = l->to.s;
-		if (l->ok) {
-			log_writen(LOG_INFO, logmail);
-			WRITE(fd, "T", 1);
-			WRITE(fd, l->to.s, l->to.len);
-			WRITE(fd, "", 1);
-		}
-		TAILQ_REMOVE(&head, head.tqh_first, entries);
-		free(l->to.s);
-		free(l);
-	}
-	WRITE(fd, "", 1);
-	while (close(fd)) {
-		if (errno != EINTR)
-			goto err_write;
-	}
-	if (s[0] != 'u')
-		free(s);
-	if (logmail[13] && (t[0] != 'u'))
-		free(t);
-	freedata();
-	free(authmsg);
+	if ( (rc = queue_envelope(fd, msgsize)) )
+		return rc;
 
 	while(waitpid(qpid, &status, 0) == -1) {
 		/* don't know why this could ever happen, but we want to be sure */
@@ -474,24 +489,17 @@ loop_data:
 			return e;
 		}
 	} while ((linelen != 1) && (linein[0] != '.'));
-	bytes[6] = ')';
-	bytes[7] = '\0';
 	s = ultostr(msgsize);
 	if (!s)
 		s = "unknown";
-	logmail[0] = "rejected message to <";
-	logmail[1] = "";
-	logmail[2] = "";
-	logmail[11] = s;
-	logmail[13] = logmsg;
-	logmail[14] = NULL;
+	logmail[7] = s;
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
 
 		TAILQ_REMOVE(&head, head.tqh_first, entries);
 		if (l->ok) {
-			logmail[3] = l->to.s;
+			logmail[1] = l->to.s;
 			log_writen(LOG_INFO, logmail);
 		}
 		free(l->to.s);
