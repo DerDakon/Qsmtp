@@ -11,9 +11,9 @@
 #include <string.h>
 #include <fcntl.h>
 
-#define VERSION "0.01"
+#define VERSION "0.02"
 
-static char linein[256];
+static char linein[300];
 
 static struct params {
 	char *name;
@@ -57,11 +57,24 @@ err2(const char *s, const char *t)
 	syslog(LOG_ERR, "%s%s\n", s, t);
 }
 
+static void
+oom(void)
+{
+	err("out of memory");
+	commstat = ENOMEM;
+}
+
 static void __attribute__ ((noreturn))
 eXit(void)
 {
 	closelog();
 	exit(0);
+}
+
+static void __attribute__ ((noreturn))
+eXiT(int __attribute__ ((unused)) ignored)
+{
+	eXit();
 }
 
 static int
@@ -210,6 +223,12 @@ echo(void)
 }
 
 static void
+eecho(int __attribute__ ((unused)) type)
+{
+	echo();
+}
+
+static void
 show(void)
 {
 	if (warn_noparam(4, "show"))
@@ -295,11 +314,44 @@ struct edbuf {
 static int
 editread(const int type)
 {
-	if (type <=2 ) {
+	if (type <= 2) {
 		FILE *fcfd;
 
 		TAILQ_INIT(&editbuffer.buf.lhead);
-		
+
+		fcfd = fopen("filterconf", "r");
+		if (fcfd == NULL) {
+			commstat = (errno == ENOENT) ? 0 : errno;
+			return commstat;
+		}
+		while (fgets(linein, sizeof(linein), fcfd)) {
+			unsigned int len = strlen(linein);
+			struct addrlist *ad;
+
+			if (!len || (linein[0] == '#') || (linein[0] == '\n'))
+				continue;
+			if (len >= 256) {
+				err2("ignoring line with more than 256 characters in file ", editbuffer.name);
+				while (linein[len] != '\n') {
+					if (!fgets(linein, sizeof(linein), fcfd)) {
+						fclose(fcfd);
+						return 0;
+					}
+					len = strlen(linein);
+				}
+			}
+			ad = malloc(sizeof(*ad));
+			if (!ad || !(ad->address = malloc(len))) {
+				fclose(fcfd);
+				oom();
+				return 1;
+			}
+			memcpy(ad->address, linein, --len);
+			ad->address[len] = '\0';
+			TAILQ_INSERT_TAIL(&editbuffer.buf.lhead, ad, entries);
+		}
+		fclose(fcfd);
+		return 0;
 	} else {
 		int fd;
 		struct stat st;
@@ -340,8 +392,7 @@ editread(const int type)
 		editbuffer.buf.map.mem = malloc(st.st_size);
 		if (!editbuffer.buf.map.mem) {
 			close(fd);
-			err("out of memory");
-			commstat = ENOMEM;
+			oom();
 			return 1;
 		}
 
@@ -450,16 +501,48 @@ editadd(const int type)
 		case 1:
 		case 2:	{
 				struct addrlist *newad = malloc(sizeof(*newad));
+				unsigned int len = strlen(linein + 4);
+				linein[3 + len--] = '\0';
 
+#warning FIXME: some error handling for parameter is missing here
+				switch (type) {
+					case 2:	if (!strchr(linein + 4, '.'))
+							goto parse;
+					case 1:	if (strchr(linein + 4, '@'))
+							goto parse;
+					case 0:	{
+							char *tmp;
+
+							/* this is allowed neither in domain nor in localpart
+							 * even if a single '.' is allowed in both */
+							if (strstr(linein + 4, ".."))
+								goto parse;
+							tmp = strchr(linein + 4, '@');
+							if (tmp) {
+/* check localpart */
+								char *l = linein + 4;
+								
+								while (l < tmp) {
+									
+								}
+								tmp++;
+							} else {
+								tmp = linein + 4;
+							}
+/* check domain */
+							while (*tmp) {
+								if ((*tmp < 32) || 
+							}
+						}
+				}
 				if (!newad)
 					goto nomem;
-#warning FIXME: all error handling for parameter is missing here
-				newad->address = malloc(strlen(linein + 4));
+				newad->address = malloc(len);
 				if (!newad->address) {
 					free(newad);
 					goto nomem;
 				}
-				memcpy(newad->address, linein + 4, strlen(linein + 4));
+				memcpy(newad->address, linein + 4, len);
 				TAILQ_INSERT_TAIL(&editbuffer.buf.lhead, newad, entries);
 			}
 			break;
@@ -527,12 +610,11 @@ editadd(const int type)
 	}
 	return;
 nomem:
-	commstat = ENOMEM;
-	err("out of memory");
+	oom();
 	return;
 parse:
 	commstat = EINVAL;
-	puts("ERROR: cannot parse parameter");
+	puts("ERROR: invalid argument");
 }
 
 static struct ecommands {
@@ -544,8 +626,8 @@ static struct ecommands {
 	{ .name = "add", .len = 3, .func = editadd },
 	{ .name = "del", .len = 3, .func = NULL },
 	{ .name = "show", .len = 4, .func = NULL },
-	{ .name = "echo", .len = 4, .func = echo },
-	{ .name = "exit", .len = 4, .func = eXit },
+	{ .name = "echo", .len = 4, .func = eecho },
+	{ .name = "exit", .len = 4, .func = eXiT },
 	{ .name = "quit", .len = 4, .func = editquit },
 	{ .name = NULL }
 };
