@@ -1034,7 +1034,7 @@ main(int argc, char *argv[]) {
 		} else {
 /* check if someone talks to us like a HTTP proxy and kill the connection if */
 			if (!strncmp("POST / HTTP/1.", linein, 14)) {
-				char *logmsg[] = {"dropped connection from [", xmitstat.remoteip, "]: client is talking HTTP to me", NULL};
+				const char *logmsg[] = {"dropped connection from [", xmitstat.remoteip, "]: client is talking HTTP to me", NULL};
 				log_writen(LOG_INFO, logmsg);
 				return 0;
 			}
