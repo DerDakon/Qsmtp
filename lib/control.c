@@ -134,7 +134,7 @@ loadintfd(int fd, unsigned long *result, const unsigned long def)
  * buf: the buffer where the contents of the file will go, memory will be malloced
  * optional: if set to 0 raise an error if the file does not exist
  *
- * returns: length of buffer
+ * returns: length of the string
  */
 int
 loadoneliner(const char *filename, char **buf, int optional)
@@ -160,8 +160,7 @@ loadoneliner(const char *filename, char **buf, int optional)
 		errno = EINVAL;
 		return -1;
 	}
-	/* the buffer is one byte ('\0') longer than the string in it */
-	return j - 1;
+	return j;
 }
 
 /**
