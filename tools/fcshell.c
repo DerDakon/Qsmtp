@@ -117,7 +117,7 @@ writefc(void)
 	FILE *fcfd;
 	char fn[25];
 	int e;
-	int len;
+	int len = 0;
 
 	snprintf(fn, sizeof(fn), "filterconf.%i", getpid());
 	fcfd = fopen(fn, "w");
