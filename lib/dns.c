@@ -119,7 +119,6 @@ ask_dnsaaaa(const char *name, struct ips **result)
 			if (!p) {
 				freeips(*result);
 				free(r);
-				errno = ENOMEM;
 				return -1;
 			}
 			*q = p;
@@ -180,7 +179,6 @@ ask_dnsa(const char *name, struct ips **result)
 				if (!p) {
 					freeips(*result);
 					free(r);
-					errno = ENOMEM;
 					return -1;
 				}
 				*q = p;
