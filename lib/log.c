@@ -15,9 +15,10 @@ log_writen(int priority, const char **s)
 		i += strlen(s[j]);
 	buf = malloc(i + 2);
 	if (!buf) {
+#ifdef USESYSLOG
 		priority = LOG_ERR;
+#endif
 		buf = "not enough memory for log message";
-		return;
 	} else {
 		i = 0;
 		for (j = 0; s[j]; j++) {
