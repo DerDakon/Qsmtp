@@ -506,6 +506,8 @@ main(int argc, char *argv[])
 
 	setup();
 
+	diemsg = "Zconnection to remote server died\n";
+
 	if (rcptcount <= 0) {
 		log_write(LOG_CRIT, "too few arguments");
 		write(1, "Zinternal error: Qremote called with invalid arguments\n", 56);

@@ -48,9 +48,14 @@ log_write(int priority, const char *s)
 	log_writen(priority, t);
 }
 
+const char *diemsg;
+
 void __attribute__ ((noreturn))
 dieerror(int error)
 {
+	if (diemsg)
+		write(1, diemsg, strlen(diemsg) + 1);
+
 	switch (error) {
 		case ETIMEDOUT:	log_write(LOG_WARNING, "connection timed out"); break;
 		case ECONNRESET:log_write(LOG_WARNING, "connection died"); break;
