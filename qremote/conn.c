@@ -67,7 +67,7 @@ tryconn(struct ips *mx)
 		}
 		if (minpri == 65537) {
 			close(socketd);
-			write(1, "Zcan't connect to any server\n", 28);
+			write(1, "Zcan't connect to any server\n", 30);
 			exit(0);
 		}
 		for (thisip = mx; thisip; thisip = thisip->next) {
