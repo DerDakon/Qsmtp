@@ -58,3 +58,5 @@ How to install:
     clients with his own name. If you want to send mail from localhost use /var/qmail/bin/sendmail instead or
     tell the mail program to use another name. If you want to disable this check completely search
     Qsmtpd/qsmtpd/qsmtpd.c for the string "LIAR" in function helovalid and remove them. Rebuild.
+14. If you want qmail-smtpd to accept IPv6 connections you probably also want qmail-remote to send on IPv6 links.
+    A patch can be found here http://pyon.org/fujiwara/ (no guarantee if this works for you).
