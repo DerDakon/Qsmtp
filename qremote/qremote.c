@@ -442,6 +442,10 @@ main(int argc, char *argv[])
 		netmsg[3] = NULL;
 	}
 	net_writen(netmsg);
+	if (smtpext & 1) {
+		netmsg[2] = ">";
+		netmsg[3] = NULL;
+	}
 	if (smtpext & 2) {
 /* server allows PIPELINING: first send all the messages, then check the replies. This allows to hide network latency */
 		write(1, linein, linelen);write(5,"\n",1);
