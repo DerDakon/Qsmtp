@@ -502,7 +502,7 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 	STREMPTY(ds->userpath);
 
 	if (addrsyntax(linein, flags, addr, more))
-		return netwrite("501 5.1.3 domain of mail address syntactically incorrect\r\n") ? errno : EDONE;
+		return netwrite("501 5.1.3 domain of mail address is syntactically incorrect\r\n") ? errno : EDONE;
 
 	/* empty mail address is valid in MAIL FROM:, this is checked by addrsyntax before
 	 * if we find an empty address here it's ok */
@@ -833,7 +833,7 @@ smtp_from(void)
 	int seenbody = 0;	/* if we found a "BODY=" after mail, there may only be one */
 	struct userconf ds;
 	struct statvfs sbuf;
-	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> syntactically correct", NULL};
+	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> is syntactically correct", NULL};
 
 	i = addrparse(0, &(xmitstat.mailfrom), &more, &ds);
 	xmitstat.frommx = NULL;
