@@ -19,11 +19,11 @@ ask_dnsmx(const char *name, struct ips **result)
 {
 	int i;
 	char *r;
-	unsigned int l;
+	unsigned int l = 0;
 
 	i = dnsmx(&r, &l, name);
 
-	if (!i) {
+	if (!i || ((i < 0) && (errno == ENOENT)) ) {
 		char *s = r;
 		struct ips **q = result;
 
