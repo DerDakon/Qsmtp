@@ -115,6 +115,16 @@ err_control2(const char *msg, const char *fn)
 	return netwrite("421 4.3.5 unable to read controls\r\n");
 }
 
+void __attribute__ ((noreturn))
+dieerror(int error)
+{
+	switch (error) {
+		case ETIMEDOUT:	log_write(LOG_WARNING, "connection timed out"); break;
+		case ECONNRESET:log_write(LOG_WARNING, "connection died"); break;
+	}
+	_exit(error);
+}
+
 static int
 setup(void)
 {

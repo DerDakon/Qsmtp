@@ -493,6 +493,20 @@ readerr:
 	exit(0);
 }
 
+void __attribute__ ((noreturn))
+dieerror(int error)
+{
+	switch (error) {
+		case ETIMEDOUT:	write(1, "Zconnection to remote server died\n", 35);
+				log_write(LOG_WARNING, "connection timed out");
+				break;
+		case ECONNRESET:write(1, "Zconnection to remote timed out\n", 33);
+				log_write(LOG_WARNING, "connection died");
+				break;
+	}
+	_exit(0);
+}
+
 static const char *mailerrmsg[] = {"Connected to ", NULL, " but sender was rejected", NULL};
 
 int
@@ -505,8 +519,6 @@ main(int argc, char *argv[])
 	int rcptcount = argc - 4;
 
 	setup();
-
-	diemsg = "Zconnection to remote server died\n";
 
 	if (rcptcount <= 0) {
 		log_write(LOG_CRIT, "too few arguments");
