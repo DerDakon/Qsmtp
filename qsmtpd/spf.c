@@ -968,7 +968,6 @@ spf_domainspec(char *token, char **domain, int *ip4cidr, int *ip6cidr)
 		}
 		if (t != token) {
 			char o;
-			int i;
 
 			o = *t;
 			*t = '\0';
