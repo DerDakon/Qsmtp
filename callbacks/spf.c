@@ -61,7 +61,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 
 		/* First match wins. */
 		while (a[v] && (spfs >= 0) &&
-					((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR))) {
+					((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR) || (spfs == SPF_LOOP))) {
 			memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
 			spfs = spflookup(spfname, 0);
 			v++;
@@ -71,9 +71,9 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 		if ((spfs == SPF_PASS) || (spfs < 0)) {
 			return 0;
 		}
-	}
-	if ((spfs == SPF_HARD_ERROR) || (spfs == SPF_LOOP)) {
-		return 0;
+		if ((spfs == SPF_HARD_ERROR) || (spfs == SPF_LOOP)) {
+			spfs = SPF_NONE;
+		}
 	}
 
 	if (spfs == SPF_TEMP_ERROR) {
@@ -92,7 +92,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 		goto strict;
 	if (spfs == SPF_NEUTRAL)
 		goto block;
-/* spfs can only be SPF_HARD_ERROR or SPF_NONE now (or something is seriously broken) */
+/* spfs can only be SPF_HARD_ERROR, SPF_LOOP or SPF_NONE now (or something is seriously broken) */
 	/* if (p == 4)
 		goto strict;
 	if (spfs == SPF_HARD_ERROR)
