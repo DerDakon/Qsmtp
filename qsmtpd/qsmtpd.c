@@ -789,8 +789,7 @@ userdenied:
 		case 2:	if ( (j = netwrite("550 5.7.1 mail denied for policy reasons\r\n")) )
 				e = errno;
 			break;
-		case 3:	if (42 == 42) {
-				/* this is _so_ ugly. I just want a local variable for this case */
+		case 3:	{
 				const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
 
 				if ( (j = net_writen(rcptmsg)) )
