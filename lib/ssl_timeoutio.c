@@ -62,8 +62,9 @@ int ssl_timeoutaccept(long t)
 	r = ssl_timeoutio(SSL_accept, t, NULL, 0);
 
 	if (r <= 0) {
-		ndelay_off(ssl_rfd);
-		ndelay_off(ssl_wfd);
+		r = ndelay_off(ssl_rfd);
+		if (!r)
+			r = ndelay_off(ssl_wfd);
 	} else
 		SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
 
