@@ -29,28 +29,33 @@ ask_dnsmx(const char *name, struct ips **result)
 		struct ips **q = result;
 
 		/* there is no MX record, so we look for an AAAA record */
-		if (!l)
+		if (!l) {
 			return ask_dnsa(name, result);
+		}
 
 		while (r + l > s) {
 			struct ips *p;
 			int pri, rc;
 
-			rc = ask_dnsa(r + 2, &p);
+			rc = ask_dnsa(s + 2, &p);
 			if (rc < 0) {
 				freeips(*result);
 				if (errno == ENOMEM)
 					return -1;
 				return 2;
 			} else if (!rc) {
+				struct ips *u;
+
 				pri = (*s << 8) + *(s + 1);
+				/* add the new results to the list */
 				*q = p;
-				do {
-					p->priority = pri;
-					p = p->next;
-				} while (p);
+				/* set priority for each of the new entries */
+				for (u = p; u; u = p->next) {
+					u->priority = pri;
+					p = u;
+				}
 				q = &(p->next);
-				s += 2 + strlen(s + 2);
+				s += 3 + strlen(s + 2);
 			}
 		}
 		free(r);
@@ -138,22 +143,27 @@ domainvalid(const char *host, const int ignored __attribute__ ((unused)))
 	int dot = 0;	/* if there is a '.' in the address */
 	const char *h = host;
 
-	if (!*host)
+	if (!*host || (*host == '.'))
 		return 1;
 	while (*host) {
-		if (!(((*host >= 'a') && (*host <= 'z')) ||
-				((*host >= 'A') && (*host <= 'Z')) ||
-				(*host == '.') || (*host == '-') ||
-				((*host >= '0') && (*host <= '9'))))
-			return 1;
+		if (!((*host >= 'a') && (*host <= 'z')) && !((*host >= 'A') && (*host <= 'Z'))  &&
+			 (*host != '.') && (*host != '-') && !((*host >= '0') && (*host <= '9'))) {
+			 return 1;
+		}
 		if (*host == '.') {
-			if (*(host+1) == '.')
-				return 1;
+			*host++;
 			dot = 1;
+			if (*host == '.')
+				return 1;
+			continue;
 		}
 		*host++;
 	}
 	if ((host - h) > 255)
+		return 1;
+	/* there is no top level domain ending with something different from a letter */
+	*host--;
+	if (!(((*host >= 'a') && (*host <= 'z')) || ((*host >= 'A') && (*host <= 'Z'))))
 		return 1;
 	return 1 - dot;
 }
