@@ -1034,7 +1034,7 @@ main(int argc, char *argv[]) {
 			flagbogus = net_writen(msg) ? errno : 0;
 		} else {
 /* check if someone talks to us like a HTTP proxy and kill the connection if */
-			if (!strcmp("POST / HTTP/1.0", linein)) {
+			if (!strncmp("POST / HTTP/1.", linein, 14)) {
 				char *logmsg[] = {"dropped connection from [", xmitstat.remoteip, "]: client is talking HTTP to me", NULL};
 				log_writen(LOG_INFO, logmsg);
 				return 0;
