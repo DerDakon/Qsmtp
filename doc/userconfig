@@ -56,11 +56,66 @@ spfpolicy:		(global) Filter mail by the policy given by a DNS TXT record of the 
 nobounce:		Don't accept bounce messages to this recipients. This is useful if this address is never
 			used to send mail (e.g. contact addresses on websites).
 
-block_soberg:		(global)
-helovalid:		(global)
+usersize:		The maximum size of a message the user wants to accept. This only works if the client uses
+			ESMTP SIZE (which all real mailservers do). The wide spread worm with own SMTP engine don't
+			use this so this will not block them.
+
+block_soberg:		(global) Block a mail where the combination of HELO and MAIL FROM looks like SoberG:
+			MAIL FROM: foo@bar.com would lead to HELO foo.com
+
+helovalid:		(global) Mails with invalid helo are rejected. The value is a bitwise of these bits:
+			1: helo is my name
+			2: helo is my [IP address]
+			3: helo is syntactically invalid
+			4: currently undefined
+			5: 2+3 (helo is my IP address, but not enclosed in '[]' which is broken
+			6, 7: currently undefined
 
 fail_hard_on_temp:	If any filter returns with a temporary reject (e.g. sending IP is listed in a IP blacklist)
 			a permanent failure is announced instead of the temporary one.
 
 nonexist_on_block:	If any filter returns with a reject code the mail server will lie and tell the client the
 			user does not exist instead of returning a policy error.
+
+
+List of files:
+
+There are 3 basic types of files:
+-address files
+	These files can contain 4 types of entries:
+	1) complete mail addresses: entire from address must match this one
+	2) @domain: from domain must match string, "@aol.com" would block "foo@aol.com" but not "foo@bar.aol.com"
+	3) no '@' at all: block everything from this domain and subdomains, the character in MAIL FROM before the match
+	   must be '.' or '@' so "aol.com" would reject "foo@aol.com" and "foo@bar.aol.com" but not "foo@no-aol.com"
+	4) beginning with '.' and no '@': block everything ending with string, so ".aol.com" would block every subdomain
+	   of aol.com, but not aol.com itself
+-domain files
+	These files can contain 2 types of entries (which will look a bit familar *g*):
+	1) see #3 above
+	2) see #4 above
+-IP match files
+	These files exist in 2 versions, one version for IPv4 addresses with record length 5 and the other for IPv6 addresses
+	with record length 17. The first 4 (16) bytes are a netmask for the IP address, the last byte is the length of the
+	netmask. The minimum value of the length byte is 8, the maximum 32 (128). The file is rejected if the length is not
+	a factor of the record length.
+
+badcc:			[address]
+
+badmailfrom:		(global) [address]
+goodmailfrom:		(global) [address]
+
+dnsbl:			(global)
+whitednsbl:		(global)
+dnsblv6:		(global)
+whitednsblv6:		(global)
+
+badhelo:		(global)
+
+ipbl:			(global) [IPv4 match]
+ipwl:			(global) [IPv4 match]
+ipblv6:			(global) [IPv6 match]
+ipwlv6:			(global) [IPv6 match]
+
+rspf:			(global)
+spfstrict:		(global)
+ignorespf:		(global)
