@@ -796,6 +796,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 					free(t);
 				}
 				break;
+		case 'P':
 		case 'p':	if (xmitstat.remotehost.len) {
 					if (spf_appendmakro(res, l, xmitstat.remotehost.s, xmitstat.remotehost.len,
 								num, r, delim))
@@ -804,12 +805,14 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 					APPEND(7, "unknown");
 				}
 				break;
+		case 'R':
 		case 'r':	if (!ex) {
 					PARSEERR;
 				}
 				if (spf_appendmakro(res, l, heloname.s, heloname.len, num, r, delim))
 					return -1;
 				break;
+		case 'V':
 		case 'v':	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
 					if (delim & 2) {
 						if (r) {
@@ -832,6 +835,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 					APPEND(3, "ip6");
 				}
 				break;
+		case 'H':
 		case 'h':	APPEND(10, "deprecated");
 				break;
 		default:	APPEND(7, "unknown");
