@@ -77,6 +77,7 @@ ask_dnsmx(const char *name, struct ips **result)
 		case EMFILE:
 		case ENOBUFS:	errno = ENOMEM;
 		case ENOMEM:	return -1;
+		case ENOENT:	return 1;
 		default:	return 3;
 	}
 }
@@ -132,6 +133,7 @@ ask_dnsa(const char *name, struct ips **result)
 		case EMFILE:
 		case ENOBUFS:	errno = ENOMEM;
 		case ENOMEM:	return -1;
+		case ENOENT:	return 1;
 		default:	return 3;
 	}
 }
@@ -140,7 +142,7 @@ ask_dnsa(const char *name, struct ips **result)
  * domainvalid - check if a string is a valid fqdn
  *
  * @host:     the name to check
- * @dnsask:   lookup the name in DNS or not
+ * @ignored:  yes, it's ignored, it's just there for loadlistfd
  *
  * returns:  0 if everything is ok 
  *           1 on syntax error
