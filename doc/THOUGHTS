@@ -1,0 +1,142 @@
+This file is a bit like DJB's THOUGHTS file. Here I write down what I think
+about some "features" and "bugs" in qmail (which one is a feature and which a
+bug differs from who you ask).
+
+1. Local recipients
+
+qmail-smtpd should know if a local recipient exists if he sees the RCPT TO.
+qmail is very "secure" by meaning that there is little code that has root
+capabilities. Normally qmail-smtpd would have to do everything qmail-local
+does only to see if there is the recipient. Of course that's too much code.
+
+For me there are 2 possible ways to solve this:
+-create some sort of daemon that does all the magic. qmail-smtpd can ask it
+ to tell if the user exists and qmail-local can get the delivery instruction
+ from it.
+-use the vpopmail way (currently implemented in Qsmtpd): this only works for
+ domains which are controlled by vpopmail. You also have to change vpopmail
+ to create the domain and user (not the Maildir/!) directories readable for
+ Qsmtpd (or qmail-smtpd). This only leaks information (to local users!) that
+ are not that private: the existence of a mail user and it's filter settings.
+ You can narrow this down by putting qmaild into group vpopmail (or a new
+ group for this special purpose) and making the domain and user directories
+ only readable to this group.
+ Note: this change is needed for Qsmtpd anyway to allow Qsmtpd read the users
+ filter config. You can circumwent this if you put all this information into
+ some sort of database (e.g. LDAP).
+
+2. Bounces
+
+I hate getting a bounce for every delivery that failed. It would be much nicer
+if qmail-send would collect the bounces to local recipients and return them
+all in one mail. For those local recipients that fail with a temporary error
+first it may send them later one by one but the recipients that fail at the
+first attempt with permanent error should be grouped together.
+
+Without looking into this deeper the code should something like this:
+
+repeat
+  for all recipients do
+    if (try_deliver fails)
+      add error message to bounce
+    else
+      mark recipient as done
+  if (bounce exists)
+    deliver bounce
+until (all recipients are marked as done)
+
+This would also group together all bounces of local and remote deliveries of
+this queue run.
+
+3. Remote deliveries
+
+I disagree with DJB about multiple recipient mails. IMHO a message to multiple
+recipients has to be delivered by a single transfer. I don't think qmail-send
+can handle this (but maybe I just don't understand this poorly documented code).
+
+The way I would do this is something like this:
+
+-qmail-send sees a message needs delivery. It calls qmail-lspawn for the local
+ deliveries as usual. It calls qmail-rspawn (or it's successor) and tells him:
+ a) the queue id (inode number) of the message to deliver and b) the maximum
+ number of remote connections it may open at any time. For this qmail-send has
+ to count the pending recipients in the file and calculate the minimum of
+ pending recipients and free remote slots (concurrencyremote). The minimum
+ number is passed to qmail-rspawn. If the remaining number of remote slots is 0
+ qmail-send will not schedule any more mails for remote delivery until at least
+ one of this childs return.
+ Note: There is a high possibility that qmail-rspawn will use less connections
+       than the given number. Mails to multiple recipients at a single domain
+       are not that rare. Using a bigger number for concurrentyremote is better
+       here (with the possibility of a high network load if every message has
+       only one recipients or every recipient has it's own MX). I would do it
+       this way to keep the DNS lookups away from qmail-send.
+-qmail-rspawn will go through the recipient list. It will fork a qmail-remote
+ (or better Qremote *g*) for every transfer, grouping mails to recipients at
+ the same domain (this is simple) and the same primary MX (this is a bit more
+ complicated, see below) together so they are sent only once through the
+ network.
+ This has some advantages:
+   a) less network transfer
+   b) less memory usage, CPU usage, latency and network transfer: fewer DNS
+      lookups (by just comparing the recipent domains). This will give a small
+      penalty of CPU cycles if there are many recipients at many different
+      domains.
+   c) less network latency: less TCP connections have to be established
+   d) bounce messages can be grouped easier, at least all errors at the same
+      host can go into a single bounce message. Some people say that if you
+      try to deliver a mail to one MX and he gives a 5xx response the transfer
+      has to be tried again at the other MXs. I think this is completely broken.
+      I will not do it. If one host gives a 5xx the message will bounce (for
+      this recipient). If a delivery fails with 4xx for all recipients and there
+      is another MX this one will be tried. If there are multiple recipients and
+      only some of them fail with 4xx (e.g. if there are too much recipients for
+      a single transfer) they will be tried again at the next queue run.
+ Grouping the transfers by DNS hosts is not that easy. It will require a multi-
+ stage algorithmus looking a bit like this:
+   -get MX entries for all domains involved. This may be limited to a reasonable
+    small number of domains (e.g. 50) to save some memory and latency.
+   -sort every MX list by priority
+   -for all domains look if there are domains which share the same MX list,
+    compact them into a single list (there are no differences in the delivery
+    attempts to all this recipients). This helps to get the algorithm more
+    effective. This group of domains will be called "one domain" in the
+    following step.
+   -while there are domains where no delivery attempt has been made:
+      local variable: the list of domains for this MX.
+      btw: primary MX = MX of the lowest (remaining) priority
+
+      -take the first domain from the delivery list and add it to the local
+       list.
+      -look if one of their primary MXes is a primary MX for another domain. If
+       it is, add this domain to the local list.
+      -try to make a connection to this MX. Loop for all IP addresses of this
+       host.
+      -If there is a connection try to deliver the mail. If at least one
+       recipient gets 2xx response remove this domains from list, try next
+       domain. Write bounce information for all 5xx responses. If there are only
+       5xx and 4xx responses (or only 4xx) go to next step. Don't try
+       recipients that got a 5xx at the other MXes.
+      -If no connection can be established delete this host from _all_ MX lists.
+      -If there is another MX of this priority clear the local domain list and
+       start again.
+      -if connection attempts to all MXes fail:
+       remove this domain from list, will be retried at next queue run
+
+4. SMTP Extensions to be supported by Qremote
+ -STARTTLS (taken from the qmail patch)
+ -SIZE (no cost for us but helps avoiding useless big transfers)
+ -8BITMIME (really this time: if the remote mailer does not support it recode
+  the mail). I agree that a mailer that is not 8 bit clean is broken, obsolete
+  and ugly. But that's life.
+ -CHUNKING: reduces the overhead of message recoding. All programs in the qmail
+  package need to be fixed to use CRLF instead of bare LF when they generate or
+  store messages (they should be fixed indipendently of this: RfC 2822 says
+  lines MUST end with CRLF).
+
+5. More fixes
+ -see CHUNKING in previous section
+ -qmail-queue must make sure that the messages do not contain lines longer than
+  1000 characters (or "sendmail" and qmail-inject must). Qsmtpd checks itself so
+  that the main "problem" are the programs for local injection. Noone uses QMTP
+  and friends ;)
