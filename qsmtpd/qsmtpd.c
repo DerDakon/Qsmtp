@@ -367,7 +367,7 @@ user_exists(const string *localpart, struct userconf *ds)
 
 	/* '/' is a valid character for localparts but we don't want it because
 	 * it could be abusedto check the existence of files */
-	if (strchr(localpart.s, '/'))
+	if (strchr(localpart->s, '/'))
 		return 0;
 
 	memcpy(filetmp, ds->userpath.s, ds->userpath.len);
