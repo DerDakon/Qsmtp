@@ -1,11 +1,15 @@
 #include <openssl/ssl.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <sys/mman.h>
+#include <sys/file.h>
+#include <sys/stat.h>
 #include <string.h>
 #include <syslog.h>
 #include <resolv.h>
 #include <unistd.h>
 #include <errno.h>
+#include <fcntl.h>
 #include "antispam.h"
 #include "log.h"
 #include "dns.h"
@@ -319,18 +323,49 @@ ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsign
 int
 lookupipbl(int fd)
 {
-	int i;
-	char *a;		/* buffer to read file into */
+	int i, rc;
+	char *map;		/* map the file here */
+	struct stat st;
 
-#warning FIXME: do not load file into memory, use mmap
-	if ( ( i = lloadfilefd(fd, &a, 0) ) < 0 )
-		return i;
-	
-	if (xmitstat.ipv4conn) {
-		i = check_ip4(a, i);
-	} else {
-		i = check_ip6(a, i);
+	while (flock(fd,LOCK_SH)) {
+		if (errno != EINTR) {
+			log_write(LOG_WARNING, "cannot lock input file");
+			errno = ENOLCK;	/* not the right error code, but good enough */
+			return -1;
+		}
 	}
-	free(a);
-	return i;
+	if ( (i = fstat(fd, &st)) )
+		return i;
+	if (!st.st_size) {
+		while ( (rc = close(fd)) ) {
+			if (errno != EINTR)
+				return rc;
+		}
+		return 0;
+	}
+
+	map = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
+	if (map == MAP_FAILED) {
+		int e = errno;
+
+		while (close(fd)) {
+			if (errno != EINTR)
+				break;
+		}
+		errno = e;
+		return -1;
+	}
+
+	if (xmitstat.ipv4conn) {
+		rc = check_ip4(map, st.st_size);
+	} else {
+		rc = check_ip6(map, st.st_size);
+	}
+	munmap(map, st.st_size);
+	while ((i = close(fd))) {
+		if (errno != EINTR) {
+			break;
+		}
+	}
+	return i ? i : rc;
 }
