@@ -108,6 +108,7 @@ queue_header(void)
 	const char *afterprot = "A\n\tfor <";	/* the string to be written after the protocol */
 
 /* write the "Received: " line to mail header */
+STAMP();
 	WRITE(fd, "Received: from ", 15);
 	if (xmitstat.remotehost.s) {
 		WRITE(fd, xmitstat.remotehost.s, xmitstat.remotehost.len);
@@ -128,6 +129,7 @@ queue_header(void)
 		WRITE(fd, ") (", 3);
 		WRITE(fd, xmitstat.remoteinfo, strlen(xmitstat.remoteinfo));
 	}
+STAMP();
 	WRITE(fd, ")\n\tby ", 6);
 	WRITE(fd, heloname.s, heloname.len);
 	WRITE(fd, " (" VERSIONSTRING ") with ", 9 + strlen(VERSIONSTRING));
@@ -140,10 +142,12 @@ queue_header(void)
 	i = strftime(datebuf, sizeof(datebuf), ">; %a, %d %b %Y %H:%M:%S %z\n", localtime(&ti));
 	WRITE(fd, datebuf, i);
 /* write "Received-SPF: " line */
+STAMP();
 	if (!(xmitstat.authname.len || xmitstat.tlsclient)) {
 		if ( (rc = spfreceived(fd, xmitstat.spf)) )
 			return rc;
 	}
+STAMP();
 	return 0;
 }
 
@@ -164,6 +168,7 @@ queue_envelope(const unsigned long msgsize)
 	int rc, e;
 	int fd = fd1[1];
 
+STAMP();
 	if (ssl)
 		logmail[1] = "encrypted ";
 	s = ultostr(msgsize);
@@ -195,11 +200,13 @@ queue_envelope(const unsigned long msgsize)
 
 /* write the envelope information to qmail-queue */
 
+STAMP();
 	/* write the return path to qmail-queue */
 	WRITE(fd, "F", 1);
 	WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
 	WRITE(fd, "", 1);
 
+STAMP();
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
 
@@ -214,6 +221,7 @@ queue_envelope(const unsigned long msgsize)
 		free(l);
 	}
 	WRITE(fd, "", 1);
+STAMP();
 err_write:
 	e = errno;
 	while ( (rc = close(fd)) ) {
@@ -233,6 +241,7 @@ err_write:
 	free(t);
 	freedata();
 	free(authmsg);
+STAMP();
 	errno = e;
 	return rc;
 }
@@ -242,6 +251,7 @@ queue_result(void)
 {
 	int status;
 
+STAMP();
 	while(waitpid(qpid, &status, 0) == -1) {
 		/* don't know why this could ever happen, but we want to be sure */
 		if (errno == EINTR) {
@@ -325,12 +335,14 @@ smtp_data(void)
 
 	if (badbounce || !goodrcpt) {
 		tarpit();
-		return netwrite("554 5.1.1 no valid recipients\r\n") ? errno : EINVAL;
+		return netwrite("554 5.1.1 no valid recipients\r\n") ? errno : EDONE;
 	}
 
+STAMP();
 	if ( (i = queue_init()) )
 		return i;
 
+STAMP();
 	if ( (rc = hasinput()) ) {
 		while (close(fd0[1]) && (errno == EINTR));
 		while (close(fd1[1]) && (errno == EINTR));
@@ -338,6 +350,7 @@ smtp_data(void)
 		return rc;
 	}
 
+STAMP();
 	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n")) {
 		int e = errno;
 
@@ -354,9 +367,11 @@ smtp_data(void)
 
 	/* fd is now the file descriptor we are writing to. This is better than always
 	 * calculating the offset to fd0[1] */
+STAMP();
 	fd = fd0[1];
 	if ( (rc = queue_header()) )
 		goto err_write;
+STAMP();
 
 	/* loop until:
 	 * -the message is bigger than allowed
@@ -368,6 +383,7 @@ smtp_data(void)
 /* write the data to mail */
 	while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes) && linelen && (hops <= MAXHOPS)) {
 
+STAMP();
 		if (linein[0] == '.') {
 			/* write buffer beginning at [1], we do not have to check if the second character 
 			 * is also a '.', RfC 2821 says only we should discard the '.' beginning the line */
@@ -376,6 +392,7 @@ smtp_data(void)
 		} else {
 			int flagr = 1;	/* if the line may be a "Received:" or "Delivered-To:"-line */
 
+STAMP();
 			if (xmitstat.check2822 & 1) {
 				if (!strncasecmp("Date:", linein, 5)) {
 					if (flagdate) {
@@ -448,6 +465,7 @@ smtp_data(void)
 		if (net_read())
 			goto err_write;
 	}
+STAMP();
 	if (xmitstat.check2822 & 1) {
 		if (!flagdate) {
 			logmail[9] = "no 'Date:' in header}";
@@ -459,6 +477,7 @@ smtp_data(void)
 			goto loop_data;
 		}
 	}
+STAMP();
 	if (!linelen) {
 		/* if(linelen) message has no body and we already are at the end */
 		WRITE(fd, "\n", 1);
@@ -485,6 +504,7 @@ smtp_data(void)
 				goto err_write;
 		}
 	}
+STAMP();
 	if (msgsize > maxbytes) {
 		rc = EMSGSIZE;
 		errmsg = NULL;
@@ -496,8 +516,10 @@ smtp_data(void)
 			goto err_write;
 	}
 	fd0[1] = 0;
+STAMP();
 	if (queue_envelope(msgsize))
 		goto err_write;
+STAMP();
 
 	return queue_result();
 loop_data:
