@@ -77,7 +77,7 @@ diff -Naur libowfat-0.20/dns/dns_ip6.c libowfat-0.20-eike/dns/dns_ip6.c
 +  stralloc sa = {.len = 0, .a = 0, .s = 0};
 +  int r;
 +
-+  if (!stralloc_copys(out,"")) return -1;
++  if (!stralloc_copys(&sa,"")) return -1;
 +  r = dns_ip6q(&sa, fqdn, str_len(fqdn));
 +  *out = sa.s;
 +  *len = sa.len;
