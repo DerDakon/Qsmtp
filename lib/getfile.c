@@ -128,7 +128,7 @@ checkconfig(char *const *config, const char *flag, const unsigned int l)
 			} else {
 				if (config[i][l] == '=') {
 					char *s;
-					unsigned long r;
+					long r;
 
 					r = strtol(config[i] + l + 1, &s, 10);
 					if (*s) {
