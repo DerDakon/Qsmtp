@@ -13,7 +13,7 @@ export SHELL CC CFLAGS LD LDFLAGS AUTOQMAIL
 SUBDIRS = lib callbacks qsmtpd qremote
 
 TARGETS = targets/Qsmtpd targets/Qremote
-TOOLS = targets/addipbl targets/testspf
+TOOLS = targets/addipbl targets/testspf targets/fcshell
 
 .phony: all clean subdirs toolsub install normal
 

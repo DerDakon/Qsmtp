@@ -1,4 +1,4 @@
-TARGETS=addipbl.o testspf.o
+TARGETS=addipbl.o testspf.o fcshell.o
 
 .phony: all clean
 
