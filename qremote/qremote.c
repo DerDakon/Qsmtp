@@ -259,6 +259,139 @@ greeting(void)
 	return 0;
 }
 
+static void
+send_data(void)
+{
+	char sendbuf[1205];
+	unsigned int idx = 0;
+	int num;
+	int lastlf = 0;		/* set if last byte sent was a LF */
+
+	netwrite("DATA\r\n");
+	if (netget() != 354)
+		quit();
+/* read in chunks of 80 bytes. Most MUAs use 80 chars per line for their mails so we will
+ * not have more than one linebreak per chunk. Make sure there are at least 160 bytes left
+ * in sendbuf so we can turn 80 "CR" _or_ "LF" into 80 "CRLF" (worst case). The last 3
+ * chars are there to pad a "CRLF.CRLF" into if the message ends with no newline and don't
+ * need to start another turn. */
+	while ( (num = read(42, sendbuf + idx, 80)) ) {
+		if (num < 0)
+			goto readerr;
+		while (num) {
+			if ((sendbuf[idx] != '\r') && (sendbuf[idx] != '\n')) {
+				if (!(smtpext & 0x08) && (sendbuf[idx] < 0)) {
+/* this message has to be recoded to 7BIT somehow... */
+					write(1, "Zmessage has 8 Bit characters but next server "
+							"does not accept 8BITMIME", 71);
+					_exit(0);
+				}
+				if (sendbuf[idx] == '.') {
+					if ((idx && (sendbuf[idx - 1] == '\n')) || (!idx && lastlf)) {
+						idx++;
+						memmove(sendbuf + idx + 1, sendbuf + idx, num);
+						sendbuf[idx] = '.';
+					}
+				}
+				idx++;
+				num--;
+				continue;
+			}
+			if (sendbuf[idx] == '\r') {
+				idx++;
+				num--;
+				/* check if this was the last byte in buffer. If it was, read one more */
+				if (!num) {
+					num = read(42, sendbuf + idx, 1);
+					if (!num) {
+						/* last byte in input stream */
+						sendbuf[idx++] = '\n';
+						break;
+					} else if (num < 0) {
+						goto readerr;
+					}
+				}
+				if (sendbuf[idx] == '\n') {
+					idx++;
+					num--;
+				} else {
+					memmove(sendbuf + idx + 1, sendbuf + idx, num);
+					sendbuf[idx++] = '\n';
+				}
+			} else {
+				memmove(sendbuf + idx + 1, sendbuf + idx, num);
+				sendbuf[idx++] = '\r';	/* insert CR before found LF */
+				idx++;			/* skip this LF */
+				num--;				/* one byte checked */
+			}
+		}
+		if (idx >= sizeof(sendbuf) - 165) {
+			netnwrite(sendbuf, idx);
+			lastlf = (sendbuf[idx - 1] == '\n');
+			idx = 0;
+		}
+	}
+	if (idx) {
+		if (sendbuf[idx - 1] != '\n') {
+			if (sendbuf[idx - 1] != '\r') {
+				sendbuf[idx++] = '\r';
+			}
+			sendbuf[idx++] = '\n';
+		}
+	} else {
+		if (!lastlf) {
+			sendbuf[0] = '\r';
+			sendbuf[1] = '\n';
+			idx = 2;
+		}
+	}
+	sendbuf[idx++] = '.';
+	sendbuf[idx++] = '\r';
+	sendbuf[idx++] = '\n';
+	netnwrite(sendbuf, idx);
+	checkreply("KZD");
+readerr:
+#warning FIXME: add error handling for read errors
+}
+
+static void
+send_bdat(void)
+{
+	char sendbuf[2048];
+	int num;
+	int last = 0;
+
+	while ( (num = read(42, sendbuf, sizeof(sendbuf) - 1)) ) {
+		char chunklen[5];
+		const char *netmsg[] = {"BDAT ", chunklen, NULL, NULL};
+
+		if (num < 0)
+			goto readerr;
+/* Try to read one byte more. If this causes EOF we can mark this the last chunk */
+		last = read(42, sendbuf + num, 1);
+		if (last < 0) {
+			goto readerr;
+		} else if (!last) {
+			netmsg[2] = " LAST";
+		} else {
+			num += 1;
+			last = 0;
+		}
+		ultostr(num, chunklen);
+		net_writen(netmsg);
+		netnwrite(sendbuf, num);
+		if (last)
+			break;
+		if (checkreply(" ZD") != 250)
+			quit();
+	}
+	if (!last)
+		netwrite("BDAT 0 LAST\r\n");
+	checkreply("KZD");
+readerr:
+#warning FIXME: add error handling for read errors
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -281,6 +414,8 @@ main(int argc, char *argv[])
 	}
 
 	getmxlist(argv[1], &mx);
+
+	dup2(0, 42);
 
 /* for all MX entries we got: try to enable connection, check if the SMTP server wants us (sends 220 response) and
  * or EHLO/HELO succeeds. If not, try next. If none left, exit. */
@@ -344,10 +479,10 @@ main(int argc, char *argv[])
 		if (rcptstat)
 			quit();
 	}
-	netwrite("DATA\r\n");
-	if (netget() != 354)
-		quit();
-	netwrite("Subject: test qremote\r\n\r\n.\r\n");
-	checkreply("KZD");
+	if (smtpext & 0x10) {
+		send_bdat();
+	} else {
+		send_data();
+	}
 	quit();
 }
