@@ -10,9 +10,9 @@ static char *b64alpha =
 
 /* returns 0 ok, >0 illegal, -1 problem */
 
-int b64decode(const unsigned char *in, int l, string *out)
+int b64decode(const unsigned char *in, unsigned int l, string *out)
 {
-	int i, j;
+	unsigned int i, j;
 	unsigned char a[4];
 	unsigned char b[3];
 	char *s;

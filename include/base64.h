@@ -3,7 +3,7 @@
 
 #include "sstring.h"
 
-extern int b64decode(const unsigned char *, int, string *);
+extern int b64decode(const unsigned char *, unsigned int, string *);
 extern int b64encode(string *, string *);
 
 #endif
