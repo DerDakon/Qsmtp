@@ -1001,25 +1001,11 @@ smtp_temperror(void)
 	return netwrite("451 4.3.5 system config error\r\n") ? errno : EDONE;
 }
 
-int
-main(int argc, char *argv[]) {
-	int flagbogus = 0;
+static int flagbogus;
 
-	if (setup()) {
-		/* setup failed: make sure we wait until the "quit" of the other host but
-		 * do not process any mail. Commands RSET, QUIT and NOOP are still allowed.
-		 * The state will not change so a client ignoring our error code will get
-		 * "bad sequence of commands" and will be kicked if it still doesn't care */
-		int i;
-		for (i = (sizeof(commands) / sizeof(struct smtpcomm)) - 1; i > 2; i--) {
-			commands[i].func = smtp_temperror;
-			commands[i].state = -1;
-		}
-	} else {
-		STREMPTY(xmitstat.authname);
-		xmitstat.check2822 = 2;
-		TAILQ_INIT(&head);		/* Initialize the recipient list. */
-	}
+static void __attribute__ ((noreturn))
+smtploop(void)
+{
 	if (!getenv("BANNER")) {
 		const char *msg[] = {"220 ", heloname.s, " " VERSIONSTRING " ESMTP", NULL};
 
@@ -1030,40 +1016,11 @@ main(int argc, char *argv[]) {
 			if (!strncmp("POST / HTTP/1.", linein, 14)) {
 				const char *logmsg[] = {"dropped connection from [", xmitstat.remoteip, "]: client is talking HTTP to me", NULL};
 				log_writen(LOG_INFO, logmsg);
-				return 0;
+				exit(0);
 			}
 		}
 	}
 
-	/* Check if parameters given. If they are given assume they are for auth checking*/
-	auth_host = NULL;
-	if (argc >= 4) {
-		auth_check = argv[2];
-		auth_sub = argv + 3;
-		if (domainvalid(argv[1])) {
-			const char *msg[] = {"domainname for auth invalid", auth_host, NULL};
-
-			log_writen(LOG_WARNING, msg);
-		} else {
-			int fd = open(auth_check, O_RDONLY);
-			if (fd < 0) {
-				const char *msg[] = {"checkpassword program '", auth_check, "' does not exist", NULL};
-
-				log_writen(LOG_WARNING, msg);
-			} else {
-				int r;
-
-				while ((r = close(fd)) && (errno == EINTR));
-				if (!r) {
-					auth_host = argv[1];
-				} else {
-					flagbogus = errno;
-				}
-			}
-		}
-	} else if (argc != 1) {
-		log_write(LOG_ERR, "invalid number of parameters given");
-	}
 /* the state machine */
 	while (1) {
 		unsigned int i;
@@ -1186,4 +1143,55 @@ main(int argc, char *argv[]) {
 			}
 		}
 	}
+}
+
+int
+main(int argc, char *argv[]) {
+
+	if (setup()) {
+		/* setup failed: make sure we wait until the "quit" of the other host but
+		 * do not process any mail. Commands RSET, QUIT and NOOP are still allowed.
+		 * The state will not change so a client ignoring our error code will get
+		 * "bad sequence of commands" and will be kicked if it still doesn't care */
+		int i;
+		for (i = (sizeof(commands) / sizeof(struct smtpcomm)) - 1; i > 2; i--) {
+			commands[i].func = smtp_temperror;
+			commands[i].state = -1;
+		}
+	} else {
+		STREMPTY(xmitstat.authname);
+		xmitstat.check2822 = 2;
+		TAILQ_INIT(&head);		/* Initialize the recipient list. */
+	}
+
+	/* Check if parameters given. If they are given assume they are for auth checking*/
+	auth_host = NULL;
+	if (argc >= 4) {
+		auth_check = argv[2];
+		auth_sub = argv + 3;
+		if (domainvalid(argv[1])) {
+			const char *msg[] = {"domainname for auth invalid", auth_host, NULL};
+
+			log_writen(LOG_WARNING, msg);
+		} else {
+			int fd = open(auth_check, O_RDONLY);
+			if (fd < 0) {
+				const char *msg[] = {"checkpassword program '", auth_check, "' does not exist", NULL};
+
+				log_writen(LOG_WARNING, msg);
+			} else {
+				int r;
+
+				while ((r = close(fd)) && (errno == EINTR));
+				if (!r) {
+					auth_host = argv[1];
+				} else {
+					flagbogus = errno;
+				}
+			}
+		}
+	} else if (argc != 1) {
+		log_write(LOG_ERR, "invalid number of parameters given");
+	}
+	smtploop();
 }
