@@ -13,6 +13,8 @@
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
 
 static const char *noqueue = "451 4.3.2 can not connect to queue\r\n";
+static int fd0[2], fd1[2];		/* the fds to communicate with qmail-queue */
+static pid_t qpid;
 
 static int
 err_pipe(void)
@@ -26,6 +28,70 @@ err_fork(void)
 {
 	log_write(LOG_ERR, "cannot fork qmail-queue");
 	return netwrite(noqueue) ? errno : 0;
+}
+
+static int
+queue_init(void)
+{
+	int i;
+
+	if (pipe(fd0)) {
+		if ( (i = err_pipe()) )
+			return i;
+		return EDONE;
+	}
+	if (pipe(fd1)) {
+		/* EIO on pipe operations? Shit just happens (although I don't know why this could ever happen) */
+		while (close(fd0[0]) && (errno == EINTR));
+		while (close(fd0[1]) && (errno == EINTR));
+		if ( (i = err_pipe()) )
+			return i;
+		return EDONE;
+	}
+
+	/* DJB uses vfork at this point (qmail.c::open_qmail) which looks broken
+	 * because he modifies data before calling execve */
+	switch (qpid = fork()) {
+		case -1:	if ( (i = err_fork()) )
+					return i;
+				return EDONE;
+		case 0:		if (1) {
+					char *qqbin;
+
+					qqbin = getenv("QMAILQUEUE");
+					if (!qqbin) {
+						qqbin = "bin/qmail-queue";
+					}
+					while ( (i = close(fd0[1])) ) {
+						if (errno != EINTR)
+							_exit(120);
+					}
+					while ( (i = close(fd1[1])) ) {
+						if (errno != EINTR)
+							_exit(120);
+					}
+					if (dup2(fd0[0], 0) == -1)
+						_exit(120);
+					if (dup2(fd1[0], 1) == -1)
+						_exit(120);
+				/* no chdir here, we already _are_ there (and qmail-queue does it again) */
+					execlp(qqbin, qqbin, NULL);
+					_exit(120);
+				}
+		default:	while (close(fd0[0]) && (errno == EINTR));
+				while (close(fd1[0]) && (errno == EINTR));
+	}
+
+/* check if the child already returned, which means something went wrong */
+	if (waitpid(qpid, NULL, WNOHANG)) {
+		/* error here may just happen, we are already in trouble */
+		while (close(fd0[1]) && (errno == EINTR));
+		while (close(fd1[1]) && (errno == EINTR));
+		if ( (i = err_fork()) )
+			return i;
+		return EDONE;
+	}
+	return 0;
 }
 
 #define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
@@ -178,8 +244,7 @@ smtp_data(void)
 					NULL, NULL};
 	int i, status, rc;
 	unsigned long msgsize = 0, maxbytes;
-	int fd0[2], fd1[2], fd;	/* the fds to communicate with qmail-queue */
-	pid_t qpid;
+	int fd;
 	int flagdate = 0, flagfrom = 0;	/* Date: and From: are required in header,
 					 * else message is bogus (RfC 2822, section 3.6).
 					 * RfC 2821 says server SHOULD NOT check for this,
@@ -193,64 +258,11 @@ smtp_data(void)
 		return netwrite("554 5.1.1 no valid recipients\r\n") ? errno : EINVAL;
 	}
 
-	if (pipe(fd0)) {
-		if ( (i = err_pipe()) )
-			return i;
-		return EDONE;
-	}
-	if (pipe(fd1)) {
-		/* EIO on pipe operations? Shit just happens (although I don't know why this could ever happen) */
-		while (close(fd0[0]) && (errno == EINTR));
-		while (close(fd0[1]) && (errno == EINTR));
-		if ( (i = err_pipe()) )
-			return i;
-		return EDONE;
-	}
-
-	/* DJB uses vfork at this point (qmail.c::open_qmail) which looks broken
-	 * because he modifies data before calling execve */
-	switch (qpid = fork()) {
-		case -1:	if ( (i = err_fork()) )
-					return i;
-				return EDONE;
-		case 0:		if (1) {
-					char *qqbin;
-
-					qqbin = getenv("QMAILQUEUE");
-					if (!qqbin) {
-						qqbin = "bin/qmail-queue";
-					}
-					while ( (i = close(fd0[1])) ) {
-						if (errno != EINTR)
-							_exit(120);
-					}
-					while ( (i = close(fd1[1])) ) {
-						if (errno != EINTR)
-							_exit(120);
-					}
-					if (dup2(fd0[0], 0) == -1)
-						_exit(120);
-					if (dup2(fd1[0], 1) == -1)
-						_exit(120);
-				/* no chdir here, we already _are_ there (and qmail-queue does it again) */
-					execlp(qqbin, qqbin, NULL);
-					_exit(120);
-				}
-		default:	while (close(fd0[0]) && (errno == EINTR));
-				while (close(fd1[0]) && (errno == EINTR));
-	}
+	if ( (i = queue_init()) )
+		return i;
 
 	if ((rc = hasinput()))
 		return rc;
-/* check if the child already returned, which means something went wrong */
-	if (waitpid(qpid, &status, WNOHANG)) {
-		/* error here may just happen, we are already in trouble */
-		while (close(fd0[1]) && (errno == EINTR));
-		while (close(fd1[1]) && (errno == EINTR));
-		if ( (i = err_fork()) )
-			return i;
-		return EDONE;
-	}
 
 	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n"))
 		return errno;
