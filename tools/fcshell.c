@@ -434,7 +434,7 @@ editquit(const int type)
 	editwrite(type);
 }
 
-struct ecommands {
+static struct ecommands {
 	const char *name;
 	const unsigned int len;
 	void (*func)(const int);
