@@ -165,7 +165,7 @@ loadoneliner(const char *filename, char **buf, int optional)
 }
 
 /**
- * loadlistfd - read a list of from config file and validate entries
+ * loadlistfd - read a list from config file and validate entries
  *
  * fd: file descriptor to read from (is closed on exit!)
  * buf: the buffer where the data should be stored (memory will be malloced)
