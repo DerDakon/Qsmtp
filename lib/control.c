@@ -22,6 +22,8 @@
  *           0: do nothing but load the file into the buffer
  *
  * returns: length of buffer on success, -1 on error (errno is set)
+ *
+ * if the file is empty (size 0 or only comments and blank lines) ENOENT is returned
  */
 int
 lloadfilefd(int fd, char **buf, const int striptab)
@@ -47,6 +49,12 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	if ( (i = fstat(fd, &st)) )
 		return i;
 	oldlen = st.st_size + 1;
+	if (!oldlen) {
+		while ( (i = close(fd)) && (errno != EINTR));
+		if (!i)
+			errno = ENOENT;
+		return -1;
+	}
 	inbuf = malloc(oldlen);
 	if (!inbuf)
 		return -1;
@@ -92,6 +100,11 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		inbuf[j++] = '\0';
 		while ((i < oldlen) && !inbuf[i])
 			i++;
+	}
+	if (j == 1) {
+		free(*buf);
+		errno = ENOENT;
+		return -1;
 	}
 	/* free the now useless memory at the end */
 	*buf = realloc(inbuf, j);
