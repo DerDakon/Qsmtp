@@ -299,7 +299,7 @@ finddomainmm(int fd, const char *domain)
 	if ( (rc = fstat(fd, &st)) )
 		return rc;
 	if (!st.st_size) {
-		while ( (rc = close(fd)) && (errno != EINTR) );
+		while ( (rc = close(fd)) && (errno == EINTR) );
 		return rc;
 	}
 
