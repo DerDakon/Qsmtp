@@ -91,7 +91,7 @@ getfileglobal(const struct userconf *ds, const char *fn, int *type)
 
 	len = strlen(fn);
 	/* neither user nor domain specified how to handle this feature
-		* now look up the global setting */
+	 * now look up the global setting */
 
 	*type = 2;
 	if (! (t = malloc(len + 9))) {
@@ -105,6 +105,13 @@ getfileglobal(const struct userconf *ds, const char *fn, int *type)
 	return fd;
 }
 
+/**
+ * checkconfig - search a value in a given list of config values
+ *
+ * @config: list of settings, last entry has to be NULL, list may be NULL
+ * @flag: the value to find
+ * @l: strlen(flag)
+ */
 static long
 checkconfig(char *const *config, const char *flag, const unsigned int l)
 {
@@ -116,6 +123,7 @@ checkconfig(char *const *config, const char *flag, const unsigned int l)
 	while (config[i]) {
 		if (!strncmp(config[i], flag, l)) {
 			if (!config[i][l]) {
+				/* only the name of the value is given: implicitely set to 1 */
 				return 1;
 			} else {
 				if (config[i][l] == '=') {
@@ -157,7 +165,7 @@ getsetting(const struct userconf *ds, const char *flag, int *type)
 	if (r > 0) {
 		return r;
 	} else if (r < 0) {
-		/* if user sets this to a value <0 this means "0 and don't override with domain setting */
+		/* if user sets this to a value <0 this means "0 and don't override with domain setting" */
 		if (errno)
 			return r;
 		return 0;
