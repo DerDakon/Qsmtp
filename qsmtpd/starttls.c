@@ -283,7 +283,7 @@ int tls_init()
 
 	prot = SSL_get_cipher(myssl);
 	l = strlen(prot);
-	newprot = realloc(protocol, l + 19);
+	newprot = realloc(protocol, l + 20);
 	if (!newprot) {
 		SSL_free(ssl);
 		ssl = NULL;
@@ -294,8 +294,8 @@ int tls_init()
 	protocol[0] = '(';
 	memcpy(protocol + 1, prot, l);
 	l++;
-	memcpy(protocol + l, " encrypted) ESMTP", 17);
-	protocol[l + 17] = '\0';
+	memcpy(protocol + l, " encrypted) ESMTPS", 18);
+	protocol[l + 18] = '\0';
 
 	/* have to discard the pre-STARTTLS HELO/EHLO argument, if any */
 	return 0;
