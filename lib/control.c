@@ -216,7 +216,7 @@ loadoneliner(const char *filename, char **buf, int optional)
  * @cf: function to check if an entry is valid or NULL if not to
  * @f: second parameter of cf
  *
- * if the file does not exist or has no content *buf and **bufa will be set to NULL
+ * if the file does not exist or has no content *buf and *bufa will be set to NULL
  */
 int
 loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
@@ -227,7 +227,7 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
 		return j;
 
 	if (!j) {
-		**bufa = NULL;
+		*bufa = NULL;
 		return 0;
 	}
 	/* count the lines in buf */
