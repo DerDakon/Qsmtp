@@ -216,12 +216,6 @@ err:
 	puts("WARNING: an error occured");
 }
 
-struct commands {
-	const char *name;
-	unsigned int len;
-	void (*func)(void);
-};
-
 static void
 wr(void)
 {
@@ -237,7 +231,11 @@ editquit(void)
 		return;
 }
 
-static struct commands edcmds[] = {
+struct ecommands {
+	const char *name;
+	const unsigned int len;
+	void (*func)(int);
+} edcmds[] = {
 	{ .name = "write", .len = 5, .func = NULL },
 	{ .name = "add", .len = 3, .func = NULL },
 	{ .name = "exit", .len = 4, .func = eXit },
@@ -328,7 +326,7 @@ edit(void)
 			if (!strncmp(linein, edcmds[i].name, edcmds[i].len)) {
 				if ((linein[edcmds[i].len] != '\n') && (linein[edcmds[i].len] != ' '))
 					break;
-				edcmds[i].func();
+				edcmds[i].func(active->type);
 				error = 0;
 				break;
 			}
@@ -382,7 +380,11 @@ err:
 	commstat = EINVAL;
 }
 
-static struct commands cmds[] = {
+static struct commands {
+	const char *name;
+	const unsigned int len;
+	void (*func)(void);
+} cmds[] = {
 	{ .name = "echo", .len = 4, .func = echo },
 	{ .name = "quit", .len = 4, .func = quit },
 	{ .name = "exit", .len = 4, .func = eXit },
