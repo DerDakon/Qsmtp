@@ -146,7 +146,10 @@ loop_long:
 	/* if readoffset is set the last character in the previous buffer was '\r' */
 	linenlen = 0;
 	do {
-		i = readinput(linein, sizeof(linein));
+		int j = readinput(linein, sizeof(linein));
+
+		if (j < 0)
+			return j;
 		if (readoffset && (linein[0] == '\n')) {
 			p = linein + 1;
 			break;
@@ -159,8 +162,8 @@ loop_long:
 				readoffset = 1;
 				goto loop_long;
 			}
-			p = memchr(p, '\r', i);
-			i -= (p - linein);
+			p = memchr(p, '\r', j);
+			j -= (p - linein);
 		}
 		readoffset = 0;
 	} while (!p);
