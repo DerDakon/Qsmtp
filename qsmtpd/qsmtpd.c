@@ -1256,6 +1256,7 @@ smtp_data(void)
 		if (errno != EINTR)
 			goto err_write;
 	}
+	fd0[1] = 0;
 	fd = fd1[1];
 
 	s = ultostr(msgsize);
@@ -1405,8 +1406,10 @@ loop_data:
 err_write:
 	rc = errno;
 	free(s);
+	if (fd0[1]) {
+		while (close(fd0[1]) && (errno == EINTR));
+	}
 	while (close(fd1[1]) && (errno == EINTR));
-	while (close(fd0[1]) && (errno == EINTR));
 	freedata();
 	if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
 		return errno;
