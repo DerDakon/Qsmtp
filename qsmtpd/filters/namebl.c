@@ -71,6 +71,7 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 			if ( (d = strchr(d, '.')) )
 				d++;
 		}
+		i++;
 	}
 
 	if (!rc) {
