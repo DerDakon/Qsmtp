@@ -80,7 +80,6 @@ static unsigned long sslauth;		/* if SMTP AUTH is only allowed after STARTTLS */
 static char *vpopbounce;		/* the bounce command in vpopmails .qmail-default */
 static unsigned int goodrcpt;		/* number of valid recipients */
 static unsigned int rcptcount;		/* number of recipients in lists including rejected */
-static int datatype;			/* the type of the data to come: 7bit or 8bit */
 static char *gcbuf;			/* buffer for globalconf array (see below) */
 static int relayclient;			/* flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
 static int badbounce;			/* bounce message with more than one recipient */
@@ -255,7 +254,7 @@ smtp_helo(void)
 	memcpy(protocol, "SMTP", 5);
 	xmitstat.esmtp = 0;
 	xmitstat.spf = 0;
-	datatype = 0;
+	xmitstat.datatype = 0;
 	if (helovalid(linein + 5) < 0)
 		return errno;
 	return net_writen(s) ? errno : 0;
@@ -310,7 +309,7 @@ smtp_ehlo(void)
 	free(sizebuf);
 	xmitstat.spf = 0;
 	xmitstat.esmtp = 1;
-	datatype = 1;
+	xmitstat.datatype = 1;
 	return rc;
 }
 
@@ -877,10 +876,10 @@ smtp_from(void)
 			seenbody = 1;
 			if (!strncasecmp(bodytype, "7BIT", 4)) {
 				more = bodytype + 4;
-				datatype = 0;
+				xmitstat.datatype = 0;
 			} else if (!strncasecmp(bodytype, "8BITMIME", 8)) {
 				more = bodytype + 8;
-				datatype = 1;
+				xmitstat.datatype = 1;
 			} else
 				return EINVAL;
 
@@ -1267,7 +1266,7 @@ smtp_data(void)
 		while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes)) {
 			int offset;
 
-			if ((xmitstat.check2822 & 1) && !datatype) {
+			if ((xmitstat.check2822 & 1) && !xmitstat.datatype) {
 				for (i = linelen - 1; i >= 0; i--)
 					if (linein[i] < 0) {
 						logmsg = " {8bit-character in message body}";
