@@ -406,9 +406,9 @@ main(int argc, char *argv[])
 		return 0;
 	}
 
-	for (i = strlen(argv[2]) - 1; i >= 0; i--) {
-		if ((argv[2][i] < '0') || (argv[2][i] > '9')) {
-			log_write(LOG_CRIT, "second argument is not a number");
+	for (i = strlen(argv[3]) - 1; i >= 0; i--) {
+		if ((argv[3][i] < '0') || (argv[3][i] > '9')) {
+			log_write(LOG_CRIT, "third argument is not a number");
 			return 0;
 		}
 	}
@@ -431,11 +431,11 @@ main(int argc, char *argv[])
 	freeips(mx);
 
 	netmsg[0] = "MAIL FROM:<";
-	netmsg[1] = argv[3];
+	netmsg[1] = argv[2];
 /* ESMTP SIZE extension */
 	if (smtpext & 1) {
 		netmsg[2] = "> SIZE=";
-		netmsg[3] = argv[2];
+		netmsg[3] = argv[3];
 		netmsg[4] = NULL;
 	} else {
 		netmsg[2] = ">";
