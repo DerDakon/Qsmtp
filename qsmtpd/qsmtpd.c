@@ -990,12 +990,12 @@ smtp_quit(void)
 	const char *msg[] = {"221 2.0.0 ", heloname.s, " service closing transmission channel", NULL};
 	int rc;
 
+	rc = net_writen(msg);
 	freedata();
 
 	free(protocol);
 	free(gcbuf);
 	free(globalconf);
-	rc = net_writen(msg);
 	exit(rc ? errno : 0);
 }
 
