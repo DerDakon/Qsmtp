@@ -75,10 +75,7 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 			i++;
 	}
 
-	if (flagtemp) {
-		*logmsg = "temporary DNS error on RBL lookup";
-		rc = 4;
-	} else if (!rc) {
+	if (!rc) {
 		logmess[7] = a[i];
 		log_writen(LOG_INFO, logmess);
 		netmsg[1] = a[i];
@@ -88,6 +85,9 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 		}
 		if ( ! (rc = net_writen(netmsg)) )
 			rc = 1;
+	} else if (flagtemp) {
+		*logmsg = "temporary DNS error on RBL lookup";
+		rc = 4;
 	} else {
 		rc = 0;
 	}
