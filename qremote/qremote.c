@@ -315,6 +315,8 @@ main(int argc, char *argv[])
 	struct ips *mx;
 	char **smtproutes, *smtproutbuf;
 
+	setup();
+
 	if (argc < 5) {
 		log_write(LOG_CRIT, "too few arguments");
 		return 0;
