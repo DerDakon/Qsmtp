@@ -71,7 +71,8 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 			if (d)
 				d++;
 		}
-		i++;
+		if (!rc)
+			i++;
 	}
 
 	if (flagtemp) {
