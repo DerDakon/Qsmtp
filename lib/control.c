@@ -15,11 +15,11 @@
 /**
  * lloadfilefd - load a text file into a buffer using locked IO
  *
- * fd: file descriptor of the file to load
- * buf: the contents of the file will go here, memory will be malloced
- * striptab: 2: strip anything after the first space or tab in a line,
- *           1: compact {'\0'}* to a single '\0'
- *           0: do nothing but load the file into the buffer
+ * @fd: file descriptor of the file to load
+ * @buf: the contents of the file will go here, memory will be malloced
+ * @striptab: 2: strip trailing whitespace
+ *            1: compact {'\0'}* to a single '\0'
+ *            0: do nothing but load the file into the buffer
  *
  * returns: length of buffer on success, -1 on error (errno is set)
  *
@@ -115,6 +115,15 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	return j;
 }
 
+/**
+ * loadintfd - read a control file containing a single integer
+ *
+ * @fd: file descriptor to read from (will be closed)
+ * @result: value will be stored here
+ * @def: default value if file does not exist
+ *
+ * returns: 0 on success, -1 on error. Parse errors in the file will set errno to EINVAL
+ */
 int
 loadintfd(int fd, unsigned long *result, const unsigned long def)
 {
@@ -144,11 +153,11 @@ loadintfd(int fd, unsigned long *result, const unsigned long def)
 /**
  * loadoneliner - read a configuration file that only may contain one line
  *
- * filename: don't know what this can ever mean ;)
- * buf: the buffer where the contents of the file will go, memory will be malloced
- * optional: if set to 0 raise an error if the file does not exist
+ * @filename: don't know what this can ever mean ;)
+ * @buf: the buffer where the contents of the file will go, memory will be malloced
+ * @optional: if set to 0 write an error message to syslog if the file does not exist
  *
- * returns: length of the string
+ * returns: length of the string, -1 on error
  */
 int
 loadoneliner(const char *filename, char **buf, int optional)
@@ -180,11 +189,13 @@ loadoneliner(const char *filename, char **buf, int optional)
 /**
  * loadlistfd - read a list from config file and validate entries
  *
- * fd: file descriptor to read from (is closed on exit!)
- * buf: the buffer where the data should be stored (memory will be malloced)
- * bufa: array to be build from buf (memory will be malloced)
- * cf: function to check if an entry is valid or NULL if not to
- * f: second parameter of cf
+ * @fd: file descriptor to read from (is closed on exit!)
+ * @buf: the buffer where the data should be stored (memory will be malloced)
+ * @bufa: array to be build from buf (memory will be malloced)
+ * @cf: function to check if an entry is valid or NULL if not to
+ * @f: second parameter of cf
+ *
+ * if the file does not exist or has no content *buf and **bufa will be set to NULL
  */
 int
 loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
