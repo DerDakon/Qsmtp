@@ -6,7 +6,6 @@
 #include <sys/stat.h>
 #include <string.h>
 #include <syslog.h>
-#include <resolv.h>
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>

@@ -17,7 +17,6 @@
 #include <syslog.h>
 #include <dirent.h>
 #include <time.h>
-#include <resolv.h>
 #include "antispam.h"
 #include "log.h"
 #include "netio.h"
