@@ -125,17 +125,17 @@ setup(void)
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
 #endif
 
+	if (chdir(AUTOQMAIL)) {
+		log_write(LOG_ERR, "cannot chdir to qmail directory");
+		return EINVAL;
+	}
+
 #ifdef DEBUG_IO
 	j = open("control/Qsmtpd_debug", O_RDONLY);
 	do_debug_io = (j > 0);
 	if (j > 0)
 		close(j);
 #endif
-
-	if (chdir(AUTOQMAIL)) {
-		log_write(LOG_ERR, "cannot chdir to qmail directory");
-		return EINVAL;
-	}
 
 	if ( ( j = loadoneliner("control/me", &heloname.s, 0) ) < 0 )
 		return errno;
