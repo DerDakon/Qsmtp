@@ -413,12 +413,14 @@ int
 main(int argc, char *argv[])
 {
 	const char *netmsg[6];
-	int i, rcptstat;
+	int rcptstat = 1;	/* this means: all recipients have been rejected */
+	int i;
 	struct ips *mx = NULL;
+	int rcptcount = argc - 4;
 
 	setup();
 
-	if (argc < 5) {
+	if (rcptcount <= 0) {
 		log_write(LOG_CRIT, "too few arguments");
 		return 0;
 	}
@@ -434,8 +436,8 @@ main(int argc, char *argv[])
 
 	dup2(0, 42);
 
-/* for all MX entries we got: try to enable connection, check if the SMTP server wants us (sends 220 response) and
- * or EHLO/HELO succeeds. If not, try next. If none left, exit. */
+/* for all MX entries we got: try to enable connection, check if the SMTP server wants us
+ * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
 	do {
 		tryconn(mx);
 		dup2(socketd, 0);
@@ -475,10 +477,9 @@ main(int argc, char *argv[])
 		netmsg[3] = NULL;
 	}
 	if (smtpext & 2) {
-/* server allows PIPELINING: first send all the messages, then check the replies. This allows to hide network latency */
-		write(1, linein, linelen);write(5,"\n",1);
+/* server allows PIPELINING: first send all the messages, then check the replies.
+ * This allows to hide network latency. */
 		netmsg[0] = "RCPT TO:<";
-		rcptstat = 1;	/* this means: all recipients have been rejected */
 		for (i = 4; i < argc; i++) {
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
@@ -492,7 +493,7 @@ main(int argc, char *argv[])
 			quit();
 		}
 /* RCPT TO: replies */
-		for (i = 4; i < argc; i++) {
+		for (i = rcptcount; i > 0; i--) {
 			if (checkreply("rsh") < 300)
 				rcptstat = 0;
 		}
@@ -504,7 +505,6 @@ main(int argc, char *argv[])
 		if ( (i = checkreply(NULL)) >= 300)
 			err_mail(i);
 		netmsg[0] = "RCPT TO:<";
-		rcptstat = 1;	/* this means: all recipients have been rejected */
 		for (i = 4; i < argc; i++) {
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
