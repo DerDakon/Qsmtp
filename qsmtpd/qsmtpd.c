@@ -1012,21 +1012,29 @@ smtp_data(void)
 		case -1:	if ( (i = err_fork()) )
 					return i;
 				return EBOGUS;
-		case 0:		while ( (i = close(fd0[1])) ) {
-					if (errno != EINTR)
+		case 0:		if (0 == 0) {
+					char *qqbin;
+
+					qqbin = getenv("QMAILQUEUE");
+					if (!qqbin) {
+						qqbin = "bin/qmail-queue");
+					}
+					while ( (i = close(fd0[1])) ) {
+						if (errno != EINTR)
+							_exit(120);
+					}
+					while ( (i = close(fd1[1])) ) {
+						if (errno != EINTR)
+							_exit(120);
+					}
+					if (dup2(fd0[0], 0) == -1)
 						_exit(120);
-				}
-				while ( (i = close(fd1[1])) ) {
-					if (errno != EINTR)
+					if (dup2(fd1[0], 1) == -1)
 						_exit(120);
+				/* no chdir here, we already _are_ there (and qmail-queue does it again) */
+					execlp(qqbin, qqbin, NULL);
+					_exit(120);
 				}
-				if (dup2(fd0[0], 0) == -1)
-					_exit(120);
-				if (dup2(fd1[0], 1) == -1)
-					_exit(120);
-			/* no chdir here, we already _are_ there (and qmail-queue does it again) */
-				execlp("bin/qmail-queue", "bin/qmail-queue", NULL);
-				_exit(120);
 		default:	while (close(fd0[0]) && (errno == EINTR));
 				while (close(fd1[0]) && (errno == EINTR));
 	}
