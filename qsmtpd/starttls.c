@@ -25,7 +25,7 @@ smtp_starttls(void)
 	return tls_init();
 }
 
-RSA *tmp_rsa_cb(SSL *ssl __attribute__ ((unused)), int export, int keylen)
+RSA *tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 {
 	if (!export)
 		keylen = 512;
@@ -42,7 +42,7 @@ RSA *tmp_rsa_cb(SSL *ssl __attribute__ ((unused)), int export, int keylen)
 	return RSA_generate_key(keylen, RSA_F4, NULL, NULL);
 }
 
-DH *tmp_dh_cb(SSL *ssl __attribute__ ((unused)), int export, int keylen)
+DH *tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 {
 	FILE *in = NULL;
 
