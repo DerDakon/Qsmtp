@@ -13,6 +13,7 @@ struct ips {
 /* lib/dns.c */
 
 extern int ask_dnsmx(const char *, struct ips **);
+extern int ask_dnsaaaa(const char *, struct ips **);
 extern int ask_dnsa(const char *, struct ips **);
 extern void freeips(struct ips *);
 

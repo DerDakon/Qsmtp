@@ -324,10 +324,10 @@ spfa(const char *domain, char *token)
 		ip6l = 128;
 	}
 	if (domainspec) {
-		i = ask_dnsa(domainspec, &ip);
+		i = ask_dnsaaaa(domainspec, &ip);
 		free(domainspec);
 	} else {
-		i = ask_dnsa(domain, &ip);
+		i = ask_dnsaaaa(domain, &ip);
 	}
 
 	switch (i) {
@@ -357,7 +357,6 @@ int
 spfexists(char *token)
 {
 	int ip6l, ip4l, i, r = 0;
-	struct ips *ip, *thisip;
 	char *domainspec;
 
 	if ( (i = spf_domainspec(token, &domainspec, &ip4l, &ip6l)) ) {
@@ -366,21 +365,11 @@ spfexists(char *token)
 	if ((ip4l > 0) || (ip6l > 0) || !domainspec) {
 		return SPF_HARD_ERROR;
 	}
-	i = ask_dnsa(domainspec, &ip);
+	i = ask_dnsa(domainspec, NULL);
 	free(domainspec);
 
 	switch (i) {
-		case 0:	thisip = ip;
-			r = SPF_NONE;
-			while (thisip) {
-				if (IN6_IS_ADDR_V4MAPPED(&thisip->addr) && 
-						IN6_ARE_ADDR_EQUAL(&thisip->addr, &xmitstat.sremoteip)) {
-					r = SPF_PASS;
-					break;
-				}
-				thisip = thisip->next;
-			}
-			freeips(ip);
+		case 0:	r = SPF_PASS;
 			break;
 		case 1:	r = SPF_NONE;
 			break;
@@ -411,10 +400,10 @@ spfptr(const char *domain, char *token)
 		return SPF_HARD_ERROR;
 	}
 	if (domainspec) {
-		i = ask_dnsa(domainspec, &ip);
+		i = ask_dnsaaaa(domainspec, &ip);
 		free(domainspec);
 	} else {
-		i = ask_dnsa(domain, &ip);
+		i = ask_dnsaaaa(domain, &ip);
 	}
 
 	switch (i) {

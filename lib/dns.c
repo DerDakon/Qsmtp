@@ -30,7 +30,7 @@ ask_dnsmx(const char *name, struct ips **result)
 
 		/* there is no MX record, so we look for an AAAA record */
 		if (!l) {
-			int rc = ask_dnsa(name, result);
+			int rc = ask_dnsaaaa(name, result);
 
 			if (!rc) {
 				struct ips *a = *result;
@@ -49,7 +49,7 @@ ask_dnsmx(const char *name, struct ips **result)
 			struct ips *p;
 			int pri, rc;
 
-			rc = ask_dnsa(s + 2, &p);
+			rc = ask_dnsaaaa(s + 2, &p);
 			if (rc < 0) {
 				freeips(*result);
 				if (errno == ENOMEM)
@@ -86,7 +86,7 @@ ask_dnsmx(const char *name, struct ips **result)
 }
 
 /**
- * ask_dnsa - get AAAA record from of the DNS
+ * ask_dnsaaaa - get AAAA record from of the DNS
  *
  * @name: the name to look up
  * @ips: first element of a list of results will be placed
@@ -98,7 +98,7 @@ ask_dnsmx(const char *name, struct ips **result)
  *         -1 on error
  */
 int
-ask_dnsa(const char *name, struct ips **result)
+ask_dnsaaaa(const char *name, struct ips **result)
 {
 	int i;
 	char *r;
@@ -127,6 +127,68 @@ ask_dnsa(const char *name, struct ips **result)
 
 			q = &(p->next);
 			s += 16;
+		}
+		return 0;
+	}
+	switch (errno) {
+		case ETIMEDOUT:
+		case EAGAIN:	return 2;
+		case ENFILE:
+		case EMFILE:
+		case ENOBUFS:	errno = ENOMEM;
+		case ENOMEM:	return -1;
+		case ENOENT:	return 1;
+		default:	return 3;
+	}
+}
+
+/**
+ * ask_dnsa - get A record from of the DNS
+ *
+ * @name: the name to look up
+ * @ips: first element of a list of results will be placed, or NULL if only return code is of interest
+ *
+ * returns: 0 on success
+ *          1 if host is not existent
+ *          2 if temporary DNS error
+ *          3 if permanent DNS error
+ *         -1 on error
+ */
+int
+ask_dnsa(const char *name, struct ips **result)
+{
+	int i;
+	char *r;
+	unsigned int l;
+
+	i = dnsip6(&r, &l, name);
+	if (!i) {
+		if (result) {
+			char *s = r;
+			struct ips **q = result;
+
+			if (!l) {
+				*result = NULL;
+				return 1;
+			}
+			while (r + l > s) {
+				struct ips *p = malloc(sizeof(*p));
+
+				if (!p) {
+					errno = ENOMEM;
+					freeips(*result);
+					return -1;
+				}
+				*q = p;
+				p->next = NULL;
+				p->addr.sin6_addr32[0] = 0;
+				p->addr.sin6_addr32[1] = 0;
+				p->addr.sin6_addr32[2] = htonl(0xffff);
+				memcpy(&(p->addr.sin6_addr32[3]), s, 4);
+
+				q = &(p->next);
+				s += 4;
+			}
 		}
 		return 0;
 	}
