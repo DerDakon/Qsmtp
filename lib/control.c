@@ -58,8 +58,17 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	inbuf = malloc(oldlen);
 	if (!inbuf)
 		return -1;
-	if ( (i = read(fd, inbuf, oldlen)) < 0 )
-		return i;
+	j = 0;
+	while (j < oldlen) {
+		if ( ((i = read(fd, inbuf + j, oldlen - j)) < 0) && (errno != EINTR)) {
+			int e = errno;
+
+			while (close(fd) && (errno == EINTR));
+			errno = e;
+			return -1;
+		}
+		j += i;
+	}
 	while ( (i = close(fd)) ) {
 		if (errno != EINTR)
 			return i;
