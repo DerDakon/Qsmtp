@@ -321,8 +321,12 @@ send_data(void)
 	int lastlf = 0;		/* set if last byte sent was a LF */
 
 	netwrite("DATA\r\n");
-	if (netget() != 354)
+	if ( (num = netget()) != 354) {
+		write(1, num >= 500 ? "D5" : "Z4", 2);
+		write(1, ".3.0 remote host rejected DATA command: ", 40);
+		write(1, linein + 4, linelen - 3);
 		quit();
+	}
 /* read in chunks of 80 bytes. Most MUAs use 80 chars per line for their mails so we will
  * not have more than one linebreak per chunk. Make sure there are at least 160 bytes left
  * in sendbuf so we can turn 80 "CR" _or_ "LF" into 80 "CRLF" (worst case). The last 3
