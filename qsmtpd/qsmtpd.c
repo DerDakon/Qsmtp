@@ -810,6 +810,7 @@ smtp_from(void)
 	struct userconf ds;
 	struct statvfs sbuf;
 	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> is syntactically correct", NULL};
+	char *s;
 
 	i = addrparse(0, &(xmitstat.mailfrom), &more, &ds);
 	xmitstat.frommx = NULL;
@@ -904,12 +905,13 @@ next:
 		xmitstat.fromdomain = ask_dnsmx(strchr(xmitstat.mailfrom.s, '@') + 1, &xmitstat.frommx);
 		if (xmitstat.fromdomain < 0)
 			return errno;
-		i = check_host(strchr(xmitstat.mailfrom.s, '@') + 1);
+		s = strchr(xmitstat.mailfrom.s, '@') + 1;
 	} else {
 		xmitstat.fromdomain = 0;
 		xmitstat.frommx = NULL;
-		i = check_host(HELOSTR);
+		s = HELOSTR;
 	}
+	i = check_host(s);
 	if (i < 0)
 		return errno;
 	xmitstat.spf = (i & 0x0f);
