@@ -609,8 +609,10 @@ main(int argc, char *argv[])
 		for (i = 4; i < argc; i++) {
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
-			if (checkreply("rsh", NULL, 0) < 300)
+			if (checkreply(" sh", NULL, 0) < 300) {
+				write(1, "r", 2);
 				rcptstat = 0;
+			}
 		}
 		if (rcptstat)
 			quit();
