@@ -1,5 +1,5 @@
-TARGETS = rcpt_cbs.o badmailfrom.o check2822.o dnsbl.o ipbl.o badcc.o fromdomain.o spf.o nobounce.o boolean.o \
-	  soberg.o helo.o usersize.o
+TARGETS = rcpt_cbs.o badmailfrom.o check2822.o dnsbl.o ipbl.o badcc.o fromdomain.o spf.o boolean.o soberg.o \
+	  helo.o usersize.o forceesmtp.o
 
 .phony: all clean
 
