@@ -540,6 +540,9 @@ static struct ecommands {
 } edcmds[] = {
 	{ .name = "write", .len = 5, .func = editwrite },
 	{ .name = "add", .len = 3, .func = editadd },
+	{ .name = "del", .len = 3, .func = NULL },
+	{ .name = "show", .len = 4, .func = NULL },
+	{ .name = "echo", .len = 4, .func = echo },
 	{ .name = "exit", .len = 4, .func = eXit },
 	{ .name = "quit", .len = 4, .func = editquit },
 	{ .name = NULL }
@@ -682,7 +685,7 @@ main(void)
 				if (linein[strlen(linein) - 1] == '\n')
 					break;
 			}
-			/* error are not caught */
+			/* errors are not caught */
 			continue;
 		}
 
