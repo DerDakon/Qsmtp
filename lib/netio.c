@@ -12,6 +12,7 @@ char linein[1002];			/* buffer for the line to read: max 1000 chars including CR
 unsigned int linelen;			/* length of the line */
 static char lineinn[sizeof(linein)];	/* if more than one line was in linein the rest is stored here */
 unsigned int linenlen;			/* length of the lineinn */
+unsigned long timeout;			/* how long to wait for data */
 
 /**
  * readinput - read characters from (network) input
@@ -29,7 +30,7 @@ int readinput(char *buffer, const unsigned int len)
 	 * An SMTP server SHOULD have a timeout of at least 5 minutes while it
 	 * is awaiting the next command from the sender. */
 	struct timeval tv = {
-		.tv_sec = 320,
+		.tv_sec = timeout,
 		.tv_usec = 0,
 	};
 

@@ -18,4 +18,6 @@ net_write(const char *s)
 	return net_writen(msg);
 }
 
+extern unsigned long timeout;
+
 #endif

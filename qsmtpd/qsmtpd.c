@@ -186,14 +186,20 @@ setup(void)
 		xmitstat.remotehost.len = 0;
 	xmitstat.remoteinfo = getenv("TCPREMOTEINFO");
 
+	if ( ( j = loadintfd(open("control/timeoutsmtpd", O_RDONLY), &timeout, 320) ) ) {
+		int e = errno;
+		log_write(LOG_ERR, "parse error in control/timeoutsmtpd");
+		return e;
+	}
 	if ( ( j = loadintfd(open("control/databytes", O_RDONLY), &databytes, 0) ) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/databytes");
 		return e;
 	}
 	if ( (j = loadintfd(open("control/forcesslauth", O_RDONLY), &sslauth, 0)) ) {
+		int e = errno;
 		log_write(LOG_ERR, "parse error in control/forcesslauth");
-		return errno;
+		return e;
 	}
 
 	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY), &gcbuf, &globalconf, NULL, 0)) ) {

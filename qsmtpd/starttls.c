@@ -14,9 +14,6 @@ int tls_verify(void);
 int ssl_verified = 0;
 const char *ssl_verify_err = 0;
 
-#warning FIXME: initialize timeout somewhere
-int timeout = 320;
-
 int
 smtp_starttls(void)
 {
