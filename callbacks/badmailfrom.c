@@ -26,6 +26,9 @@ lookupbmf(char *at, char **a)
 	unsigned int i = 0;
 	int rc = 0;
 
+	if (!a)
+		return rc;
+
 	while (a[i]) {
 		if (*a[i] == '@') {
 			if (at && !strcasecmp(a[i], at)) {
