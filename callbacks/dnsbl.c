@@ -76,7 +76,7 @@ cb_dnsbl(const struct userconf *ds, char **logmsg, int *t)
 					*logmsg = "temporary DNS error on RBL lookup";
 					rc = 4;
 				} else {
-					rc = -1;
+					rc = j;
 				}
 			} else {
 				const char *netmsg[] = {"501 5.7.1 message rejected, you are listed in ",
