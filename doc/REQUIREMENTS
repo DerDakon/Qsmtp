@@ -1,5 +1,0 @@
--IPv6 capable system
--ucspi-tcp
--IPv6 patches for ucspi-tcp (get them at http://www.fefe.de/ucspi/)
--libowfat (get from http://www.fefe.de/libowfat/)
--cdb.a (i.e. from vpopmail)
