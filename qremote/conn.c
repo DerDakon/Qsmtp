@@ -48,7 +48,7 @@ conn(const struct in6_addr remoteip)
  *
  * Every entry where a connection attempt was made is marked with a priority of 65537
  */
-int
+void
 tryconn(struct ips *mx)
 {
 	struct ips *thisip;
@@ -71,7 +71,7 @@ tryconn(struct ips *mx)
 				thisip->priority = 65537;
 
 				if (!conn(thisip->addr))
-					return 0;
+					return;
 			}
 		}
 	}
