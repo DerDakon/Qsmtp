@@ -178,7 +178,7 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
 {
 	int i, j, k;
 
-	if ( (j = lloadfilefd(fd, buf, 2)) < 0)
+	if ( (j = lloadfilefd(fd, buf, 3)) < 0)
 		return j;
 
 	/* count the lines in buf */
