@@ -13,8 +13,6 @@
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
 
 static const char *noqueue = "451 4.3.2 can not connect to queue\r\n";
-static int fd0[2], fd1[2];		/* the fds to communicate with qmail-queue */
-static pid_t qpid;
 
 static int
 err_pipe(void)
@@ -28,70 +26,6 @@ err_fork(void)
 {
 	log_write(LOG_ERR, "cannot fork qmail-queue");
 	return netwrite(noqueue) ? errno : 0;
-}
-
-static int
-queue_init(void)
-{
-	int i;
-
-	if (pipe(fd0)) {
-		if ( (i = err_pipe()) )
-			return i;
-		return EDONE;
-	}
-	if (pipe(fd1)) {
-		/* EIO on pipe operations? Shit just happens (although I don't know why this could ever happen) */
-		while (close(fd0[0]) && (errno == EINTR));
-		while (close(fd0[1]) && (errno == EINTR));
-		if ( (i = err_pipe()) )
-			return i;
-		return EDONE;
-	}
-
-	/* DJB uses vfork at this point (qmail.c::open_qmail) which looks broken
-	 * because he modifies data before calling execve */
-	switch (qpid = fork()) {
-		case -1:	if ( (i = err_fork()) )
-					return i;
-				return EDONE;
-		case 0:		if (1) {
-					char *qqbin;
-
-					qqbin = getenv("QMAILQUEUE");
-					if (!qqbin) {
-						qqbin = "bin/qmail-queue";
-					}
-					while ( (i = close(fd0[1])) ) {
-						if (errno != EINTR)
-							_exit(120);
-					}
-					while ( (i = close(fd1[1])) ) {
-						if (errno != EINTR)
-							_exit(120);
-					}
-					if (dup2(fd0[0], 0) == -1)
-						_exit(120);
-					if (dup2(fd1[0], 1) == -1)
-						_exit(120);
-				/* no chdir here, we already _are_ there (and qmail-queue does it again) */
-					execlp(qqbin, qqbin, NULL);
-					_exit(120);
-				}
-		default:	while (close(fd0[0]) && (errno == EINTR));
-				while (close(fd1[0]) && (errno == EINTR));
-	}
-
-/* check if the child already returned, which means something went wrong */
-	if (waitpid(qpid, NULL, WNOHANG)) {
-		/* error here may just happen, we are already in trouble */
-		while (close(fd0[1]) && (errno == EINTR));
-		while (close(fd1[1]) && (errno == EINTR));
-		if ( (i = err_fork()) )
-			return i;
-		return EDONE;
-	}
-	return 0;
 }
 
 #define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
@@ -202,7 +136,8 @@ queue_envelope(int fd, const unsigned long msgsize)
 
 	/* write the return path to qmail-queue */
 	WRITE(fd, "F", 1);
-	WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len + 1);
+	WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+	WRITE(fd, "", 1);
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
@@ -238,12 +173,14 @@ err_write:
 int
 smtp_data(void)
 {
+	char *authmsg = NULL;
 	const char *logmail[] = {"rejected message to <", NULL, "> from <", xmitstat.mailfrom.s,
 					"> from ip [", xmitstat.remoteip, "] (", NULL, " bytes) {",
 					NULL, NULL};
 	int i, status, rc;
 	unsigned long msgsize = 0, maxbytes;
-	int fd;
+	int fd0[2], fd1[2], fd;	/* the fds to communicate with qmail-queue */
+	pid_t qpid;
 	int flagdate = 0, flagfrom = 0;	/* Date: and From: are required in header,
 					 * else message is bogus (RfC 2822, section 3.6).
 					 * RfC 2821 says server SHOULD NOT check for this,
@@ -257,24 +194,67 @@ smtp_data(void)
 		return netwrite("554 5.1.1 no valid recipients\r\n") ? errno : EINVAL;
 	}
 
-	if ( (i = queue_init()) )
-		return i;
-
-	if ((rc = hasinput())) {
+	if (pipe(fd0)) {
+		if ( (i = err_pipe()) )
+			return i;
+		return EDONE;
+	}
+	if (pipe(fd1)) {
+		/* EIO on pipe operations? Shit just happens (although I don't know why this could ever happen) */
+		while (close(fd0[0]) && (errno == EINTR));
 		while (close(fd0[1]) && (errno == EINTR));
-		while (close(fd1[1]) && (errno == EINTR));
-		while ((waitpid(qpid, &status, 0) == -1) && (errno == EINTR));
+		if ( (i = err_pipe()) )
+			return i;
+		return EDONE;
+	}
+
+	/* DJB uses vfork at this point (qmail.c::open_qmail) which looks broken
+	 * because he modifies data before calling execve */
+	switch (qpid = fork()) {
+		case -1:	if ( (i = err_fork()) )
+					return i;
+				return EDONE;
+		case 0:		if (1) {
+					char *qqbin;
+
+					qqbin = getenv("QMAILQUEUE");
+					if (!qqbin) {
+						qqbin = "bin/qmail-queue";
+					}
+					while ( (i = close(fd0[1])) ) {
+						if (errno != EINTR)
+							_exit(120);
+					}
+					while ( (i = close(fd1[1])) ) {
+						if (errno != EINTR)
+							_exit(120);
+					}
+					if (dup2(fd0[0], 0) == -1)
+						_exit(120);
+					if (dup2(fd1[0], 1) == -1)
+						_exit(120);
+				/* no chdir here, we already _are_ there (and qmail-queue does it again) */
+					execlp(qqbin, qqbin, NULL);
+					_exit(120);
+				}
+		default:	while (close(fd0[0]) && (errno == EINTR));
+				while (close(fd1[0]) && (errno == EINTR));
+	}
+
+	if ((rc = hasinput()))
 		return rc;
-	}
-
-	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n")) {
-		int e = errno;
-
+/* check if the child already returned, which means something went wrong */
+	if (waitpid(qpid, &status, WNOHANG)) {
+		/* error here may just happen, we are already in trouble */
 		while (close(fd0[1]) && (errno == EINTR));
 		while (close(fd1[1]) && (errno == EINTR));
-		while ((waitpid(qpid, &status, 0) == -1) && (errno == EINTR));
-		return e;
+		if ( (i = err_fork()) )
+			return i;
+		return EDONE;
 	}
+
+	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n"))
+		return errno;
 	if (databytes) {
 		maxbytes = databytes;
 	} else {
@@ -426,8 +406,8 @@ smtp_data(void)
 	}
 	fd0[1] = 0;
 	fd = fd1[1];
-	if ( (rc = queue_envelope(fd, msgsize)) )
-		return rc;
+	if (queue_envelope(fd, msgsize))
+		goto err_write;
 
 	while(waitpid(qpid, &status, 0) == -1) {
 		/* don't know why this could ever happen, but we want to be sure */
@@ -525,6 +505,7 @@ loop_data:
 	}
 	if (s[0] != 'u')
 		free(s);
+	free(authmsg);
 	freedata();
 
 	if (errmsg)
@@ -533,6 +514,7 @@ loop_data:
 err_write:
 	rc = errno;
 	free(s);
+	free(authmsg);
 	if (fd0[1]) {
 		while (close(fd0[1]) && (errno == EINTR));
 	}
