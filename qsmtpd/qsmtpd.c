@@ -365,6 +365,11 @@ user_exists(const string *localpart, struct userconf *ds)
 	DIR *dirp;
 	unsigned int i = 0;
 
+	/* '/' is a valid character for localparts but we don't want it because
+	 * it could be abusedto check the existence of files */
+	if (strchr(localpart, '/'))
+		return 0;
+
 	memcpy(filetmp, ds->userpath.s, ds->userpath.len);
 	filetmp[ds->userpath.len] = '\0';
 
@@ -1059,7 +1064,6 @@ main(int argc, char *argv[]) {
 	} else if (argc != 1) {
 		log_write(LOG_ERR, "invalid number of parameters given");
 	}
-
 /* the state machine */
 	while (1) {
 		unsigned int i;

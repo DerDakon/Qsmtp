@@ -20,8 +20,9 @@ static int __attribute__ ((pure))
 parseaddr(const char *addr)
 {
 	const char *t, *at = strchr(addr, '@');
+	int quoted = 0;
 
-	t = addr;
+	t = addr + 1;
 	/* RfC 2821, section 4.1.2
 	 * Systems MUST NOT define mailboxes in such a way as to require the use
 	 * in SMTP of non-ASCII characters (octets with the high order bit set
@@ -29,26 +30,41 @@ parseaddr(const char *addr)
 	 * These characters MUST NOT be used in MAIL or RCPT commands or other
 	 * commands that require mailbox names.
 	 *
+	 * RfC 2822, section 3.2.4
+	 * Any character except controls, SP and specials.
+	 *
 	 * '/' is illegal because it can be misused to check for the existence of
-	 * arbitrary files. The other one are just because I don't like them *eg* */
-	while (t < addr) {
-		const char *badchars = "\\|'`/";
-		const unsigned int numbc = strlen(badchars);
-		unsigned int i;
-
-		if ((*t + 1) < 32)
-			return 1;
-		/* if we don't do this someone may be able to check if
-		 * USERNAME/DIRECTORY exists if localpart is "username/directory"
-		 * Also a user with '\' or '|' and so on in it's name will not exist here
-		 */
-		for (i = 0; i < numbc; i++) {
-			if (*t == badchars[i])
-				return 0;
+	 * arbitrary files. */
+	while (t < at) {
+		if (*t == '"') {
+			quoted = 1 - quoted;
+		} else if (!quoted) {
+			if (!(((*t >= 'a') && (*t <= 'z')) || ((*t >= 'A') && (*t <= 'Z')) || (*t == '.') ||
+				((*t >= '0') && (*t <= '9')) || (*t == '!') || ((*t >= '#') && (*t <= '\'')) ||
+				(*t == '*') || (*t == '+') || (*t == '-') || (*t == '/') || (*t == '=') ||
+				(*t == '?') || ((*t >= '^') && (*t <= '`')) || ((*t >= '{') && (*t <= '~')))) {
+						return 0;
+			}
+		} else {
+			if (!(((*t >= 35) && (*t <= 91)) || (*t >= 93) || ((*t >= 1) && (*t <= 8)) || (*t == 11) ||
+						(*t == 12) || ((*t >= 14) && (*t <= 31)))) {
+				if (*t == '\\') {
+					if ((*(t + 1) == '"') || (*(t + 1) == '\\')) {
+						t++;
+						if (t == addr)
+							return 0;
+					} else {
+						return 0;
+					}
+				} else {
+					return 0;
+				}
+			}
 		}
-
-		*t++;
+		t++;
 	}
+	if (quoted)
+		return 0;
 	if (!at)
 		return 1 - domainvalid(addr);
 
