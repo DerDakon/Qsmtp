@@ -20,7 +20,7 @@ char *logmess[] = {"no MX", "temporary DNS error on from domain lookup", "NXDOMA
  *
  * 1: reject mail if from domain does not exist
  * 2: reject mail if from domain resolves only to localhost addresses
- * 3: reject mail if from domain resolves only to private nets (RfC 1918)
+ * 4: reject mail if from domain resolves only to private nets (RfC 1918)
  */
 int
 cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
@@ -32,7 +32,7 @@ cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
 		return 0;
 
 	/* if there is a syntax error in the file it's the users fault and this mail will be accepted */
-	if ( (u = getsettingglobal(ds, "fromdomain", t)) <= 0)
+	if ( (u = getsettingglobal(ds, "fromdomain", t)) < 0)
 		return 0;
 
 	if (u & 1) {
@@ -100,15 +100,9 @@ cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
 		struct ips *thisip;
 		int fd;
 
-		fd = open("control/ipv4only", O_RDONLY);
-		if (fd) {
-			close(fd);
-			flaghit = 1;
-		} else {
-			/* ignore all other errors here, this only means for us we don't care about this check for now */
-			if (errno == ENOMEM)
-				return -1;
-		}
+		if ( (flaghit = getsettingglobal(ds, "reject_ipv6only", t)) <= 0)
+			return 0;
+
 		while (flaghit && (thisip = xmitstat.frommx)) {
 			if (IN6_IS_ADDR_V4MAPPED(&(thisip->addr)))
 				flaghit = 0;
