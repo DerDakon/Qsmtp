@@ -160,7 +160,7 @@ loadoneliner(const char *filename, char **buf, int optional)
 		errno = EINVAL;
 		return -1;
 	}
-	return j;
+	return j - 1;
 }
 
 /**
