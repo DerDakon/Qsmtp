@@ -886,9 +886,10 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 {
 	char *res;
 	char *p;
+	unsigned int l;
 
 	if (!(p = strchr(token, '%'))) {
-		unsigned int l = strlen(token) + 1;
+		l = strlen(token) + 1;
 
 		res = malloc(l);
 		if (!res) {
@@ -896,7 +897,7 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 		}
 		memcpy(res, token, l);
 	} else {
-		unsigned int l = p - token;
+		l = p - token;
 
 		res = malloc(l);
 		if (!res) {
