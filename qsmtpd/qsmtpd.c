@@ -570,12 +570,10 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 	}
 
 	if (!j) {
-		const char *frommsg[] = {"550 5.1.0 sending user <", addr->s,
-				"> faked, I will not accept this mail", NULL};
-		const char *rcptmsg[] = {"550 5.1.1 no such user <", addr->s, ">", NULL};
+		const char *logmsg[] = {"550 5.1.1 no such user <", addr->s, ">", NULL};
 
 		tarpit();
-		result = net_writen((flags == 1) ? rcptmsg : frommsg) ? errno : -1;
+		result = net_writen(logmsg) ? errno : -1;
 		goto free_and_out;
 	}
 	return 0;
