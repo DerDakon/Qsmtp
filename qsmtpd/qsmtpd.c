@@ -1102,7 +1102,7 @@ smtp_data(void)
 	WRITE(fd, " ([", 3);
 	WRITE(fd, xmitstat.remoteip, strlen(xmitstat.remoteip));
 	WRITE(fd, "]", 1);
-	if (xmitstat.helostr.s) {
+	if (xmitstat.helostr.len) {
 		WRITE(fd, " HELO ", 6);
 		WRITE(fd, xmitstat.helostr.s, xmitstat.helostr.len);
 	}
