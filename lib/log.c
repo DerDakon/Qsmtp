@@ -35,7 +35,7 @@ log_writen(int priority, const char **s)
 	syslog(priority, "%s", buf);
 #endif
 #ifndef NOSTDERR
-	write(2, buf, strlen(buf));
+	write(2, buf, i);
 #endif
 	free(buf);
 }
@@ -53,8 +53,6 @@ dieerror(int error)
 	switch (error) {
 		case ETIMEDOUT:	log_write(LOG_WARNING, "connection timed out"); break;
 		case ECONNRESET:log_write(LOG_WARNING, "connection died"); break;
-		default:	log_write(LOG_ERR, "stupid programmer"); break;
 	}
 	_exit(error);
 }
-
