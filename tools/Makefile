@@ -1,4 +1,4 @@
-TARGETS=addipbl.o
+TARGETS=addipbl.o testspf.o
 
 .phony: all clean
 
@@ -10,6 +10,8 @@ all:	$(TARGETS)
 
 clean:
 	rm -f *.o *~ \#* $(TARGETS)
+
+testspf.o: qsmtpd.h antispam.h sstring.h
 
 %.o: %.c
 	 $(CC) $(CFLAGS) $<
