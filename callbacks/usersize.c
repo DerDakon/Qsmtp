@@ -8,7 +8,7 @@ cb_usersize(const struct userconf *ds, char **logmsg, int *t)
 	long usize;
 	int rc;
 
-	if ((usize = getsettingglobal(ds, "usersize", t)) <= 0)
+	if ((usize = getsetting(ds, "usersize", t)) <= 0)
 		return 0;
 
 	if (xmitstat.thisbytes <= usize)
