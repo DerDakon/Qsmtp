@@ -269,6 +269,8 @@ main(int argc, char *argv[])
 		}
 	} while (greeting());
 
+	freeips(mx);
+
 	netmsg[0] = "MAIL FROM:<";
 	netmsg[1] = argv[3];
 /* ESMTP SIZE extension */
