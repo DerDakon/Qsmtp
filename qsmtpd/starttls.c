@@ -81,7 +81,7 @@ int tls_verify(void)
 {
 	char *clientbuf, **clients;
 	STACK_OF(X509_NAME) *sk = SSL_load_client_CA_file(CLIENTCA);
-	int relayclient = 0;
+	int tlsrelay = 0;
 
 	if (!ssl || xmitstat.authname.len || ssl_verified)
 		return 0;
@@ -160,7 +160,7 @@ int tls_verify(void)
 				memcpy(protocol + l + 7, email.s, email.len);
 				protocol[l + 7 + email.len] = ')';
 				protocol[l + 8 + email.len] = '\0';
-				relayclient = 1;
+				tlsrelay = 1;
 			}
 		}
 
@@ -173,7 +173,7 @@ int tls_verify(void)
 	SSL_set_client_CA_list(ssl, NULL);
 	SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
 
-	return relayclient;
+	return tlsrelay;
 }
 
 int tls_init()
