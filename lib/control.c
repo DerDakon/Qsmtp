@@ -83,7 +83,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	while (i < oldlen) {
 		if ((inbuf[i] == '#') && (!i || (inbuf[i - 1] != '\\'))) {
 			/* this line contains a comment: strip it */
-			while ( (inbuf[i] != '0') && (inbuf[i] != '\n') )
+			while ( (inbuf[i] != '\0') && (inbuf[i] != '\n') )
 				inbuf[i++] = '\0';
 		} else if ((striptab  & 2) && ((inbuf[i] == ' ') || (inbuf[i] == '\t') )) {
 			/* if there is a space or tab from here to the end of the line
