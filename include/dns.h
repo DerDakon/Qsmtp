@@ -16,11 +16,11 @@ extern int ask_dnsmx(const char *, struct ips **);
 extern int ask_dnsaaaa(const char *, struct ips **);
 extern int ask_dnsa(const char *, struct ips **);
 extern void freeips(struct ips *);
+extern int domainvalid(const char *);
 
-/* lib/addrsyntax.c */
+/* qsmtpd/addrsyntax.c */
 
-extern int domainvalid(const char *, const int);
-extern int checkaddr(const char *, const int);
+extern int checkaddr(const char *);
 extern int addrsyntax(char *in, const int flags, string *addr, char **more);
 
 /* return codes of helovalid:

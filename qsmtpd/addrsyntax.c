@@ -50,7 +50,7 @@ parseaddr(const char *addr)
 		*t++;
 	}
 	if (!at)
-		return 1 - domainvalid(addr, 0);
+		return 1 - domainvalid(addr);
 
 	/* domain name too long */
 	if (strlen(at + 1) > 255)
@@ -59,18 +59,17 @@ parseaddr(const char *addr)
 	if ((at - addr) > 65)
 		return 0;
 	if (*addr == '@')
-		return domainvalid(addr + 1, 0) ? 0 : 2;
-	return domainvalid(at + 1, 0) ? 0 : 3;
+		return domainvalid(addr + 1) ? 0 : 2;
+	return domainvalid(at + 1) ? 0 : 3;
 }
 
 /**
  * checkaddr - check an email address for validity, use as loadlistfd callback
  *
  * @addr: the address to check
- * @f: passed as "flags" to addrsyntax
  */
 int
-checkaddr(const char *addr, const int f __attribute__ ((unused)))
+checkaddr(const char *addr)
 {
 	return !parseaddr(addr);
 }
@@ -107,7 +106,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 			f++;
 			while ( ( t = strchr(f,',') ) ) {
 				*t++ = '\0';
-				if (domainvalid(f + 1,0))
+				if (domainvalid(f + 1))
 					return 1;
 				f = t;
 				if (*f != '@')
@@ -117,7 +116,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 			if (!t)
 				return 1;
 			*t++ = '\0';
-			if (domainvalid(f + 1,0))
+			if (domainvalid(f + 1))
 				return 1;
 			/* RfC 2821, Section 4.5.3.1: The maximum total length of a reverse-path or forward-path
 			 * is 256 characters (including the punctuation and element separators). */
@@ -221,7 +220,7 @@ helovalid(const char *helo)
 		}
 	}
 	/* check if the argument is a valid domain name */
-	if (!domainvalid(helo, 0)) {
+	if (!domainvalid(helo)) {
 		xmitstat.helostatus = 0;
 		return 0;
 	}

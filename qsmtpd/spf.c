@@ -57,7 +57,7 @@ spflookup(const char *domain, const int rec)
 	if (rec >= 20)
 		return SPF_HARD_ERROR;
 
-	if (domainvalid(domain, 0))
+	if (domainvalid(domain))
 		return SPF_FAIL_MALF;
 
  	i = dnstxt(&txt, domain);

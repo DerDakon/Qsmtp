@@ -34,7 +34,7 @@ cb_dnsbl(const struct userconf *ds, char **logmsg, int *t)
 	if ( (fd = getfileglobal(ds, fnb, t)) < 0)
 		return (errno == ENOENT) ? 0 : -1;
 
-	if ( ( rc = loadlistfd(fd, &b, &a, domainvalid, 0) ) < 0 )
+	if ( (rc = loadlistfd(fd, &b, &a, domainvalid)) < 0)
 		return rc;
 
 	i = check_rbl(a, &txt);
@@ -54,7 +54,7 @@ cb_dnsbl(const struct userconf *ds, char **logmsg, int *t)
 		} else {
 			char *wtxt;
 
-			if ( ( rc = loadlistfd(fd, &d, &c, domainvalid, 0) ) < 0 ) {
+			if ( (rc = loadlistfd(fd, &d, &c, domainvalid)) < 0) {
 				free(a);
 				free(b);
 				free(txt);

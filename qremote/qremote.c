@@ -106,14 +106,12 @@ setup(void)
 			log_write(LOG_ERR, "can open neither control/helohost nor control/me");
 			_exit(0);
 		}
-		/* we ignore the other DNS errors here, the rest is fault of the admin */
-		if (domainvalid(heloname.s, 0) == 1) {
+		if (domainvalid(heloname.s)) {
 			log_write(LOG_ERR, "control/me contains invalid name");
 			_exit(0);
 		}
 	} else {
-		/* we ignore the other DNS errors here, the rest is fault of the admin */
-		if (domainvalid(heloname.s, 0) == 1) {
+		if (domainvalid(heloname.s)) {
 			log_write(LOG_ERR, "control/helohost contains invalid name");
 			_exit(0);
 		}
@@ -333,7 +331,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (!loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutbuf, &smtproutes, NULL, 0) && smtproutbuf) {
+	if (!loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutbuf, &smtproutes, NULL) && smtproutbuf) {
 		char *target;
 		unsigned int k = 0;
 

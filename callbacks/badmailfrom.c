@@ -77,7 +77,7 @@ cb_badmailfrom(const struct userconf *ds, char **logmsg, int *t)
 		return (errno != ENOENT) ? fd : 0;
 
 	/* don't check syntax of entries here: there might be things like ".cn" and so on that would fail the test */
-	if ( ( rc = loadlistfd(fd, &b, &a, NULL, 0) ) < 0 )
+	if ( (rc = loadlistfd(fd, &b, &a, NULL)) < 0)
 		return rc;
 
 	at = strchr(xmitstat.mailfrom.s, '@');
@@ -91,7 +91,7 @@ cb_badmailfrom(const struct userconf *ds, char **logmsg, int *t)
 		if (errno != ENOENT)
 			return fd;
 	} else {
-		if (loadlistfd(fd, &b, &a, checkaddr, 2) < 0)
+		if (loadlistfd(fd, &b, &a, checkaddr) < 0)
 			return -1;
 		if (lookupbmf(at, a)) {
 			logwhitelisted(*logmsg, *t, u);

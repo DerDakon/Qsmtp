@@ -130,13 +130,12 @@ setup(void)
 	if ( ( j = loadoneliner("control/me", &heloname.s, 0) ) < 0 )
 		return errno;
 	heloname.len = j;
-	/* we ignore the other DNS errors here, the rest is fault of the admin */
-	if (domainvalid(heloname.s, 0) == 1) {
+	if (domainvalid(heloname.s)) {
 		log_write(LOG_ERR, "control/me contains invalid name");
 		return EINVAL;
 	}
 
-	if ( (j = loadlistfd(open("control/rcpthosts", O_RDONLY), &rcpth, &rcpthosts, domainvalid, 0))) {
+	if ( (j = loadlistfd(open("control/rcpthosts", O_RDONLY), &rcpth, &rcpthosts, domainvalid))) {
 		if ((errno == ENOENT) || !rcpth)
 			log_write(LOG_ERR, "control/rcpthosts not found");
 		return errno;
@@ -185,7 +184,7 @@ setup(void)
 		return e;
 	}
 
-	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY), &gcbuf, &globalconf, NULL, 0)) ) {
+	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY), &gcbuf, &globalconf, NULL)) ) {
 		if ((errno == ENOENT) || !gcbuf) {
 			gcbuf = NULL;
 			globalconf = NULL;
@@ -676,7 +675,7 @@ smtp_rcpt(void)
 
 /* load user and domain "filterconf" file */
 	/* if the file is empty there is no problem, NULL is a legal value for the buffers */
-	if (loadlistfd(getfile(&ds, "filterconf", &i), &ucbuf, &(ds.userconf), NULL, 0)) {
+	if (loadlistfd(getfile(&ds, "filterconf", &i), &ucbuf, &(ds.userconf), NULL)) {
 		e = errno;
 
 		free(ds.userpath.s);
@@ -693,7 +692,7 @@ smtp_rcpt(void)
 			/* make sure this one opens the domain file: just set user path length to 0 */
 			l = ds.userpath.len;
 			ds.userpath.len = 0;
-			if (loadlistfd(getfile(&ds, "filterconf", &j), &dcbuf, &(ds.domainconf), NULL, 0)) {
+			if (loadlistfd(getfile(&ds, "filterconf", &j), &dcbuf, &(ds.domainconf), NULL)) {
 				e = errno;
 
 				free(ucbuf);
@@ -1026,7 +1025,7 @@ main(int argc, char *argv[]) {
 	if (argc >= 4) {
 		auth_check = argv[2];
 		auth_sub = argv + 3;
-		if (domainvalid(argv[1],0)) {
+		if (domainvalid(argv[1])) {
 			const char *msg[] = {"domainname for auth invalid", auth_host, NULL};
 
 			log_writen(LOG_WARNING, msg);

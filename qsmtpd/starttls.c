@@ -89,7 +89,7 @@ int tls_verify(void)
 
 	/* request client cert to see if it can be verified by one of our CAs
 	* and the associated email address matches an entry in tlsclients */
-	if ( loadlistfd(open("control/tlsclients", O_RDONLY), &clientbuf, &clients, checkaddr, 1) < 0 )
+	if (loadlistfd(open("control/tlsclients", O_RDONLY), &clientbuf, &clients, checkaddr) < 0)
 		return -1;
 
 	/* if CLIENTCA contains all the standard root certificates, a

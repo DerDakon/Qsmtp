@@ -34,7 +34,7 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 	if ( (fd = getfileglobal(ds, "namebl", t)) < 0)
 		return (errno == ENOENT) ? 0 : -1;
 
-	if ( ( rc = loadlistfd(fd, &b, &a, domainvalid, 0) ) < 0 )
+	if ( (rc = loadlistfd(fd, &b, &a, domainvalid)) < 0)
 		return rc;
 	
 	if (!b)

@@ -213,7 +213,6 @@ ask_dnsa(const char *name, struct ips **result)
  * domainvalid - check if a string is a valid fqdn
  *
  * @host:     the name to check
- * @ignored:  yes, it's ignored, it's just there for loadlistfd
  *
  * returns:  0 if everything is ok 
  *           1 on syntax error
@@ -221,7 +220,7 @@ ask_dnsa(const char *name, struct ips **result)
  * if there is a standard function doing the same throw this one away
  */
 int
-domainvalid(const char *host, const int ignored __attribute__ ((unused)))
+domainvalid(const char *host)
 {
 	int dot = 0;	/* if there is a '.' in the address */
 	const char *h = host;

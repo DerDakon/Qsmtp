@@ -216,7 +216,7 @@ loadoneliner(const char *filename, char **buf, int optional)
  * if the file does not exist or has no content *buf and *bufa will be set to NULL
  */
 int
-loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
+loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
 {
 	int i, j, k;
 
@@ -231,7 +231,7 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
 	i = j - 1;
 	k = j = 0;
 	while (k < i) {
-		if (!cf || !cf(*buf + k,f))
+		if (!cf || !cf(*buf + k))
 			j++;
 		else {
 			const char *s[] = {"input file contains invalid entry '", *buf + k, "'", NULL};
