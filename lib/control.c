@@ -60,7 +60,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		return -1;
 	j = 0;
 	while (j < oldlen - 1) {
-		if ( ((i = read(fd, inbuf + j, oldlen - 1 - j)) < 0) && (errno != EINTR)) {
+		if ( ((i = read(fd, inbuf + j, oldlen - 1 - j)) < 0) && (errno != EINTR) ) {
 			int e = errno;
 
 			while (close(fd) && (errno == EINTR));
@@ -101,9 +101,12 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			i++;
 		/* maybe checking for \r and friends? */
 	}
+
 	if (striptab & 1) {
 		/* compact the buffer */
 		j = i = 0;
+		while ((i < oldlen) && !inbuf[i])
+			i++;
 		while (i < oldlen) {
 			while (inbuf[i])
 				inbuf[j++] = inbuf[i++];
@@ -111,7 +114,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			while ((i < oldlen) && !inbuf[i])
 				i++;
 		}
-		if (j == 1) {
+		if (!j) {
 			free(inbuf);
 			*buf = NULL;
 			return 0;
