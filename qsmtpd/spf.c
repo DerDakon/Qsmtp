@@ -763,9 +763,11 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 		case 'd':	if (spf_appendmakro(res, l, domain, strlen(domain), num, r, delim))
 					return -1;
 				break;
+		case 'C':
 		case 'c':	if (!ex)
 					PARSEERR;
 				/* fallthrough */
+		case 'I':
 		case 'i':	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
 					char ip[INET_ADDRSTRLEN];
 
