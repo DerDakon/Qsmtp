@@ -88,16 +88,17 @@ authgetl(void) {
 		authin.len += i;
 	} while (authin.s[authin.len - 1] != '\n');
 
-	if (--authin.len)
+	if (--authin.len) {
 		if (authin.s[authin.len - 1] == '\r')
 			--authin.len;
 
-	if ((*authin.s == '*') && (authin.len == 1)) {
-		free(authin.s);
-		errno = err_authabrt();
-		return -1;
+		if ((authin.len == 1) && (*authin.s == '*')) {
+			free(authin.s);
+			errno = err_authabrt();
+			return -1;
+		}
+		authin.s[authin.len] = '\0';
 	}
-	authin.s[authin.len] = '\0';
 	if (authin.len == 0) {
 		free(authin.s);
 		return err_input();
