@@ -82,6 +82,7 @@ cb_badmailfrom(const struct userconf *ds, char **logmsg, int *t)
 	if (!rc)
 		return rc;
 
+	*logmsg = "bad mail from";
 	if ( (fd = getfileglobal(ds, "goodmailfrom", &u)) < 0) {
 		if (errno != ENOENT)
 			return fd;
@@ -91,8 +92,6 @@ cb_badmailfrom(const struct userconf *ds, char **logmsg, int *t)
 		if (lookupbmf(at, a)) {
 			logwhitelisted("bad mail from", *t, u);
 			rc = 0;
-		} else {
-			*logmsg = "bad mail from";
 		}
 		free(b);
 	}
