@@ -590,9 +590,9 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 /* first: go and replace all delimiters with '.' */
 	/* delim == 1 means only '.' is delimiter so we only have to count them */
 	if (delim == 1) {
-		unsigned int j = sl;
+		int j = sl;
 
-		while (--j) {
+		while (--j >= 0) {
 			 if (s[j] == '.') {
 			 	dc++;
 			 }
