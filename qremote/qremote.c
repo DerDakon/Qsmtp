@@ -15,6 +15,7 @@
 #include "sstring.h"
 #include "conn.h"
 #include "qremote.h"
+#include "starttlsr.h"
 
 int socketd;
 static struct string heloname;
@@ -530,6 +531,16 @@ main(int argc, char *argv[])
 	getrhost(mx);
 	freeips(mx);
 	mailerrmsg[1] = rhost;
+
+	if (smtpext & 0x04) {
+		if (tls_init()) {
+			if (greeting()) {
+				write(1, "ZEHLO failed after STARTTLS\n", 29);
+				quit();
+			}
+			successmsg[4] = " encrypted";
+		}
+	}
 
 	netmsg[0] = "MAIL FROM:<";
 	netmsg[1] = argv[2];
