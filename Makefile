@@ -12,13 +12,16 @@ export SHELL CC CFLAGS LD LDFLAGS AUTOQMAIL
 
 SUBDIRS = lib callbacks qsmtpd qremote tools
 
-TARGETS = targets/Qsmtpd targets/Qremote targets/addipbl targets/testspf
+TARGETS = targets/Qsmtpd targets/Qremote
+TOOLS = targets/addipbl targets/testspf
 
-.phony: all clean subdirs install
+.phony: all clean subdirs install normal
 
-default: all
+default: normal
 
-all: subdirs $(TARGETS)
+all: subdirs $(TARGETS) $(TOOLS)
+
+normal: subdirs $(TARGETS)
 
 subdirs:
 	for dir in $(SUBDIRS); do\
@@ -50,8 +53,6 @@ targets/Qremote: qremote/qremote.o lib/dns.o lib/netio.o lib/ssl_timeoutio.o lib
 
 targets/addipbl: tools/addipbl.o
 	$(LD) $(LDFLAGS) -o $@ $^
-
-tools/addipbl.o: tools/addipbl.c
 
 targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/match.o \
 		$(OWFATPATH)/libowfat.a

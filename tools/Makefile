@@ -14,4 +14,4 @@ clean:
 testspf.o: qsmtpd.h antispam.h sstring.h
 
 %.o: %.c
-	 $(CC) $(CFLAGS) $<
+	$(CC) $(CFLAGS) $<
