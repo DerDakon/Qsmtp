@@ -142,6 +142,7 @@ getrhost(const struct ips *mx)
 			err_mem(1);
 		}
 
+		memcpy(rhost, partner_fqdn, rhostlen);
 		rhost[rhostlen++] = ' ';
 		rhost[rhostlen++] = '[';
 		/* there can't be any errors here ;) */
