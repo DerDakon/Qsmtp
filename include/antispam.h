@@ -12,6 +12,7 @@ extern int domainmatch(const char *, const unsigned int, const char **);
 extern int ip4_matchnet(const struct in6_addr *, const struct in_addr *, const unsigned char);
 extern int ip6_matchnet(const struct in6_addr *, const struct in6_addr *, const unsigned char);
 extern int lookupipbl(int);
+extern int reverseip4(char *);
 
 /* qsmtpd/spf.c */
 

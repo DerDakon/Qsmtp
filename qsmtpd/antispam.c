@@ -27,6 +27,22 @@ nibbletohex(char *dest, const char n)
 }
 
 /**
+ * reverseip4 - print client IPv4 address in reverse order into a given buffer
+ *
+ * @buf: buffer to write in (must have at least INET_ADDRSTRLEN (16) bytes)
+ */
+int
+reverseip4(char *buf)
+{
+	struct in_addr r;
+
+	r.s_addr = (xmitstat.sremoteip.s6_addr[12] << 24) + (xmitstat.sremoteip.s6_addr[13] << 16) +
+			(xmitstat.sremoteip.s6_addr[14] << 8) + xmitstat.sremoteip.s6_addr[15];
+	inet_ntop(AF_INET, &r, buf, INET_ADDRSTRLEN);
+	return strlen(buf);
+}
+
+/**
  * check_rbl - do a rbl lookup for remoteip
  *
  * @rbls: a NULL terminated array of rbls
@@ -44,12 +60,7 @@ check_rbl(char *const *rbls, char **txt)
 	int again = 0;	/* if this is set at least one rbl lookup failed with temp error */
 
 	if (xmitstat.ipv4conn) {
-		struct in_addr r;
-
-		r.s_addr = (xmitstat.sremoteip.s6_addr[12] << 24) + (xmitstat.sremoteip.s6_addr[13] << 16) +
-				(xmitstat.sremoteip.s6_addr[14] << 8) + xmitstat.sremoteip.s6_addr[15];
-		inet_ntop(AF_INET, &r, lookup, sizeof(lookup));
-		l = strlen(lookup);
+		l = reverseip4(lookup);
 		lookup[l++] = '.';
 	} else {
 		int k;
