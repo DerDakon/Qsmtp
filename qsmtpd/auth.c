@@ -122,25 +122,38 @@ static int authenticate(void)
 	}
 	switch(child = fork()) {
 		case -1:	return err_fork();
-		case 0:		close(pi[1]);
-				if (pi[0] != 3)
-					if (dup2(pi[0],3))
+		case 0:		while (close(pi[1])) {
+					if (errno != EINTR)
 						_exit(1);
+				}
+				if (pi[0] != 3) {
+					if (dup2(pi[0],3)) {
+						_exit(1);
+					}
+				}
 				sa.sa_handler = SIG_DFL;
 				sigemptyset(&(sa.sa_mask));
 				sigaction(SIGPIPE, &sa, NULL);
 				execlp(auth_check, auth_check, auth_sub, NULL);
 				_exit(1);
 	}
-	close(pi[0]);
+	while (close(pi[0])) {
+		if (errno != EINTR)
+			goto out;
+	}
 
 	WRITE(user.s, user.len);
 	WRITE("", 1);
 	WRITE(pass.s, pass.len);
+	/* make sure not to leak password */
+	memset(pass.s, 0, pass.len);
 	WRITE("", 1);
 	WRITE(resp.s, resp.len);
 	WRITE("", 1);
-	close(pi[1]);
+	while (close(pi[1])) {
+		if (errno != EINTR)
+			goto out;
+	}
 
 	while (waitpid(child, &wstat, 0) == -1) {
 		if (errno != EINTR) {

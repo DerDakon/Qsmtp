@@ -43,8 +43,6 @@ typedef struct smtpcomm {
 					/* 2: this command allows lines > 512 chars (and will check this itself) */
 } smtpcomm;
 
-int smtp_null(void);
-
 int smtp_noop(void);
 int smtp_quit(void);
 int smtp_rset(void);
@@ -104,29 +102,6 @@ static int badcmds = 0;			/* bad commands in a row */
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
 #define MAXRCPT		500		/* maximum number of recipients in a single mail */
 
-/* KILLME: debugging functions */
-#if 0
-#include <stdio.h>
-
-void dump(const char *name, char *buf, unsigned int size)
-{
- unsigned int c = 0, i;
- if (!size) return;
- fprintf(stderr, "dumping %s, length %u\n", name, size);
- for (i=0; i< size; i++) {
-   fprintf(stderr, "%s[%i] = 0x%x %c", name, i, buf[i], (buf[i] > 31) ? buf[i] : '?');
-   putc((c = ((c + 1) & 3)) ? ' ' : '\n', stderr);
- }
- if (c) putc('\n', stderr);
- for (i=0; i<size; i++) {
-   putc((buf[i] > 31) ? buf[i] : '?',stderr);
- }
- putc('\n', stderr);
-}
-
-#endif
-/* end KILLME */
-
 inline int
 err_badbounce(void)
 {
@@ -137,7 +112,7 @@ err_badbounce(void)
 int
 err_control(const char *fn)
 {
-	const char *logmsg[] = {"error: unable to open file: """, fn, """\n", NULL};
+	const char *logmsg[] = {"error: unable to open file: \"", fn, "\"\n", NULL};
 
 	log_writen(LOG_ERR, logmsg);
 	return netwrite("421 4.3.5 unable to read controls\r\n");
@@ -146,7 +121,7 @@ err_control(const char *fn)
 int
 err_control2(const char *msg, const char *fn)
 {
-	const char *logmsg[] = {"error: unable to open file: """, msg, fn, """\n", NULL};
+	const char *logmsg[] = {"error: unable to open file: \"", msg, fn, "\"\n", NULL};
 
 	log_writen(LOG_ERR, logmsg);
 	return netwrite("421 4.3.5 unable to read controls\r\n");
@@ -268,8 +243,7 @@ smtp_helo(void)
 	protocol = realloc(protocol, 5);
 	if (!protocol)
 		return ENOMEM;
-	memcpy(protocol, "SMTP", 4);
-	protocol[4] = '\0';
+	memcpy(protocol, "SMTP", 5);
 	xmitstat.esmtp = 0;
 	xmitstat.authname = NULL;
 	xmitstat.spf = 0;
@@ -298,7 +272,7 @@ smtp_ehlo(void)
 	if (helovalid(linein + 5) < 0)
 		return errno;
 	if (auth_host && (!sslauth || (sslauth && ssl))) {
-#ifdef CRAMMD5
+#ifdef AUTHCRAM
 		msg[next++] = "250-AUTH PLAIN LOGIN CRAMMD5\r\n";
 #else
 		msg[next++] = "250-AUTH PLAIN LOGIN\r\n";
@@ -309,12 +283,12 @@ smtp_ehlo(void)
 		int fd = open("control/servercert.pem", O_RDONLY);
 
 		if (fd >= 0) {
-			close(fd);
+			while (close(fd) && (errno == EINTR));
 			msg[next++] = "250-STARTTLS\r\n";
 		}
 	}
 
-	/* this must stay last: it begins with "250 " and does not have "\r\n" at the end so net_writen works */
+/* this must stay last: it begins with "250 " and does not have "\r\n" at the end so net_writen works */
 	if (databytes) {
 		msg[next++] = "250 SIZE ";
 		sizebuf = ultostr(databytes);
@@ -382,10 +356,7 @@ int
 user_exists(const string *localpart, const char *domainpart, struct userconf *ds)
 {
 	char tmpfile[PATH_MAX];
-	string dotqm;
 	DIR *dirp;
-	int fd;
-	int r = 0;
 	unsigned int i = 0;
 
 	while (filterdom[i]) {
@@ -401,6 +372,8 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 	dirp = opendir(tmpfile);
 	if (dirp == NULL) {
 		int e = errno;
+		int fd;
+		string dotqm;
 
 		free(ds->userpath.s);
 		ds->userpath.s = NULL;
@@ -416,12 +389,10 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 		memcpy(tmpfile + i, ".qmail-", 7);
 		i += 7;
 		tmpfile[i] = '\0';
-		dotqm.s = malloc(i);
-		if (!dotqm.s) {
-			return -1;
+		if ( (fd = newstr(&dotqm, i + 1)) ) {
+			return fd;
 		}
-		memcpy(dotqm.s, tmpfile, i);
-		dotqm.len = i;
+		memcpy(dotqm.s, tmpfile, dotqm.len--);
 		fd = qmexists(&dotqm, localpart->s, localpart->len, 2);
 		/* try .qmail-user-default instead */
 		if (fd < 0) {
@@ -447,7 +418,10 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 						return fd;
 					}
 				} else {
-					close(fd);
+					while (close(fd)) {
+						if (errno != EINTR)
+							return -1;
+					}
 					free(dotqm.s);
 					return 4;
 				}
@@ -462,6 +436,7 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 				return (errno == ENOENT) ? 0 : fd;
 			} else if (vpopbounce) {
 				char buff[2*strlen(vpopbounce)+1];
+				int r;
 
 				r = read(fd, buff, sizeof(buff)-1);
 				if (r == -1) {
@@ -470,7 +445,10 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 						errno = e;
 					return -1;
 				}
-				close(fd);
+				while (close(fd)) {
+					if (errno != EINTR)
+						return -1;
+				}
 				buff[r] = 0;
 				while (r && (buff[r - 1] == '\n'))
 					buff[--r] = 0;
@@ -485,7 +463,10 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 			}
 		} else {
 			free(dotqm.s);
-			close(fd);
+			while (close(fd)) {
+				if (errno != EINTR)
+					return -1;
+			}
 		}
 	} else {
 		closedir(dirp);
@@ -510,7 +491,7 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 int
 addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 {
-	char *at = NULL;		/* guess! ;) The NULL is just to shut up the compiler */
+	char *at;			/* guess! ;) */
 	int result = 0;			/* return code */
 	int i = 0, j;
 	string localpart;
@@ -541,7 +522,7 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 		int rc = finddomainmm(open("control/morercpthosts", O_RDONLY), at + 1);
 
 		if (rc < 0) {
-			if ((errno == ENOMEM) || (errno == EINTR)) {
+			if (errno == ENOMEM) {
 				result = errno;
 			} else if (err_control("control/morercpthosts")) {
 				result = errno;
@@ -558,6 +539,8 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 /* get the domain directory from "users/cdb" */
 	j = vget_assign(at + 1, &(ds->domainpath));
 	if (j < 0) {
+		if (errno == ENOENT)
+			return 0;
 		result = errno;
 		goto free_and_out;
 	} else if (!j) {
@@ -819,6 +802,7 @@ userdenied:
 		case 3:	if (42 == 42) {
 				/* this is _so_ ugly. I just want a local variable for this case */
 				const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
+
 				j = net_writen(rcptmsg);
 			}
 			break;
@@ -842,6 +826,7 @@ smtp_from(void)
 	unsigned int validlength = 510;
 	int seenbody = 0;	/* if we found a "BODY=" after mail, there may only be one */
 	struct userconf ds;
+	struct statvfs sbuf;
 
 	i = addrparse(0, &(xmitstat.mailfrom), &more, &ds);
 	xmitstat.frommx = NULL;
@@ -899,17 +884,17 @@ smtp_from(void)
 	if (linelen > validlength)
 		return E2BIG;
 
-	struct statvfs sbuf;
-	if ( ( i = statvfs("queue/lock/sendmutex", &sbuf)) ) {
+	while ( ( i = statvfs("queue/lock/sendmutex", &sbuf)) ) {
 		int e;
+
 		switch (e = errno) {
-			case ENOMEM:
-			case EINTR:	return e;
+			case EINTR:	break;
+			case ENOMEM:	return e;
 			case ENOENT:	/* uncritical: only means that qmail-send is not running */
 			case ENOSYS:
 			/* will happen in most cases because program runs not in group qmail */
 			case EACCES:	log_write(LOG_WARNING, "warning: can not get free queue disk space");
-					break;
+					goto next;
 /*			case ELOOP:
 			case ENAMETOOLONG:
 			case ENOTDIR:
@@ -920,9 +905,11 @@ smtp_from(void)
 			default:	log_write(LOG_ERR, "critical: can not get free queue disk space");
 					return e;
 		}
+	}
+next:
+	if (!i) {
 		if (sbuf.f_flag & ST_RDONLY)
 			return EROFS;
-	} else {
 		/* check if the free disk in queue filesystem is at least the size of the message */
 		if ((databytes && (databytes < xmitstat.thisbytes)) || (sbuf.f_bsize*sbuf.f_bavail < xmitstat.thisbytes))
 			return netwrite("452 4.3.1 Requested action not taken: insufficient system storage\r\n") ? errno : EDONE;
@@ -1029,8 +1016,9 @@ smtp_data(void)
 		return EBOGUS;
 	}
 	if (pipe(fd1)) {
-		close(fd0[0]);
-		close(fd0[1]);
+		/* EIO on pipe operations? Shit just happens (although I don't know why this could ever happen) */
+		while (close(fd0[0]) && (errno == EINTR));
+		while (close(fd0[1]) && (errno == EINTR));
 		if ( (i = err_pipe()) )
 			return i;
 		return EBOGUS;
@@ -1042,10 +1030,14 @@ smtp_data(void)
 		case -1:	if ( (i = err_fork()) )
 					return i;
 				return EBOGUS;
-		case 0:		if (close(fd0[1]))
-					_exit(120);
-				if (close(fd1[1]))
-					_exit(120);
+		case 0:		while ( (i = close(fd0[1])) ) {
+					if (errno != EINTR)
+						_exit(120);
+				}
+				while ( (i = close(fd1[1])) ) {
+					if (errno != EINTR)
+						_exit(120);
+				}
 				if (dup2(fd0[0], 0) == -1)
 					_exit(120);
 				if (dup2(fd1[0], 1) == -1)
@@ -1053,8 +1045,8 @@ smtp_data(void)
 			/* no chdir here, we already _are_ there (and qmail-queue does it again) */
 				execlp("bin/qmail-queue", "bin/qmail-queue", NULL);
 				_exit(120);
-		default:	close(fd0[0]);
-				close(fd1[0]);
+		default:	while (close(fd0[0]) && (errno == EINTR));
+				while (close(fd1[0]) && (errno == EINTR));
 	}
 
 	/* Watch stdin (fd 0) to see if it has input (see below why). */
@@ -1070,10 +1062,11 @@ smtp_data(void)
 		 * reply. His SMTP engine is broken so we don't let him send the mail */
 		return netwrite("550 5.5.0 you must wait for my data reply\r\n") ? errno : EBOGUS;
 	}
+/* check if the child already returned, which means something went wrong */
 	if (waitpid(qpid, &status, WNOHANG)) {
-		/* the child already returned, this means something went wrong */
-		close(fd0[1]);
-		close(fd1[1]);
+		/* error here may just happen, we are already in trouble */
+		while (close(fd0[0]) && (errno == EINTR));
+		while (close(fd1[0]) && (errno == EINTR));
 		if ( (i = err_fork()) )
 			return i;
 		return EDONE;
@@ -1233,6 +1226,8 @@ smtp_data(void)
 		if ( (i = net_read()) )
 			return errno;
 		while (strcmp(linein,".") && (msgsize <= maxbytes)) {
+			int offset;
+
 			if ((xmitstat.check2822 & 1) && !datatype) {
 				for (i = linelen - 1; i >= 0; i--)
 					if (linein[i] < 0) {
@@ -1242,15 +1237,10 @@ smtp_data(void)
 					}
 			}
 
-			if (linein[0] == '.') {
-				WRITE(fd, linein + 1, linelen - 1);
-				// printf buffer beginning at [1]
-				msgsize += linelen + 1;
-			} else {
-				WRITE(fd, linein, linelen);
-				// printf buffer beginning at [0]
-				msgsize += linelen + 2;
-			}
+			offset = (linein[0] == '.') ? 1 : 0;
+			WRITE(fd, linein + offset, linelen - offset);
+			msgsize += linelen + 2 - offset;
+
 			WRITE(fd, "\n", 1);
 			if ( (i = net_read()) )
 				return errno;
@@ -1262,7 +1252,10 @@ smtp_data(void)
 		goto loop_data;
 	}
 	/* the message body is sent to qmail-queue. Close the file descriptor and send the envelope information */
-	close(fd);
+	while (close(fd)) {
+		if (errno != EINTR)
+			goto err_write;
+	}
 	fd = fd1[1];
 
 	s = ultostr(msgsize);
@@ -1301,7 +1294,10 @@ smtp_data(void)
 		free(l);
 	}
 	WRITE(fd, "", 1);
-	close(fd);
+	while (close(fd)) {
+		if (errno != EINTR)
+			goto err_write;
+	}
 	free(s);
 	free(t);
 	freedata();
@@ -1364,8 +1360,8 @@ smtp_data(void)
 		}
 	}
 loop_data:
-	close(fd1[1]);
-	close(fd1[0]);
+	while (close(fd1[1]) && (errno == EINTR));
+	while (close(fd0[1]) && (errno == EINTR));
 	/* eat all data until the transmission ends. But just drop it and return
 	 * an error defined before jumping here */
 	do {
@@ -1408,9 +1404,9 @@ loop_data:
 	return rc;
 err_write:
 	rc = errno;
-	close(fd0[1]);
-	close(fd1[1]);
 	free(s);
+	while (close(fd1[1]) && (errno == EINTR));
+	while (close(fd0[1]) && (errno == EINTR));
 	freedata();
 	if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
 		return errno;
@@ -1501,12 +1497,18 @@ main(int argc, char *argv[]) {
 		} else {
 			int fd = open(auth_check, O_RDONLY);
 			if (fd < 0) {
-				const char *msg[] = {"checkpassword program '", auth_check,
-							"' does not exist", NULL};
+				const char *msg[] = {"checkpassword program '", auth_check, "' does not exist", NULL};
+
 				log_writen(LOG_WARNING, msg);
 			} else {
-				close(fd);
-				auth_host = argv[1];
+				int r;
+
+				while ((r = close(fd)) && (errno == EINTR));
+				if (!r) {
+					auth_host = argv[1];
+				} else {
+					flagbogus = errno;
+				}
 			}
 		}
 	} else if (argc != 1) {
@@ -1564,11 +1566,14 @@ main(int argc, char *argv[]) {
 						break;
 				case ENOMEM:	/* ignore errors for the first 2 messages: if the third
 						 * one succeeds everything is ok */
-						netwrite("421-4.3.0 out of memory\r\n");
+						netwrite("452-4.3.0 out of memory\r\n");
 						sleep(30);
-						netwrite("421-4.3.0 give me some time to recover\r\n");
+						netwrite("452-4.3.0 give me some time to recover\r\n");
 						sleep(30);
-						flagbogus = netwrite("421 4.3.0 please try again later\r\n") ? errno : 0;
+						flagbogus = netwrite("452 4.3.0 please try again later\r\n") ? errno : 0;
+						badcmds = 0;
+						break;
+				case EIO:	flagbogus = netwrite("451 4.3.0 IO error, please try again later\r\n") ? errno : 0;
 						badcmds = 0;
 						break;
 				case EMSGSIZE:	flagbogus = netwrite("552 4.3.1 Too much mail data\r\n") ? errno : 0;
@@ -1587,8 +1592,7 @@ main(int argc, char *argv[]) {
 				case EBOGUS:	flagbogus = 0;
 						break;
 				case EINTR:	log_write(LOG_WARNING, "interrupted by signal");
-#warning FIXME: do something better on EINTR
-						exit(EINTR);
+						_exit(EINTR);
 				default:	log_write(LOG_ERR, "writer error. kick me.");
 						log_write(LOG_ERR, strerror(flagbogus));
 						flagbogus = netwrite("500 5.3.0 unknown error\r\n") ? errno : 0;

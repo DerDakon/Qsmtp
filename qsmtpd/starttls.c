@@ -33,7 +33,8 @@ RSA *tmp_rsa_cb(SSL *ssl __attribute__ ((unused)), int export, int keylen)
 		FILE *in = fopen("control/rsa512.pem", "r");
 		if (in) {
 			RSA *rsa = PEM_read_RSAPrivateKey(in, NULL, NULL, NULL);
-			fclose(in);
+
+			while (fclose(in) && (errno == EINTR));
 			if (rsa)
 				return rsa;
 		}
@@ -54,7 +55,8 @@ DH *tmp_dh_cb(SSL *ssl __attribute__ ((unused)), int export, int keylen)
 	}
 	if (in) {
 		DH *dh = PEM_read_DHparams(in, NULL, NULL, NULL);
-		fclose(in);
+
+		while (fclose(in) && (errno == EINTR));
 		if (dh)
 			return dh;
 	}

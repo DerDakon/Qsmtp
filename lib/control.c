@@ -26,7 +26,7 @@ int
 lloadfilefd(int fd, char **buf, const int striptab)
 {
 	char *inbuf;
-	int oldlen, j, i = 0;
+	int oldlen, j, i;
 	struct stat st;
 
 	if (fd < 0) {
@@ -36,24 +36,32 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		} else
 			return -1;
 	}
-	if (flock(fd,LOCK_SH)) {
-		log_write(LOG_WARNING, "cannot lock input file");
-		errno = ENOLCK;	/* not the right error code, but good enough */
-		return -1;
+	while (flock(fd,LOCK_SH)) {
+		if (errno != EINTR) {
+			log_write(LOG_WARNING, "cannot lock input file");
+			errno = ENOLCK;	/* not the right error code, but good enough */
+			return -1;
+		}
 	}
-	fstat(fd, &st);
+	if ( (i = fstat(fd, &st)) )
+		return i;
 	oldlen = st.st_size + 1;
 	inbuf = malloc(oldlen);
 	if (!inbuf)
 		return -1;
-	read(fd, inbuf, oldlen);
-	close(fd);
+	if ( (i = read(fd, inbuf, oldlen)) )
+		return i;
+	while ( (i = close(fd)) ) {
+		if (errno != EINTR)
+			return i;
+	}
 	inbuf[--oldlen] = '\0'; /* if file has no newline at the end */
 	if (!striptab) {
 		*buf = inbuf;
 		return oldlen;
 	}
 
+	i = 0;
 	while (i < oldlen) {
 		if (inbuf[i] == '#') {
 			/* this line contains a comment: strip it */
@@ -89,7 +97,6 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	if (!buf) {
 		free(inbuf);
 		j = -1;
-		errno = EINVAL;
 	}
 	return j;
 }
@@ -138,6 +145,7 @@ loadoneliner(const char *filename, char **buf, int optional)
 	if (!*buf) {
 		if (!optional) {
 			const char *logmsg[] = {filename, " not found", NULL};
+
 			log_writen(LOG_ERR, logmsg);
 		}
 		errno = ENOENT;
@@ -145,6 +153,7 @@ loadoneliner(const char *filename, char **buf, int optional)
 	}
 	if (strlen(*buf) + 1 != (unsigned int) j) {
 		const char *logmsg[] = {"more than one line in ", filename, NULL};
+
 		log_writen(LOG_ERR, logmsg);
 		errno = EINVAL;
 		return -1;
@@ -189,6 +198,7 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
 			j++;
 		else {
 			const char *s[] = {"input file contains invalid entry '",*buf + k, "'", NULL};
+
 			log_writen(LOG_WARNING, s);
 		}
 		k += strlen(*buf + k) + 1;
@@ -208,20 +218,33 @@ finddomainmm(int fd, const char *domain)
 	if (fd < 0) {
 		return (errno == ENOENT) ? 0 : fd;
 	}
-	if (flock(fd,LOCK_SH)) {
-		log_write(LOG_WARNING, "cannot lock input file");
-		errno = ENOLCK;	/* not the right error code, but good enough */
-		return -1;
+
+	while (flock(fd,LOCK_SH)) {
+		if (errno != EINTR) {
+			log_write(LOG_WARNING, "cannot lock input file");
+			errno = ENOLCK;	/* not the right error code, but good enough */
+			return -1;
+		}
 	}
-	fstat(fd, &st);
+	if ( (rc = fstat(fd, &st)) )
+		return rc;
 	if (!st.st_size) {
-		close(fd);
+		while ( (rc = close(fd)) ) {
+			if (errno != EINTR)
+				return rc;
+		}
 		return 0;
 	}
 
 	map = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	if (map == MAP_FAILED) {
-		close(fd);
+		int e = errno;
+
+		while (close(fd)) {
+			if (errno != EINTR)
+				break;
+		}
+		errno = e;
 		return -1;
 	}
 
@@ -256,6 +279,11 @@ finddomainmm(int fd, const char *domain)
 	} while (cur);
 
 	munmap(map, st.st_size);
-	close(fd);
+	while (close(fd)) {
+		if (errno != EINTR) {
+			rc = -1;
+			break;
+		}
+	}
 	return rc;
 }
