@@ -12,15 +12,13 @@
 #include "qsmtpd.h"
 
 int
-cb_ipbl(const struct userconf *ds, char **logmsg __attribute__ ((unused)), int *t)
+cb_ipbl(const struct userconf *ds, char **logmsg, int *t)
 {
 	int i;			/* counter of the array position */
 	int rc;			/* return code */
 	int fd;			/* file descriptor of the policy file */
 	const char *fnb;	/* filename of the blacklist file */
 	const char *fnw;	/* filename of the whitelist file */
-	const char *tmperr = "4.3.0 temporary policy error\r\n";
-				/* error message announced on malformed file */
 
 	if (xmitstat.ipv4conn) {
 		fnb = "ipbl";
@@ -41,7 +39,7 @@ cb_ipbl(const struct userconf *ds, char **logmsg __attribute__ ((unused)), int *
 		int u;
 
 		if ( (fd = getfile(ds, fnw, &u)) < 0) {
-			if ((errno != ENOENT) && (errno != ENOLCK))
+			if (errno != ENOENT)
 				return fd;
 			i = 0;
 		} else {
@@ -57,19 +55,15 @@ cb_ipbl(const struct userconf *ds, char **logmsg __attribute__ ((unused)), int *
 			const char *logmess[] = {"bad input data in ", blocktype[u],
 						"ipwl file for address <", THISRCPT, ">", NULL};
 			log_writen(LOG_ERR, logmess);
-			if (netwrite(tmperr))
-				return -1;
 			rc = 0;
 		}
-	} else if (!i) {
-		rc = 0;
 	} else {
-		const char *logmess[] = {"bad input data in ", blocktype[*t],
-					"ipbl file for address <", THISRCPT, ">", NULL};
-
-		log_writen(LOG_ERR, logmess);
-		if (netwrite(tmperr))
-			return -1;
+		if (i) {
+			const char *logmess[] = {"bad input data in ", blocktype[*t],
+						"ipbl file for address <", THISRCPT, ">", NULL};
+	
+			log_writen(LOG_ERR, logmess);
+		}
 		rc = 0;
 	}
 	return rc;
