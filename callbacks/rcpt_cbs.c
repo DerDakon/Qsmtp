@@ -16,11 +16,13 @@ extern int cb_spf(const struct userconf *, char **, int *);
 extern int cb_soberg(const struct userconf *, char **, int *);
 extern int cb_nobounce(const struct userconf *, char **, int *);
 extern int cb_helo(const struct userconf *, char **, int *);
+extern int cb_usersize(const struct userconf *, char **, int *);
 
 /* the callbacks will be called in the order in this array */
 
 /* offline checks first */
 rcpt_cb rcpt_cbs[] = {	cb_whitelistauth,
+			cb_usersize,
 			cb_soberg,
 			cb_nobounce,
 			cb_forcessl,
