@@ -333,7 +333,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	if (!loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutbuf, &smtproutes, NULL, 0)) {
+	if (!loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutbuf, &smtproutes, NULL, 0) && smtproutesbuf) {
 		char *target;
 		unsigned int k = 0;
 
