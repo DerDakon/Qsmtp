@@ -796,23 +796,22 @@ userdenied:
 			logmsg[3] = "";
 		log_writen(LOG_INFO, logmsg);
 	}
+	if (j > 0)
+		tarpit();
 	switch (i) {
 		case -1:j = 1; break;
-		case 2:	tarpit();
-			if ( (j = netwrite("550 5.7.1 mail denied for policy reasons\r\n")) )
+		case 2:	if ( (j = netwrite("550 5.7.1 mail denied for policy reasons\r\n")) )
 				e = errno;
 			break;
 		case 3:	if (42 == 42) {
 				/* this is _so_ ugly. I just want a local variable for this case */
 				const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
 
-				tarpit();
 				if ((j = net_writen(rcptmsg)))
 					e = errno;
 			}
 			break;
-		case 4:	tarpit();
-			if ( (j = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
+		case 4:	if ( (j = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
 				e = errno;
 			break;
 	}
