@@ -12,7 +12,7 @@ char linein[1002];			/* buffer for the line to read: max 1000 chars including CR
 size_t linelen;				/* length of the line */
 static char lineinn[sizeof(linein)];	/* if more than one line was in linein the rest is stored here */
 size_t linenlen;			/* length of the lineinn */
-unsigned long timeout;			/* how long to wait for data */
+time_t timeout;				/* how long to wait for data */
 
 #ifdef DEBUG_IO
 #include <syslog.h>

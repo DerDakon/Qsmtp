@@ -3,6 +3,7 @@
 
 #include <bits/wordsize.h>
 #include <sys/types.h>
+#include <time.h>
 
 extern char linein[];			/* current input line */
 extern size_t linelen;			/* length of the line */
@@ -30,7 +31,7 @@ net_write(const char *s)
 #define ULSTRLEN 11
 #endif
 
-extern unsigned long timeout;
+extern time_t timeout;
 extern int socketd;
 
 #ifdef DEBUG_IO

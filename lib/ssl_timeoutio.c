@@ -5,15 +5,15 @@
 #include "log.h"
 #include "tls.h"
 
-#define ndelay_on(fd) fcntl(fd,F_SETFL,fcntl(fd,F_GETFL,0) | O_NONBLOCK)
-#define ndelay_off(fd) fcntl(fd,F_SETFL,fcntl(fd,F_GETFL,0) & ~O_NONBLOCK)
+#define ndelay_on(fd) fcntl(fd,F_SETFL,fcntl(fd,F_GETFL) | O_NONBLOCK)
+#define ndelay_off(fd) fcntl(fd,F_SETFL,fcntl(fd,F_GETFL) & ~O_NONBLOCK)
 
 int ssl_rfd = -1, ssl_wfd = -1; /* SSL_get_Xfd() are broken */
 
-int ssl_timeoutio(int (*fun)(), long t, char *buf, const int len)
+int ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 {
 	int n = 0;
-	const long end = t + time(NULL);
+	const time_t end = t + time(NULL);
 
 	do {
 		fd_set fds;
@@ -52,7 +52,7 @@ int ssl_timeoutio(int (*fun)(), long t, char *buf, const int len)
 	return n;
 }
 
-int ssl_timeoutaccept(long t)
+int ssl_timeoutaccept(time_t t)
 {
 	int r;
 
@@ -71,7 +71,7 @@ int ssl_timeoutaccept(long t)
 	return r;
 }
 
-int ssl_timeoutconn(long t)
+int ssl_timeoutconn(time_t t)
 {
 	int r;
 
@@ -91,7 +91,7 @@ int ssl_timeoutconn(long t)
 	return r;
 }
 
-int ssl_timeoutrehandshake(long t)
+int ssl_timeoutrehandshake(time_t t)
 {
 	int r;
 	
@@ -105,14 +105,14 @@ int ssl_timeoutrehandshake(long t)
 	return ssl_timeoutio(SSL_do_handshake, t, NULL, 0);
 }
 
-int ssl_timeoutread(long t, char *buf, const int len)
+int ssl_timeoutread(time_t t, char *buf, const int len)
 {
 	if (SSL_pending(ssl))
 		return SSL_read(ssl, buf, len);
 	return ssl_timeoutio(SSL_read, t, buf, len);
 }
 
-inline int ssl_timeoutwrite(long t, const char *buf, const int len)
+inline int ssl_timeoutwrite(time_t t, const char *buf, const int len)
 {
 	/* SSL_write takes a const char* as second argument so
 	 * we do not need to worry here, just shut up the compiler */
