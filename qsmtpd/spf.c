@@ -672,11 +672,11 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	}
 
 /**
- * spf_makroletter - exand a SPF makro letter
+ * spf_makroletter - expand a SPF makro letter
  *
  * @p: the token to parse
  * @domain: the current domain string
- * @ex: if this is an ex string
+ * @ex: if this is an exp string
  * @res: the resulting string is stored here
  * @l: offset into res
  *
@@ -817,11 +817,11 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 	}
 
 /**
- * spf_makro - exand a SPF makro
+ * spf_makro - expand a SPF makro
  *
  * @token: the token to parse
  * @domain: the current domain string
- * @ex: if this is an ex string
+ * @ex: if this is an exp string
  * @result: the resulting string is stored here
  *
  * returns: 0 on success, -1 on ENOMEM, SPF_{HARD,TEMP}_ERROR on problems
@@ -891,7 +891,7 @@ spf_makro(char *token, const char *domain, int ex, char **result)
  * spf_domainspec - parse the domainspec 
  *
  * @token: pointer to the string after the token
- * @domain: here the exanded domain string is stored (memory will be malloced)
+ * @domain: here the expanded domain string is stored (memory will be malloced)
  * @ip4cidr: the length of the IPv4 net (parsed if present in token, -1 if none given)
  * @ip6cidr: same for IPv6 net length
  *
