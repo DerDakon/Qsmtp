@@ -46,13 +46,12 @@ conn(const struct in6_addr remoteip)
  *
  * @mx: list of IP adresses to try
  *
- * Every entry where a connection failed is marked with a priority of 65537
+ * Every entry where a connection attempt was made is marked with a priority of 65537
  */
 int
 tryconn(struct ips *mx)
 {
 	struct ips *thisip;
-	int c;
 
 	thisip = mx;
 	while (1) {
@@ -69,12 +68,10 @@ tryconn(struct ips *mx)
 		}
 		for (thisip = mx; thisip; thisip = thisip->next) {
 			if (thisip->priority == minpri) {
-				c = conn(thisip->addr);
-				if (c) {
-					thisip->priority = 65537;
-				} else {
+				thisip->priority = 65537;
+
+				if (!conn(thisip->addr))
 					return 0;
-				}
 			}
 		}
 	}
