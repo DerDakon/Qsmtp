@@ -203,11 +203,13 @@ greeting(void)
 	struct smtpexts {
 		const char *name;
 		unsigned int len;	/* strlen(name) */
-		int (*func)(void);
+		int (*func)(void);	/* used to handle arguments to this extension, NULL if no arguments allowed */
 	} extensions[] = {
 		{ .name = "SIZE",	.len = 4,	.func = cb_size	}, /* 0x01 */
 		{ .name = "PIPELINING",	.len = 10,	.func = NULL	}, /* 0x02 */
 		{ .name = "STARTTLS",	.len = 8,	.func = NULL	}, /* 0x04 */
+		{ .name = "8BITMIME",	.len = 8,	.func = NULL	}, /* 0x08 */
+		{ .name = "CHUNKING",	.len = 8,	.func = NULL	}, /* 0x10 */
 		{ .name = NULL }
 	};
 	const char *cmd[3];
@@ -254,7 +256,6 @@ greeting(void)
 			return 1;
 		}
 	}
-
 	return 0;
 }
 
