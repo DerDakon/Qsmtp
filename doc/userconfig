@@ -45,10 +45,11 @@ spfpolicy:		(global) Filter mail by the policy given by a DNS TXT record of the 
 			has this meanings:
 
 			* 1: temporary DNS errors will block mail temporary
-			* 2: rejects mail if the SPF record says 'fail'
-			* 3: rejects mail when the SPF record says 'softfail'
-			* 4: rejects mail when the SPF record says 'neutral'
-			* 5 (or more): rejects mail when no SPF records are found or they are syntactically invalid
+			* 2: reject mail if the SPF record says 'fail'
+			* 3: reject mail if the SPF record is syntactically invalid
+			* 4: reject mail when the SPF record says 'softfail'
+			* 5: reject mail when the SPF record says 'neutral'
+			* 6 (or more): rejects mail when no SPF records are found
 
 			=> see also: rspf (file), spfstrict (file), spfignore (file)
 

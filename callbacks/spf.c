@@ -12,9 +12,10 @@
  *
  * 1: temporary DNS errors will block mail temporary
  * 2: rejects mail if the SPF record says 'fail'
- * 3: rejects mail when the SPF record says 'softfail'
- * 4: rejects mail when the SPF record says 'neutral'
- * 5 (or more): rejects mail when no SPF records are found or they are syntactically invalid
+ * 3: rejects mail if the SPF record is syntactically invalid
+ * 4: rejects mail when the SPF record says 'softfail'
+ * 5: rejects mail when the SPF record says 'neutral'
+ * 6: rejects mail when there is no SPF record
  *
  * If the reverse lookup matches a line in "ignorespf" file the mail will be accepted even if it would normally fail.
  * Use this e.g. if you are forwarding a mail from another account without changing the envelope from.
@@ -34,7 +35,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 	char *fromdomain = NULL;	/* pointer to the beginning of the domain in xmitstat.mailfrom.s */
 	int spfs = xmitstat.spf;	/* the spf status to check, either global or local one */
 
-	if ((spfs == SPF_PASS) || !xmitstat.mailfrom.len)
+	if (spfs == SPF_PASS)
 		return 0;
 
 	p = getsettingglobal(ds, "spfpolicy", t);
@@ -61,9 +62,10 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 
 		/* First match wins. */
 		while (a[v] && (spfs >= 0) &&
-					((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR) || (spfs == SPF_LOOP))) {
+					((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR) ||
+					(spfs == SPF_FAIL_NONEX))) {
 			memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
-			spfs = spflookup(spfname, 0);
+			spfs = check_host(spfname);
 			v++;
 		}
 		free(a);
@@ -71,7 +73,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 		if ((spfs == SPF_PASS) || (spfs < 0)) {
 			return 0;
 		}
-		if ((spfs == SPF_HARD_ERROR) || (spfs == SPF_LOOP)) {
+		if (spfs == SPF_HARD_ERROR) {
 			spfs = SPF_NONE;
 		}
 	}
@@ -82,24 +84,23 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 	}
 	if (p == 1)
 		goto strict;
-	if (spfs == SPF_FAIL)
+	if (SPF_FAIL(spfs))
 		goto block;
 	if (p == 2)
 		goto strict;
-	if (spfs == SPF_SOFTFAIL)
+	if (spfs == SPF_HARD_ERROR)
 		goto block;
 	if (p == 3)
 		goto strict;
+	if (spfs == SPF_SOFTFAIL)
+		goto block;
+	if (p == 4)
+		goto strict;
 	if (spfs == SPF_NEUTRAL)
 		goto block;
-/* spfs can only be SPF_HARD_ERROR, SPF_LOOP or SPF_NONE now (or something is seriously broken) */
-	/* if (p == 4)
-		goto strict;
-	if (spfs == SPF_HARD_ERROR)
-		goto block; */
-	if (p != 4)
+/* spfs can only be SPF_NONE here */
+	if (p != 5)
 		goto block;
-
 strict:
 	if (!fromdomain) {
 		fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
@@ -110,7 +111,7 @@ strict:
 block:
 	if (xmitstat.remotehost.len) {
 		rc = finddomainmm(getfileglobal(ds, "ignorespf", &u), xmitstat.remotehost.s);
-		if (!rc) {
+		if (rc > 0) {
 			logwhitelisted("SPF", *t, u);
 			return 0;
 		} else if (rc < 0) {
