@@ -39,6 +39,7 @@ extern int smtp_data(void);
 int smtp_vrfy(void);
 extern int smtp_auth(void);
 extern int smtp_starttls(void);
+int http_post(void);
 
 #define _C(c,l,m,f,s,o) { .name = c, .len = l, .mask = m, .func = f, .state = s, .flags = o }
 
@@ -51,9 +52,10 @@ struct smtpcomm commands[] = {
 	_C("MAIL FROM:",10, 0x0018, smtp_from,      0, 3),  /* 0x020 */
 	_C("RCPT TO:",	 8, 0x0060, smtp_rcpt,      0, 1),  /* 0x040 */
 	_C("DATA",	 4, 0x0040, smtp_data,   0x10, 0),  /* 0x080 */ /* the status to change to is changed in smtp_data */
-	_C("STARTTLS",	 8, 0x0010, smtp_starttls, 0x1, 0),  /* 0x100 */
+	_C("STARTTLS",	 8, 0x0010, smtp_starttls, 0x1, 0), /* 0x100 */
 	_C("AUTH",	 4, 0x0010, smtp_auth,     -1, 1),  /* 0x200 */
-	_C("VRFY",	 4, 0xffff, smtp_vrfy,     -1, 1)   /* 0x400 */
+	_C("VRFY",	 4, 0xffff, smtp_vrfy,     -1, 1),  /* 0x400 */
+	_C("POST",	 4, 0xffff, http_post,     -1, 1)   /* 0x800 */ /* this should stay last */
 };
 
 #undef _C
@@ -999,6 +1001,36 @@ static int
 smtp_temperror(void)
 {
 	return netwrite("451 4.3.5 system config error\r\n") ? errno : EDONE;
+}
+
+/**
+ * http_post - handle HTTP POST request
+ *
+ * This has nothing to do with SMTP at all. But I have seen many proxy attempts
+ * trying to send spam and beginning the connection with a sequence like this:
+ *
+ * > POST / HTTP/1.0
+ * > Via: 1.0 SERVEUR
+ * > Host: mail.sf-mail.de:25
+ * > Content-Length: 1255
+ * > Content-Type: text/plain
+ * > Connection: Keep-Alive
+ * >
+ * > RSET
+ *
+ * This function is only there to handle this connections and drop them as early as possible to save our bandwidth.
+ */
+int
+http_post(void)
+{
+	if (comstate != 0x001)
+		return EINVAL;
+	if (!strncmp(" / HTTP/1.", linein + 4, 14)) {
+		const char *logmsg[] = {"dropped connection from [", xmitstat.remoteip, "]: client is talking HTTP to me", NULL};
+		log_writen(LOG_INFO, logmsg);
+		exit(0);
+	}
+	return EINVAL;
 }
 
 static int flagbogus;
