@@ -98,7 +98,8 @@ quitmsg(void)
 	do {
 /* don't care about what he replies: we want to quit, if he don't want us to he must pay money *eg* */
 		if (net_read()) {
-			// error handling
+			log_write("network read error while waiting for QUIT reply");
+			break;
 		}
 	} while ((linelen >= 4) && (linein[3] == '-'));
 	close(socketd);
