@@ -41,7 +41,7 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 		if (fd < 0) {
 			if (errno != ENOENT)
 				return -1;
-		} else if (fd >= 0) {
+		} else {
 			free(filename);
 			return fd;
 		}
