@@ -51,6 +51,19 @@ eXit(void)
 	exit(0);
 }
 
+static int
+warn_noparam(const int index, const char *cmd)
+{
+	if (linein[index] != '\n') {
+		fputs("error: command \"", stdout);
+		fputs(cmd, stdout);
+		puts("\" takes no parameters");
+		commstat = EINVAL;
+		return 1;
+	}
+	return 0;
+}
+
 static void
 readfc(void)
 {
@@ -154,6 +167,7 @@ err:
 static void __attribute__ ((noreturn))
 quit(void)
 {
+	warn_noparam(4, "quit");
 	writefc();
 	eXit();
 }
@@ -187,6 +201,9 @@ echo(void)
 static void
 show(void)
 {
+	if (warn_noparam(4, "show"))
+		return;
+
 	for (int i = 0; params[i].name; i++) {
 		if (printf("%s=%li\n", params[i].name, params[i].value) < 0)
 			goto err;
@@ -208,21 +225,16 @@ struct commands {
 static void
 wr(void)
 {
-	if (linein[5] != '\n') {
-		puts("ERROR: command \"write\" takes no parameters, data NOT written");
-		commstat = EINVAL;
+	if (warn_noparam(5, "write"))
 		return;
-	}
 	writefc();
 }
 
 static void
-editquit(void) {
-	if (linein[4] != '\n') {
-		puts("unrecognized command");
-		commstat = EINVAL;
-		linein[1] = '\0';
-	}
+editquit(void)
+{
+	if (warn_noparam(4, "quit"))
+		return;
 }
 
 static struct commands edcmds[] = {
