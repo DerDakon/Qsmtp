@@ -63,11 +63,11 @@ extern int hasinput(void);
 TAILQ_HEAD(tailhead, recip) head;
 extern struct tailhead *headp;		/* List head. */
 
-typedef struct recip {
+struct recip {
 	TAILQ_ENTRY(recip) entries;	/* List. */
 	string to;			/* the mail address */
 	int ok;				/* if this address is accepted or not */
-} recip;
+};
 
 extern struct recip *thisrecip;
 
