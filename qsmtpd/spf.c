@@ -180,7 +180,8 @@ spflookup(const char *domain, const int rec)
 
 #warning FIXME: this must be case invalid
 			if ((ex = strstr(txt, "exp="))) {
-				int ip4, ip6, i;
+				int ip4, ip6;
+
 				if ((i = spf_domainspec(ex, &xmitstat.spfex, &ip4, &ip6))) {
 					xmitstat.spfex = NULL;
 				}
