@@ -1047,8 +1047,8 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 	*ip4cidr = -1;
 	*ip6cidr = -1;
 /* if there is nothing we don't need to do anything */
+	*domainspec = NULL;
 	if (!*token || WSPACE(*token)) {
-		*domainspec = NULL;
 		return 0;
 /* search for a domain in token */
 	} else if (*token != '/') {
