@@ -13,6 +13,8 @@ void ssl_free(SSL *myssl)
 	SSL_free(myssl);
 }
 
+/* _exit is defined to ssl_exit in tls.h to be sure ssl is always freed correctly */
+#undef _exit
 void __attribute__ ((noreturn)) ssl_exit(int status)
 {
 	if (ssl)
