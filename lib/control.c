@@ -112,7 +112,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 				i++;
 		}
 		if (j == 1) {
-			free(*buf);
+			free(inbuf);
 			*buf = NULL;
 			return 0;
 		}
