@@ -528,10 +528,10 @@ spf_makroparam(char *token, int *num, int *r, int *delim)
 
 	if ((*token >= '0') && (*token <= '9')) {
 		*num = 0;
-		while ((*token >= '0') && (*token <= '9')) {
+		do {
 			*num = *num * 10 + (*token++ - '0');
 			res++;
-		}
+		} while ((*token >= '0') && (*token <= '9'));
 		if (!*num) {
 			errno = EINVAL;
 			return -1;
@@ -622,8 +622,35 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		}
 	}
 	if (r) {
-#warning FIXME: add reverse support here
-		nl = 0;
+		char *tmp, *dot;
+		unsigned int v;
+
+		start = news;
+		if (num > dc) {
+			v = sl;
+		} else {
+			while (dc >= num) {
+				start = strchr(start, '.');
+				dc--;
+			}
+			v = start - news;
+		}
+
+		tmp = malloc(v + 1);
+		dot = news;
+
+		while (dc-- >= 0) {
+			unsigned int o = strchr(dot, '.') - dot;
+
+			memcpy(tmp + v - o, dot, o);
+			tmp[v - o - 1] = '.';
+			dot += o + 1;
+		}
+		free(news);
+		news = tmp;
+		tmp[v] = '\0';
+
+		nl = v;
 	} else {
 		start = news;
 		if (dc >= num) {
