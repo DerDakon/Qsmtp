@@ -14,7 +14,7 @@ int
 cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 {
 	char *b;		/* buffer to read file into */
-	char **a;		/* array of domains and/or mailaddresses to block */
+	char **a;		/* array of blacklists to check */
 	int i = 0;		/* counter of the array position */
 	int rc;			/* return code */
 	int fd;			/* file descriptor of the policy file */
@@ -67,10 +67,8 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 					flagtemp = 1;
 				}
 				/* ask_dnsa returns 0 on success, that means we have a match */
-				
 			}
-			d = strchr(d, '.');
-			if (d)
+			if ( (d = strchr(d, '.')) )
 				d++;
 		}
 	}
