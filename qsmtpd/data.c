@@ -551,7 +551,7 @@ err_write:
 
 	if ((rc == ENOSPC) || (rc == EFBIG)) {
 		rc = EMSGSIZE;
-	} else if ((errno != ENOMEM) && (errno != EMSGSIZE)) {
+	} else if ((errno != ENOMEM) && (errno != EMSGSIZE) && (errno != E2BIG) && (errno != EINVAL)) {
 		if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
 			return errno;
 	}
