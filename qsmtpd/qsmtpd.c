@@ -546,14 +546,14 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 
 /* get the localpart out of the RCPT TO */
 	le = (at - addr->s);
-	if ( (j = newstr(&localpart, le + 1) ) ) {
+	if (newstr(&localpart, le + 1)) {
 		result = errno;
 		goto free_and_out;
 	}
 	memcpy(localpart.s, addr->s, le);
 	localpart.s[--localpart.len] = '\0';
 /* now the userpath : userpatth.s = domainpath.s + [localpart of RCPT TO] + '/' */
-	if ( (j = newstr(&(ds->userpath), ds->domainpath.len + 2 + localpart.len ) ) ) {
+	if (newstr(&(ds->userpath), ds->domainpath.len + 2 + localpart.len)) {
 		result = errno;
 		goto free_and_out;
 	}
