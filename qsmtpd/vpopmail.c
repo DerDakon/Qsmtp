@@ -26,7 +26,7 @@ extern int cdb_seek(int fd, char *key, unsigned int len, unsigned int *dlen);
 int vget_assign(const char *domain, string *domaindir)
 {
 	int fd;
-	int dlen;
+	unsigned int dlen;
 	int i;
 
 	char *cdb_key;
@@ -58,9 +58,15 @@ int vget_assign(const char *domain, string *domaindir)
 		* so next create a storage buffer, and then read it in
 		*/
 		cdb_buf = malloc(dlen);
-		if (!cdb_buf)
-			return -1;
+		if (!cdb_buf) {
+			i = -1;
+			goto out;
+		}
 		i = read(fd, cdb_buf, dlen);
+		if (i < 0) {
+			free(cdb_buf);
+			goto out;
+		}
 	
 		/* format of cdb_buf is :
 		* realdomain.com\0uid\0gid\0path\0
@@ -82,8 +88,11 @@ int vget_assign(const char *domain, string *domaindir)
 		while (*(ptr + len - 1) == '/')
 			--len;
 		i = newstr(domaindir, len + 2);
-		if (i)
-			return -1;
+		if (i) {
+			i = -1;
+			free(cdb_buf);
+			goto out;
+		}
 		memcpy(domaindir->s, ptr, len);
 		domaindir->s[len] = '/';
 		domaindir->s[--domaindir->len] = '\0';
@@ -91,6 +100,8 @@ int vget_assign(const char *domain, string *domaindir)
 		free(cdb_buf);
 		i++;
 	}
-	close(fd);
+out:
+	while (close(fd) && (errno == EINTR));
+	free(cdb_key);
 	return i;
 }
