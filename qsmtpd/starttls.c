@@ -135,9 +135,9 @@ int tls_verify(void)
 			}
 		}
 
-		if (email.len <= 0)
+		if (email.len <= 0) {
 			ssl_verify_err = "contains no email address";
-		else {
+		} else if (clientbuf) {
 			unsigned int i = 0;
 			while (clients[i]) {
 				if (!strcmp(email.s, clients[i]))
