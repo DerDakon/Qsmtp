@@ -58,6 +58,9 @@ static int err_input(void)
 	return -1;
 }
 
+#ifdef AUTHCRAM
+static char unique[83];
+#endif
 static string authin;
 static string user;
 static string pass;
@@ -289,8 +292,6 @@ static int auth_plain(void)
 }
 
 #ifdef AUTHCRAM
-static char unique[83];
-
 static int auth_cram(void)
 {
 	int i, r;
@@ -301,12 +302,16 @@ static int auth_cram(void)
 
 	s = unique;
 	t = ultostr(getpid());
+	if (!t)
+		return -1;
 	m = strlen(t);
 	memcpy(s, t, m);
 	s += m;
 	*s++ = '.';
 	free(t);
 	t = ultostr(time(NULL));
+	if (!t)
+		return -1;
 	m = strlen(t);
 	memcpy(s, t, m);
 	s += m;
