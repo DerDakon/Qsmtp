@@ -98,7 +98,6 @@ cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
 	if (u) {
 		int flaghit = 0;
 		struct ips *thisip;
-		int fd;
 
 		if ( (flaghit = getsettingglobal(ds, "reject_ipv6only", t)) <= 0)
 			return 0;
