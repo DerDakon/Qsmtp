@@ -65,4 +65,4 @@ targets/%: tools/%.o
 
 install:
 	install -s -g qmail -o qmaild targets/Qsmtpd $(AUTOQMAIL)/bin
-#	install -s -g qmail -o qmailr targets/Qremote $(AUTOQMAIL)/bin
+	install -s -g qmail -o qmailr targets/Qremote $(AUTOQMAIL)/bin
