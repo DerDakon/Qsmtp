@@ -566,7 +566,7 @@ spf_makroparam(char *token, int *num, int *r, int *delim)
  *
  * @res: result string
  * @l: current length of res
- * @s: the raw string to append (does not have to be '\0'-terminated)
+ * @s: the raw string to appended, does not need to be terminated by '\0'
  * @sl: strlen(s), must not be 0
  * @num: DIGIT
  * @r: reverse of not
@@ -587,6 +587,7 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	if (!news)
 		return -1;
 	memcpy(news, s, sl);
+	news[sl] = '\0';
 /* first: go and replace all delimiters with '.' */
 	/* delim == 1 means only '.' is delimiter so we only have to count them */
 	if (delim == 1) {
@@ -628,20 +629,20 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		start = news;
 		if (num > dc) {
 			v = sl;
+			num = dc + 1;
 		} else {
-			while (dc > num) {
-				start = strchr(start, '.');
-				dc--;
+			for (v = num; v > 0; v--) {
+				start = strchr(start, '.') + 1;
 			}
-			v = start - news;
+			v = start - news - 1;
 		}
 
-		tmp = malloc(v + 2);
+		tmp = malloc(v + 1);
 		dot = news;
-		tmp[v] = '\0';
 		nl = v;
+		dc = num - 1;
 
-		while (dc-- > 0) {
+		while (--dc >= 0) {
 			unsigned int o = strchr(dot, '.') - dot;
 
 			memcpy(tmp + v - o, dot, o);
@@ -649,7 +650,12 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 			dot += o + 1;
 			v -= o + 1;
 		}
-		memcpy(tmp, dot, strlen(dot));
+		if ((start = strchr(dot, '.'))) {
+			v = start - dot;
+		} else {
+			v = strlen(dot);
+		}
+		memcpy(tmp, dot, v);
 		free(news);
 		start = news = tmp;
 	} else {
