@@ -40,7 +40,6 @@ main(int argc, char *argv[])
 			fputs("invalid mask found in argument '", stderr);
 			fputs(argv[j], stderr);
 			fputs("'\n", stderr);
-fputs(t,stderr);
 			continue;
 		}
 		if ((m < 8) || (m > 32)) {
