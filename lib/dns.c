@@ -89,7 +89,7 @@ ask_dnsmx(const char *name, struct ips **result)
  * ask_dnsaaaa - get AAAA record from of the DNS
  *
  * @name: the name to look up
- * @ips: first element of a list of results will be placed
+ * @result: first element of a list of results will be placed
  *
  * returns: 0 on success
  *          1 if host is not existent
@@ -146,7 +146,7 @@ ask_dnsaaaa(const char *name, struct ips **result)
  * ask_dnsa - get A record from of the DNS
  *
  * @name: the name to look up
- * @ips: first element of a list of results will be placed, or NULL if only return code is of interest
+ * @result: first element of a list of results will be placed, or NULL if only return code is of interest
  *
  * returns: 0 on success
  *          1 if host is not existent
@@ -161,7 +161,7 @@ ask_dnsa(const char *name, struct ips **result)
 	char *r;
 	unsigned int l;
 
-	i = dnsip6(&r, &l, name);
+	i = dnsip4(&r, &l, name);
 	if (!i) {
 		if (result) {
 			char *s = r;
