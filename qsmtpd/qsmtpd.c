@@ -665,7 +665,7 @@ smtp_rcpt(void)
 		free(tmp.s);
 		if (netwrite("452 4.5.3 Too many recipients"))
 			return errno;
-		return EDONE;
+		return 0;
 	}
 	r = malloc(sizeof(*r));
 	if (!r) {
@@ -815,7 +815,7 @@ userdenied:
 				e = errno;
 			break;
 	}
-	return j ? e : EDONE;
+	return j ? e : 0;
 }
 
 int
