@@ -11,24 +11,6 @@
 #include "netio.h"
 #include "qsmtpd.h"
 
-static int
-lookupipbl(int fd)
-{
-	int i;
-	char *a;		/* buffer to read file into */
-
-	if ( ( i = lloadfilefd(fd, &a, 0) ) < 0 )
-		return i;
-	
-	if (IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr)) {
-		i = check_ip4(&(xmitstat.sremoteip), a, i);
-	} else {
-		i = check_ip6(&(xmitstat.sremoteip), a, i);
-	}
-	free(a);
-	return i;
-}
-
 int
 cb_ipbl(const struct userconf *ds, char **logmsg __attribute__ ((unused)), int *t)
 {
@@ -40,7 +22,7 @@ cb_ipbl(const struct userconf *ds, char **logmsg __attribute__ ((unused)), int *
 	const char *tmperr = "4.3.0 temporary policy error\r\n";
 				/* error message announced on malformed file */
 
-	if (IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr)) {
+	if (xmitstat.ipv4conn) {
 		fnb = "ipbl";
 		fnw = "ipwl";
 	} else {
@@ -49,20 +31,21 @@ cb_ipbl(const struct userconf *ds, char **logmsg __attribute__ ((unused)), int *
 	}
 
 	if ( (fd = getfileglobal(ds, fnb, t)) < 0)
-		return (errno == ENOENT) ? 0 : -1;
+		return (errno == ENOENT) ? 0 : fd;
 
-	if ((i = lookupipbl(fd)) < 0)
-		return i;
+	i = lookupipbl(fd);
+	if (errno == ENOLCK) {
+		return 0;
+	}
 	if (i > 0) {
 		int u;
 
 		if ( (fd = getfile(ds, fnw, &u)) < 0) {
-			if (errno != ENOENT)
-				return -1;
+			if ((errno != ENOENT) && (errno != ENOLCK))
+				return fd;
 			i = 0;
 		} else {
-			if ( (i = lookupipbl(fd)) < 0)
-				return i;
+			i = lookupipbl(fd);
 		}
 		if (i > 0) {
 			logwhitelisted("ipbl", *t, u);
