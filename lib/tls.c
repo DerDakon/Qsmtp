@@ -1,14 +1,24 @@
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include <openssl/ssl.h>
-#include <openssl/err.h>
 #include "tls.h"
 
 SSL *ssl = NULL;
 
-void ssl_free(SSL *myssl) { SSL_shutdown(myssl); SSL_free(myssl); }
-void __attribute__ ((noreturn)) ssl_exit(int status) { if (ssl) ssl_free(ssl); _exit(status); }
+void ssl_free(SSL *myssl)
+{
+	SSL_shutdown(myssl);
+	SSL_free(myssl);
+}
+
+void __attribute__ ((noreturn)) ssl_exit(int status)
+{
+	if (ssl)
+		ssl_free(ssl);
+	_exit(status);
+}
 
 const char *ssl_error(void)
 {
