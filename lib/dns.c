@@ -30,7 +30,17 @@ ask_dnsmx(const char *name, struct ips **result)
 
 		/* there is no MX record, so we look for an AAAA record */
 		if (!l) {
-			return ask_dnsa(name, result);
+			int r = ask_dnsa(name, result);
+			if (!r) {
+				struct ips *a = *result;
+
+				while (a) {
+					/* the DNS priority is 2 bytes long so 65536 can
+					   never be returned from a real DNS_MX lookup */
+					a->priority = 65536;
+					a = a->next;
+				}
+			}
 		}
 
 		while (r + l > s) {
