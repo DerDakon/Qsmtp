@@ -51,7 +51,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		return i;
 	if (!st.st_size) {
 		*buf = NULL;
-		while ( (i = close(fd)) && (errno != EINTR));
+		while ( (i = close(fd)) && (errno == EINTR));
 		return i ? i : 0;
 	}
 	oldlen = st.st_size + 1;
@@ -205,6 +205,10 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
 	if ( (j = lloadfilefd(fd, buf, 3)) < 0)
 		return j;
 
+	if (!j) {
+		**bufa = NULL;
+		return 0;
+	}
 	/* count the lines in buf */
 	i = j - 1;
 	k = j = 0;
@@ -266,21 +270,15 @@ finddomainmm(int fd, const char *domain)
 	if ( (rc = fstat(fd, &st)) )
 		return rc;
 	if (!st.st_size) {
-		while ( (rc = close(fd)) ) {
-			if (errno != EINTR)
-				return rc;
-		}
-		return 0;
+		while ( (rc = close(fd)) && (errno != EINTR) );
+		return rc;
 	}
 
 	map = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
 	if (map == MAP_FAILED) {
 		int e = errno;
 
-		while (close(fd)) {
-			if (errno != EINTR)
-				break;
-		}
+		while (close(fd) && (errno == EINTR));
 		errno = e;
 		return -1;
 	}
