@@ -629,28 +629,29 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		if (num > dc) {
 			v = sl;
 		} else {
-			while (dc >= num) {
+			while (dc > num) {
 				start = strchr(start, '.');
 				dc--;
 			}
 			v = start - news;
 		}
 
-		tmp = malloc(v + 1);
+		tmp = malloc(v + 2);
 		dot = news;
+		tmp[v] = '\0';
+		nl = v;
 
-		while (dc-- >= 0) {
+		while (dc-- > 0) {
 			unsigned int o = strchr(dot, '.') - dot;
 
 			memcpy(tmp + v - o, dot, o);
 			tmp[v - o - 1] = '.';
 			dot += o + 1;
+			v -= o + 1;
 		}
+		memcpy(tmp, dot, strlen(dot));
 		free(news);
-		news = tmp;
-		tmp[v] = '\0';
-
-		nl = v;
+		start = news = tmp;
 	} else {
 		start = news;
 		if (dc >= num) {
