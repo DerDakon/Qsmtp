@@ -1057,19 +1057,19 @@ smtp_data(void)
 /* print the authname.s into a buffer for the logmsg */
 	if (xmitstat.authname.len) {
 		if (strcasecmp(xmitstat.authname.s, xmitstat.mailfrom.s)) {
-			authmsg = malloc(xmitstat.authname.len + 20);
+			authmsg = malloc(xmitstat.authname.len + 21);
 
 			if (!authmsg)
 				goto err_write;
 			memcpy(authmsg, "(authenticated as ", 18);
 			memcpy(authmsg + 18, xmitstat.authname.s, xmitstat.authname.len);
-			memcpy(authmsg + 18 + xmitstat.authname.len, ")", 2);
+			memcpy(authmsg + 18 + xmitstat.authname.len, ") ", 3);
 		} else {
-			authmsg = malloc(16);
+			authmsg = malloc(17);
 
 			if (!authmsg)
 				goto err_write;
-			memcpy(authmsg, "(authenticated)", 16);
+			memcpy(authmsg, "(authenticated) ", 17);
 		}
 		logmail[7] = authmsg;
 	}
