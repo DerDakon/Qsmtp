@@ -67,8 +67,8 @@ ask_dnsmx(const char *name, struct ips **result)
 					p = u;
 				}
 				q = &(p->next);
-				s += 3 + strlen(s + 2);
 			}
+			s += 3 + strlen(s + 2);
 		}
 		free(r);
 		return 0;
