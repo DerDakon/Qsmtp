@@ -14,6 +14,62 @@ static char lineinn[sizeof(linein)];	/* if more than one line was in linein the 
 size_t linenlen;			/* length of the lineinn */
 unsigned long timeout;			/* how long to wait for data */
 
+#ifdef DEBUG_IO
+#include <syslog.h>
+
+int do_debug_io;
+
+void DEBUG_IN(const size_t len)
+{
+	char buffer[len + 4];
+	int en = 0;
+
+	if (!do_debug_io)
+		return;
+
+	buffer[0] = '<';
+	if (ssl) {
+		en = 1;
+		buffer[1] = 'e';
+	}
+	buffer[1 + en] = ' ';
+	memcpy(buffer + 2 + en, linein, len + 1);
+
+	log_write(LOG_DEBUG, buffer);
+}
+
+void DEBUG_OUT(const char *s, const size_t l)
+{
+	char buffer[l + 2];
+	int en = 0;
+	const char *b, *c;
+	
+	if (!do_debug_io)
+		return;
+
+	buffer[0] = '>';
+	if (ssl) {
+		en = 1;
+		buffer[1] = 'e';
+	}
+	buffer[1 + en] = ' ';
+
+	b = s;
+	while ( (c = strchr(b, '\r')) ) {
+		memcpy(buffer + 2 + en, b, c - b);
+		buffer[2 + c - b + en] = '\0';
+		log_write(LOG_DEBUG, buffer);
+		b = c + 2;
+	}
+}
+
+#else
+
+#define DEBUG_IN(l) {}
+#define DEBUG_OUT(s, l) {}
+
+#endif
+
 /**
  * readinput - read characters from (network) input
  *
@@ -92,6 +148,9 @@ net_read(void)
 				/* copy back rest of the buffer back to lineinn */
 				memcpy(lineinn, c + 1, linenlen);
 			}
+			
+			DEBUG_IN(linelen);
+
 			return 0;
 		} else {
 			readoffset = linenlen;
@@ -145,6 +204,9 @@ readin:
 	 * handles '.' duplication in data phase wrong this allows
 	 * smtp_data to get his '\n.\n' and throw him out. If he
 	 * is broken once why not twice? */
+	
+	DEBUG_IN(linelen);
+
 	return 0;
 loop_long:
 	/* if readoffset is set the last character in the previous buffer was '\r' */
@@ -213,6 +275,8 @@ netnwrite(const char *s, const size_t l)
 		.tv_usec = 0,
 	};
 	int retval;
+
+	DEBUG_OUT(s, l);
 
 	if (ssl) {
 		if (ssl_timeoutwrite(tv.tv_sec, s, l) <= 0) {

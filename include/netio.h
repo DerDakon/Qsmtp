@@ -33,4 +33,8 @@ net_write(const char *s)
 extern unsigned long timeout;
 extern int socketd;
 
+#ifdef DEBUG_IO
+extern int do_debug_io;
+#endif
+
 #endif
