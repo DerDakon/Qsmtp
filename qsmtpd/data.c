@@ -12,7 +12,7 @@
 
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
 
-const char *noqueue = "451 4.3.2 can not connect to queue\r\n";
+static const char *noqueue = "451 4.3.2 can not connect to queue\r\n";
 
 static int
 err_pipe(void)
@@ -83,6 +83,10 @@ queue_header(int fd)
 	return 0;
 }
 
+#undef WRITE
+#define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
+					goto err_write
+
 static int
 queue_envelope(int fd, const unsigned long msgsize)
 {
@@ -91,15 +95,15 @@ queue_envelope(int fd, const unsigned long msgsize)
 	char bytes[] = " bytes, ";
 	const char *logmail[] = {"received ", "", "message to <", NULL, "> from <", xmitstat.mailfrom.s,
 					"> ", "", "from ip [", xmitstat.remoteip, "] (", NULL, bytes,
-					NULL, " recipients)",NULL};
+					NULL, " recipients)", NULL};
 	char *authmsg = NULL;
 	int rc;
 
+	if (ssl)
+		logmail[1] = "encrypted ";
 	s = ultostr(msgsize);
 	if (!s)
 		s = "unknown";
-	if (ssl)
-		logmail[1] = "encrypted ";
 	logmail[11] = s;
 	logmail[5] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
 	if (head.tqh_first == *head.tqh_last) {
@@ -122,22 +126,17 @@ queue_envelope(int fd, const unsigned long msgsize)
 			memcpy(authmsg, "(authenticated as ", 18);
 			memcpy(authmsg + 18, xmitstat.authname.s, xmitstat.authname.len);
 			memcpy(authmsg + 18 + xmitstat.authname.len, ") ", 3);
+			logmail[7] = authmsg;
 		} else {
-			authmsg = malloc(17);
-
-			if (!authmsg)
-				return errno;
-			memcpy(authmsg, "(authenticated) ", 17);
+			logmail[7] = "(authenticated) ";
 		}
-		logmail[7] = authmsg;
 	}
 
 /* write the envelope information to qmail-queue */
 
 	/* write the return path to qmail-queue */
 	WRITE(fd, "F", 1);
-	WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
-	WRITE(fd, "", 1);
+	WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len + 1);
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
@@ -146,31 +145,29 @@ queue_envelope(int fd, const unsigned long msgsize)
 		if (l->ok) {
 			log_writen(LOG_INFO, logmail);
 			WRITE(fd, "T", 1);
-			WRITE(fd, l->to.s, l->to.len);
-			WRITE(fd, "", 1);
+			WRITE(fd, l->to.s, l->to.len + 1);
 		}
 		TAILQ_REMOVE(&head, head.tqh_first, entries);
 		free(l->to.s);
 		free(l);
 	}
 	WRITE(fd, "", 1);
-	while (close(fd)) {
-		if (errno != EINTR)
-			return errno;
+	while ( (rc = close(fd)) ) {
+		if (errno != EINTR) {
+			goto err_write;
+		}
 	}
 	if (s[0] != 'u')
 		free(s);
 	if (logmail[13] && (t[0] != 'u'))
 		free(t);
+
+	rc = 0;
+err_write:
 	freedata();
 	free(authmsg);
-
-	return 0;
+	return rc;
 }
-
-#undef WRITE
-#define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
-					goto err_write
 
 int
 smtp_data(void)
