@@ -1065,8 +1065,8 @@ smtp_data(void)
 /* check if the child already returned, which means something went wrong */
 	if (waitpid(qpid, &status, WNOHANG)) {
 		/* error here may just happen, we are already in trouble */
-		while (close(fd0[0]) && (errno == EINTR));
-		while (close(fd1[0]) && (errno == EINTR));
+		while (close(fd0[1]) && (errno == EINTR));
+		while (close(fd1[1]) && (errno == EINTR));
 		if ( (i = err_fork()) )
 			return i;
 		return EDONE;
