@@ -188,7 +188,7 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf, int f)
 		if (!cf || !cf(*buf + k,f))
 			j++;
 		else {
-			const char *s[] = {"input file contains invalid domain name '",*buf + k, "'", NULL};
+			const char *s[] = {"input file contains invalid entry '",*buf + k, "'", NULL};
 			log_writen(LOG_WARNING, s);
 		}
 		k += strlen(*buf + k) + 1;
