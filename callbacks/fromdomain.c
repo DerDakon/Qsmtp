@@ -32,7 +32,7 @@ cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
 		return 0;
 
 	/* if there is a syntax error in the file it's the users fault and this mail will be accepted */
-	if ( (u = getsettingglobal(ds, "fromdomain", t)) < 0)
+	if ( (u = getsettingglobal(ds, "fromdomain", t)) <= 0)
 		return 0;
 
 	if (u & 1) {
