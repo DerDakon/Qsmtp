@@ -296,6 +296,8 @@ smtp_ehlo(void)
 	if (databytes) {
 		msg[next++] = "250 SIZE ";
 		sizebuf = ultostr(databytes);
+		if (!sizebuf)
+			return -1;
 		msg[next] = sizebuf;
 	} else {
 		msg[next] = "250 SIZE";
@@ -1253,7 +1255,7 @@ smtp_data(void)
 		WRITE(fd, "\n", 1);
 		if ( (i = net_read()) )
 			return errno;
-		while (strcmp(linein,".") && (msgsize <= maxbytes)) {
+		while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes)) {
 			int offset;
 
 			if ((xmitstat.check2822 & 1) && !datatype) {
@@ -1288,13 +1290,17 @@ smtp_data(void)
 	fd = fd1[1];
 
 	s = ultostr(msgsize);
+	if (!s)
+		s = "unknown";
 	if (ssl)
 		logmail[1] = "encrypted ";
 	logmail[11] = s;
 	logmail[5] = xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "";
 	if (head.tqh_first == *head.tqh_last) {
 		t = ultostr(goodrcpt);
-		logmail[12] = t;
+		if (!t)
+			t = "unknown";
+		logmail[13] = t;
 	} else {
 		bytes[6] = ')';
 		bytes[7] = '\0';
@@ -1327,8 +1333,10 @@ smtp_data(void)
 		if (errno != EINTR)
 			goto err_write;
 	}
-	free(s);
-	free(t);
+	if (s[0] != 'u')
+		free(s);
+	if (t[0] != 'u')
+		free(t);
 	freedata();
 	free(authmsg);
 
@@ -1356,7 +1364,8 @@ smtp_data(void)
 
 			logmsg[1] = ec ? ec : "unknown";
 			log_writen(LOG_ERR, logmsg);
-			free(ec);
+			if (ec[0] != 'u')
+				free(ec);
  
 			/* stolen from qmail.c::qmail_close */
 			switch(exitcode) {
@@ -1412,6 +1421,8 @@ loop_data:
 	bytes[6] = ')';
 	bytes[7] = '\0';
 	s = ultostr(msgsize);
+	if (!s)
+		s = "unknown";
 	logmail[0] = "rejected message to <";
 	logmail[1] = "";
 	logmail[2] = "";
@@ -1430,7 +1441,8 @@ loop_data:
 		free(l->to.s);
 		free(l);
 	}
-	free(s);
+	if (s[0] != 'u')
+		free(s);
 	free(authmsg);
 	freedata();
 
@@ -1470,10 +1482,11 @@ smtp_noop(void)
 int
 smtp_rset(void)
 {
-	freedata();
 	/* if there was EHLO or HELO before we reset to the state to immediately after this */
-	if (comstate >= 0x008)
+	if (comstate >= 0x008) {
+		freedata();
 		commands[2].state = (0x008 << xmitstat.esmtp);
+	}
 	/* we don't need the else case here: if there was no helo/ehlo no one has changed .state */
 	return netwrite("250 2.0.0 ok\r\n") ? errno : 0;
 }
@@ -1651,12 +1664,10 @@ main(int argc, char *argv[]) {
 			if (!strncasecmp(linein, commands[i].name, commands[i].len)) {
 				if (comstate & commands[i].mask) {
 					if (!(commands[i].flags & 2) && (linelen > 510)) {
-						/* RfC 2821, section 4.5.3.1 defines the maximum
-						 * length of a command line to 512 chars if this
-						 * limit is not raised by an extension. Since we
-						 * stripped CRLF our limit is 510. A command may
-						 * override this check and check line length by
-						 * itself */
+						/* RfC 2821, section 4.5.3.1 defines the maximum length of a command line
+						 * to 512 chars if this limit is not raised by an extension. Since we
+						 * stripped CRLF our limit is 510. A command may override this check and
+						 * check line length by itself */
 						 flagbogus = E2BIG;
 						 break;
 					}
