@@ -595,8 +595,10 @@ main(int argc, char *argv[])
 		}
 /* RCPT TO: replies */
 		for (i = rcptcount; i > 0; i--) {
-			if (checkreply("rsh", NULL, 0) < 300)
+			if (checkreply(" sh", NULL, 0) < 300) {
+				write(1, "r", 2);
 				rcptstat = 0;
+			}
 		}
 		if (rcptstat)
 			quit();
