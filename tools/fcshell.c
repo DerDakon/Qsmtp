@@ -426,7 +426,7 @@ err:
 }
 
 static void
-editquit(int type)
+editquit(const int type)
 {
 	if (warn_noparam(4, "quit"))
 		return;
@@ -437,7 +437,7 @@ editquit(int type)
 struct ecommands {
 	const char *name;
 	const unsigned int len;
-	void (*func)(int);
+	void (*func)(const int);
 } edcmds[] = {
 	{ .name = "write", .len = 5, .func = editwrite },
 	{ .name = "add", .len = 3, .func = NULL },
