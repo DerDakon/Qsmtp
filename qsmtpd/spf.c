@@ -982,7 +982,7 @@ spf_domainspec(char *token, char **domain, int *ip4cidr, int *ip6cidr)
 					d = strchr(d, '.');
 				} while (d && (strlen(d) > 255));
 				if (!d) {
-					free(domain);
+					free(*domain);
 					return SPF_HARD_ERROR;
 				} else {
 					unsigned int l = strlen(d) + 1;
