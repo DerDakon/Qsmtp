@@ -1,8 +1,8 @@
-OWFATPATH=../libowfat-0.20
-CDBPATH=../vpopmail-5.4.2/cdb
+OWFATPATH=/mnt/misc/qmail/libowfat-0.21-eike
+CDBPATH=/mnt/misc/qmail/vpopmail-5.4.0-eike/cdb
 SHELL=/bin/sh
 CC=gcc
-CFLAGS=-O2 -c -Wall -W -Wshadow -I$(shell pwd)/include -DIPV4ONLY -DNOSTDERR -DUSESYSLOG -g
+CFLAGS=-O2 -c -Wall -W -Wshadow -I$(shell pwd)/include -DNOSTDERR -DUSESYSLOG -march=i686 -g
 LD=gcc
 LDFLAGS= #-lefence
 LDFLAGSSSL=-lssl -lcrypto
@@ -47,8 +47,9 @@ targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
-targets/Qremote: qremote/qremote.o qremote/conn.o lib/dns.o lib/netio.o lib/ssl_timeoutio.o lib/log.o \
-		lib/tls.o lib/control.o lib/log.o lib/match.o $(OWFATPATH)/libowfat.a
+targets/Qremote: qremote/qremote.o qremote/conn.o qremote/starttlsr.o lib/dns.o lib/netio.o \
+		lib/ssl_timeoutio.o lib/log.o lib/tls.o lib/control.o lib/log.o lib/match.o \
+		lib/ssl_timeoutio.o lib/tls.o $(OWFATPATH)/libowfat.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
 targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/match.o \
