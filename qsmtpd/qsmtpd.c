@@ -63,8 +63,6 @@ struct smtpcomm commands[] = {
 
 static char *rcpth;			/* string of rcpthosts */
 static char **rcpthosts;		/* array of hosts to accept mail for */
-static char *filterd;			/* string of filterdom */
-static char **filterdom;		/* domains where NOT to look for existing users */
 static unsigned long sslauth;		/* if SMTP AUTH is only allowed after STARTTLS */
 static char *vpopbounce;		/* the bounce command in vpopmails .qmail-default */
 static unsigned int rcptcount;		/* number of recipients in lists including rejected */
@@ -150,9 +148,6 @@ setup(void)
 		log_write(LOG_ERR, "found no valid names in control/rcpthosts");
 		return 1;
 	}
-	j = loadlistfd(open("control/filterdomains", O_RDONLY), &filterd, &filterdom, domainvalid, 0);
-	if (j && (errno != ENOENT))
-		return errno;
 	xmitstat.remoteip = getenv("TCP6REMOTEIP");
 	if (!xmitstat.remoteip || !*xmitstat.remoteip) {
 		xmitstat.remoteip = "unknown";
@@ -198,6 +193,12 @@ setup(void)
 			log_write(LOG_ERR, "error opening control/filterconf");
 			return errno;
 		}
+	}
+
+	if ( (j = lloadfilefd(open("control/vpopbounce", O_RDONLY), &vpopbounce, 0)) < 0) {
+		int e = errno;
+		err_control("control/vpopbounce");
+		return e;
 	}
 
 	/* block sigpipe. If we don't we can't handle the errors in smtp_data correctly and remote host
@@ -319,12 +320,23 @@ qmexists(const string *dirtempl, const char *suff1, const unsigned int len, cons
 		return -1;
 	memcpy(filetmp, dirtempl->s, l);
 	if (def & 2) {
+		char *p;
+
 		if (l + len >= PATH_MAX)
 			return -1;
 		memcpy(filetmp + l, suff1, len);
-		l += len;
-	}
 
+		while ( (p = strchr(filetmp + l, '.')) ) {
+			*p = ':';
+		}
+		l += len;
+		if (def & 1) {
+			if (l + 1 >= PATH_MAX)
+				return -1;
+			*(filetmp + l) = '-';
+			l++;
+		}
+	}
 	if (def & 1) {
 		if (l + 7 >= PATH_MAX)
 			return -1;
@@ -350,22 +362,16 @@ qmexists(const string *dirtempl, const char *suff1, const unsigned int len, cons
   -1: error, errno is set.
 */
 static int
-user_exists(const string *localpart, const char *domainpart, struct userconf *ds)
+user_exists(const string *localpart, struct userconf *ds)
 {
 	char filetmp[PATH_MAX];
 	DIR *dirp;
 	unsigned int i = 0;
 
-	while (filterdom[i]) {
-		if (!strcasecmp(filterdom[i], domainpart))
-			return 3;
-		i++;
-	}
-
 	memcpy(filetmp, ds->userpath.s, ds->userpath.len);
 	filetmp[ds->userpath.len] = '\0';
 
-	/* does directory USERPATH/DOMAIN/USER exist? */
+	/* does directory (ds->domainpath.s)+'/'+localpart exist? */
 	dirp = opendir(filetmp);
 	if (dirp == NULL) {
 		int e = errno;
@@ -408,7 +414,7 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 			}
 			p = strchr(localpart->s, '-');
 			while (p) {
-				fd = qmexists(&dotqm, localpart->s, (p - localpart->s) + 1, 3);
+				fd = qmexists(&dotqm, localpart->s, (p - localpart->s), 3);
 				if (fd < 0) {
 					if (errno != ENOENT) {
 						free(dotqm.s);
@@ -435,7 +441,7 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 				char buff[2*strlen(vpopbounce)+1];
 				int r;
 
-				r = read(fd, buff, sizeof(buff)-1);
+				r = read(fd, buff, sizeof(buff) - 1);
 				if (r == -1) {
 					e = errno;
 					if (!err_control(filetmp))
@@ -447,8 +453,7 @@ user_exists(const string *localpart, const char *domainpart, struct userconf *ds
 						return -1;
 				}
 				buff[r] = 0;
-				while (r && (buff[r - 1] == '\n'))
-					buff[--r] = 0;
+
 				/* mail would be bounced or catched by .qmail-default */
 				return strcmp(buff, vpopbounce) ? 2 : 0;
 			} else {
@@ -561,7 +566,7 @@ addrparse(const int flags, string *addr, char **more, struct userconf *ds)
 	ds->userpath.s[--ds->userpath.len - 1] = '\0';
 	ds->userpath.s[ds->userpath.len - 1] = '/';
 
-	j = user_exists(&localpart, at + 1, ds);
+	j = user_exists(&localpart, ds);
 	free(localpart.s);
 	if (j < 0) {
 		result = errno;
