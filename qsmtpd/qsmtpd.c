@@ -62,12 +62,12 @@ struct smtpcomm commands[] = {
 
 static char *rcpth;			/* string of rcpthosts */
 static char **rcpthosts;		/* array of hosts to accept mail for */
-static unsigned long sslauth;		/* if SMTP AUTH is only allowed after STARTTLS */
 static char *vpopbounce;		/* the bounce command in vpopmails .qmail-default */
 static unsigned int rcptcount;		/* number of recipients in lists including rejected */
 static char *gcbuf;			/* buffer for globalconf array (see below) */
 static int relayclient;			/* flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
 
+unsigned long sslauth;			/* if SMTP AUTH is only allowed after STARTTLS */
 unsigned long databytes;		/* maximum message size */
 unsigned int goodrcpt;			/* number of valid recipients */
 int badbounce;				/* bounce message with more than one recipient */

@@ -11,6 +11,7 @@
 #include "netio.h"
 #include "base64.h"
 #include "log.h"
+#include "tls.h"
 
 const char *tempnoauth = "454 4.3.0 AUTH temporaryly not available\r\n";
 
@@ -407,11 +408,8 @@ smtp_auth(void)
 	int i;
 	char *type = linein + 5;
 
-	if (xmitstat.authname.len)
+	if (xmitstat.authname.len || !auth_host || (sslauth && !ssl))
 		return 1;
-
-	if (!auth_host)
-		return netwrite(tempnoauth) ? -1 : EBOGUS;
 
 	STREMPTY(user);
 	STREMPTY(pass);

@@ -14,7 +14,7 @@ clean:
 qsmtpd.o: qsmtpd.c qsmtpd.h antispam.h log.h netio.h dns.h control.h tls.h sstring.h usercallback.h version.h vpopmail.h
 	$(CC) $(CFLAGS) -DAUTOQMAIL='"$(AUTOQMAIL)"' $<
 
-auth.o: qsmtpd.h sstring.h netio.h base64.h log.h
+auth.o: qsmtpd.h sstring.h netio.h base64.h log.h tls.h
 
 starttls.o: tls.h netio.h control.h dns.h ssl_timeoutio.h qsmtpd.h
 

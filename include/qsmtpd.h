@@ -48,6 +48,7 @@ extern char **auth_sub;			/* subprogram and arguments to be invoked by auth_chec
 extern string heloname;			/* the fqdn to show in helo */
 extern unsigned int goodrcpt;		/* number of valid recipients */
 extern int badbounce;			/* bounce message with more than one recipient */
+extern unsigned long sslauth;		/* if SMTP AUTH is only allowed after STARTTLS */
 extern unsigned long databytes;		/* maximum message size */
 
 extern long comstate;			/* status of the SMTP state machine */
