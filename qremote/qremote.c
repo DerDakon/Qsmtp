@@ -462,7 +462,7 @@ send_bdat(void)
 {
 	char sendbuf[2048];
 	int num;
-	int last = 0;
+	int more = 1;
 
 	successmsg[2] = "chunked ";
 	while ( (num = read(42, sendbuf, sizeof(sendbuf) - 1)) ) {
@@ -472,25 +472,23 @@ send_bdat(void)
 		if (num < 0)
 			goto readerr;
 /* Try to read one byte more. If this causes EOF we can mark this the last chunk */
-		last = read(42, sendbuf + num, 1);
-		if (last < 0) {
+		more = read(42, sendbuf + num, 1);
+		if (more < 0) {
 			goto readerr;
-		} else if (!last) {
+		} else if (!more) {
 			netmsg[2] = " LAST";
-			last = 1;
 		} else {
 			num += 1;
-			last = 0;
 		}
 		ultostr(num, chunklen);
 		net_writen(netmsg);
 		netnwrite(sendbuf, num);
-		if (last)
+		if (!more)
 			break;
 		if (checkreply(" ZD", NULL, 0) != 250)
 			quit();
 	}
-	if (!last)
+	if (more)
 		netwrite("BDAT 0 LAST\r\n");
 	checkreply("KZD", successmsg, 1);
 	return;
