@@ -52,6 +52,7 @@ ask_dnsmx(const char *name, struct ips **result)
 			rc = ask_dnsaaaa(s + 2, &p);
 			if (rc < 0) {
 				freeips(*result);
+				free(r);
 				if (errno == ENOMEM)
 					return -1;
 				return 2;
@@ -117,8 +118,9 @@ ask_dnsaaaa(const char *name, struct ips **result)
 			struct ips *p = malloc(sizeof(*p));
 
 			if (!p) {
-				errno = ENOMEM;
 				freeips(*result);
+				free(r);
+				errno = ENOMEM;
 				return -1;
 			}
 			*q = p;
@@ -128,6 +130,7 @@ ask_dnsaaaa(const char *name, struct ips **result)
 			q = &(p->next);
 			s += 16;
 		}
+		free(r);
 		return 0;
 	}
 	switch (errno) {
@@ -175,8 +178,9 @@ ask_dnsa(const char *name, struct ips **result)
 				struct ips *p = malloc(sizeof(*p));
 
 				if (!p) {
-					errno = ENOMEM;
 					freeips(*result);
+					free(r);
+					errno = ENOMEM;
 					return -1;
 				}
 				*q = p;
@@ -190,6 +194,7 @@ ask_dnsa(const char *name, struct ips **result)
 				s += 4;
 			}
 		}
+		free(r);
 		return 0;
 	}
 	switch (errno) {
