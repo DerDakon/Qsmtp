@@ -66,7 +66,7 @@ tryconn(struct ips *mx)
 				minpri = thisip->priority;
 		}
 		if (minpri == 65537) {
-			write(1, "can't connect to any server\n", 14);
+			write(1, "Zcan't connect to any server\n", 29);
 			close(socketd);
 			exit(0);
 		}
