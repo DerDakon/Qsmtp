@@ -35,7 +35,8 @@ void DEBUG_IN(const size_t len)
 		buffer[1] = 'e';
 	}
 	buffer[1 + en] = ' ';
-	memcpy(buffer + 2 + en, linein, len + 1);
+	memcpy(buffer + 2 + en, linein, len);
+	buffer[2 + en + len] = '\0';
 	for (i = len + 2 + en; i > 0; i--) {
 		if (buffer[i] < 32)
 			buffer[i] = '?';
