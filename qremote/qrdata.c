@@ -103,6 +103,9 @@ send_data(void)
 	sendbuf[idx++] = '.';
 	sendbuf[idx++] = '\r';
 	sendbuf[idx++] = '\n';
+#ifdef DEBUG_IO
+	sendbuf[idx] = '\0';
+#endif
 	netnwrite(sendbuf, idx);
 	checkreply("KZD", successmsg, 1);
 	return;
