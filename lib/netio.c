@@ -23,7 +23,8 @@ int in_data;
 void DEBUG_IN(const size_t len)
 {
 	char buffer[len + 4];
-	int en = 0;
+	size_t en = 0;
+	size_t i; 
 
 	if (!do_debug_io || in_data)
 		return;
@@ -35,6 +36,10 @@ void DEBUG_IN(const size_t len)
 	}
 	buffer[1 + en] = ' ';
 	memcpy(buffer + 2 + en, linein, len + 1);
+	for (i = len + 2 + en; i > 0; i--) {
+		if (buffer[i] < 32)
+			buffer[i] = '?';
+	}
 
 	log_write(LOG_DEBUG, buffer);
 }
