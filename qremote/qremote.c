@@ -123,6 +123,9 @@ getrhost(const struct ips *mx)
 {
 	const struct ips *m = mx;
 
+	free(partner_fqdn);
+	free(rhost);
+
 	/* find active mx */
 	while (m->priority)
 		m = m->next;
@@ -405,6 +408,15 @@ main(int argc, char *argv[])
 		tryconn(mx);
 		dup2(socketd, 0);
 		if (netget() != 220) {
+			quitmsg();
+			continue;
+		}
+		if (linein[3] != ' ') {
+			const char *dropmsg[] = {"invalid greeting from ", NULL, NULL};
+
+			getrhost(mx);
+			dropmsg[1] = rhost;
+			log_writen(LOG_WARNING, dropmsg);
 			quitmsg();
 			continue;
 		}
