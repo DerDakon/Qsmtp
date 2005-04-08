@@ -184,9 +184,9 @@ netget(void)
 			}
 		}
 	}
-	if (linelen < 4)
+	if (linelen < 3)
 		goto syntax;
-	if ((linein[3] != ' ') && (linein[3] != '-'))
+	if ((linelen > 3) && ((linein[3] != ' ') && (linein[3] != '-')))
 		goto syntax;
 	r = linein[0] - '0';
 	if ((r < 2) || (r > 5))
