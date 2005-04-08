@@ -25,6 +25,10 @@ send_data(void)
 		write(1, linein + 4, linelen - 3);
 		quit();
 	}
+#ifdef DEBUG_IO
+	in_data = 1;
+#endif
+
 /* read in chunks of 80 bytes. Most MUAs use 80 chars per line for their mails so we will
  * not have more than one linebreak per chunk. Make sure there are at least 160 bytes left
  * in sendbuf so we can turn 80 "CR" _or_ "LF" into 80 "CRLF" (worst case). The last 3
@@ -104,6 +108,9 @@ send_data(void)
 	sendbuf[idx++] = '\r';
 	sendbuf[idx++] = '\n';
 	netnwrite(sendbuf, idx);
+#ifdef DEBUG_IO
+	in_data = 0;
+#endif
 	checkreply("KZD", successmsg, 1);
 	return;
 readerr:
@@ -136,7 +143,13 @@ send_bdat(void)
 		}
 		ultostr(num, chunklen);
 		net_writen(netmsg);
+#ifdef DEBUG_IO
+		in_data = 1;
+#endif
 		netnwrite(sendbuf, num);
+#ifdef DEBUG_IO
+		in_data = 0;
+#endif
 		if (!more)
 			break;
 		if (checkreply(" ZD", NULL, 0) != 250)
