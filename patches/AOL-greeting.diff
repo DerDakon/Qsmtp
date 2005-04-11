@@ -1,0 +1,15 @@
+Index: qremote/qremote.c
+===================================================================
+--- qremote/qremote.c	(revision 497)
++++ qremote/qremote.c	(working copy)
+@@ -411,6 +411,10 @@
+ 			quitmsg();
+ 			continue;
+ 		}
++		while (linein[3] == '-') {
++			if (netget() != 220)
++				break;
++		}
+ 		if (linein[3] != ' ') {
+ 			const char *dropmsg[] = {"invalid greeting from ", NULL, NULL};
+ 
