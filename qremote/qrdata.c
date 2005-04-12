@@ -37,7 +37,7 @@ send_data(void)
 	while ( (num = read(42, sendbuf + idx, 80)) ) {
 		if (num < 0)
 			goto readerr;
-		while (num) {
+		while (num > 0) {
 			if ((sendbuf[idx] != '\r') && (sendbuf[idx] != '\n')) {
 				if (!(smtpext & 0x08) && (sendbuf[idx] < 0)) {
 /* this message has to be recoded to 7BIT somehow... */
