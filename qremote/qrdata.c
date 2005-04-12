@@ -15,7 +15,7 @@ send_data(void)
 	char sendbuf[1205];
 	unsigned int idx = 0;
 	int num;
-	int lastlf = 0;		/* set if last byte sent was a LF */
+	int lastlf = 1;		/* set if last byte sent was a LF */
 
 	successmsg[2] = "";
 	netwrite("DATA\r\n");
