@@ -37,7 +37,7 @@ void DEBUG_IN(const size_t len)
 	buffer[1 + en] = ' ';
 	memcpy(buffer + 2 + en, linein, len);
 	buffer[2 + en + len] = '\0';
-	for (i = len + 2 + en; i > 0; i--) {
+	for (i = len + 1 + en; i > 0; i--) {
 		if (buffer[i] < 32)
 			buffer[i] = '?';
 	}
@@ -47,7 +47,7 @@ void DEBUG_IN(const size_t len)
 
 void DEBUG_OUT(const char *s, const size_t l)
 {
-	char buffer[l + 2];
+	char buffer[l + 3];
 	int en = 0;
 	const char *b, *c;
 	
