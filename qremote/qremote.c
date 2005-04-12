@@ -1,6 +1,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 #include <stdio.h>
 #include <errno.h>
 #include <unistd.h>
@@ -381,6 +383,7 @@ main(int argc, char *argv[])
 	int i;
 	struct ips *mx = NULL;
 	int rcptcount = argc - 4;
+	struct stat st;
 
 	setup();
 
@@ -400,6 +403,23 @@ main(int argc, char *argv[])
 
 	getmxlist(argv[1], &mx);
 
+	/* this shouldn't fail normally: qmail-rspawn did it before successfully */
+	i = fstat(0, &st);
+	if (i) {
+		if (errno == ENOMEM)
+			err_mem(0);
+		log_write(LOG_CRIT, "can't fstat() input");
+		write(1, "Zinternal error: can't fstat() input\n", 38);
+		return 0;
+	}
+	msgsize = st.st_size;
+	msgdata = mmap(NULL, msgsize, PROT_READ, MAP_SHARED, 0, 0);
+
+	if (msgdata == MAP_FAILED) {
+		log_write(LOG_CRIT, "can't mmap() input");
+		write(1, "Zinternal error: can't mmap() input\n", 37);
+		return 0;
+	}
 	dup2(0, 42);
 
 /* for all MX entries we got: try to enable connection, check if the SMTP server wants us

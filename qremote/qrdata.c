@@ -8,6 +8,12 @@
 #include "qrdata.h"
 
 const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "./Remote_host_said: ", NULL};
+char *msgdata;			/* message will be mmaped here */
+#ifndef __USE_FILE_OFFSET64
+	__off_t msgsize;	/* size of the mmaped area */
+#else
+	__off64_t msgsize;
+#endif
 
 void
 send_data(void)
@@ -16,6 +22,26 @@ send_data(void)
 	unsigned int idx = 0;
 	int num;
 	int lastlf = 1;		/* set if last byte sent was a LF */
+	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
+#ifndef __USE_FILE_OFFSET64
+	__off_t off;
+#else
+	__off64_t off;
+#endif
+
+	if (!(smtpext & 0x008)) {
+		off = msgsize;
+
+		while (off > 0) {
+			off--;
+			if (msgdata[off] < 0) {
+#warning FIXME: add proper quoted-printable recoding here
+				write(1, "Z5.6.3 message has 8 Bit characters but next server "
+						"does not accept 8BITMIME", 77);
+				quit();
+			}
+		}
+	}
 
 	successmsg[2] = "";
 	netwrite("DATA\r\n");
@@ -29,62 +55,71 @@ send_data(void)
 	in_data = 1;
 #endif
 
-/* read in chunks of 80 bytes. Most MUAs use 80 chars per line for their mails so we will
- * not have more than one linebreak per chunk. Make sure there are at least 160 bytes left
- * in sendbuf so we can turn 80 "CR" _or_ "LF" into 80 "CRLF" (worst case). The last 3
- * chars are there to pad a "CRLF.CRLF" into if the message ends with no newline and don't
- * need to start another turn. */
-	while ( (num = read(42, sendbuf + idx, 80)) ) {
-		if (num < 0)
-			goto readerr;
-		while (num > 0) {
-			if ((sendbuf[idx] != '\r') && (sendbuf[idx] != '\n')) {
-				if (!(smtpext & 0x08) && (sendbuf[idx] < 0)) {
-/* this message has to be recoded to 7BIT somehow... */
-					write(1, "Z5.6.3 message has 8 Bit characters but next server "
-							"does not accept 8BITMIME", 77);
-					_exit(0);
-				}
-				if (sendbuf[idx] == '.') {
-					if ((idx && (sendbuf[idx - 1] == '\n')) || (!idx && lastlf)) {
-						idx++;
-						memmove(sendbuf + idx + 1, sendbuf + idx, num);
-						sendbuf[idx] = '.';
-					}
-				}
-				idx++;
-				num--;
-				continue;
-			}
-			if (sendbuf[idx] == '\r') {
-				idx++;
-				num--;
-				/* check if this was the last byte in buffer. If it was, read one more */
-				if (!num) {
-					num = read(42, sendbuf + idx, 1);
-					if (!num) {
-						/* last byte in input stream */
-						sendbuf[idx++] = '\n';
-						break;
-					} else if (num < 0) {
-						goto readerr;
-					}
-				}
-				if (sendbuf[idx] == '\n') {
-					idx++;
-					num--;
+	off = 0;
+	while (off < msgsize) {
+		while (idx + chunk < sizeof(sendbuf) - 5) {
+			if (off + chunk == msgsize) {
+				break;
+			} else if (msgdata[off + chunk] == '.') {
+				/* no need to check for '\r' here, than we would have copied
+				 * data and set chunk to 0.
+				 *
+				 * There are three cases where we have to double the '.':
+				 * - we are in the middle of a chunk to copy and the last byte
+				 *   in the input file was '\n'
+				 * - this is the first byte of a chunk, sendbuf is empty and we
+				 *   sent a '\n' as last character to the network before
+				 * - this is the first byte in a chunk and the last byte written
+				 *   into sendbuf is '\n'
+				 */
+				if ((chunk && (msgdata[off + chunk - 1] == '\n')) ||
+						(!chunk && ((!idx && lastlf) || (idx && (sendbuf[idx - 1] == '\n'))))) {
+					chunk++;
+					memcpy(sendbuf + idx, msgdata + off, chunk);
+					off += chunk;
+					idx += chunk;
+					sendbuf[idx++] = '.';
+					chunk = 0;
 				} else {
-					memmove(sendbuf + idx + 1, sendbuf + idx, num);
-					sendbuf[idx++] = '\n';
+					chunk++;
 				}
+			} else if (msgdata[off + chunk] == '\r') {
+				int last = (off + chunk == msgsize - 1);
+
+				if (!last && (msgdata[off + chunk] == '\n')) {
+					chunk += 2;
+				} else {
+					chunk++;
+					memcpy(sendbuf + idx, msgdata + off, chunk);
+					off += chunk;
+					idx += chunk;
+					sendbuf[idx++] = '\n';
+					chunk = 0;
+					if (last) {
+						break;
+					}
+				}
+			} else if (msgdata[off + chunk] == '\n') {
+				/* bare '\n' */
+				memcpy(sendbuf + idx, msgdata + off, chunk);
+				off += chunk + 1;
+				idx += chunk;
+				sendbuf[idx++] = '\r';
+				sendbuf[idx++] = '\n';
+				chunk = 0;
 			} else {
-				memmove(sendbuf + idx + 1, sendbuf + idx, num);
-				sendbuf[idx++] = '\r';	/* insert CR before found LF */
-				idx++;			/* skip this LF */
-				num--;				/* one byte checked */
+				chunk++;
 			}
 		}
-		if (idx >= sizeof(sendbuf) - 165) {
+		if (chunk) {
+			chunk++;
+			memcpy(sendbuf + idx, msgdata + off, chunk);
+			off += chunk;
+			idx += chunk;
+			chunk = 0;
+		}
+
+		if (msgsize != off) {
 			netnwrite(sendbuf, idx);
 			lastlf = (sendbuf[idx - 1] == '\n');
 			idx = 0;
@@ -113,53 +148,46 @@ send_data(void)
 #endif
 	checkreply("KZD", successmsg, 1);
 	return;
-readerr:
-	write(1, "Zerror reading mail, aborting transfer.\n", 41);
-	exit(0);
 }
 
 void
 send_bdat(void)
 {
-	char sendbuf[2048];
-	int num;
-	int more = 1;
+	char chunklen[6];
+	const char *netmsg[] = {"BDAT ", NULL, NULL, NULL};
+#ifndef __USE_FILE_OFFSET64
+	__off_t off = 0;
+#else
+	__off64_t off = 0;
+#endif
 
 	successmsg[2] = "chunked ";
-	while ( (num = read(42, sendbuf, sizeof(sendbuf) - 1)) ) {
-		char chunklen[5];
-		const char *netmsg[] = {"BDAT ", chunklen, NULL, NULL};
 
-		if (num < 0)
-			goto readerr;
-/* Try to read one byte more. If this causes EOF we can mark this the last chunk */
-		more = read(42, sendbuf + num, 1);
-		if (more < 0) {
-			goto readerr;
-		} else if (!more) {
-			netmsg[2] = " LAST";
-		} else {
-			num += 1;
-		}
-		ultostr(num, chunklen);
+#define CHUNKSIZE 15000
+	netmsg[1] = "15000";
+	while (msgsize - off > CHUNKSIZE) {
 		net_writen(netmsg);
 #ifdef DEBUG_IO
 		in_data = 1;
 #endif
-		netnwrite(sendbuf, num);
+		netnwrite(msgdata + off, CHUNKSIZE);
 #ifdef DEBUG_IO
 		in_data = 0;
 #endif
-		if (!more)
-			break;
 		if (checkreply(" ZD", NULL, 0) != 250)
 			quit();
+		off += CHUNKSIZE;
 	}
-	if (more)
-		netwrite("BDAT 0 LAST\r\n");
+	ultostr((unsigned long) (msgsize - off), chunklen);
+	netmsg[1] = chunklen;
+	netmsg[2] = " LAST";
+	net_writen(netmsg);
+#ifdef DEBUG_IO
+	in_data = 1;
+#endif
+	netnwrite(msgdata + off, msgsize - off);
+#ifdef DEBUG_IO
+	in_data = 0;
+#endif
 	checkreply("KZD", successmsg, 1);
-	return;
-readerr:
-	write(1, "Zerror reading mail, aborting transfer.\n", 41);
-	exit(0);
 }
