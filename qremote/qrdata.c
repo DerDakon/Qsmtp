@@ -86,10 +86,10 @@ send_data(void)
 			} else if (msgdata[off + chunk] == '\r') {
 				int last = (off + chunk == msgsize - 1);
 
+				chunk++;
 				if (!last && (msgdata[off + chunk] == '\n')) {
-					chunk += 2;
-				} else {
 					chunk++;
+				} else {
 					memcpy(sendbuf + idx, msgdata + off, chunk);
 					off += chunk;
 					idx += chunk;
