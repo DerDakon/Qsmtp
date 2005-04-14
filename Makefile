@@ -1,5 +1,5 @@
-OWFATPATH=/mnt/misc/qmail/libowfat-0.21-eike
-CDBPATH=/mnt/misc/qmail/vpopmail-5.4.0-eike/cdb
+OWFATPATH=../../libowfat-0.22
+CDBPATH=../../qmail-1.03
 SHELL=/bin/sh
 CC=gcc
 CFLAGS=-O2 -c -Wall -W -Wshadow -I$(shell pwd)/include -DNOSTDERR -DUSESYSLOG -march=i686 -g
