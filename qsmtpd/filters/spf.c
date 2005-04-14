@@ -54,8 +54,13 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 			return rc;
 
 		if (b) {
-			fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
-			fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
+			if (xmitstat.mailfrom.len) {
+				fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+				fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
+			} else {
+				fromdomain = HELOSTR;
+				fromlen = HELOLEN;
+			}
 			memcpy(spfname, fromdomain, fromlen);
 			spfname[fromlen++] = '.';
 
@@ -105,7 +110,11 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 		goto block;
 strict:
 	if (!fromdomain) {
-		fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+		if (xmitstat.mailfrom.len) {
+			fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+		} else {
+			fromdomain = HELOSTR;
+		}
 	}
 	rc = finddomainmm(getfileglobal(ds, "spfstrict", t), fromdomain);
 	if (rc <= 0)
