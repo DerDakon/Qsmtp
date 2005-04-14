@@ -1,12 +1,12 @@
 Index: qremote/qremote.c
 ===================================================================
---- qremote/qremote.c	(revision 497)
+--- qremote/qremote.c	(revision 519)
 +++ qremote/qremote.c	(working copy)
-@@ -411,6 +411,10 @@
+@@ -431,6 +431,10 @@
  			quitmsg();
  			continue;
  		}
-+		while (linein[3] == '-') {
++		while (!strncmp("220-", linein, 4)) {
 +			if (netget() != 220)
 +				break;
 +		}
