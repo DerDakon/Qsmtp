@@ -378,7 +378,7 @@ ultostr(const unsigned long u, char *res)
  * net_readbin - read a given number of bytes from network as binary data (i.e. without any mangling)
  *
  * @num: number of bytes to read
- * @buf: buffer to store data (must have enough space)
+ * @buf: buffer to store data (must have enough space for (num + 1) bytes)
  *
  * returns: number of bytes read, -1 on error
  */
@@ -403,7 +403,7 @@ net_readbin(size_t num, char *buf)
 	while (num) {
 		size_t r;
 
-		r = readinput(buf + offs, num);
+		r = readinput(buf + offs, num + 1);
 		if (r == (size_t) -1)
 			return -1;
 		offs += r;
