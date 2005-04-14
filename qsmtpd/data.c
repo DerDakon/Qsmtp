@@ -30,6 +30,8 @@ err_fork(void)
 	return netwrite(noqueue) ? errno : 0;
 }
 
+static const char *qqbin;
+
 static int
 queue_init(void)
 {
@@ -55,29 +57,28 @@ queue_init(void)
 		case -1:	if ( (i = err_fork()) )
 					return i;
 				return EDONE;
-		case 0:		if (1) {
-					char *qqbin;
+		case 0:		if (!qqbin) {
 
 					qqbin = getenv("QMAILQUEUE");
 					if (!qqbin) {
 						qqbin = "bin/qmail-queue";
 					}
-					while ( (i = close(fd0[1])) ) {
-						if (errno != EINTR)
-							_exit(120);
-					}
-					while ( (i = close(fd1[1])) ) {
-						if (errno != EINTR)
-							_exit(120);
-					}
-					if (dup2(fd0[0], 0) == -1)
-						_exit(120);
-					if (dup2(fd1[0], 1) == -1)
-						_exit(120);
-				/* no chdir here, we already _are_ there (and qmail-queue does it again) */
-					execlp(qqbin, qqbin, NULL);
-					_exit(120);
 				}
+				while ( (i = close(fd0[1])) ) {
+					if (errno != EINTR)
+						_exit(120);
+				}
+				while ( (i = close(fd1[1])) ) {
+					if (errno != EINTR)
+						_exit(120);
+				}
+				if (dup2(fd0[0], 0) == -1)
+					_exit(120);
+				if (dup2(fd1[0], 1) == -1)
+					_exit(120);
+				/* no chdir here, we already _are_ there (and qmail-queue does it again) */
+				execlp(qqbin, qqbin, NULL);
+				_exit(120);
 		default:	while (close(fd0[0]) && (errno == EINTR));
 				while (close(fd1[0]) && (errno == EINTR));
 	}
