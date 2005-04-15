@@ -1154,6 +1154,7 @@ smtploop(void)
 						break;
 				case EINTR:	log_write(LOG_WARNING, "interrupted by signal");
 						_exit(EINTR);
+				case ECONNRESET:dieerror(flagbogus);
 				default:	log_write(LOG_ERR, "writer error. kick me.");
 						log_write(LOG_ERR, strerror(flagbogus));
 						badcmds = 0;
