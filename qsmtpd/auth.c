@@ -134,14 +134,14 @@ authenticate(void)
 						_exit(1);
 				}
 				if (pi[0] != 3) {
-					if (dup2(pi[0],3)) {
+					if (dup2(pi[0],3) < 0) {
 						_exit(1);
 					}
 				}
 				sa.sa_handler = SIG_DFL;
 				sigemptyset(&(sa.sa_mask));
 				sigaction(SIGPIPE, &sa, NULL);
-				execlp(auth_check, auth_check, auth_sub, NULL);
+				execlp(auth_check, auth_check, *auth_sub, NULL);
 				_exit(1);
 	}
 	while (close(pi[0])) {
