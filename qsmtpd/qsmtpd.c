@@ -172,7 +172,7 @@ setup(void)
 		/* is this just too paranoid? */
 		if (inet_pton(AF_INET6, xmitstat.remoteip, &(xmitstat.sremoteip)) <= 0) {
 			xmitstat.remoteip = "unknown";
-			log_write(LOG_ERR, "TCP6REMOTEIP does not contain a valid AF_INET6 addres");
+			log_write(LOG_ERR, "TCP6REMOTEIP does not contain a valid AF_INET6 address");
 			memset(xmitstat.sremoteip.s6_addr, 0, sizeof(xmitstat.sremoteip));
 		} else {
 			xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr) ? 1 : 0;
@@ -1202,7 +1202,6 @@ smtploop(void)
 
 int
 main(int argc, char *argv[]) {
-
 	if (setup()) {
 		/* setup failed: make sure we wait until the "quit" of the other host but
 		 * do not process any mail. Commands RSET, QUIT and NOOP are still allowed.
@@ -1248,6 +1247,5 @@ main(int argc, char *argv[]) {
 	} else if (argc != 1) {
 		log_write(LOG_ERR, "invalid number of parameters given");
 	}
-//sleep(15);
 	smtploop();
 }
