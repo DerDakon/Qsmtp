@@ -386,7 +386,7 @@ user_exists(const string *localpart, struct userconf *ds)
 	unsigned int i = 0;
 
 	/* '/' is a valid character for localparts but we don't want it because
-	 * it could be abusedto check the existence of files */
+	 * it could be abused to check the existence of files */
 	if (strchr(localpart->s, '/'))
 		return 0;
 
