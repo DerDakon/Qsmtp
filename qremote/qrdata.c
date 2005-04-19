@@ -23,24 +23,29 @@ send_data(void)
 	int num;
 	int lastlf = 1;		/* set if last byte sent was a LF */
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
+	int ascii = 0;
 #ifndef __USE_FILE_OFFSET64
-	__off_t off;
+	__off_t off = msgsize;
 #else
-	__off64_t off;
+	__off64_t off = msgsize;
 #endif
 
-	if (!(smtpext & 0x008)) {
-		off = msgsize;
+/* check if message is plain ASCII or not */
+	off = msgsize;
 
-		while (off > 0) {
-			off--;
-			if (msgdata[off] < 0) {
-#warning FIXME: add proper quoted-printable recoding here
-				write(1, "Z4.6.3 message has 8 Bit characters but next server "
-						"does not accept 8BITMIME", 77);
-				quit();
-			}
+	while (off > 0) {
+		off--;
+		if (msgdata[off] < 0) {
+			ascii = 1;
+			break;
 		}
+	}
+
+	if (!(smtpext & 0x008) && ascii) {
+#warning FIXME: add proper quoted-printable recoding here
+		write(1, "Z4.6.3 message has 8 Bit characters but next server "
+				"does not accept 8BITMIME", 77);
+		quit();
 	}
 
 	successmsg[2] = "";
