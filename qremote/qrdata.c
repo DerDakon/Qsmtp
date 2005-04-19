@@ -36,7 +36,7 @@ send_data(void)
 			off--;
 			if (msgdata[off] < 0) {
 #warning FIXME: add proper quoted-printable recoding here
-				write(1, "Z5.6.3 message has 8 Bit characters but next server "
+				write(1, "Z4.6.3 message has 8 Bit characters but next server "
 						"does not accept 8BITMIME", 77);
 				quit();
 			}
