@@ -15,4 +15,6 @@ extern __off_t msgsize;
 extern __off64_t msgsize;
 #endif
 
+extern int ascii;
+
 #endif

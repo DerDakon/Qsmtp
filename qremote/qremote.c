@@ -378,12 +378,17 @@ static const char *mailerrmsg[] = {"Connected to ", NULL, " but sender was rejec
 int
 main(int argc, char *argv[])
 {
-	const char *netmsg[6];
+	const char *netmsg[7];
 	int rcptstat = 1;	/* this means: all recipients have been rejected */
 	int i;
 	struct ips *mx = NULL;
 	int rcptcount = argc - 4;
 	struct stat st;
+#ifndef __USE_FILE_OFFSET64
+	__off_t off;
+#else
+	__off64_t off;
+#endif
 
 	setup();
 
@@ -456,23 +461,41 @@ main(int argc, char *argv[])
 		}
 	}
 
+/* check if message is plain ASCII or not */
+	off = msgsize;
+	ascii = 1;
+
+	while (off > 0) {
+		off--;
+		if (msgdata[off] < 0) {
+			ascii = 0;
+			break;
+		}
+	}
+
 	netmsg[0] = "MAIL FROM:<";
 	netmsg[1] = argv[2];
+	netmsg[2] = ">";
+	netmsg[3] = NULL;
 /* ESMTP SIZE extension */
-	if (smtpext & 1) {
-		netmsg[2] = "> SIZE=";
-		netmsg[3] = argv[3];
-		netmsg[4] = NULL;
-	} else {
-		netmsg[2] = ">";
-		netmsg[3] = NULL;
+	if (smtpext & 0x01) {
+		netmsg[3] = " SIZE=";
+		netmsg[4] = argv[3];
+		netmsg[5] = NULL;
+	}
+/* ESMTP 8BITMIME extension */
+	if (smtpext & 0x08) {
+		int idx;
+
+		idx = (smtpext & 0x01) ? 5 : 3;
+
+		netmsg[idx++] = ascii ? " BODY=7BIT" : " BODY=8BITMIME";
+		netmsg[idx] = NULL;
 	}
 	net_writen(netmsg);
-	if (smtpext & 1) {
-		netmsg[2] = ">";
-		netmsg[3] = NULL;
-	}
-	if (smtpext & 2) {
+
+	netmsg[3] = NULL;
+	if (smtpext & 0x02) {
 /* server allows PIPELINING: first send all the messages, then check the replies.
  * This allows to hide network latency. */
 		netmsg[0] = "RCPT TO:<";
