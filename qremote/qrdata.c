@@ -24,7 +24,6 @@ send_data(void)
 	int num;
 	int lastlf = 1;		/* set if last byte sent was a LF */
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
-	int ascii = 0;
 #ifndef __USE_FILE_OFFSET64
 	__off_t off = 0;
 #else
