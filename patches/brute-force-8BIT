@@ -1,0 +1,19 @@
+Index: qremote/qrdata.c
+===================================================================
+--- qremote/qrdata.c	(revision 532)
++++ qremote/qrdata.c	(working copy)
+@@ -30,12 +30,14 @@
+ 	__off64_t off = 0;
+ #endif
+ 
++#if 0
+ 	if (!(smtpext & 0x008) && !ascii) {
+ #warning FIXME: add proper quoted-printable recoding here
+ 		write(1, "Z4.6.3 message has 8 Bit characters but next server "
+ 				"does not accept 8BITMIME", 77);
+ 		quit();
+ 	}
++#endif
+ 
+ 	successmsg[2] = "";
+ 	netwrite("DATA\r\n");
