@@ -186,7 +186,7 @@ netget(void)
 						write(1, "Z", 1);
 						write(1, tmp, strlen(tmp) + 1);
 						quit();
-			}
+					}
 		}
 	}
 	if (linelen < 3)
@@ -384,6 +384,7 @@ main(int argc, char *argv[])
 	struct ips *mx = NULL;
 	int rcptcount = argc - 4;
 	struct stat st;
+	char sizebuf[ULSTRLEN];
 #ifndef __USE_FILE_OFFSET64
 	__off_t off;
 #else
@@ -396,14 +397,6 @@ main(int argc, char *argv[])
 		log_write(LOG_CRIT, "too few arguments");
 		write(1, "Zinternal error: Qremote called with invalid arguments\n", 56);
 		return 0;
-	}
-
-	for (i = strlen(argv[3]) - 1; i >= 0; i--) {
-		if ((argv[3][i] < '0') || (argv[3][i] > '9')) {
-			log_write(LOG_CRIT, "third argument is not a number");
-			write(1, "Zinternal error: Qremote called with invalid arguments\n", 56);
-			return 0;
-		}
 	}
 
 	getmxlist(argv[1], &mx);
@@ -480,7 +473,8 @@ main(int argc, char *argv[])
 /* ESMTP SIZE extension */
 	if (smtpext & 0x01) {
 		netmsg[3] = " SIZE=";
-		netmsg[4] = argv[3];
+		ultostr(msgsize, sizebuf);
+		netmsg[4] = sizebuf;
 		netmsg[5] = NULL;
 	}
 /* ESMTP 8BITMIME extension */
@@ -499,7 +493,7 @@ main(int argc, char *argv[])
 /* server allows PIPELINING: first send all the messages, then check the replies.
  * This allows to hide network latency. */
 		netmsg[0] = "RCPT TO:<";
-		for (i = 4; i < argc; i++) {
+		for (i = 3; i < argc; i++) {
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
 		}
@@ -523,7 +517,7 @@ main(int argc, char *argv[])
 		if (checkreply(" ZD", mailerrmsg, 6) >= 300)
 			quit();
 		netmsg[0] = "RCPT TO:<";
-		for (i = 4; i < argc; i++) {
+		for (i = 3; i < argc; i++) {
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
 			if (checkreply(" sh", NULL, 0) < 300) {
