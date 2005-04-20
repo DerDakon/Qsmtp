@@ -1,3 +1,8 @@
+This patch changes Qremote to be a bit more tolerant about the greeting
+of the remote server. RfC 2821, section 4.2 specifies that a greeting begins
+with "220 ", so multiline greetings are forbidden. Nevertheless there are
+some hosts doing this, normally Qremote will refuse to send a mail to them.
+
 Index: qremote/qremote.c
 ===================================================================
 --- qremote/qremote.c	(revision 519)
