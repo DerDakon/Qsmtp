@@ -179,7 +179,7 @@ queue_envelope(const unsigned long msgsize)
 /* print the authname.s into a buffer for the log message */
 	if (xmitstat.authname.len) {
 		if (strcasecmp(xmitstat.authname.s, MAILFROM)) {
-			authmsg = malloc(xmitstat.authname.len + 21);
+			authmsg = malloc(xmitstat.authname.len + 23);
 
 			if (!authmsg)
 				return errno;
