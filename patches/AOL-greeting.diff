@@ -11,7 +11,7 @@ Index: qremote/qremote.c
  /* for all MX entries we got: try to enable connection, check if the SMTP server wants us
   * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
  	do {
-+		flagerr = 0;
++		int flagerr = 0;
 +
  		tryconn(mx);
  		dup2(socketd, 0);
