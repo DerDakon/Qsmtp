@@ -382,7 +382,7 @@ main(int argc, char *argv[])
 	int rcptstat = 1;	/* this means: all recipients have been rejected */
 	int i;
 	struct ips *mx = NULL;
-	int rcptcount = argc - 4;
+	int rcptcount = argc - 3;
 	struct stat st;
 	char sizebuf[ULSTRLEN];
 #ifndef __USE_FILE_OFFSET64
