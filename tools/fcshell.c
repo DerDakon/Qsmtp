@@ -531,7 +531,10 @@ editadd(const int type)
 							}
 /* check domain */
 							while (*tmp) {
-								if ((*tmp < 32) || 
+								if ((*tmp < 46) || (*tmp == '/') || ((*tmp >= 58) && (*tmp <= 64)) ||
+										((*tmp >= 91) && (*tmp <= 96)) || (*tmp > 'z'))
+									goto parse;
+								tmp++;
 							}
 						}
 				}
