@@ -11,6 +11,7 @@ string heloname = {.s = "caliban.sf-tec.de", .len = 17};
 int log_write() {return 0;}
 int log_writen() {return 0;}
 int dieerror() {return 0;}
+int socketd;
 
 extern int spf_makro(char *token, const char *domain, int ex, char **result);
 
