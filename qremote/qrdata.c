@@ -9,7 +9,7 @@
 
 const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "./Remote_host_said: ", NULL};
 int ascii;			/* if message is plain ASCII or not */
-char *msgdata;			/* message will be mmaped here */
+const char *msgdata;		/* message will be mmaped here */
 #ifndef __USE_FILE_OFFSET64
 	__off_t msgsize;	/* size of the mmaped area */
 #else
