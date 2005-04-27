@@ -12,11 +12,8 @@
 #include "sstring.h"
 #include "starttlsr.h"
 
-const char *ssl_err_str = NULL;
-
-#warning FIXME: ugly
-void __attribute__ ((noreturn))
-TLS_QUIT(void)
+static void __attribute__ ((noreturn))
+tls_quit(void)
 {
 	char *msg = ssl ? "; connected to " : "; connecting to ";
 
@@ -26,20 +23,19 @@ TLS_QUIT(void)
 	quit();
 }
 
-
-void  __attribute__ ((noreturn))
-tls_quit(const char *s1, const char *s2)
+static void  __attribute__ ((noreturn))
+tls_quitmsg(const char *s1, const char *s2)
 {
 	write(1, s1, strlen(s1));
 	if (s2) {
 		write(1, ": ", 2);
 		write(1, s2, strlen(s2));
 	}
-	TLS_QUIT();
+	tls_quit();
 }
-#define tls_quit_error(s) tls_quit(s, ssl_error())
 
-int match_partner(const char *s, size_t len)
+static int
+match_partner(const char *s, size_t len)
 {
 	if (!strncasecmp(partner_fqdn, s, len) && !partner_fqdn[len])
 		return 1;
@@ -55,7 +51,8 @@ int match_partner(const char *s, size_t len)
 	return 0;
 }
 
-int tls_init(void)
+int
+tls_init(void)
 {
 	int i = 0;
 	SSL *myssl;
@@ -87,14 +84,14 @@ int tls_init(void)
 	if (!ctx) {
 		if (!servercert)
 			return 0;
-		tls_quit_error("ZTLS error initializing ctx");
+		tls_quitmsg("ZTLS error initializing ctx", ssl_error());
 	}
 
 	if (servercert) {
 		if (!SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
 			SSL_CTX_free(ctx);
 			write(1, "ZTLS unable to load ", 20);
-			tls_quit_error(servercert);
+			tls_quitmsg(servercert, ssl_error());
 		}
 		/* set the callback here; SSL_set_verify didn't work before 0.9.6c */
 		SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
@@ -109,7 +106,7 @@ int tls_init(void)
 	if (!myssl) {
 		if (!servercert)
 			return 0;
-		tls_quit_error("ZTLS error initializing ssl");
+		tls_quitmsg("ZTLS error initializing ssl", ssl_error());
 	}
 
 	netwrite("STARTTLS\r\n");
@@ -143,13 +140,13 @@ int tls_init(void)
 		write(1, "ZSTARTTLS rejected while ", 25);
 		write(1, servercert, strlen(servercert));
 		write(1, " exists", 7);
-		TLS_QUIT();
+		tls_quit();
 	}
 
 	ssl = myssl;
 	ssl_rfd = ssl_wfd = socketd;
 	if (ssl_timeoutconn(timeout) <= 0) {
-		tls_quit("ZTLS connect failed", ssl_strerror());
+		tls_quitmsg("ZTLS connect failed", ssl_strerror());
 	}
 
 	if (servercert) {
@@ -159,14 +156,14 @@ int tls_init(void)
 
 		if (r != X509_V_OK) {
 			write(1, "ZTLS unable to verify server with ", 34);
-			tls_quit(servercert, X509_verify_cert_error_string(r));
+			tls_quitmsg(servercert, X509_verify_cert_error_string(r));
 		}
 		free(servercert);
 		
 		peercert = SSL_get_peer_certificate(ssl);
 		if (!peercert) {
 			write(1, "ZTLS unable to verify server ", 29);
-			tls_quit(partner_fqdn, "no certificate provided");
+			tls_quitmsg(partner_fqdn, "no certificate provided");
 		}
 
 		/* RFC 2595 section 2.4: find a matching name
@@ -199,7 +196,7 @@ int tls_init(void)
 			}
 			if (!peer.len) {
 				write(1, "ZTLS unable to verify server ", 29);
-				tls_quit(partner_fqdn, "certificate contains no valid commonName");
+				tls_quitmsg(partner_fqdn, "certificate contains no valid commonName");
 			}
 			if (!match_partner(peer.s, peer.len)) {
 				char buf[64];
@@ -221,7 +218,7 @@ int tls_init(void)
 					}
 				}
 				write(1, buf, idx);
-				TLS_QUIT();
+				tls_quit();
 			}
 		}
 
