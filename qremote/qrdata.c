@@ -16,37 +16,20 @@ const char *msgdata;		/* message will be mmaped here */
 	__off64_t msgsize;
 #endif
 
-void
-send_data(void)
+/**
+ * send_plain - send message body, only fix broken line endings if present
+ */
+static void
+send_plain(void)
 {
 	char sendbuf[1205];
 	unsigned int idx = 0;
-	int num;
 	int lastlf = 1;		/* set if last byte sent was a LF */
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
 #ifndef __USE_FILE_OFFSET64
 	__off_t off = 0;
 #else
 	__off64_t off = 0;
-#endif
-
-	if (!(smtpext & 0x008) && !ascii) {
-#warning FIXME: add proper quoted-printable recoding here
-		write(1, "Z4.6.3 message has 8 Bit characters but next server "
-				"does not accept 8BITMIME", 77);
-		quit();
-	}
-
-	successmsg[2] = "";
-	netwrite("DATA\r\n");
-	if ( (num = netget()) != 354) {
-		write(1, num >= 500 ? "D5" : "Z4", 2);
-		write(1, ".3.0 remote host rejected DATA command: ", 40);
-		write(1, linein + 4, linelen - 3);
-		quit();
-	}
-#ifdef DEBUG_IO
-	in_data = 1;
 #endif
 
 	while (off < msgsize) {
@@ -66,7 +49,8 @@ send_data(void)
 				 *   into sendbuf is '\n'
 				 */
 				if ((chunk && (msgdata[off + chunk - 1] == '\n')) ||
-						(!chunk && ((!idx && lastlf) || (idx && (sendbuf[idx - 1] == '\n'))))) {
+							(!chunk && ((!idx && lastlf) ||
+								(idx && (sendbuf[idx - 1] == '\n'))))) {
 					chunk++;
 					memcpy(sendbuf + idx, msgdata + off, chunk);
 					off += chunk;
@@ -136,6 +120,34 @@ send_data(void)
 	sendbuf[idx++] = '\r';
 	sendbuf[idx++] = '\n';
 	netnwrite(sendbuf, idx);
+}
+
+void
+send_data(void)
+{
+	int num;
+
+	if (!(smtpext & 0x008) && !ascii) {
+#warning FIXME: add proper quoted-printable recoding here
+		write(1, "Z4.6.3 message has 8 Bit characters but next server "
+				"does not accept 8BITMIME", 77);
+		quit();
+	}
+
+	successmsg[2] = "";
+	netwrite("DATA\r\n");
+	if ( (num = netget()) != 354) {
+		write(1, num >= 500 ? "D5" : "Z4", 2);
+		write(1, ".3.0 remote host rejected DATA command: ", 40);
+		write(1, linein + 4, linelen - 3);
+		quit();
+	}
+#ifdef DEBUG_IO
+	in_data = 1;
+#endif
+
+	send_plain();
+
 #ifdef DEBUG_IO
 	in_data = 0;
 #endif
