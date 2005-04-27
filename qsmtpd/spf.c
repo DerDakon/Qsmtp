@@ -1,5 +1,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#define __USE_GNU
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
@@ -101,7 +102,8 @@ spflookup(const char *domain, const int rec)
 			case '~':	token++; prefix = SPF_SOFTFAIL; break;
 			case '+':	token++; prefix = SPF_PASS; break;
 			case '?':	token++; prefix = SPF_NEUTRAL; break;
-			default:	if (((*token >= 'a') && (*token <= 'z')) || ((*token >= 'A') && (*token <= 'Z'))) {
+			default:	if (((*token >= 'a') && (*token <= 'z')) ||
+								((*token >= 'A') && (*token <= 'Z'))) {
 						prefix = SPF_PASS;
 					} else {
 						free(txt);
@@ -109,7 +111,8 @@ spflookup(const char *domain, const int rec)
 					}
 		}
 		if (!strncasecmp(token, "mx", 2) &&
-				(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':') || (*(token + 2) == '/'))) {
+					(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':') ||
+						(*(token + 2) == '/'))) {
 			token += 2;
 			if (*token == ':')
 				token++;
@@ -303,7 +306,8 @@ spfmx(const char *domain, char *token)
 	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
 		while (mx) {
 			if (IN6_IS_ADDR_V4MAPPED(&(mx->addr)) &&
-					ip4_matchnet(&xmitstat.sremoteip, (struct in_addr *) &(mx->addr.s6_addr32[3]), ip4l))
+					ip4_matchnet(&xmitstat.sremoteip,
+							(struct in_addr *) &(mx->addr.s6_addr32[3]), ip4l))
 				return SPF_PASS;
 			mx = mx->next;
 		}
@@ -484,8 +488,8 @@ spfip6(char *domain)
 
 	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
 		return SPF_NONE;
-	while (((*sl >= '0') && (*sl <= '9')) || ((*sl >= 'a') && (*sl <= 'f')) || ((*sl >= 'A') && (*sl <= 'F')) ||
-					(*sl == ':') || (*sl == '.')) {
+	while (((*sl >= '0') && (*sl <= '9')) || ((*sl >= 'a') && (*sl <= 'f')) ||
+					((*sl >= 'A') && (*sl <= 'F')) || (*sl == ':') || (*sl == '.')) {
 		sl++;
 	}
 	if (*sl == '/') {
@@ -648,8 +652,8 @@ urlencode(char *token, char **result)
  * returns: 0 on success, -1 on error
  */
 static int
-spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned int sl, int num, const int r,
-				const int delim)
+spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned int sl, int num,
+			const int r, const int delim)
 {
 	int dc = 0;	/* how many delimiters we find */
 	unsigned int nl;
@@ -801,8 +805,9 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 	switch (ch) {
 		case 'S':	r |= 0x2;
 		case 's':	if (xmitstat.mailfrom.len) {
-					if (spf_appendmakro(res, l, xmitstat.mailfrom.s, xmitstat.mailfrom.len,
-										num, r, delim))
+					if (spf_appendmakro(res, l, xmitstat.mailfrom.s,
+					    				xmitstat.mailfrom.len,
+									num, r, delim))
 						return -1;
 				} else {
 					unsigned int senderlen = 12 + HELOLEN;
@@ -822,13 +827,14 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 		case 'l':	if (xmitstat.mailfrom.len) {
 					char *at = strchr(xmitstat.mailfrom.s, '@');
 
-					if (spf_appendmakro(res, l, xmitstat.mailfrom.s, at - xmitstat.mailfrom.s,
+					if (spf_appendmakro(res, l, xmitstat.mailfrom.s,
+					    					at - xmitstat.mailfrom.s,
 										num, r, delim)) {
 						return -1;
 					}
 				} else {
-					/* we can do it the short way here, this can't be changed by any combination of
-					 * makro flags */
+					/* we can do it the short way here, this can't be changed by
+					 * any combination of makro flags */
 					APPEND(10, "postmaster");
 				}
 				break;
@@ -839,8 +845,8 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 							at - xmitstat.mailfrom.s + 1;
 
 					/* the domain name is always the same in normal and url-ified form */
-					if (spf_appendmakro(res, l, at + 1, xmitstat.mailfrom.len - offset, num, r,
-									delim))
+					if (spf_appendmakro(res, l, at + 1, xmitstat.mailfrom.len - offset,
+					    				num, r, delim))
 						return -1;
 				} else {
 					if (spf_appendmakro(res, l, HELOSTR, HELOLEN, num, r, delim))
@@ -893,8 +899,8 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 				break;
 		case 'P':
 		case 'p':	if (xmitstat.remotehost.len) {
-					if (spf_appendmakro(res, l, xmitstat.remotehost.s, xmitstat.remotehost.len,
-								num, r, delim))
+					if (spf_appendmakro(res, l, xmitstat.remotehost.s,
+					    			xmitstat.remotehost.len, num, r, delim))
 						return -1;
 				} else {
 					APPEND(7, "unknown");
