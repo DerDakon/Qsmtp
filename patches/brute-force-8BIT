@@ -7,11 +7,11 @@ I will add quoted-printable recoding one day and this can go away then.
 
 Index: qremote/qrdata.c
 ===================================================================
---- qremote/qrdata.c	(revision 532)
+--- qremote/qrdata.c	(revision 549)
 +++ qremote/qrdata.c	(working copy)
-@@ -30,12 +30,14 @@
- 	__off64_t off = 0;
- #endif
+@@ -127,12 +127,14 @@
+ {
+ 	int num;
  
 +#if 0
  	if (!(smtpext & 0x008) && !ascii) {
