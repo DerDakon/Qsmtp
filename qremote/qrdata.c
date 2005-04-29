@@ -124,9 +124,6 @@ send_plain(const char *buf, const q_off_t len)
 			idx = 2;
 		}
 	}
-	sendbuf[idx++] = '.';
-	sendbuf[idx++] = '\r';
-	sendbuf[idx++] = '\n';
 	netnwrite(sendbuf, idx);
 }
 
@@ -155,6 +152,7 @@ send_data(void)
 #endif
 
 	send_plain(msgdata, msgsize);
+	netnwrite(".\r\n", 3);
 
 #ifdef DEBUG_IO
 	in_data = 0;
