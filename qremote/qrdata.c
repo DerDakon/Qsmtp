@@ -25,9 +25,15 @@ scan_8bit(const char *buf, q_off_t len)
 
 /**
  * send_plain - send message body, only fix broken line endings if present
+ *
+ * @buf: buffer to send
+ * @len: length of data in buffer
+ *
+ * send_plain() will make sure that there is always CRLF at the end of the
+ * transmitted data. ".CRLF" is not send by send_plain()
  */
 static void
-send_plain(void)
+send_plain(const char *buf, const q_off_t len)
 {
 	char sendbuf[1205];
 	unsigned int idx = 0;
@@ -35,11 +41,11 @@ send_plain(void)
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
 	q_off_t off = 0;
 
-	while (off < msgsize) {
+	while (off < len) {
 		while (idx + chunk < sizeof(sendbuf) - 5) {
-			if (off + chunk == msgsize) {
+			if (off + chunk == len) {
 				break;
-			} else if (msgdata[off + chunk] == '.') {
+			} else if (buf[off + chunk] == '.') {
 				/* no need to check for '\r' here, than we would have copied
 				 * data and set chunk to 0.
 				 *
@@ -51,11 +57,11 @@ send_plain(void)
 				 * - this is the first byte in a chunk and the last byte written
 				 *   into sendbuf is '\n'
 				 */
-				if ((chunk && (msgdata[off + chunk - 1] == '\n')) ||
+				if ((chunk && (buf[off + chunk - 1] == '\n')) ||
 							(!chunk && ((!idx && lastlf) ||
 								(idx && (sendbuf[idx - 1] == '\n'))))) {
 					chunk++;
-					memcpy(sendbuf + idx, msgdata + off, chunk);
+					memcpy(sendbuf + idx, buf + off, chunk);
 					off += chunk;
 					idx += chunk;
 					sendbuf[idx++] = '.';
@@ -63,14 +69,14 @@ send_plain(void)
 				} else {
 					chunk++;
 				}
-			} else if (msgdata[off + chunk] == '\r') {
-				int last = (off + chunk == msgsize - 1);
+			} else if (buf[off + chunk] == '\r') {
+				int last = (off + chunk == len - 1);
 
 				chunk++;
-				if (!last && (msgdata[off + chunk] == '\n')) {
+				if (!last && (buf[off + chunk] == '\n')) {
 					chunk++;
 				} else {
-					memcpy(sendbuf + idx, msgdata + off, chunk);
+					memcpy(sendbuf + idx, buf + off, chunk);
 					off += chunk;
 					idx += chunk;
 					sendbuf[idx++] = '\n';
@@ -79,9 +85,9 @@ send_plain(void)
 						break;
 					}
 				}
-			} else if (msgdata[off + chunk] == '\n') {
+			} else if (buf[off + chunk] == '\n') {
 				/* bare '\n' */
-				memcpy(sendbuf + idx, msgdata + off, chunk);
+				memcpy(sendbuf + idx, buf + off, chunk);
 				off += chunk + 1;
 				idx += chunk;
 				sendbuf[idx++] = '\r';
@@ -93,13 +99,13 @@ send_plain(void)
 		}
 		if (chunk) {
 			chunk++;
-			memcpy(sendbuf + idx, msgdata + off, chunk);
+			memcpy(sendbuf + idx, buf + off, chunk);
 			off += chunk;
 			idx += chunk;
 			chunk = 0;
 		}
 
-		if (msgsize != off) {
+		if (len != off) {
 			netnwrite(sendbuf, idx);
 			lastlf = (sendbuf[idx - 1] == '\n');
 			idx = 0;
@@ -149,7 +155,7 @@ send_data(void)
 	in_data = 1;
 #endif
 
-	send_plain();
+	send_plain(msgdata, msgsize);
 
 #ifdef DEBUG_IO
 	in_data = 0;
