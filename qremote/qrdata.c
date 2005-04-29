@@ -98,7 +98,6 @@ send_plain(const char *buf, const q_off_t len)
 			}
 		}
 		if (chunk) {
-			chunk++;
 			memcpy(sendbuf + idx, buf + off, chunk);
 			off += chunk;
 			idx += chunk;
