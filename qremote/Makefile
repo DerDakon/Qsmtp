@@ -18,7 +18,7 @@ conn.o: conn.h dns.h control.h log.h match.h
 
 starttlsr.o: tls.h ssl_timeoutio.h qremote.h control.h netio.h sstring.h starttlsr.h
 
-qrdata.o: netio.h qrdata.h qremote.h
+qrdata.o: netio.h qrdata.h qremote.h version.h mime.h
 
 %.o: %.c
 	 $(CC) $(CFLAGS) $<
