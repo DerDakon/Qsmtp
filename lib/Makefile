@@ -1,4 +1,4 @@
-TARGETS = netio.o dns.o log.o control.o ssl_timeoutio.o tls.o getfile.o base64.o match.o
+TARGETS = netio.o dns.o log.o control.o ssl_timeoutio.o tls.o getfile.o base64.o match.o mime.o
 
 .phony: all clean
 
@@ -20,6 +20,8 @@ getfile.o: userfilters.h control.h
 netio.o: log.h ssl_timeoutio.h tls.h
 
 ssl_timeoutio.o: log.h tls.h
+
+mime.o: sstring.h
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) $<
