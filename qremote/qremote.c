@@ -449,7 +449,7 @@ main(int argc, char *argv[])
 	}
 
 /* check if message is plain ASCII or not */
-	ascii = scan_8bit(msgdata, msgsize);
+	ascii = 1 - scan_8bit(msgdata, msgsize);
 
 	netmsg[0] = "MAIL FROM:<";
 	netmsg[1] = argv[2];
