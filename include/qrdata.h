@@ -11,6 +11,7 @@ typedef __off64_t q_off_t;
 
 extern const char *successmsg[];
 
+extern int scan_8bit(const char *, q_off_t);
 extern void send_data(void);
 extern void send_bdat(void);
 

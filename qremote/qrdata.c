@@ -12,6 +12,17 @@ int ascii;			/* if message is plain ASCII or not */
 const char *msgdata;		/* message will be mmaped here */
 q_off_t msgsize;		/* size of the mmaped area */
 
+int
+scan_8bit(const char *buf, q_off_t len)
+{
+	while (len-- > 0) {
+		if (buf[len] <= 0) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
 /**
  * send_plain - send message body, only fix broken line endings if present
  */

@@ -385,11 +385,6 @@ main(int argc, char *argv[])
 	int rcptcount = argc - 3;
 	struct stat st;
 	char sizebuf[ULSTRLEN];
-#ifndef __USE_FILE_OFFSET64
-	__off_t off;
-#else
-	__off64_t off;
-#endif
 
 	setup();
 
@@ -455,16 +450,7 @@ main(int argc, char *argv[])
 	}
 
 /* check if message is plain ASCII or not */
-	off = msgsize;
-	ascii = 1;
-
-	while (off > 0) {
-		off--;
-		if (msgdata[off] < 0) {
-			ascii = 0;
-			break;
-		}
-	}
+	ascii = scan_8bit(msgdata, msgsize);
 
 	netmsg[0] = "MAIL FROM:<";
 	netmsg[1] = argv[2];
