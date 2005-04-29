@@ -116,9 +116,9 @@ quit(void)
 }
 
 /**
+ * getrhost - print remote host information to buffer
  *
- *
- *
+ * @mx: list of MX entries, first with priority 0 is active
  */
 static inline void
 getrhost(const struct ips *mx)
@@ -163,7 +163,6 @@ getrhost(const struct ips *mx)
 		rhost[rhostlen] = '\0';
 	}
 }
-
 
 /**
  * netget - get one line from the network, handle all error cases
