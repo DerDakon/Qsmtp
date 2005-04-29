@@ -10,11 +10,7 @@
 const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "./Remote_host_said: ", NULL};
 int ascii;			/* if message is plain ASCII or not */
 const char *msgdata;		/* message will be mmaped here */
-#ifndef __USE_FILE_OFFSET64
-	__off_t msgsize;	/* size of the mmaped area */
-#else
-	__off64_t msgsize;
-#endif
+q_off_t msgsize;		/* size of the mmaped area */
 
 /**
  * send_plain - send message body, only fix broken line endings if present
@@ -26,11 +22,7 @@ send_plain(void)
 	unsigned int idx = 0;
 	int lastlf = 1;		/* set if last byte sent was a LF */
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
-#ifndef __USE_FILE_OFFSET64
-	__off_t off = 0;
-#else
-	__off64_t off = 0;
-#endif
+	q_off_t off = 0;
 
 	while (off < msgsize) {
 		while (idx + chunk < sizeof(sendbuf) - 5) {
@@ -160,11 +152,7 @@ send_bdat(void)
 {
 	char chunklen[6];
 	const char *netmsg[] = {"BDAT ", NULL, NULL, NULL};
-#ifndef __USE_FILE_OFFSET64
-	__off_t off = 0;
-#else
-	__off64_t off = 0;
-#endif
+	q_off_t off = 0;
 
 	successmsg[2] = "chunked ";
 
