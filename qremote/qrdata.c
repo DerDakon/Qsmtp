@@ -167,28 +167,16 @@ qp_header(struct string *boundary)
 				off++;
 			if (off == msgsize)
 				break;
-			if (msgdata[off] == '\r') {
-				off++;
-				if ((off < msgsize) && (msgdata[off] == '\n'))
-					off++;
+			if ((msgdata[off] == '\r') || (msgdata[off] == '\n')) {
 				header = off;
-				break;
-			} else if (msgdata[off] == '\n') {
-				header = off + 1;
 				break;
 			}
 		} else if (msgdata[off] == '\n') {
 			off++;
 			if (off == msgsize)
 				break;
-			if (msgdata[off] == '\r') {
-				off++;
-				if ((off < msgsize) && (msgdata[off] == '\n'))
-					off++;
+			if ((msgdata[off] == '\r') || (msgdata[off] == '\n')) {
 				header = off;
-				break;
-			} else if (msgdata[off] == '\n') {
-				header = off + 1;
 				break;
 			}
 		}
@@ -248,6 +236,7 @@ qp_header(struct string *boundary)
 			netnwrite("Content-Transfer-Encoding: 7bit\r\n", 33);
 		}*/
 	} else {
+#warning: FIXME: this adds an extra newline between header and body
 		if (cenc.len) {
 			send_plain(msgdata, cenc.s - msgdata);
 			netnwrite("Content-Transfer-Encoding: quoted-printable\r\n", 45);
