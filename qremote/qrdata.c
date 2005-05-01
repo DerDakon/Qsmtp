@@ -340,7 +340,10 @@ send_qp(void)
 					}
 					sendbuf[idx++] = '\r';
 					sendbuf[idx++] = '\n';
-					off += 3;
+					if (msgdata[++off] == '\r')
+						off++;
+					if (msgdata[off] == '\n')
+						off++;
 					llen = 0;
 					chunk = 0;
 				} else {
