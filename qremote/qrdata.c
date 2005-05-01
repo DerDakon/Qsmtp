@@ -343,7 +343,7 @@ send_qp(void)
 					sendbuf[idx++] = '\n';
 					if (msgdata[++off] == '\r')
 						off++;
-					if (msgdata[off] == '\n')
+					if ((off < msgsize) && (msgdata[off] == '\n'))
 						off++;
 					llen = 0;
 					chunk = 0;
