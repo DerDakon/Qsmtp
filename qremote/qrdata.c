@@ -223,11 +223,10 @@ qp_header(struct string *boundary)
 		die_8bitheader();
 
 	if ( (multipart = is_multipart(&ctype)) ) {
-#warning FIXME: add proper quoted-printable recoding here
-		write(1, "Z4.6.3 message has 8 Bit characters but next server does not accept 8BITMIME", 77);
-		exit(0);
-/*		boundary->s = "boundary="
-		if (cenc.len) {
+/*		boundary->s = strncasestr("boundary=", ctype.s, ctype.len);
+#warning FIXME: get boundary->len here*/
+#warning FIXME: change Content-Transfer-Encoding to 7bit/quoted-printable in multipart messages
+/*		if (cenc.len) {
 			netnwrite(msgdata, cenc.s - msgdata);
 			netnwrite("Content-Transfer-Encoding: 7bit\r\n", 33);
 			netnwrite(cenc.s + cenc.len, msgdata + header - cenc.s - cenc.len);
@@ -263,7 +262,12 @@ send_qp(void)
 	struct string boundary;
 
 	off = qp_header(&boundary);
-#warning FIXME: change Content-Transfer-Encoding to 7bit/quoted-printable in multipart messages
+	
+	if (multipart) {
+#warning FIXME: add proper quoted-printable recoding here
+		write(1, "Z4.6.3 message has 8 Bit characters but next server does not accept 8BITMIME", 77);
+		exit(0);
+	}
 /* encode body */
 	while (off < msgsize) {
 		while (idx + chunk < sizeof(sendbuf) - 11) {
