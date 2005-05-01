@@ -330,12 +330,11 @@ send_qp(void)
 					memcpy(sendbuf + idx, msgdata + off, chunk);
 					off += chunk;
 					idx += chunk;
+					sendbuf[idx++] = '=';
 					if (msgdata[off] == '\t') {
-						sendbuf[idx++] = '=';
 						sendbuf[idx++] = '0';
 						sendbuf[idx++] = '9';
 					} else {
-						sendbuf[idx++] = '=';
 						sendbuf[idx++] = '2';
 						sendbuf[idx++] = '0';
 					}
