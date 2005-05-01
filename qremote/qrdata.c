@@ -326,7 +326,7 @@ send_qp(void)
 				chunk = 0;
 			} else if ((msgdata[off + chunk] == '\t') || (msgdata[off + chunk] == ' ')) {
 				/* recode whitespace if a linebreak follows */
-				if ((off + chunk < msgsize) && (msgdata[off + chunk + 1] == '\r')) {
+				if ((off + chunk < msgsize) && ((msgdata[off + chunk + 1] == '\r') || (msgdata[off + chunk + 1] == '\n'))) {
 					memcpy(sendbuf + idx, msgdata + off, chunk);
 					off += chunk;
 					idx += chunk;
