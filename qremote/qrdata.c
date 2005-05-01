@@ -293,6 +293,7 @@ send_qp(void)
 				sendbuf[idx++] = '\r';
 				sendbuf[idx++] = '\n';
 				llen = 0;
+				continue;
 			}
 
 			/* add soft line break to make sure encoded line length < 80 */
