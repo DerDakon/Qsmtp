@@ -281,6 +281,7 @@ send_qp(void)
 					memcpy(sendbuf + idx, msgdata + off, chunk);
 					off += chunk;
 					idx += chunk;
+					sendbuf[idx++] = '\n';
 					chunk = 0;
 				}
 				continue;
