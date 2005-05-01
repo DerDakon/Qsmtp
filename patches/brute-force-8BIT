@@ -7,20 +7,18 @@ I will add quoted-printable recoding one day and this can go away then.
 
 Index: qremote/qrdata.c
 ===================================================================
---- qremote/qrdata.c	(revision 549)
+--- qremote/qrdata.c	(revision 573)
 +++ qremote/qrdata.c	(working copy)
-@@ -127,12 +127,14 @@
- {
- 	int num;
- 
-+#if 0
- 	if (!(smtpext & 0x008) && !ascii) {
+@@ -265,8 +265,12 @@
+ 	
+ 	if (multipart) {
  #warning FIXME: add proper quoted-printable recoding here
- 		write(1, "Z4.6.3 message has 8 Bit characters but next server "
- 				"does not accept 8BITMIME", 77);
- 		quit();
- 	}
++#if 0
+ 		write(1, "Z4.6.3 message has 8 Bit characters but next server does not accept 8BITMIME", 77);
+ 		exit(0);
++#else
++		send_plain(msgdata + off, msgsize - off);
 +#endif
- 
- 	successmsg[2] = "";
- 	netwrite("DATA\r\n");
+ 	}
+ /* encode body */
+ 	while (off < msgsize) {
