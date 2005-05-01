@@ -255,7 +255,7 @@ static void
 send_qp(void)
 {
 	unsigned int idx = 0;
-	char sendbuf[36];
+	char sendbuf[1280];
 	int lastlf = 1;		/* set if last byte sent was a LF */
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
 	q_off_t off = 0;
