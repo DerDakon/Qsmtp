@@ -317,31 +317,13 @@ send_qp(void)
 				llen = 0;
 			}
 
-			if (msgdata[off + chunk] == '.') {
-				/* no need to check for '\r' here, than we would have copied
-				 * data and set chunk to 0.
-				 *
-				 * There are three cases where we have to double the '.':
-				 * - we are in the middle of a chunk to copy and the last byte
-				 *   in the input file was '\n'
-				 * - this is the first byte of a chunk, sendbuf is empty and we
-				 *   sent a '\n' as last character to the network before
-				 * - this is the first byte in a chunk and the last byte written
-				 *   into sendbuf is '\n'
-				 */
-				if ((chunk && (msgdata[off + chunk - 1] == '\n')) ||
-						(!chunk && ((!idx && lastlf) ||
-						(idx && (sendbuf[idx - 1] == '\n'))))) {
-					chunk++;
-					memcpy(sendbuf + idx, msgdata + off, chunk);
-					off += chunk;
-					idx += chunk;
-					sendbuf[idx++] = '.';
-					chunk = 0;
-				} else {
-					chunk++;
-					llen++;
-				}
+			if (!llen && (msgdata[off + chunk] == '.')){
+				chunk++;
+				memcpy(sendbuf + idx, msgdata + off, chunk);
+				off += chunk;
+				idx += chunk;
+				sendbuf[idx++] = '.';
+				chunk = 0;
 			} else if ((msgdata[off + chunk] == '\t') || (msgdata[off + chunk] == ' ')) {
 				/* recode whitespace if a linebreak follows */
 				if ((off + chunk < msgsize) && (msgdata[off + chunk + 1] == '\r')) {
