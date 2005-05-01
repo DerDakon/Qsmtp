@@ -151,8 +151,8 @@ send_plain(const char *buf, const q_off_t len)
 static q_off_t
 qp_header(struct string *boundary)
 {
-	const char *recodeheader[] = {"X-Quoted-Printable-Recoding-By: ", VERSIONSTRING, " at ",
-					heloname.s, "\r\n", NULL};
+	const char *recodeheader[] = {"Content-Transfer-Encoding: quoted-printable (recoded by: ", VERSIONSTRING,
+					" at ", heloname.s, ")", NULL};
 	q_off_t off = 0, header = 0;
 	struct string cenc, ctype;
 
@@ -236,15 +236,12 @@ qp_header(struct string *boundary)
 			netnwrite("Content-Transfer-Encoding: 7bit\r\n", 33);
 		}*/
 	} else {
-#warning: FIXME: this adds an extra newline between header and body
 		if (cenc.len) {
 			send_plain(msgdata, cenc.s - msgdata);
-			netnwrite("Content-Transfer-Encoding: quoted-printable\r\n", 45);
 			net_writen(recodeheader);
 			send_plain(cenc.s + cenc.len, msgdata + header - cenc.s - cenc.len);
 		} else {
 			send_plain(msgdata, header);
-			netnwrite("Content-Transfer-Encoding: quoted-printable\r\n", 45);
 			net_writen(recodeheader);
 		}
 	}
