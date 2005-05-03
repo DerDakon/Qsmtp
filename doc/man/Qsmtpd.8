@@ -1,0 +1,246 @@
+.\"TOPICS "Topics:"
+.TH Qsmtpd 8 "May 2005" "Qsmtpd Version 0.7" "Qsmtpd"
+.SH NAME
+Qsmtpd \- receive mail via (E)SMTP
+.SH SYNOPSIS
+.B Qsmtpd
+[
+.I hostname
+.I checkprogram
+.I subprogram
+]
+.SH DESCRIPTION
+.B Qsmtpd
+behaves more or less like
+.B qmail-smtpd(8) ,
+, but adds better spam filtering capabilities, better RfC compliance, IPv6 support and more SMTP extensions
+out-of-the box.
+
+.B Qsmtpd
+receives mail messages via the Simple Mail Transfer Protocol (SMTP)
+and invokes
+.B qmail-queue
+to deposit them into the outgoing queue.
+.B Qsmtpd
+must be supplied several environment variables;
+see
+.BR tcp-environ(5) .
+
+.B Qsmtpd
+accepts messages sent as SMTP or ESMTP. The extensions ENHANCEDSTATUSCODES, PIPELINING, 8BITMIME and SIZE are always
+announced in ESMTP mode. If .IR hostname
+, .IR checkprogram
+ and .IR subprogram
+arguments are present and .IR checkprogram
+exists the AUTH extension is announced. If a TLS certificate is present the STARTTLS extension is also announced.
+
+.B Qsmtpd
+counts the number of Recevied:-lines in the mail header.
+It rejects any message with 100 or more
+.B Received
+header fields.
+
+.B Qsmtpd
+can accept LOGIN, PLAIN, and CRAM-MD5 AUTH types.  It invokes
+.IR checkprogram ,
+which reads on file descriptor 3 the username, a 0 byte, the password
+or challenge derived from
+.IR hostname ,
+another 0 byte, a CRAM-MD5 response (if applicable to the AUTH type),
+and a final 0 byte.
+.I checkprogram
+invokes
+.I subprogram
+upon successful authentication, which should in turn return 0 to
+.BR Qsmtpd .
+.B Qsmtpd
+will reject the authentication attempt if it receives a nonzero return
+value from
+.I checkprogram
+or
+.IR subprogram .
+.SH TRANSPARENCY
+.B Qsmtpd
+converts the SMTP newline convention into the UNIX newline convention
+by converting CR LF into LF.
+It returns a permanent error on bare CRs or LFs as well as lines with
+more than 1000 characters. Messages that contain non-ASCII characters are
+rejected if the client announced the message to be pure ASCII or if the
+connection is not in ESMTP mode.
+
+.SH RECIPIENTS
+.B Qsmtpd
+tries to figure out if local recipients or sender addresses exist. All addresses
+that fail this check will be rejected. These tests only work for virtual domains
+(e.g. created by vpopmail), local users will not be checked.
+
+.SH "CONTROL FILES"
+
+These files are used for configuring several aspects of .B Qsmtpd
+. Some of them may also be present in the recipient or recipient domain directory
+if the domain is controlled by vpopmail. In this case the more local file overrides
+the global files.
+
+.TP 5
+.I badmailfrom
+Unacceptable envelope sender addresses.
+.B Qsmtpd
+will reject every recipient address for a message
+if the envelope sender address is listed in
+.IR badmailfrom .
+A line in
+.I badmailfrom
+may be of the form
+.BR @\fIhost ,
+meaning every address at
+.IR host .
+If an entry does not contain a '@' the domain and all subdomains
+are rejected.
+
+.EX
+    example.com
+.EE
+
+would block emails from *@example.com as well as *@*.example.com.
+In contrast if the entry does not contain a '@' and begins with '.'
+only subdomains will be blocked:
+
+.EX
+    .example.org
+.EE
+
+would block emails from *@*.example.org, but *@example.org would pass.
+
+.TP 5
+.I clientca.pem
+A list of Certifying Authority (CA) certificates that are used to verify
+the client-presented certificates during a TLS-encrypted session.
+
+.TP 5
+.I databytes
+Maximum number of bytes allowed in a message,
+or 0 for no limit.
+Default: 0.
+If a message exceeds this limit,
+.B Qsmtpd
+returns a permanent error code to the client;
+in contrast, if
+the disk is full or
+.B Qsmtpd
+hits a resource limit,
+.B Qsmtpd
+returns a temporary error code.
+
+.I databytes
+counts bytes as stored on disk, not as transmitted through the network.
+It does not count the
+.B Qsmtpd
+Received line, the
+.B qmail-queue
+Received line, or the envelope.
+
+.TP 5
+.I localiphost
+Replacement host name for local IP addresses.
+Default:
+.IR me ,
+if that is supplied.
+.B Qsmtpd
+is responsible for recognizing dotted-decimal addresses for the
+current host.
+When it sees a recipient address of the form
+.IR box@[d.d.d.d] ,
+where
+.I d.d.d.d
+is a local IP address,
+it replaces
+.IR [d.d.d.d]
+with
+.IR localiphost .
+This is done before
+.IR rcpthosts .
+
+.TP 5
+.I rcpthosts
+Allowed RCPT domains.
+If
+.I rcpthosts
+is supplied,
+.B Qsmtpd
+will reject
+any envelope recipient address with a domain not listed in
+.IR rcpthosts .
+
+.I rcpthosts
+may include wildcards:
+
+.EX
+   example.org
+   .example.com
+.EE
+
+The only allowed envelope recipient address without @ sign is postmaster.
+
+.TP 5
+.I rsa512.pem
+If this 512 RSA key is provided,
+.B Qsmtpd
+will use it for TLS sessions instead of generaring one on-the-fly.
+
+.TP 5
+.I servercert.pem
+SSL certificate to be presented to clients in
+TLS-encrypted sessions. Certifying Authority
+(CA) and intermediate certificates can be added at the end of the file.
+
+.TP 5
+.I timeoutsmtpd
+Number of seconds
+.B Qsmtpd
+will wait for each new buffer of data from the remote SMTP client.
+Default: 1200.
+
+.TP 5
+.I tlsclients
+A list of email addresses. When relay rules would reject an incoming message,
+.B Qsmtpd
+can allow it if the client presents a certificate that can be verified against
+the CA list in
+.I clientca.pem
+and the certificate email address is in
+.IR tlsclients .
+
+.TP 5
+.I tlsserverciphers
+A set of OpenSSL cipher strings. Multiple ciphers contained in a
+string should be separated by a colon. If the environment variable
+.B TLSCIPHERS
+is set to such a string, it takes precedence.
+
+.TP 5
+.I filterconf
+Configures several binary or integer settings. See filterconf(5).
+
+.TP 5
+.I forcesslauth
+If file contents is a number and not 0, AUTH extension will only be announced
+if STARTTLS has been sent by client before and succeeded.
+
+.TP 5
+.I vpopbounce
+A .qmail-default file with the same contents as this file will be used as sign
+that this recipient does not exist. Normally vadddomain(5)
+
+.SH "SEE ALSO"
+tcp-env(1),
+filterconf(5),
+tcp-environ(5),
+qmail-control(5),
+qmail-inject(8),
+qmail-newmrh(8),
+qmail-queue(8),
+qmail-smtpd(8)
+.SH AUTHOR
+Rolf Eike Beer
+.SH WEBSITE
+http://opensource.sf-tec.de/Qsmtp/

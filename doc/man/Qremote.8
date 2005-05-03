@@ -1,0 +1,256 @@
+.\"TOPICS "Topics:"
+.TH Qremote 8 "May 2005" "Qremote Version 0.7" "Qremote"
+.SH NAME
+Qremote \- send mail via (E)SMTP
+.SH SYNOPSIS
+.B Qemote
+.I host
+.I sender
+.I recip
+[
+.I recip ...
+]
+.SH DESCRIPTION
+.B Qemote
+reads a mail message from its standard input and sends 
+the message to one or more recipients at a remote host.
+The standard input must be a descriptor of a file opened 
+for reading, Qremote will fstat(2) and mmap(2) it.
+
+The remote host is
+.BR Qremote 's
+first argument,
+.IR host .
+.B Qremote
+sends the message to
+.IR host ,
+or to a mail exchanger for
+.I host
+listed in the Domain Name System,
+via the Simple Mail Transfer Protocol (SMTP).
+.I host
+can be either a fully-qualified domain name:
+
+.EX
+     mail.example.com
+.EE
+
+or an IP address enclosed in brackets:
+
+.EX
+     [192.0.2.19]
+.EE
+
+or an IPv6 address enclosed in brackets:
+
+.EX
+     [::ffff:192.0.2.19]
+.EE
+
+The envelope recipient addresses are listed as
+.I recip
+arguments to
+.BR Qremote .
+The envelope sender address is listed as
+.I sender\fP.
+
+.SH TRANSPARENCY
+End-of-file in SMTP is encoded as dot CR LF.
+A dot at the beginning of a line is encoded as dot dot.
+It is impossible in SMTP to send a message that does not end with a newline
+.B Qremote
+converts single CR or LF into the SMTP newline convention by converting them
+to CRLF.
+
+If the message contains non-ascii characters the message is encoded 
+as quoted-printable if the remote server does not support the 8BITMIME
+extension defined in RfC 1652.
+It is the user's responsibility to avoid generating illegal messages.
+It is a protocol violation to send messages with long lines (more than 1000 characters).
+.B Qremote
+rejects such message in the middle of the transfer, it does not scan the message before transferring it.
+A message transfer interrupted this way will not be delivered by the receiving mail server but instead will
+be bounced to the sender.
+
+.B Qremote
+supports the CHUNKING extension defined in RfC 3030. If the remote server
+supports CHUNKING no message recoding is done at all.
+.SH "RESULTS"
+.B Qremote
+prints some number of 
+.I recipient reports\fP,
+followed by a
+.I message report\fR.
+Each report is terminated by a 0 byte.
+Each report begins with a single letter:
+.TP 5
+r
+Recipient report: acceptance.
+.TP 5
+h
+Recipient report: permanent rejection.
+.TP 5
+s
+Recipient report: temporary rejection.
+.TP 5
+K
+Message report: success.
+.I host
+has taken responsibility for delivering the message to each
+acceptable recipient.
+.TP 5
+Z
+Message report: temporary failure.
+.TP 5
+D
+Message report: permanent failure.
+.PP
+After this letter comes a human-readable description of
+what happened. No human readable description is printed
+after 'r' status report (qmail-rspawn would get confused
+otherwise).
+
+The recipient reports will always be printed in the same order as
+.BR Qremote 's
+.I recip
+arguments.
+Note that in failure cases there may be fewer
+recipient reports
+than
+.I recip
+arguments.
+
+.B Qremote
+always exits zero.
+.SH "CONTROL FILES"
+.TP 5
+.I clientcert.pem
+SSL certificate that is used to authenticate with the remote server
+during a TLS session.
+.TP 5
+.I helohost
+Current host name,
+for use solely in saying hello to the remote SMTP server.
+Default:
+.IR me ,
+if that is supplied;
+otherwise
+.B Qremote
+refuses to run.
+.TP 5
+.I smtproutes
+Artificial SMTP routes.
+Each route has the form
+.IR domain\fB:\fIrelay ,
+without any extra spaces.
+If
+.I domain
+matches
+.IR host ,
+.B Qremote
+will connect to
+.IR relay ,
+as if
+.I host
+had
+.I relay
+as its only MX.
+(It will also avoid doing any CNAME lookups on
+.IR recip .)
+.I host
+may include a colon and a port number to use instead of the
+normal SMTP port, 25:
+
+.EX
+   foo.example.com:mx2.example.com:24
+.EE
+
+Also username and password for SMTP authentication may be
+added behind port name. They are currently ignored, .B Qremote
+does not support authentication yet. In this case
+.I smtproutes
+should be set to user qmailr and mode 0400.
+
+.EX
+   bar.example.com:relay.example.com:24:myuser:secret
+.EE
+
+.I relay
+may be empty;
+this tells
+.B Qremote
+to look up MX records as usual.
+.I smtproutes
+may include wildcards:
+
+.EX
+   .example.org:
+   :baz.example.org:24
+.EE
+
+Here
+any address ending with
+.B .example.org
+(but not
+.B example.org
+itself)
+is routed by its MX records;
+any other address is artificially routed to
+.BR foo.example.org
+port 24.
+
+The
+.B qmail
+system does not protect you if you create an artificial
+mail loop between machines.
+However,
+you are always safe using
+.I smtproutes
+if you do not accept mail from the network.
+.TP 5
+.I timeoutconnect
+Number of seconds
+.B Qremote
+will wait for the remote SMTP server to accept a connection.
+Default: 60.
+The kernel normally imposes a 75-second upper limit.
+.TP 5
+.I timeoutremote
+Number of seconds
+.B Qremote
+will wait for each response from the remote SMTP server.
+Default: 1200.
+
+.TP 5
+.I tlsclientciphers
+A set of OpenSSL client cipher strings. Multiple ciphers
+contained in a string should be separated by a colon.
+
+.TP 5
+.I tlshosts/<FQDN>.pem
+.B Qremote
+requires authentication from servers for which this certificate exists
+.RB ( <FQDN>
+is the fully-qualified domain name of the server). One of the
+.I DNSname
+or the
+.I CommonName
+attributes have to match.
+
+.B WARNING:
+this option may cause mail to be delayed, bounced, doublebounced, or lost.
+
+.SH "SEE ALSO"
+fstat(2),
+mmap(2),
+addresses(5),
+envelopes(5),
+qmail-control(5),
+qmail-send(8),
+Qsmtpd(8),
+qmail-tcpok(8),
+qmail-tcpto(8)
+.SH AUTHOR
+Rolf Eike Beer
+.SH WEBSITE
+http://opensource.sf-tec.de/Qsmtp/
