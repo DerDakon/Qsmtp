@@ -58,7 +58,6 @@ queue_init(void)
 					return i;
 				return EDONE;
 		case 0:		if (!qqbin) {
-
 					qqbin = getenv("QMAILQUEUE");
 					if (!qqbin) {
 						qqbin = "bin/qmail-queue";
