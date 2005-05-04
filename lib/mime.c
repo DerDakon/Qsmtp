@@ -26,7 +26,7 @@ const char * __attribute__ ((pure))
 skipwhitespace(const char *line, const size_t len)
 {
 	int ws = 0;	/* found at least one whitespace */
-	size_t l = len;	/* -1: make sure to stop before end of data, assume it ends with CRLF */
+	size_t l = len;
 	const char *c = line;
 
 	/* skip whitespaces */
@@ -130,7 +130,35 @@ is_multipart(const struct string *line)
 		return -1;
 
 	if (!strncasecmp(ch, "multipart/", 10) || !strncasecmp(ch, "message/", 8)) {
-#warning FIXME: scan rest of line for syntax errors
+		size_t i, j;
+		const char *n;
+
+		if ((*(ch + 1) == 'u') || (*(ch + 1) == 'U')) {
+			i = 10;
+		} else {
+			i = 8;
+		}
+		j = mime_token(ch + i, line->len - (ch - line->s) - i);
+		if (!j || (ch[i + j] == '='))
+			return -1;
+		i += j;
+		if (ch[i] != ';') {
+			if (skipwhitespace(ch + i, line->len - (ch - line->s) - i) != line->s + line->len)
+				return -1;
+			return 1;
+		}
+		i++;
+		for (;;) {
+			ch += i;
+			n = skipwhitespace(ch + i, line->len - (ch - line->s) - i);
+			if (n == line->s + line->len)
+				return 1;
+			i = mime_param(ch, line->len - (ch - line->s));
+			if (!i)
+				return 0;
+			if (*(ch + i) == ';')
+				i++;
+		}
 		return 1;
 	}
 
@@ -167,4 +195,79 @@ getfieldlen(const char *msg, const size_t len)
 	} while (r && ((*cr == ' ') || (*cr == '\t')));
 
 	return ((*(cr - 1) == '\n') || (*(cr - 1) == '\r')) ? len - r : 0;
+}
+
+/**
+ * mime_param - get length of MIME header parameter
+ *
+ * @line: header line to scan
+ * @len: length of line
+ *
+ * returns: length of parameter, 0 on syntax error
+ */
+size_t __attribute__ ((pure))
+mime_param(const char *line, const size_t len)
+{
+	size_t i = mime_token(line, len);
+
+	if (!i || (i == len) || (line[i] != '='))
+		return 0;
+
+	i++;
+	if (line[i] == '"') {
+		for (; i < len; i++) {
+			if ((line[i] == '"') && (line[i - 1] != '\\')) {
+				break;
+			}
+		}
+		if (i == len) {
+			return i;
+		}
+		i++;
+		if ((line[i] != ';') && (line[i] != '(') && !WSPACE(line[i])) {
+			return 0;
+		}
+		return i;
+	} else {
+		size_t j;
+
+		if (WSPACE(line[i]))
+			return 0;
+		j = mime_token(line + i, len - i);
+
+		i += j;
+		if ((line[i] == ';') || WSPACE(line[i]))
+			return i;
+		return 0;
+	}
+}
+
+/**
+ * mime_param - get length of MIME header token as defined in RfC 2045, section 5.1
+ *
+ * @line: header line to scan
+ * @len: length of line
+ *
+ * returns: length of parameter, 0 on syntax error
+ */
+size_t __attribute__ ((pure))
+mime_token(const char *line, const size_t len)
+{
+	size_t i = 0;
+
+	for (; i < len; i++) {
+		if ((line[i] == ';') || (line[i] == '=')) {
+			return i;
+		}
+		if ((line[i] == ' ') || (line[i] == '\t') ||
+					(line[i] == '\r') || (line[i] == '\n')) {
+			const char *e = skipwhitespace(line + i, len - i);
+
+			return (e == line + len) ? i : 0;
+		}
+		if ((line[i] <= 32) || TSPECIAL(line[i])) {
+			return 0;
+		}
+	}
+	return i;
 }
