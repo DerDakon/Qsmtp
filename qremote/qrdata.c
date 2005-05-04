@@ -52,61 +52,58 @@ send_plain(const char *buf, const q_off_t len)
 	int lastlf = 1;		/* set if last byte sent was a LF */
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
 	q_off_t off = 0;
+	int llen = 0;		/* length of line */
 
 	while (off < len) {
 		while (idx + chunk < sizeof(sendbuf) - 5) {
 			if (off + chunk == len) {
 				break;
-			} else if (buf[off + chunk] == '.') {
-				/* no need to check for '\r' here, than we would have copied
-				 * data and set chunk to 0.
-				 *
-				 * There are three cases where we have to double the '.':
-				 * - we are in the middle of a chunk to copy and the last byte
-				 *   in the input file was '\n'
-				 * - this is the first byte of a chunk, sendbuf is empty and we
-				 *   sent a '\n' as last character to the network before
-				 * - this is the first byte in a chunk and the last byte written
-				 *   into sendbuf is '\n'
-				 */
-				if ((chunk && (buf[off + chunk - 1] == '\n')) ||
-							(!chunk && ((!idx && lastlf) ||
-								(idx && (sendbuf[idx - 1] == '\n'))))) {
-					chunk++;
-					memcpy(sendbuf + idx, buf + off, chunk);
-					off += chunk;
-					idx += chunk;
-					sendbuf[idx++] = '.';
-					chunk = 0;
-				} else {
-					chunk++;
-				}
-			} else if (buf[off + chunk] == '\r') {
-				int last = (off + chunk == len - 1);
-
-				chunk++;
-				if (!last && (buf[off + chunk] == '\n')) {
-					chunk++;
-				} else {
-					memcpy(sendbuf + idx, buf + off, chunk);
-					off += chunk;
-					idx += chunk;
-					sendbuf[idx++] = '\n';
-					chunk = 0;
-					if (last) {
-						break;
-					}
-				}
-			} else if (buf[off + chunk] == '\n') {
-				/* bare '\n' */
-				memcpy(sendbuf + idx, buf + off, chunk);
-				off += chunk + 1;
-				idx += chunk;
-				sendbuf[idx++] = '\r';
-				sendbuf[idx++] = '\n';
-				chunk = 0;
-			} else {
-				chunk++;
+			}
+			switch (buf[off + chunk]) {
+				case '\r':	{
+							int last = (off + chunk == len - 1);
+		
+							chunk++;
+							llen = 0;
+							if (!last && (buf[off + chunk] == '\n')) {
+								chunk++;
+							} else {
+								memcpy(sendbuf + idx, buf + off, chunk);
+								off += chunk;
+								idx += chunk;
+								sendbuf[idx++] = '\n';
+								chunk = 0;
+								if (last) {
+									break;
+								}
+							}
+						}
+				case '\n':	{
+							/* bare '\n' */
+							memcpy(sendbuf + idx, buf + off, chunk);
+							off += chunk + 1;
+							idx += chunk;
+							sendbuf[idx++] = '\r';
+							sendbuf[idx++] = '\n';
+							chunk = 0;
+							llen = 0;
+						}
+				case '.':	if (!llen) {
+							chunk++;
+							memcpy(sendbuf + idx, buf + off, chunk);
+							off += chunk;
+							idx += chunk;
+							sendbuf[idx++] = '.';
+							chunk = 0;
+							break;
+						}
+						/* fallthrough */
+				default:	chunk++;
+						llen++;
+			}
+			if (llen > 998) {
+				write(1, "D5.6.3 message has too long line\n", 34);
+				_exit(0);
 			}
 		}
 		if (chunk) {
