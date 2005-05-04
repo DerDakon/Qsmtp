@@ -7,8 +7,8 @@ I will add quoted-printable recoding one day and this can go away then.
 
 Index: qrdata.c
 ===================================================================
---- qrdata.c	(revision 580)
-+++ qrdata.c	(working copy)
+--- qremote/qrdata.c	(revision 580)
++++ qremote/qrdata.c	(working copy)
 @@ -408,8 +408,12 @@
  	
  	if (multipart) {
