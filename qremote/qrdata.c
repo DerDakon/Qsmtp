@@ -102,6 +102,7 @@ send_plain(const char *buf, const q_off_t len)
 						llen++;
 			}
 			if (llen > 998) {
+				/* if we knew this before we could have used quoted-printable... */
 				write(1, "D5.6.3 message has too long line\n", 34);
 				_exit(0);
 			}
@@ -245,10 +246,13 @@ qp_header(struct string *boundary)
 }
 
 /**
- * send_qp - send message body, do quoted-printable recoding where needed
+ * recode_qp - recode buffer to quoted-printable and send it to remote host
+ *
+ * @buf: data to send
+ * @len: length of buffer
  */
 static void
-send_qp(void)
+recode_qp(const char *buf, q_off_t len)
 {
 	unsigned int idx = 0;
 	char sendbuf[1280];
@@ -256,38 +260,29 @@ send_qp(void)
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
 	q_off_t off = 0;
 	int llen = 0;		/* length of this line, needed for qp line break */
-	struct string boundary;
 
-	off = qp_header(&boundary);
-	
-	if (multipart) {
-#warning FIXME: add proper quoted-printable recoding here
-		write(1, "Z4.6.3 message has 8 Bit characters but next server does not accept 8BITMIME", 77);
-		exit(0);
-	}
-/* encode body */
-	while (off < msgsize) {
+	while (off < len) {
 		while (idx + chunk < sizeof(sendbuf) - 11) {
-			if (off + chunk == msgsize) {
+			if (off + chunk == len) {
 				break;
 			}
 
-			if (msgdata[off + chunk] == '\r') {
+			if (buf[off + chunk] == '\r') {
 				chunk++;
 				llen = 0;
-				if (msgdata[off + chunk] == '\n') {
+				if (buf[off + chunk] == '\n') {
 					chunk++;
 				} else {
 					chunk++;
-					memcpy(sendbuf + idx, msgdata + off, chunk);
+					memcpy(sendbuf + idx, buf + off, chunk);
 					off += chunk;
 					idx += chunk;
 					sendbuf[idx++] = '\n';
 					chunk = 0;
 				}
 				continue;
-			} else if (msgdata[off + chunk] == '\n') {
-				memcpy(sendbuf + idx, msgdata + off, chunk);
+			} else if (buf[off + chunk] == '\n') {
+				memcpy(sendbuf + idx, buf + off, chunk);
 				off += chunk + 1;
 				idx += chunk;
 				chunk = 0;
@@ -300,7 +295,7 @@ send_qp(void)
 			/* add soft line break to make sure encoded line length < 80 */
 			if (llen > 72) {
 				chunk++;
-				memcpy(sendbuf + idx, msgdata + off, chunk);
+				memcpy(sendbuf + idx, buf + off, chunk);
 				off += chunk;
 				idx += chunk;
 				chunk = 0;
@@ -320,21 +315,22 @@ send_qp(void)
 				llen = 0;
 			}
 
-			if (!llen && (msgdata[off + chunk] == '.')){
+			if (!llen && (buf[off + chunk] == '.')){
 				chunk++;
-				memcpy(sendbuf + idx, msgdata + off, chunk);
+				memcpy(sendbuf + idx, buf + off, chunk);
 				off += chunk;
 				idx += chunk;
 				sendbuf[idx++] = '.';
 				chunk = 0;
-			} else if ((msgdata[off + chunk] == '\t') || (msgdata[off + chunk] == ' ')) {
+			} else if ((buf[off + chunk] == '\t') || (buf[off + chunk] == ' ')) {
 				/* recode whitespace if a linebreak follows */
-				if ((off + chunk < msgsize) && ((msgdata[off + chunk + 1] == '\r') || (msgdata[off + chunk + 1] == '\n'))) {
-					memcpy(sendbuf + idx, msgdata + off, chunk);
+				if ((off + chunk < len) &&
+						((buf[off + chunk + 1] == '\r') || (buf[off + chunk + 1] == '\n'))) {
+					memcpy(sendbuf + idx, buf + off, chunk);
 					off += chunk;
 					idx += chunk;
 					sendbuf[idx++] = '=';
-					if (msgdata[off] == '\t') {
+					if (buf[off] == '\t') {
 						sendbuf[idx++] = '0';
 						sendbuf[idx++] = '9';
 					} else {
@@ -343,9 +339,9 @@ send_qp(void)
 					}
 					sendbuf[idx++] = '\r';
 					sendbuf[idx++] = '\n';
-					if (msgdata[++off] == '\r')
+					if (buf[++off] == '\r')
 						off++;
-					if ((off < msgsize) && (msgdata[off] == '\n'))
+					if ((off < len) && (buf[off] == '\n'))
 						off++;
 					llen = 0;
 					chunk = 0;
@@ -353,33 +349,33 @@ send_qp(void)
 					chunk++;
 					llen++;
 				}
-			} else if ((msgdata[off + chunk] < 32) || (msgdata[off + chunk] == '=') ||
-							(msgdata[off + chunk] > 126)) {
-				const char hexchars[] = "0123456789ABCDEF";
+			} else if ((buf[off + chunk] < 32) || (buf[off + chunk] == '=') ||
+							 (buf[off + chunk] > 126)) {
+								 const char hexchars[] = "0123456789ABCDEF";
 
-				/* recode non-printable and non-ascii characters */
-				memcpy(sendbuf + idx, msgdata + off, chunk);
-				off += chunk;
-				idx += chunk;
-				chunk = 0;
-				sendbuf[idx++] = '=';
-				sendbuf[idx++] = hexchars[(msgdata[off] >> 4) & 0x0f];
-				sendbuf[idx++] = hexchars[msgdata[off] & 0xf];
-				llen +=3;
-				off++;
-			} else {
-				llen++;
-				chunk++;
-			}
+								 /* recode non-printable and non-ascii characters */
+								 memcpy(sendbuf + idx, buf + off, chunk);
+								 off += chunk;
+								 idx += chunk;
+								 chunk = 0;
+								 sendbuf[idx++] = '=';
+								 sendbuf[idx++] = hexchars[(buf[off] >> 4) & 0x0f];
+								 sendbuf[idx++] = hexchars[buf[off] & 0xf];
+								 llen +=3;
+								 off++;
+							 } else {
+								 llen++;
+								 chunk++;
+							 }
 		}
 		if (chunk) {
-			memcpy(sendbuf + idx, msgdata + off, chunk);
+			memcpy(sendbuf + idx, buf + off, chunk);
 			off += chunk;
 			idx += chunk;
 			chunk = 0;
 		}
 
-		if (msgsize != off) {
+		if (len != off) {
 			netnwrite(sendbuf, idx);
 			lastlf = (sendbuf[idx - 1] == '\n');
 			idx = 0;
@@ -399,10 +395,26 @@ send_qp(void)
 			idx = 2;
 		}
 	}
-	sendbuf[idx++] = '.';
-	sendbuf[idx++] = '\r';
-	sendbuf[idx++] = '\n';
-	netnwrite(sendbuf, idx);
+}
+
+/**
+ * send_qp - send message body, do quoted-printable recoding where needed
+ */
+static void
+send_qp(void)
+{
+	q_off_t off = 0;
+	struct string boundary;
+
+	off = qp_header(&boundary);
+	
+	if (multipart) {
+#warning FIXME: add proper quoted-printable recoding here
+		write(1, "Z4.6.3 message has 8 Bit characters but next server does not accept 8BITMIME", 77);
+		exit(0);
+	} else {
+		recode_qp(msgdata + off, msgsize - off);
+	}
 }
 
 void
@@ -430,8 +442,8 @@ send_data(void)
 	{
 #endif
 		send_plain(msgdata, msgsize);
-		netnwrite(".\r\n", 3);
 	}
+	netnwrite(".\r\n", 3);
 
 #ifdef DEBUG_IO
 	in_data = 0;
