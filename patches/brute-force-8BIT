@@ -5,11 +5,11 @@ noticed them) but it violates the RfC. You might need this patch if some of
 your clients send mails with "Content-Transfer-Encoding: 8bit". Hopefully
 I will add quoted-printable recoding one day and this can go away then.
 
-Index: qremote/qrdata.c
+Index: qrdata.c
 ===================================================================
---- qremote/qrdata.c	(revision 573)
-+++ qremote/qrdata.c	(working copy)
-@@ -265,8 +265,12 @@
+--- qrdata.c	(revision 580)
++++ qrdata.c	(working copy)
+@@ -408,8 +408,12 @@
  	
  	if (multipart) {
  #warning FIXME: add proper quoted-printable recoding here
@@ -19,6 +19,6 @@ Index: qremote/qrdata.c
 +#else
 +		send_plain(msgdata + off, msgsize - off);
 +#endif
+ 	} else {
+ 		recode_qp(msgdata + off, msgsize - off);
  	}
- /* encode body */
- 	while (off < msgsize) {
