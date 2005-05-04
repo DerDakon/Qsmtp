@@ -145,12 +145,12 @@ send_plain(const char *buf, const q_off_t len)
  * Warning: boundary will not be 0-terminated! Use boundary->len!
  */
 static q_off_t
-qp_header(struct string *boundary)
+qp_header(string *boundary)
 {
 	const char *recodeheader[] = {"Content-Transfer-Encoding: quoted-printable (recoded by: ", VERSIONSTRING,
 					" at ", heloname.s, ")", NULL};
 	q_off_t off = 0, header = 0;
-	struct string cenc, ctype;
+	cstring cenc, ctype;
 
 	STREMPTY(cenc);
 	STREMPTY(ctype);
@@ -402,7 +402,7 @@ static void
 send_qp(void)
 {
 	q_off_t off = 0;
-	struct string boundary;
+	string boundary;
 
 	off = qp_header(&boundary);
 	

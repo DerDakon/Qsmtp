@@ -9,6 +9,11 @@ typedef struct string {
 	size_t len;
 } string;
 
+typedef struct cstring {
+	const char *s;
+	size_t len;
+} cstring;
+
 #define STREMPTY(x) {(x).s = NULL; (x).len = 0; }
 
 static inline int

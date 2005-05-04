@@ -116,7 +116,7 @@ skipwhitespace(const char *line, const size_t len)
  * returns: 1 if line contains multipart/(*) or message/(*) declaration, 0 if other type, -1 on syntax error
  */
 int __attribute__ ((pure))
-is_multipart(const struct string *line)
+is_multipart(const cstring *line)
 {
 	const char *ch;
 
