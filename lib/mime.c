@@ -130,6 +130,7 @@ is_multipart(const struct string *line)
 		return -1;
 
 	if (!strncasecmp(ch, "multipart/", 10) || !strncasecmp(ch, "message/", 8)) {
+#if 0
 		size_t i, j;
 		const char *n;
 
@@ -159,6 +160,7 @@ is_multipart(const struct string *line)
 			if (*(ch + i) == ';')
 				i++;
 		}
+#endif
 		return 1;
 	}
 
