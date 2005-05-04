@@ -61,9 +61,8 @@ send_plain(const char *buf, const q_off_t len)
 			}
 			switch (buf[off + chunk]) {
 				case '\r':	{
-							int last = (off + chunk == len - 1);
+							int last = (off + ++chunk == len);
 		
-							chunk++;
 							llen = 0;
 							if (!last && (buf[off + chunk] == '\n')) {
 								chunk++;
@@ -73,10 +72,8 @@ send_plain(const char *buf, const q_off_t len)
 								idx += chunk;
 								sendbuf[idx++] = '\n';
 								chunk = 0;
-								if (last) {
-									break;
-								}
 							}
+							break;
 						}
 				case '\n':	{
 							/* bare '\n' */
@@ -87,6 +84,7 @@ send_plain(const char *buf, const q_off_t len)
 							sendbuf[idx++] = '\n';
 							chunk = 0;
 							llen = 0;
+							break;
 						}
 				case '.':	if (!llen) {
 							chunk++;
