@@ -434,6 +434,7 @@ send_data(void)
 
 #ifdef USE_QP_RECODE
 	if (!(smtpext & 0x008) && !ascii) {
+		successmsg[2] = "(qp recoded)";
 		send_qp();
 	} else {
 #else
