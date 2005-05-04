@@ -21,7 +21,7 @@
 #include "qrdata.h"
 
 int socketd;
-struct string heloname;
+string heloname;
 unsigned int smtpext;
 char *rhost;
 size_t rhostlen;

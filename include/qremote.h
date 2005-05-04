@@ -14,6 +14,6 @@ extern char *rhost;
 extern size_t rhostlen;
 extern char *partner_fqdn;
 extern unsigned int smtpext;
-extern struct string heloname;
+extern string heloname;
 
 #endif
