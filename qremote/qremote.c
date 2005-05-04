@@ -145,6 +145,7 @@ getrhost(const struct ips *mx)
 		rhostlen = strlen(rhost);
 		rhost[rhostlen++] = ']';
 		rhost[rhostlen] = '\0';
+		partner_fqdn = NULL;
 	} else {
 		rhostlen = strlen(partner_fqdn);
 		rhost = malloc(rhostlen + INET6_ADDRSTRLEN + 3);

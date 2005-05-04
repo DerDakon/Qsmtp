@@ -37,6 +37,9 @@ tls_quitmsg(const char *s1, const char *s2)
 static int
 match_partner(const char *s, size_t len)
 {
+	if (!partner_fqdn)
+		return 0;
+
 	if (!strncasecmp(partner_fqdn, s, len) && !partner_fqdn[len])
 		return 1;
 	/* we also match if the name is *.domainname */
@@ -59,7 +62,7 @@ tls_init(void)
 	SSL_CTX *ctx;
 	char *saciphbuf, **saciphers, *servercert = NULL;
 	const char *ciphers;
-	size_t fqlen;
+	size_t fqlen = 0;
 
 	if (partner_fqdn) {
 		char *tmp;
