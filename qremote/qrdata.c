@@ -465,7 +465,6 @@ send_data(void)
 	in_data = 0;
 #endif
 	checkreply("KZD", successmsg, 1);
-	return;
 }
 
 void
