@@ -235,7 +235,7 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 	/* We now know how long the header is. Check it if there are unencoded 8bit characters */
 	off = header;
 
-	if ((*multipart = is_multipart(&ctype, boundary)) > 1) {
+	if ((*multipart = is_multipart(&ctype, boundary)) > 0) {
 #warning FIXME: change Content-Transfer-Encoding to 7bit/quoted-printable in multipart messages
 /*		if (cenc.len) {
 			netnwrite(buf, cenc.s - buf);
