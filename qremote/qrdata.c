@@ -13,6 +13,7 @@ const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "./Remote_h
 int ascii;			/* if message is plain ASCII or not */
 const char *msgdata;		/* message will be mmaped here */
 q_off_t msgsize;		/* size of the mmaped area */
+static int lastlf = 1;		/* set if last byte sent was a LF */
 
 static int multipart;		/* set to one if this is a multipart message */
 
@@ -74,15 +75,13 @@ need_recode(const char *buf, q_off_t len)
  * @buf: buffer to send
  * @len: length of data in buffer
  *
- * send_plain() will make sure that there is always CRLF at the end of the
- * transmitted data. ".CRLF" is not send by send_plain()
+ * lastlf will be set if last 2 bytes sent were CRLF
  */
 static void
 send_plain(const char *buf, const q_off_t len)
 {
 	char sendbuf[1205];
 	unsigned int idx = 0;
-	int lastlf = 1;		/* set if last byte sent was a LF */
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
 	q_off_t off = 0;
 	int llen = 0;		/* length of line */
@@ -151,20 +150,7 @@ send_plain(const char *buf, const q_off_t len)
 			idx = 0;
 		}
 	}
-	if (idx) {
-		if (sendbuf[idx - 1] != '\n') {
-			if (sendbuf[idx - 1] != '\r') {
-				sendbuf[idx++] = '\r';
-			}
-			sendbuf[idx++] = '\n';
-		}
-	} else {
-		if (!lastlf) {
-			sendbuf[0] = '\r';
-			sendbuf[1] = '\n';
-			idx = 2;
-		}
-	}
+	lastlf = (sendbuf[idx - 1] == '\n');
 	netnwrite(sendbuf, idx);
 }
 
@@ -285,7 +271,6 @@ recode_qp(const char *buf, q_off_t len)
 {
 	unsigned int idx = 0;
 	char sendbuf[1280];
-	int lastlf = 1;		/* set if last byte sent was a LF */
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
 	q_off_t off = 0;
 	int llen = 0;		/* length of this line, needed for qp line break */
@@ -410,20 +395,8 @@ recode_qp(const char *buf, q_off_t len)
 			idx = 0;
 		}
 	}
-	if (idx) {
-		if (sendbuf[idx - 1] != '\n') {
-			if (sendbuf[idx - 1] != '\r') {
-				sendbuf[idx++] = '\r';
-			}
-			sendbuf[idx++] = '\n';
-		}
-	} else {
-		if (!lastlf) {
-			sendbuf[0] = '\r';
-			sendbuf[1] = '\n';
-			idx = 2;
-		}
-	}
+	lastlf = (sendbuf[idx - 1] == '\n');
+	netnwrite(sendbuf, idx);
 }
 
 /**
@@ -473,7 +446,11 @@ send_data(void)
 #endif
 		send_plain(msgdata, msgsize);
 	}
-	netnwrite(".\r\n", 3);
+	if (lastlf) {
+		netnwrite(".\r\n", 3);
+	} else {
+		netnwrite("\r\n.\r\n", 5);
+	}
 
 #ifdef DEBUG_IO
 	in_data = 0;
