@@ -419,7 +419,7 @@ send_qp(void)
 
 	off = qp_header(msgdata, msgsize, &boundary, &multipart);
 	
-	if (multipart > 1) {
+	if (multipart > 0) {
 #warning FIXME: add proper quoted-printable recoding here
 		write(1, "Z4.6.3 message has 8 Bit characters but next server does not accept 8BITMIME", 77);
 		exit(0);
