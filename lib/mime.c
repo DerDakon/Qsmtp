@@ -209,7 +209,7 @@ mime_param(const char *line, const size_t len)
 
 	i++;
 	if (line[i] == '"') {
-		for (; i < len; i++) {
+		for (i++; i < len; i++) {
 			if ((line[i] == '"') && (line[i - 1] != '\\')) {
 				break;
 			}
