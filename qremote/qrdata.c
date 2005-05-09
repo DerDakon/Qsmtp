@@ -365,22 +365,22 @@ recode_qp(const char *buf, q_off_t len)
 				}
 			} else if ((buf[off + chunk] < 32) || (buf[off + chunk] == '=') ||
 							 (buf[off + chunk] > 126)) {
-								 const char hexchars[] = "0123456789ABCDEF";
+				const char hexchars[] = "0123456789ABCDEF";
 
-								 /* recode non-printable and non-ascii characters */
-								 memcpy(sendbuf + idx, buf + off, chunk);
-								 off += chunk;
-								 idx += chunk;
-								 chunk = 0;
-								 sendbuf[idx++] = '=';
-								 sendbuf[idx++] = hexchars[(buf[off] >> 4) & 0x0f];
-								 sendbuf[idx++] = hexchars[buf[off] & 0xf];
-								 llen +=3;
-								 off++;
-							 } else {
-								 llen++;
-								 chunk++;
-							 }
+				/* recode non-printable and non-ascii characters */
+				memcpy(sendbuf + idx, buf + off, chunk);
+				off += chunk;
+				idx += chunk;
+				chunk = 0;
+				sendbuf[idx++] = '=';
+				sendbuf[idx++] = hexchars[(buf[off] >> 4) & 0x0f];
+				sendbuf[idx++] = hexchars[buf[off] & 0xf];
+				llen +=3;
+				off++;
+			} else {
+				llen++;
+				chunk++;
+			}
 		}
 		if (chunk) {
 			memcpy(sendbuf + idx, buf + off, chunk);
