@@ -248,15 +248,16 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 #warning FIXME: fold long header lines if (need_redode() & 3)
 
 	if ((*multipart = is_multipart(&ctype, boundary)) > 0) {
-#warning FIXME: change Content-Transfer-Encoding to 7bit/quoted-printable in multipart messages
-/*		if (cenc.len) {
-			netnwrite(buf, cenc.s - buf);
-			netnwrite("Content-Transfer-Encoding: 7bit\r\n", 33);
-			netnwrite(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
+		/* content is implicitely 7bit if no declaration is present */
+		if (cenc.len) {
+			send_plain(buf, cenc.s - buf);
+			send_plain(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
 		} else {
-			netnwrite(buf, header);
-			netnwrite("Content-Transfer-Encoding: 7bit\r\n", 33);
-		}*/
+			send_plain(buf, header);
+		}
+	} else if (*multipart < 0) {
+		write(1, "D5.6.3 syntax error in Content-Type message header\n", 52);
+		exit(0);
 	} else {
 		if (cenc.len) {
 			send_plain(buf, cenc.s - buf);
