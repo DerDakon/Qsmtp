@@ -15,8 +15,6 @@ const char *msgdata;		/* message will be mmaped here */
 q_off_t msgsize;		/* size of the mmaped area */
 static int lastlf = 1;		/* set if last byte sent was a LF */
 
-static int multipart;		/* set to one if this is a multipart message */
-
 static void __attribute__ ((noreturn))
 die_8bitheader(void)
 {
@@ -160,13 +158,14 @@ send_plain(const char *buf, const q_off_t len)
  * @buf: buffer to scan
  * @len: length of buffer
  * @boundary: if this is a multipart message a pointer to the boundary-string is stored here
+ * @multipart: will be set to 1 if this is a multipart message
  *
  * returns: offset of end of header
  *
  * Warning: boundary will not be 0-terminated! Use boundary->len!
  */
 static q_off_t
-qp_header(const char *buf, const q_off_t len, string *boundary)
+qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 {
 	const char *recodeheader[] = {"Content-Transfer-Encoding: quoted-printable (recoded by: ", VERSIONSTRING,
 					" at ", heloname.s, ")", NULL};
@@ -245,7 +244,7 @@ qp_header(const char *buf, const q_off_t len, string *boundary)
 	if (need_recode(buf, header) & 1)
 		die_8bitheader();
 
-	if ( (multipart = is_multipart(&ctype, boundary)) ) {
+	if ((*multipart = is_multipart(&ctype, boundary)) > 1) {
 #warning FIXME: change Content-Transfer-Encoding to 7bit/quoted-printable in multipart messages
 /*		if (cenc.len) {
 			netnwrite(buf, cenc.s - buf);
@@ -414,11 +413,13 @@ static void
 send_qp(void)
 {
 	q_off_t off = 0;
-	string boundary;
+	cstring boundary;
+	int multipart;		/* set to one if this is a multipart message */
 
-	off = qp_header(msgdata, msgsize, &boundary);
+
+	off = qp_header(msgdata, msgsize, &boundary, &multipart);
 	
-	if (multipart) {
+	if (multipart > 1) {
 #warning FIXME: add proper quoted-printable recoding here
 		write(1, "Z4.6.3 message has 8 Bit characters but next server does not accept 8BITMIME", 77);
 		exit(0);
