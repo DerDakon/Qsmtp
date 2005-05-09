@@ -24,15 +24,49 @@ die_8bitheader(void)
 	exit(0);
 }
 
+/**
+ * need_recode - check if buffer has to be recoded for SMTP transfer
+ *
+ * @buf: buffer to scan
+ * @len: length of buffer
+ *
+ * returns: logical or of: 1 if buffer has 8bit characters, 2 if buffer contains line longer 998 chars
+ */
 int
-scan_8bit(const char *buf, q_off_t len)
+		need_recode(const char *buf, q_off_t len)
 {
-	while (len-- > 0) {
-		if (buf[len] <= 0) {
-			return 1;
+	int res = 0;
+	int llen = 0;
+
+	/* if buffer is too short we don't need to check for long lines */
+	if (len >= 998) {
+		while (len-- > 0) {
+			if (buf[len] <= 0) {
+				res |= 1;
+				llen++;
+			} else if ((buf[len] == '\r') || (buf[len] == '\n')) {
+				llen = 0;
+			} else {
+				llen++;
+			}
+			if (llen > 998) {
+				if (res) {
+					return 3;
+				} else {
+					res |= 2;
+					break;
+				}
+			}
 		}
 	}
-	return 0;
+	/* only scan for 8bit characters now */
+	while (len-- > 0) {
+		if (buf[len] <= 0) {
+			res |= 1;
+			break;
+		}
+	}
+	return res;
 }
 
 /**
@@ -215,7 +249,7 @@ qp_header(string *boundary)
 	/* We now know how long the header is. Check it if there are unencoded 8bit characters */
 	off = header;
 
-	if (scan_8bit(msgdata, header))
+	if (need_recode(msgdata, header) & 1)
 		die_8bitheader();
 
 	if ( (multipart = is_multipart(&ctype, boundary)) ) {
@@ -431,7 +465,7 @@ send_data(void)
 #endif
 
 #ifdef USE_QP_RECODE
-	if (!(smtpext & 0x008) && !ascii) {
+	if (!(smtpext & 0x008) && ascii) {
 		successmsg[2] = "(qp recoded) ";
 		send_qp();
 	} else {

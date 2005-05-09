@@ -450,7 +450,7 @@ main(int argc, char *argv[])
 	}
 
 /* check if message is plain ASCII or not */
-	ascii = 1 - scan_8bit(msgdata, msgsize);
+	ascii = need_recode(msgdata, msgsize);
 
 	netmsg[0] = "MAIL FROM:<";
 	netmsg[1] = argv[2];
@@ -469,7 +469,7 @@ main(int argc, char *argv[])
 
 		idx = (smtpext & 0x01) ? 5 : 3;
 
-		netmsg[idx++] = ascii ? " BODY=7BIT" : " BODY=8BITMIME";
+		netmsg[idx++] = (ascii & 1) ? " BODY=7BIT" : " BODY=8BITMIME";
 		netmsg[idx] = NULL;
 	}
 	net_writen(netmsg);
