@@ -311,12 +311,12 @@ netnwrite(const char *s, const size_t l)
 }
 
 /**
- * net_writen - write one line to the network
+ * net_writen - write one line to the network, fold if needed
  *
  * returns: 0 on success
  *          -1 on error (errno is set)
  *
- *          does not return on timeout, programm will be cancelled
+ * does not return on timeout, programm will be cancelled
  */
 int
 net_writen(const char *const *s)
@@ -327,27 +327,29 @@ net_writen(const char *const *s)
 	 *   The maximum total length of a reply line including the reply code
 	 *   and the <CRLF> is 512 characters.  More information may be
 	 *   conveyed through multiple-line replies. */
-	char msg[511];
+	char msg[512];
 
 	for (i = 0; s[i]; i++) {
 		size_t l = strlen(s[i]);
 
 		/* silently ignore the case if s[i] itself is too big */
-		if (len + l > sizeof(msg) - 1) {
+		if (len + l > sizeof(msg) - 2) {
 			char c = msg[3];
 
 			msg[3] = '-';
-			memcpy(msg + len, "\r\n\0", 3);
+			msg[len++] = '\r';
+			msg[len++] = '\n';
 			/* ignore if this fails: if the last on succeeds this must be enough for the client */
-			(void) net_write(msg);
+			(void) netnwrite(msg, len + 2);
 			msg[3] = c;
 			len = 4;
 		}
 		memcpy(msg + len, s[i], l);
 		len += l;
 	}
-	memcpy(msg + len, "\r\n\0", 3);
-	return netwrite(msg);
+	msg[len++] = '\r';
+	msg[len++] = '\n';
+	return netnwrite(msg, len);
 }
 
 /**
