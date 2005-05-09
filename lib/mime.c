@@ -297,9 +297,9 @@ find_boundary(const char *buf, const q_off_t len, const cstring *boundary)
 					return pos;
 				if (pos + 1 < len) {
 					if ((buf[pos] == '-') && (buf[pos + 1] == '-') &&
-										((pos + 2 == len) || (WSPACE(buf[pos + 2])))) {
+							((pos + 2 == len) || (WSPACE(buf[pos + 2])))) {
 						return pos;
-										}
+					}
 				}
 			}
 		}
