@@ -140,6 +140,21 @@ send_plain(const char *buf, const q_off_t len)
 	netnwrite(sendbuf, idx);
 }
 
+static void
+recodeheader(void)
+{
+	char buf[64 + heloname.len + strlen(VERSIONSTRING)];
+	
+	memcpy(buf, "Content-Transfer-Encoding: quoted-printable (recoded by: ", 57);
+	memcpy(buf + 57, VERSIONSTRING, strlen(VERSIONSTRING));
+	memcpy(buf + 57 + strlen(VERSIONSTRING), " at ", 4);
+	memcpy(buf + 61 + strlen(VERSIONSTRING), heloname.s, heloname.len);
+	buf[sizeof(buf) - 3] = ')';
+	buf[sizeof(buf) - 2] = '\r';
+	buf[sizeof(buf) - 1] = '\n';
+	netnwrite(buf, sizeof(buf));
+}
+
 /**
  * qp_header - scan and recode header: fix Content-Transfer-Encoding, check for boundary
  *
@@ -155,8 +170,6 @@ send_plain(const char *buf, const q_off_t len)
 static q_off_t
 qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 {
-	const char *recodeheader[] = {"Content-Transfer-Encoding: quoted-printable (recoded by: ", VERSIONSTRING,
-					" at ", heloname.s, ")", NULL};
 	q_off_t off = 0, header = 0;
 	cstring cenc, ctype;
 
@@ -243,11 +256,11 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 	} else {
 		if (cenc.len) {
 			send_plain(buf, cenc.s - buf);
-			net_writen(recodeheader);
+			recodeheader();
 			send_plain(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
 		} else {
 			send_plain(buf, header);
-			net_writen(recodeheader);
+			recodeheader();
 		}
 	}
 	return header;
