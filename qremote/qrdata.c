@@ -218,9 +218,7 @@ qp_header(string *boundary)
 	if (scan_8bit(msgdata, header))
 		die_8bitheader();
 
-	if ( (multipart = is_multipart(&ctype)) ) {
-/*		boundary->s = strncasestr("boundary=", ctype.s, ctype.len);
-#warning FIXME: get boundary->len here*/
+	if ( (multipart = is_multipart(&ctype, boundary)) ) {
 #warning FIXME: change Content-Transfer-Encoding to 7bit/quoted-printable in multipart messages
 /*		if (cenc.len) {
 			netnwrite(msgdata, cenc.s - msgdata);

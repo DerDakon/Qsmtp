@@ -1,5 +1,6 @@
 #include <strings.h>
 #include <string.h>
+#include <unistd.h>
 #include "mime.h"
 #include "sstring.h"
 #include "qrdata.h"
@@ -108,7 +109,7 @@ skipwhitespace(const char *line, const size_t len)
  * returns: 1 if line contains multipart/(*) or message/(*) declaration, 0 if other type, -1 on syntax error
  */
 int __attribute__ ((pure))
-is_multipart(const struct string *line)
+is_multipart(const cstring *line, cstring *boundary)
 {
 	const char *ch;
 
@@ -121,10 +122,10 @@ is_multipart(const struct string *line)
 	if (ch == line->s + line->len)
 		return -1;
 
+	STREMPTY(*boundary);
+
 	if (!strncasecmp(ch, "multipart/", 10) || !strncasecmp(ch, "message/", 8)) {
-#if 0
 		size_t i, j;
-		const char *n;
 
 		if ((*(ch + 1) == 'u') || (*(ch + 1) == 'U')) {
 			i = 10;
@@ -132,28 +133,72 @@ is_multipart(const struct string *line)
 			i = 8;
 		}
 		j = mime_token(ch + i, line->len - (ch - line->s) - i);
-		if (!j || (ch[i + j] == '='))
-			return -1;
 		i += j;
+		if (!j || (ch[i] == '='))
+			return -1;
 		if (ch[i] != ';') {
-			if (skipwhitespace(ch + i, line->len - (ch - line->s) - i) != line->s + line->len)
-				return -1;
-			return 1;
+			return -1;
 		}
 		i++;
 		for (;;) {
 			ch += i;
-			n = skipwhitespace(ch + i, line->len - (ch - line->s) - i);
-			if (n == line->s + line->len)
-				return 1;
+			ch = skipwhitespace(ch, line->len - (ch - line->s));
+			/* multipart/(*) or message/(*) without boundary is invalid */
+			if (ch == line->s + line->len)
+				return -1;
 			i = mime_param(ch, line->len - (ch - line->s));
+			if (i >= 10) {
+				if (!strncasecmp("boundary=", ch, 9)) {
+					boundary->s = ch + 9;
+					if (*(ch + 9) == '"') {
+						const char *e;
+
+						(boundary->s)++;
+						e = memchr(ch + 10, '"', line->len - 10 - (ch - line->s));
+						boundary->len = e - ch - 10;
+						if (!e) {
+							write(1, "D5.6.3 boundary definition is unterminated quoted string\n", 58);
+							exit(0);
+						} else if (boundary->len > 68) {
+							write(1, "D5.6.3 boundary definition is too long\n", 40);
+							exit(0);
+						}
+						j = boundary->len;
+					} else {
+						j = 0;
+						while (!WSPACE(boundary->s[j]) && (boundary->s[j] != ';') &&
+										(boundary->s + j < line->s + line ->len)) {
+							j++;
+						}
+						boundary->len = j;
+					}
+					if (!boundary->len) {
+						write(1, "D5.6.3 boundary definition is empty\n", 37);
+						exit(0);
+					}
+					while (j > 0) {
+						j--;
+						if (!(((boundary->s[j] >= 'a') && (boundary->s[j] <= 'z')) ||
+									((boundary->s[j] >= 'A') && (boundary->s[j] <= 'Z')) ||
+									((boundary->s[j] >= '+') && (boundary->s[j] <= ':')) ||
+									((boundary->s[j] >= '\'') || (boundary->s[j] == ')')) ||
+									((boundary->s[j] >= '+') || (boundary->s[j] == ')')) ||
+									(boundary->s[j] == '_') || (boundary->s[j] == '=') ||
+									(boundary->s[j] == '_'))) {
+							write(1, "D5.6.3 boundary definition contains invalid character\n", 55);
+							exit(0);
+						}
+					}
+					/* we have a valid boundary definition, that's all what we're interested in */
+					return 1;
+				}
+			}
 			if (!i)
-				return 0;
+				return -1;
 			if (*(ch + i) == ';')
 				i++;
 		}
-#endif
-		return 1;
+		return -1;
 	}
 
 	return 0;
