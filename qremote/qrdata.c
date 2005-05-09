@@ -15,13 +15,6 @@ const char *msgdata;		/* message will be mmaped here */
 q_off_t msgsize;		/* size of the mmaped area */
 static int lastlf = 1;		/* set if last byte sent was a LF */
 
-static void __attribute__ ((noreturn))
-die_8bitheader(void)
-{
-	write(1, "D5.6.3 message contains unencoded 8bit data in message header\n", 63);
-	exit(0);
-}
-
 /**
  * need_recode - check if buffer has to be recoded for SMTP transfer
  *
@@ -232,17 +225,15 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 					llen = 1;
 		}
 	}
-	if (!header) {
+	if (!header || (need_recode(buf, header) & 1)) {
 		/* no empty line found: treat whole message as header. But this means we have
 		 * 8bit characters in header which is a bug in the client that we can't handle */
-		die_8bitheader();
+		write(1, "D5.6.3 message contains unencoded 8bit data in message header\n", 63);
+		exit(0);
 	}
 
 	/* We now know how long the header is. Check it if there are unencoded 8bit characters */
 	off = header;
-
-	if (need_recode(buf, header) & 1)
-		die_8bitheader();
 
 	if ((*multipart = is_multipart(&ctype, boundary)) > 1) {
 #warning FIXME: change Content-Transfer-Encoding to 7bit/quoted-printable in multipart messages
