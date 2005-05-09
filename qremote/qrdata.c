@@ -3,11 +3,13 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <syslog.h>
 #include "netio.h"
 #include "qremote.h"
 #include "qrdata.h"
 #include "version.h"
 #include "mime.h"
+#include "log.h"
 
 const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "./Remote_host_said: ", NULL};
 int ascii;			/* if message is plain ASCII or not */
@@ -423,9 +425,134 @@ send_qp(const char *buf, const q_off_t len)
 	off = qp_header(buf, len, &boundary, &multipart);
 	
 	if (multipart > 0) {
-#warning FIXME: add proper quoted-printable recoding here
-		write(1, "Z4.6.3 message has 8 Bit characters but next server does not accept 8BITMIME", 77);
-		exit(0);
+		q_off_t nextoff = find_boundary(buf + off, len - off, &boundary);
+		int nr;
+
+		if (!nextoff) {
+			/* huh? message declared as multipart, but without any boundary? */
+			/* add boundary */
+			netnwrite("\r\n--", 4);
+			netnwrite(boundary.s, boundary.len);
+			netnwrite("\r\n", 2);
+			/* add Content-Transfer-Encoding header and extra newline */
+			recodeheader();
+			netnwrite("\r\n", 2);
+			/* recode body */
+			recode_qp(buf + off, len - off);
+			/* add end boundary */
+			netnwrite("\r\n--", 4);
+			netnwrite(boundary.s, boundary.len);
+			netnwrite("--\r\n", 4);
+			lastlf = 1;
+			return;
+		}
+
+		nr = need_recode(buf + off, nextoff);
+		if (nr & 1) {
+			netnwrite("\r\nMIME epilogue contained 8bit characters and was removed\r\n\r\n--", 66);
+			netnwrite(boundary.s, boundary.len);
+		} else if (nr & 3) {
+#warning FIXME: wrap long lines in epilogue
+		}
+		if (buf[off + nextoff] == '-') {
+			q_off_t pos = off;
+
+			while ((pos < off + nextoff) && WSPACE(buf[pos])) {
+				pos++;
+			}
+			if (pos != off + nextoff) {
+				netnwrite("\r\n--", 4);
+				netnwrite(boundary.s, boundary.len);
+				netnwrite("\r\n", 2);
+				if (need_recode(buf + off, off + nextoff - pos)) {
+					recodeheader();
+					netnwrite("\r\n", 2);
+					recode_qp(buf + off, off + nextoff - pos);
+				} else {
+					netnwrite("\r\n", 2);
+					send_plain(buf + off, off + nextoff - pos);
+				}
+			}
+			off += nextoff;
+			if (need_recode(buf + off, len - off) & 1) {
+				log_write(LOG_ERR, "message has 8bit characters in MIME epilogue, stripping epilogue");
+				netnwrite("--\r\n\r\nMIME epilogue contained 8bit data, it has been removed.\r\n", 66);
+				lastlf = 1;
+			}
+#warning: wrap long lines here
+		}
+		if (!nr) {
+			send_plain(buf + off, nextoff);
+		}
+		/* strip transport padding */
+		off += nextoff;
+		while ((off < len) && (buf[off] != '\r') && (buf[off] != '\n')) {
+			off++;
+		}
+		do {
+			nextoff = find_boundary(buf + off, len - off, &boundary);
+			if (nextoff) {
+				q_off_t partlen = nextoff - boundary.len - 2;
+
+				if (need_recode(buf + off, partlen)) {
+					send_qp(buf + off, partlen);
+					if (buf[off + nextoff] == '-') {
+						/* this is end boundary */
+						netnwrite(buf + off + partlen, boundary.len + 4);
+					} else {
+						netnwrite(buf + off + partlen, boundary.len + 2);
+					}
+					off += nextoff;
+					/* delete anything between boundary and line end */
+					while ((off < len) && (buf[off] != '\r') && (buf[off] != '\n')) {
+						off++;
+					}
+					if (off == len) {
+						netnwrite("--\r\n", 4);
+						lastlf = 1;
+					}
+				} else {
+					send_plain(buf + off, nextoff);
+					off += nextoff;
+				}
+			}
+		} while (nextoff && (off + 1 < len) && (buf[off] != '-'));
+
+		if ((off + 1 < len) && (buf[off] == '-')) {
+			off += 2;
+			while ((off < len) && (buf[off] != '\r') && (buf[off] != '\n')) {
+				off++;
+			}
+			if (off == len) {
+				netnwrite("--\r\n", 4);
+				lastlf = 1;
+			} else {
+				if (need_recode(buf + off, len - off)) {
+					log_write(LOG_ERR, "message has 8bit characters in MIME epilogue, stripping epilogue");
+					netnwrite("--\r\n\r\nMIME epilogue contained 8bit data, it has been removed.\r\n", 66);
+					lastlf = 1;
+				} else {
+					netnwrite("--", 2);
+					send_plain(buf + off, len - off);
+				}
+			}
+			
+		} else if (nextoff) {
+			/* this can only be whitespace or CR or LF, find_boundary had complained otherwise */
+			netnwrite("\r\n", 2);
+			lastlf = 1;
+		} else {
+			if (need_recode(buf + off, len - off)) {
+				recode_qp(buf + off, len - off);
+			} else {
+				send_plain(buf + off, len - off);
+			}
+			/* add end boundary */
+			netnwrite("\r\n--", 4);
+			netnwrite(boundary.s, boundary.len);
+			netnwrite("--\r\n", 4);
+			lastlf = 1;
+		}
 	} else {
 		recode_qp(buf + off, len - off);
 	}
