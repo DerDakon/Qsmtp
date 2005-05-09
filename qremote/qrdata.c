@@ -189,7 +189,6 @@ qp_header(const char *buf, const q_off_t len, string *boundary)
 						break;
 					if ((buf[off] == '\r') || (buf[off] == '\n')) {
 						header = off;
-						break;
 					}
 					break;
 			case '\n':	off++;
@@ -198,7 +197,6 @@ qp_header(const char *buf, const q_off_t len, string *boundary)
 						break;
 					if ((buf[off] == '\r') || (buf[off] == '\n')) {
 						header = off;
-						break;
 					}
 					break;
 			case 'c':
@@ -207,7 +205,7 @@ qp_header(const char *buf, const q_off_t len, string *boundary)
 
 						if (!llen && (rest >= 12) && !strncasecmp(buf + off + 1, "ontent-Type:", 11)) {
 							const char *cr = buf + off;
-			
+
 							ctype.len = getfieldlen(cr, len - off);
 							if (ctype.len) {
 								ctype.s = cr;
