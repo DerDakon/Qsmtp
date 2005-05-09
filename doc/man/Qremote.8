@@ -62,15 +62,11 @@ It is impossible in SMTP to send a message that does not end with a newline
 converts single CR or LF into the SMTP newline convention by converting them
 to CRLF.
 
-If the message contains non-ascii characters the message is encoded 
+If the message contains non-ascii characters the message is encoded
 as quoted-printable if the remote server does not support the 8BITMIME
-extension defined in RfC 1652.
-It is the user's responsibility to avoid generating illegal messages.
-It is a protocol violation to send messages with long lines (more than 1000 characters).
-.B Qremote
-rejects such message in the middle of the transfer, it does not scan the message before transferring it.
-A message transfer interrupted this way will not be delivered by the receiving mail server but instead will
-be bounced to the sender.
+extension defined in RfC 1652. If a message contains lines with more than
+1000 characters it is always recoded to quoted-printable, sending such a
+long line would be a SMTP protocol violation.
 
 .B Qremote
 supports the CHUNKING extension defined in RfC 3030. If the remote server
