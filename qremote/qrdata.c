@@ -240,8 +240,7 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 		exit(0);
 	}
 
-	/* We now know how long the header is. Check it if there are unencoded 8bit characters */
-	off = header;
+#warning FIXME: fold long header lines if (need_redode() & 3)
 
 	if ((*multipart = is_multipart(&ctype, boundary)) > 0) {
 #warning FIXME: change Content-Transfer-Encoding to 7bit/quoted-printable in multipart messages
