@@ -77,6 +77,9 @@ send_plain(const char *buf, const q_off_t len)
 	q_off_t off = 0;
 	int llen = 0;		/* flag if start of line */
 
+	if (!len)
+		return;
+
 	while (off < len) {
 		while (idx + (q_off_t) chunk < sizeof(sendbuf) - 5) {
 			if (off + (q_off_t) chunk == len) {
