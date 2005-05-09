@@ -410,7 +410,6 @@ send_qp(const char *buf, const q_off_t len)
 	cstring boundary;
 	int multipart;		/* set to one if this is a multipart message */
 
-
 	off = qp_header(buf, len, &boundary, &multipart);
 	
 	if (multipart > 0) {
@@ -440,7 +439,7 @@ send_data(void)
 #endif
 
 #ifdef USE_QP_RECODE
-	if (!(smtpext & 0x008) && ascii) {
+	if ((!(smtpext & 0x008) && (ascii & 1)) || (ascii & 2)) {
 		successmsg[2] = "(qp recoded) ";
 		send_qp(msgdata, msgsize);
 	} else {
