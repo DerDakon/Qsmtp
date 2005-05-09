@@ -15,7 +15,6 @@ const char *msgdata;		/* message will be mmaped here */
 q_off_t msgsize;		/* size of the mmaped area */
 
 static int multipart;		/* set to one if this is a multipart message */
-static void send_plain(const char *buf, const q_off_t len);
 
 static void __attribute__ ((noreturn))
 die_8bitheader(void)
@@ -33,7 +32,7 @@ die_8bitheader(void)
  * returns: logical or of: 1 if buffer has 8bit characters, 2 if buffer contains line longer 998 chars
  */
 int
-		need_recode(const char *buf, q_off_t len)
+need_recode(const char *buf, q_off_t len)
 {
 	int res = 0;
 	int llen = 0;
