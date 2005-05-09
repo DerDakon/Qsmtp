@@ -176,8 +176,11 @@ qp_header(string *boundary)
 /* scan header */
 	/* first: find the newline between header and body */
 	while (off < msgsize) {
+		int llen = 0;		/* flag if we are at beginning of line or not */
+
 		switch (msgdata[off]) {
 			case '\r':	off++;
+					llen = 0;
 					if ((off < msgsize) && (msgdata[off] == '\n'))
 						off++;
 					if (off == msgsize)
@@ -188,6 +191,7 @@ qp_header(string *boundary)
 					}
 					break;
 			case '\n':	off++;
+					llen = 0;
 					if (off == msgsize)
 						break;
 					if ((msgdata[off] == '\r') || (msgdata[off] == '\n')) {
@@ -199,7 +203,7 @@ qp_header(string *boundary)
 			case 'C':	{
 						q_off_t rest = msgsize - off;
 
-						if ((rest >= 12) && !strncasecmp(msgdata + off + 1, "ontent-Type:", 11)) {
+						if (!llen && (rest >= 12) && !strncasecmp(msgdata + off + 1, "ontent-Type:", 11)) {
 							const char *cr = msgdata + off;
 			
 							ctype.len = getfieldlen(cr, msgsize - off);
@@ -208,8 +212,9 @@ qp_header(string *boundary)
 								off += ctype.len - 2;
 							}
 							off += 12 + ctype.len;
+							llen = 1;
 							break;
-						} else if ((rest >= 25) &&
+						} else if (!llen && (rest >= 25) &&
 								!strncasecmp(msgdata + off + 1, "ontent-Transfer-Encoding:", 25)) {
 							const char *cr = msgdata + off;
 			
@@ -219,11 +224,13 @@ qp_header(string *boundary)
 								off += cenc.len - 2;
 							}
 							off += 25 + cenc.len;
+							llen = 1;
 							break;
 						}
 						/* fallthrough */
 					}
 			default:	off++;
+					llen = 1;
 		}
 	}
 	if (!header) {
