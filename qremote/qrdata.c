@@ -87,13 +87,13 @@ send_plain(const char *buf, const q_off_t len)
 	int llen = 0;		/* length of line */
 
 	while (off < len) {
-		while (idx + chunk < sizeof(sendbuf) - 5) {
-			if (off + chunk == len) {
+		while (idx + (q_off_t) chunk < sizeof(sendbuf) - 5) {
+			if (off + (q_off_t) chunk == len) {
 				break;
 			}
 			switch (buf[off + chunk]) {
 				case '\r':	{
-							int last = (off + ++chunk == len);
+							int last = (off + (q_off_t) ++chunk == len);
 		
 							llen = 0;
 							if (!last && (buf[off + chunk] == '\n')) {
@@ -276,8 +276,8 @@ recode_qp(const char *buf, q_off_t len)
 	int llen = 0;		/* length of this line, needed for qp line break */
 
 	while (off < len) {
-		while (idx + chunk < sizeof(sendbuf) - 11) {
-			if (off + chunk == len) {
+		while (idx + (q_off_t) chunk < sizeof(sendbuf) - 11) {
+			if (off + (q_off_t) chunk == len) {
 				break;
 			}
 
@@ -338,7 +338,7 @@ recode_qp(const char *buf, q_off_t len)
 				chunk = 0;
 			} else if ((buf[off + chunk] == '\t') || (buf[off + chunk] == ' ')) {
 				/* recode whitespace if a linebreak follows */
-				if ((off + chunk < len) &&
+				if ((off + (q_off_t) chunk < len) &&
 						((buf[off + chunk + 1] == '\r') || (buf[off + chunk + 1] == '\n'))) {
 					memcpy(sendbuf + idx, buf + off, chunk);
 					off += chunk;
