@@ -13,7 +13,7 @@ export SHELL CC CFLAGS LD LDFLAGS AUTOQMAIL
 SUBDIRS = lib qsmtpd qsmtpd/filters qremote
 
 TARGETS = targets/Qsmtpd targets/Qremote
-TOOLS = targets/addipbl targets/testspf targets/fcshell
+TOOLS = targets/addipbl targets/testspf targets/fcshell targets/qp
 
 .PHONY: all clean toolsub install targets tools $(SUBDIRS)
 .SECONDARY:
@@ -56,6 +56,8 @@ targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/ma
 		lib/netio.o lib/tls.o lib/ssl_timeoutio.o $(OWFATPATH)/libowfat.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 	strip $@
+
+targets/qp: qremote/qrdata.o lib/mime.o
 
 lib/%.o qsmtpd/filters/%.o qsmtpd/%.o qremote/%.o tools/%.o:
 	$(MAKE) -C $(@D) $(@F)
