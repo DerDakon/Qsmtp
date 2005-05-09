@@ -157,6 +157,8 @@ send_plain(const char *buf, const q_off_t len)
 /**
  * qp_header - scan and recode header: fix Content-Transfer-Encoding, check for boundary
  *
+ * @buf: buffer to scan
+ * @len: length of buffer
  * @boundary: if this is a multipart message a pointer to the boundary-string is stored here
  *
  * returns: offset of end of header
@@ -164,7 +166,7 @@ send_plain(const char *buf, const q_off_t len)
  * Warning: boundary will not be 0-terminated! Use boundary->len!
  */
 static q_off_t
-qp_header(string *boundary)
+qp_header(const char *buf, const q_off_t len, string *boundary)
 {
 	const char *recodeheader[] = {"Content-Transfer-Encoding: quoted-printable (recoded by: ", VERSIONSTRING,
 					" at ", heloname.s, ")", NULL};
@@ -175,38 +177,38 @@ qp_header(string *boundary)
 	STREMPTY(ctype);
 /* scan header */
 	/* first: find the newline between header and body */
-	while (!header && (off < msgsize)) {
+	while (!header && (off < len)) {
 		int llen = 0;		/* flag if we are at beginning of line or not */
 
-		switch (msgdata[off]) {
+		switch (buf[off]) {
 			case '\r':	off++;
 					llen = 0;
-					if ((off < msgsize) && (msgdata[off] == '\n'))
+					if ((off < len) && (buf[off] == '\n'))
 						off++;
-					if (off == msgsize)
+					if (off == len)
 						break;
-					if ((msgdata[off] == '\r') || (msgdata[off] == '\n')) {
+					if ((buf[off] == '\r') || (buf[off] == '\n')) {
 						header = off;
 						break;
 					}
 					break;
 			case '\n':	off++;
 					llen = 0;
-					if (off == msgsize)
+					if (off == len)
 						break;
-					if ((msgdata[off] == '\r') || (msgdata[off] == '\n')) {
+					if ((buf[off] == '\r') || (buf[off] == '\n')) {
 						header = off;
 						break;
 					}
 					break;
 			case 'c':
 			case 'C':	{
-						q_off_t rest = msgsize - off;
+						q_off_t rest = len - off;
 
-						if (!llen && (rest >= 12) && !strncasecmp(msgdata + off + 1, "ontent-Type:", 11)) {
-							const char *cr = msgdata + off;
+						if (!llen && (rest >= 12) && !strncasecmp(buf + off + 1, "ontent-Type:", 11)) {
+							const char *cr = buf + off;
 			
-							ctype.len = getfieldlen(cr, msgsize - off);
+							ctype.len = getfieldlen(cr, len - off);
 							if (ctype.len) {
 								ctype.s = cr;
 								off += ctype.len - 2;
@@ -215,10 +217,10 @@ qp_header(string *boundary)
 							llen = 1;
 							break;
 						} else if (!llen && (rest >= 25) &&
-								!strncasecmp(msgdata + off + 1, "ontent-Transfer-Encoding:", 25)) {
-							const char *cr = msgdata + off;
+								!strncasecmp(buf + off + 1, "ontent-Transfer-Encoding:", 25)) {
+							const char *cr = buf + off;
 			
-							cenc.len = getfieldlen(cr, msgsize - off);
+							cenc.len = getfieldlen(cr, len - off);
 							if (cenc.len) {
 								cenc.s = cr;
 								off += cenc.len - 2;
@@ -242,26 +244,26 @@ qp_header(string *boundary)
 	/* We now know how long the header is. Check it if there are unencoded 8bit characters */
 	off = header;
 
-	if (need_recode(msgdata, header) & 1)
+	if (need_recode(buf, header) & 1)
 		die_8bitheader();
 
 	if ( (multipart = is_multipart(&ctype, boundary)) ) {
 #warning FIXME: change Content-Transfer-Encoding to 7bit/quoted-printable in multipart messages
 /*		if (cenc.len) {
-			netnwrite(msgdata, cenc.s - msgdata);
+			netnwrite(buf, cenc.s - buf);
 			netnwrite("Content-Transfer-Encoding: 7bit\r\n", 33);
-			netnwrite(cenc.s + cenc.len, msgdata + header - cenc.s - cenc.len);
+			netnwrite(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
 		} else {
-			netnwrite(msgdata, header);
+			netnwrite(buf, header);
 			netnwrite("Content-Transfer-Encoding: 7bit\r\n", 33);
 		}*/
 	} else {
 		if (cenc.len) {
-			send_plain(msgdata, cenc.s - msgdata);
+			send_plain(buf, cenc.s - buf);
 			net_writen(recodeheader);
-			send_plain(cenc.s + cenc.len, msgdata + header - cenc.s - cenc.len);
+			send_plain(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
 		} else {
-			send_plain(msgdata, header);
+			send_plain(buf, header);
 			net_writen(recodeheader);
 		}
 	}
@@ -416,7 +418,7 @@ send_qp(void)
 	q_off_t off = 0;
 	string boundary;
 
-	off = qp_header(&boundary);
+	off = qp_header(msgdata, msgsize, &boundary);
 	
 	if (multipart) {
 #warning FIXME: add proper quoted-printable recoding here
