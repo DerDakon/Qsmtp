@@ -75,7 +75,7 @@ send_plain(const char *buf, const q_off_t len)
 	unsigned int idx = 0;
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
 	q_off_t off = 0;
-	int llen = 0;		/* length of line */
+	int llen = 0;		/* flag if start of line */
 
 	while (off < len) {
 		while (idx + (q_off_t) chunk < sizeof(sendbuf) - 5) {
@@ -120,12 +120,7 @@ send_plain(const char *buf, const q_off_t len)
 						}
 						/* fallthrough */
 				default:	chunk++;
-						llen++;
-			}
-			if (llen > 998) {
-				/* if we knew this before we could have used quoted-printable... */
-				write(1, "D5.6.3 message has too long line\n", 34);
-				_exit(0);
+						llen = 1;
 			}
 		}
 		if (chunk) {
