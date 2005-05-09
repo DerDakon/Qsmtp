@@ -13,6 +13,7 @@
 extern void send_qp(const char *, const q_off_t);
 unsigned int smtpext;
 struct string heloname;
+int in_data;
 
 void quit(void) { return; }
 int net_writen(const char *const *a __attribute__ ((unused)))
