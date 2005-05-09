@@ -30,46 +30,37 @@ skipwhitespace(const char *line, const size_t len)
 	size_t l = len;
 	const char *c = line;
 
-	/* skip whitespaces */
-	while ((*c == ' ') || (*c == '\t')) {
-		c++;
-		if (!--l)
-			return c;
-		ws = 1;
-	}
-
-	if (!ws)
-		return c;
-
-	/* RfC 822 Section 2.8 */
-	if (*c == ';') {
-		c++;
-		if (!--l)
-			return c;
-
-		while ((*c != '\r') || (*c != '\n')) {
-			c++;
-			if (!--l)
-				return c;
-		}
-		if (*c == '\r') {
-			c++;
-			if (--l && (*c == '\n')) {
-				l--;
-				c++;
-			}
-		}
-	}
-
 	for (;;) {
 		int brace = 0;
 
+		ws = 0;
 		/* skip whitespaces */
 		if ((*c == ' ') || (*c == '\t')) {
 			while ((*c == ' ') || (*c == '\t')) {
 				c++;
 				if (!--l)
 					return c;
+			}
+			ws = 1;
+		}
+
+		/* RfC 822 Section 2.8 */
+		if (ws && (*c == ';')) {
+			c++;
+			if (!--l)
+				return c;
+
+			while ((*c != '\r') || (*c != '\n')) {
+				c++;
+				if (!--l)
+					return c;
+			}
+			if (*c == '\r') {
+				c++;
+				if (--l && (*c == '\n')) {
+					l--;
+					c++;
+				}
 			}
 		}
 
