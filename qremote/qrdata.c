@@ -399,23 +399,26 @@ recode_qp(const char *buf, q_off_t len)
 
 /**
  * send_qp - send message body, do quoted-printable recoding where needed
+ *
+ * @buf: buffer to encode
+ * @len: length of buffer
  */
 static void
-send_qp(void)
+send_qp(const char *buf, const q_off_t len)
 {
 	q_off_t off = 0;
 	cstring boundary;
 	int multipart;		/* set to one if this is a multipart message */
 
 
-	off = qp_header(msgdata, msgsize, &boundary, &multipart);
+	off = qp_header(buf, len, &boundary, &multipart);
 	
 	if (multipart > 0) {
 #warning FIXME: add proper quoted-printable recoding here
 		write(1, "Z4.6.3 message has 8 Bit characters but next server does not accept 8BITMIME", 77);
 		exit(0);
 	} else {
-		recode_qp(msgdata + off, msgsize - off);
+		recode_qp(buf + off, len - off);
 	}
 }
 
@@ -439,7 +442,7 @@ send_data(void)
 #ifdef USE_QP_RECODE
 	if (!(smtpext & 0x008) && ascii) {
 		successmsg[2] = "(qp recoded) ";
-		send_qp();
+		send_qp(msgdata, msgsize);
 	} else {
 #else
 	{
