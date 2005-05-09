@@ -176,53 +176,54 @@ qp_header(string *boundary)
 /* scan header */
 	/* first: find the newline between header and body */
 	while (off < msgsize) {
-		if (msgdata[off] == '\r') {
-			off++;
-			if ((off < msgsize) && (msgdata[off] == '\n'))
-				off++;
-			if (off == msgsize)
-				break;
-			if ((msgdata[off] == '\r') || (msgdata[off] == '\n')) {
-				header = off;
-				break;
-			}
-		} else if (msgdata[off] == '\n') {
-			off++;
-			if (off == msgsize)
-				break;
-			if ((msgdata[off] == '\r') || (msgdata[off] == '\n')) {
-				header = off;
-				break;
-			}
-		}
+		switch (msgdata[off]) {
+			case '\r':	off++;
+					if ((off < msgsize) && (msgdata[off] == '\n'))
+						off++;
+					if (off == msgsize)
+						break;
+					if ((msgdata[off] == '\r') || (msgdata[off] == '\n')) {
+						header = off;
+						break;
+					}
+					break;
+			case '\n':	off++;
+					if (off == msgsize)
+						break;
+					if ((msgdata[off] == '\r') || (msgdata[off] == '\n')) {
+						header = off;
+						break;
+					}
+					break;
+			case 'c':
+			case 'C':	{
+						q_off_t rest = msgsize - off;
 
-		if ((msgdata[off] == 'c') || (msgdata[off] == 'C')) {
-			size_t rest = (size_t) (msgsize - off);
-
-			if ((rest >= 12) && !strncasecmp(msgdata + off + 1, "ontent-Type:", 11)) {
-				const char *cr = msgdata + off;
-
-				ctype.len = getfieldlen(cr, msgsize - off);
-				if (ctype.len) {
-					ctype.s = cr;
-					off += ctype.len - 2;
-					continue;
-				}
-			} else if ((rest >= 25) &&
-					!strncasecmp(msgdata + off + 1, "ontent-Transfer-Encoding:", 25)) {
-				const char *cr = msgdata + off;
-
-				cenc.len = getfieldlen(cr, msgsize - off);
-				if (cenc.len) {
-					cenc.s = cr;
-					off += cenc.len - 2;
-					continue;
-				}
-			} else {
-				off++;
-			}
-		} else {
-			off++;
+						if ((rest >= 12) && !strncasecmp(msgdata + off + 1, "ontent-Type:", 11)) {
+							const char *cr = msgdata + off;
+			
+							ctype.len = getfieldlen(cr, msgsize - off);
+							if (ctype.len) {
+								ctype.s = cr;
+								off += ctype.len - 2;
+							}
+							off += 12 + ctype.len;
+							break;
+						} else if ((rest >= 25) &&
+								!strncasecmp(msgdata + off + 1, "ontent-Transfer-Encoding:", 25)) {
+							const char *cr = msgdata + off;
+			
+							cenc.len = getfieldlen(cr, msgsize - off);
+							if (cenc.len) {
+								cenc.s = cr;
+								off += cenc.len - 2;
+							}
+							off += 25 + cenc.len;
+							break;
+						}
+						/* fallthrough */
+					}
+			default:	off++;
 		}
 	}
 	if (!header) {
