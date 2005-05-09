@@ -2,6 +2,7 @@
 #include <string.h>
 #include "mime.h"
 #include "sstring.h"
+#include "qrdata.h"
 
 /**
  * skipwhitespace - skip whitespaces
@@ -116,7 +117,7 @@ skipwhitespace(const char *line, const size_t len)
  * returns: 1 if line contains multipart/(*) or message/(*) declaration, 0 if other type, -1 on syntax error
  */
 int __attribute__ ((pure))
-is_multipart(const cstring *line)
+is_multipart(const struct string *line)
 {
 	const char *ch;
 
@@ -272,4 +273,37 @@ mime_token(const char *line, const size_t len)
 		}
 	}
 	return i;
+}
+
+/**
+ * find_boundary - find next mime boundary
+ *
+ * @buf: buffer to scan
+ * @len: length of buffer
+ * @boundary: boundary limit string
+ *
+ * returns: offset of first character behind next boundary, 0 if no boundary found
+ */
+q_off_t __attribute__ ((pure))
+find_boundary(const char *buf, const q_off_t len, const cstring *boundary)
+{
+	q_off_t pos = 0;
+
+	while (pos < len - 3 - boundary->len) {
+		if (((buf[pos] == '\r') || (buf[pos] == '\n')) && (buf[pos + 1] == '-') && (buf[pos + 2] == '-')) {
+			if (!strncmp(buf + pos + 3, boundary->s, boundary->len)) {
+				pos += 3 + boundary->len;
+				if (WSPACE(buf[pos]))
+					return pos;
+				if (pos + 1 < len) {
+					if ((buf[pos] == '-') && (buf[pos + 1] == '-') &&
+										((pos + 2 == len) || (WSPACE(buf[pos + 2])))) {
+						return pos;
+										}
+				}
+			}
+		}
+		pos++;
+	}
+	return 0;
 }
