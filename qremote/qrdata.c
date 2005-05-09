@@ -175,7 +175,7 @@ qp_header(string *boundary)
 	STREMPTY(ctype);
 /* scan header */
 	/* first: find the newline between header and body */
-	while (off < msgsize) {
+	while (!header && (off < msgsize)) {
 		int llen = 0;		/* flag if we are at beginning of line or not */
 
 		switch (msgdata[off]) {
