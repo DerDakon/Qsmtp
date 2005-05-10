@@ -95,8 +95,11 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 		goto block;
 	if (p == 2)
 		goto strict;
-	if (spfs == SPF_HARD_ERROR)
-		goto block;
+	if (spfs == SPF_HARD_ERROR) {
+		*logmsg = "SPF";
+		rc = netwrite("550 5.5.2 syntax error in SPF record\r\n");
+		return rc ? rc : 1;
+	}
 	if (p == 3)
 		goto strict;
 	if (spfs == SPF_SOFTFAIL)
