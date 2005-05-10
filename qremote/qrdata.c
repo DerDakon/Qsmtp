@@ -448,12 +448,10 @@ send_qp(const char *buf, const q_off_t len)
 			return;
 		}
 
-		nr = need_recode(buf + off, nextoff);
-		if (nr & 1) {
-			netnwrite("\r\nMIME epilogue contained 8bit characters and was removed\r\n\r\n--", 66);
+		if ( (nr = need_recode(buf + off, nextoff)) ) {
+			log_write(LOG_ERR, "discarding invalid MIME preamble");
+			netnwrite("\r\ninvalid MIME preamble was dicarded.\r\n\r\n--", 46);
 			netnwrite(boundary.s, boundary.len);
-		} else if (nr & 3) {
-#warning FIXME: wrap long lines in epilogue
 		}
 		if (buf[off + nextoff] == '-') {
 			q_off_t pos = off;
@@ -475,12 +473,11 @@ send_qp(const char *buf, const q_off_t len)
 				}
 			}
 			off += nextoff;
-			if (need_recode(buf + off, len - off) & 1) {
-				log_write(LOG_ERR, "message has 8bit characters in MIME epilogue, stripping epilogue");
-				netnwrite("--\r\n\r\nMIME epilogue contained 8bit data, it has been removed.\r\n", 66);
+			if (need_recode(buf + off, len - off)) {
+				log_write(LOG_ERR, "discarding invalid MIME epilogue");
+				netnwrite("--\r\n\r\ninvalid MIME epilogue has been discarded.\r\n", 55);
 				lastlf = 1;
 			}
-#warning: wrap long lines here
 		}
 		if (!nr) {
 			send_plain(buf + off, nextoff);
@@ -529,8 +526,8 @@ send_qp(const char *buf, const q_off_t len)
 				lastlf = 1;
 			} else {
 				if (need_recode(buf + off, len - off)) {
-					log_write(LOG_ERR, "message has 8bit characters in MIME epilogue, stripping epilogue");
-					netnwrite("--\r\n\r\nMIME epilogue contained 8bit data, it has been removed.\r\n", 66);
+					log_write(LOG_ERR, "discarding invalid MIME epilogue");
+					netnwrite("--\r\n\r\ninvalid MIME epilogue has been discarded.\r\n", 55);
 					lastlf = 1;
 				} else {
 					netnwrite("--", 2);
