@@ -469,7 +469,7 @@ main(int argc, char *argv[])
 
 		idx = (smtpext & 0x01) ? 5 : 3;
 
-		netmsg[idx++] = (ascii & 1) ? " BODY=7BIT" : " BODY=8BITMIME";
+		netmsg[idx++] = (ascii & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
 		netmsg[idx] = NULL;
 	}
 	net_writen(netmsg);
