@@ -501,7 +501,8 @@ send_qp(const char *buf, const q_off_t len)
 			if (nextoff) {
 				q_off_t partlen = nextoff - boundary.len - 2;
 
-				if (need_recode(buf + off, partlen)) {
+				nr = need_recode(buf + off, partlen);
+				if (!(smtpext & 0x008) || (nr & 2)) {
 					send_qp(buf + off, partlen);
 					if (buf[off + nextoff] == '-') {
 						/* this is end boundary */
