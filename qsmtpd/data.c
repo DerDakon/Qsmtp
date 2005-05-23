@@ -146,6 +146,8 @@ queue_header(void)
 	WRITE(fd, ")\n\tby ", 6);
 	WRITE(fd, heloname.s, heloname.len);
 	WRITE(fd, " (" VERSIONSTRING ") with ", 9 + strlen(VERSIONSTRING));
+	if (!strncasecmp(linein, "BDAT", 4))
+		WRITE(fd, "(chunked) ", 10);
 	WRITE(fd, protocol, strlen(protocol));
 	/* add the 'A' to the end of ESMTP or ESMTPS as described in RfC 3848 */
 	i = xmitstat.authname.len ? 0 : 1;
