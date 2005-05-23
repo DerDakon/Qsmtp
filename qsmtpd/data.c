@@ -248,12 +248,7 @@ queue_result(void)
 		int exitcode = WEXITSTATUS(status);
 
 		if (!exitcode) {
-			if (netwrite("250 2.5.0 accepted message for delivery\r\n")) {
-				return errno;
-			} else {
-				commands[7].state = (0x008 << xmitstat.esmtp);
-				return 0;
-			}
+			return netwrite("250 2.5.0 accepted message for delivery\r\n") ? errno : 0;
 		} else {
 			char ec[ULSTRLEN];
 			const char *logmess[] = {"qmail-queue failed with exitcode ", ec, NULL};
@@ -499,6 +494,7 @@ smtp_data(void)
 #ifdef DEBUG_IO
 	in_data = 0;
 #endif
+	commands[7].state = (0x008 << xmitstat.esmtp);
 	return queue_result();
 loop_data:
 	while (close(fd0[1]) && (errno == EINTR));
