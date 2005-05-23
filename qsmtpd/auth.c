@@ -361,7 +361,7 @@ auth_cram(void)
 	if (newstr(&user, i))
 		goto err;
 	k = strlen(s);
-	if (newstr(&resp, k) {
+	if (newstr(&resp, k)) {
 		free(user.s);
 		goto err;
 	}
