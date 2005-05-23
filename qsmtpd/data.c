@@ -17,6 +17,7 @@ static const char *noqueue = "451 4.3.2 can not connect to queue\r\n";
 static int fd0[2], fd1[2];		/* the fds to communicate with qmail-queue */
 static pid_t qpid;			/* the pid of qmail-queue */
 unsigned long maxbytes;
+static int chunked;			/* set to 1 if BDAT transfer is running */
 
 static int
 err_pipe(void)
@@ -146,7 +147,7 @@ queue_header(void)
 	WRITE(fd, ")\n\tby ", 6);
 	WRITE(fd, heloname.s, heloname.len);
 	WRITE(fd, " (" VERSIONSTRING ") with ", 9 + strlen(VERSIONSTRING));
-	if (!strncasecmp(linein, "BDAT", 4))
+	if (chunked)
 		WRITE(fd, "(chunked) ", 10);
 	WRITE(fd, protocol, strlen(protocol));
 	/* add the 'A' to the end of ESMTP or ESMTPS as described in RfC 3848 */
@@ -174,7 +175,7 @@ queue_envelope(const unsigned long msgsize)
 	char s[ULSTRLEN];		/* msgsize */
 	char t[ULSTRLEN];		/* goodrcpt */
 	char bytes[] = " bytes, ";
-	const char *logmail[] = {"received ", "", "message to <", NULL, "> from <", MAILFROM,
+	const char *logmail[] = {"received ", "", "", "message to <", NULL, "> from <", MAILFROM,
 					"> ", "from ip [", xmitstat.remoteip, "] (", s, bytes,
 					NULL, " recipients)", NULL};
 	char *authmsg = NULL;
@@ -183,14 +184,16 @@ queue_envelope(const unsigned long msgsize)
 
 	if (ssl)
 		logmail[1] = "encrypted ";
+	if (chunked)
+		logmail[2] = "chunked ";
 	ultostr(msgsize, s);
 	if (goodrcpt > 1) {
 		ultostr(goodrcpt, t);
-		logmail[12] = t;
+		logmail[13] = t;
 	} else {
 		bytes[6] = ')';
 		bytes[7] = '\0';
-		/* logmail[13] is already NULL so that logging will stop there */
+		/* logmail[14] is already NULL so that logging will stop there */
 	}
 /* print the authname.s into a buffer for the log message */
 	if (xmitstat.authname.len) {
@@ -202,9 +205,9 @@ queue_envelope(const unsigned long msgsize)
 			memcpy(authmsg, "> (authenticated as ", 20);
 			memcpy(authmsg + 20, xmitstat.authname.s, xmitstat.authname.len);
 			memcpy(authmsg + 20 + xmitstat.authname.len, ") ", 3);
-			logmail[6] = authmsg;
+			logmail[7] = authmsg;
 		} else {
-			logmail[6] = "> (authenticated) ";
+			logmail[7] = "> (authenticated) ";
 		}
 	}
 
@@ -217,7 +220,7 @@ queue_envelope(const unsigned long msgsize)
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
 
-		logmail[3] = l->to.s;
+		logmail[4] = l->to.s;
 		if (l->ok) {
 			log_writen(LOG_INFO, logmail);
 			WRITE(fd, "T", 1);
@@ -329,6 +332,7 @@ smtp_data(void)
 	unsigned int hops = 0;		/* number of "Received:"-lines */
 
 	msgsize = 0;
+	chunked = 0;
 
 	if (badbounce || !goodrcpt) {
 		tarpit();
@@ -619,6 +623,7 @@ smtp_bdat(void)
 		msgsize = 0;
 		bdaterr = 0;
 		comstate = 0x0800;
+		chunked = 1;
 
 		bdaterr = queue_init();
 
@@ -688,6 +693,7 @@ smtp_bdat(void)
 		const char *bdatmess[] = {"250 2.5.0 ", linein + 5, " octets received", NULL};
 
 		bdaterr = net_writen(bdatmess) ? errno : 0;
+		chunked = 0;
 	}
 
 	return bdaterr;
