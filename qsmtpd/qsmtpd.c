@@ -198,6 +198,12 @@ setup(void)
 		log_write(LOG_ERR, "parse error in control/databytes");
 		return e;
 	}
+	if (databytes) {
+		maxbytes = databytes;
+	} else {
+		maxbytes = -1UL - 1000;
+	}
+
 	if ( (j = loadintfd(open("control/forcesslauth", O_RDONLY), &sslauth, 0)) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/forcesslauth");

@@ -4,4 +4,6 @@
 extern int smtp_data(void);
 extern void rset_queue(void);
 
+extern unsigned long maxbytes;
+
 #endif

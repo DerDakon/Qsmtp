@@ -16,6 +16,7 @@
 static const char *noqueue = "451 4.3.2 can not connect to queue\r\n";
 static int fd0[2], fd1[2];		/* the fds to communicate with qmail-queue */
 static pid_t qpid;			/* the pid of qmail-queue */
+unsigned long maxbytes;
 
 static int
 err_pipe(void)
@@ -315,7 +316,7 @@ smtp_data(void)
 					"> from ip [", xmitstat.remoteip, "] (", s, " bytes) {",
 					NULL, NULL};
 	int i, rc;
-	unsigned long msgsize = 0, maxbytes;
+	unsigned long msgsize = 0;
 	int fd;
 	int flagdate = 0, flagfrom = 0;	/* Date: and From: are required in header,
 					 * else message is bogus (RfC 2822, section 3.6).
@@ -350,11 +351,6 @@ smtp_data(void)
 #ifdef DEBUG_IO
 	in_data = 1;
 #endif
-	if (databytes) {
-		maxbytes = databytes;
-	} else {
-		maxbytes = -1UL - 1000;
-	}
 
 	/* fd is now the file descriptor we are writing to. This is better than always
 	 * calculating the offset to fd0[1] */
