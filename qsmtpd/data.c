@@ -308,6 +308,8 @@ queue_result(void)
 	}
 }
 
+static unsigned long msgsize;
+
 int
 smtp_data(void)
 {
@@ -316,7 +318,6 @@ smtp_data(void)
 					"> from ip [", xmitstat.remoteip, "] (", s, " bytes) {",
 					NULL, NULL};
 	int i, rc;
-	unsigned long msgsize = 0;
 	int fd;
 	int flagdate = 0, flagfrom = 0;	/* Date: and From: are required in header,
 					 * else message is bogus (RfC 2822, section 3.6).
@@ -324,6 +325,8 @@ smtp_data(void)
 					 * but we let the user decide */
 	const char *errmsg = NULL;
 	unsigned int hops = 0;		/* number of "Received:"-lines */
+
+	msgsize = 0;
 
 	if (badbounce || !goodrcpt) {
 		tarpit();
@@ -572,6 +575,142 @@ err_write:
 		/* normally none of the other errors may ever occur. But who knows what I'm missing here? */
 		default:	{
 					const char *logmsg[] = {"error in DATA: ", strerror(rc), NULL};
+
+					log_writen(LOG_ERR, logmsg);
+					return EDONE; // will not be caught in main
+				}
+	}
+}
+
+static int bdaterr;
+
+int
+smtp_bdat(void)
+{
+	char s[ULSTRLEN];		/* msgsize */
+	const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
+					"> from ip [", xmitstat.remoteip, "] (", s, " bytes) {",
+					NULL, NULL};
+	int rc;
+	int fd;
+#warning FIXME: loop detection missing
+	unsigned int hops = 0;		/* number of "Received:"-lines */
+	long chunksize;
+	char *more;
+
+	if (badbounce || !goodrcpt) {
+		tarpit();
+		return netwrite("554 5.1.1 no valid recipients\r\n") ? errno : EDONE;
+	}
+
+	if ((linein[5] < '0') || (linein[5] > '9'))
+		return EINVAL;
+	chunksize = strtol(linein + 5, &more, 10);
+	if ((chunksize < 0) || (*more && (*more != ' ')))
+		return EINVAL;
+	if (*more && strcasecmp(more + 1, "LAST"))
+		return EINVAL;
+
+	/* fd is now the file descriptor we are writing to. This is better than always
+	 * calculating the offset to fd0[1] */
+	if (comstate != 0x0800) {
+		msgsize = 0;
+		bdaterr = 0;
+		comstate = 0x0800;
+
+		bdaterr = queue_init();
+
+		if (!bdaterr && (rc = queue_header()) ) {
+			bdaterr = rc;
+		}
+	}
+	fd = fd0[1];
+
+	while (chunksize > 0) {
+		size_t chunk;
+		char inbuf[2048];
+
+		if (chunksize >= sizeof(inbuf)) {
+			chunk = net_readbin(sizeof(inbuf) - 1, inbuf);
+		} else {
+			chunk = net_readbin(chunksize, inbuf);
+		}
+		if (chunk == (size_t) -1) {
+			if (!bdaterr) {
+				bdaterr = errno;
+			}
+		} else {
+			WRITE(fd, inbuf, chunk);
+			chunksize -= chunk;
+			msgsize += chunk;
+		}
+	}
+
+	if ((msgsize > maxbytes) && !bdaterr) {
+		logmail[9] = "message too big}";
+		while (head.tqh_first != NULL) {
+			struct recip *l = head.tqh_first;
+
+			TAILQ_REMOVE(&head, head.tqh_first, entries);
+			if (l->ok) {
+				logmail[1] = l->to.s;
+				log_writen(LOG_INFO, logmail);
+			}
+			free(l->to.s);
+			free(l);
+		}
+		bdaterr = EMSGSIZE;
+	}
+	/* send envelope data if this is last chunk */
+	if (*more && !bdaterr) {
+		/* the message body is sent to qmail-queue. Close the file descriptor and
+			* send the envelope information */
+		while (close(fd)) {
+			if (errno != EINTR)
+				goto err_write;
+		}
+		fd0[1] = 0;
+		if (queue_envelope(msgsize))
+			goto err_write;
+
+		commands[11].state = 0x010;
+		return queue_result();
+	}
+
+	if (bdaterr) {
+		if (fd1[1]) {
+			rset_queue();
+			fd1[1] = 0;
+		}
+	} else {
+		const char *bdatmess[] = {"250 2.5.0 ", linein + 5, " octets received", NULL};
+
+		bdaterr = net_writen(bdatmess) ? errno : 0;
+	}
+
+	return bdaterr;
+err_write:
+	rc = errno;
+	rset_queue();
+	freedata();
+
+	if ((rc == ENOSPC) || (rc == EFBIG)) {
+		rc = EMSGSIZE;
+	} else if ((errno != ENOMEM) && (errno != EMSGSIZE) && (errno != E2BIG)) {
+		if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
+			return errno;
+	}
+	switch (rc) {
+		case EMSGSIZE:
+		case ENOMEM:	return rc;
+		case EPIPE:	log_write(LOG_ERR, "broken pipe to qmail-queue");
+				return EDONE;
+		case EINTR:	log_write(LOG_ERR, "interrupt while writing to qmail-queue");
+				return EDONE;
+		case E2BIG:	return rc;
+		/* normally none of the other errors may ever occur. But who knows what I'm missing here? */
+		default:	{
+					const char *logmsg[] = {"error in BDAT: ", strerror(rc), NULL};
 
 					log_writen(LOG_ERR, logmsg);
 					return EDONE; // will not be caught in main

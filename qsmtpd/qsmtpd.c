@@ -56,7 +56,8 @@ struct smtpcomm commands[] = {
 	_C("STARTTLS",	 8, 0x0010, smtp_starttls, 0x1, 0), /* 0x0100 */
 	_C("AUTH",	 4, 0x0010, smtp_auth,     -1, 1),  /* 0x0200 */
 	_C("VRFY",	 4, 0xffff, smtp_vrfy,     -1, 1),  /* 0x0400 */
-	_C("POST",	 4, 0xffff, http_post,     -1, 1)   /* 0x0800 */ /* this should stay last */
+	_C("BDAT",	 4, 0x0840, smtp_bdat,     -1, 1),  /* 0x0800 */ /* the status to change to is changed in smtp_bdat */
+	_C("POST",	 4, 0xffff, http_post,     -1, 1)   /* 0x1000 */ /* this should stay last */
 };
 
 #undef _C
@@ -284,7 +285,7 @@ int
 smtp_ehlo(void)
 {
 	/* can this be self-growing? */
-	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n",
+	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n250-CHUNKING\r\n",
 				NULL, NULL, NULL, NULL, NULL};
 	unsigned int next = 3;	/* next index in to be used */
 	char sizebuf[ULSTRLEN];
@@ -1000,6 +1001,8 @@ smtp_noop(void)
 int
 smtp_rset(void)
 {
+	if (comstate == 0x0800)
+		rset_queue();
 	/* if there was EHLO or HELO before we reset to the state to immediately after this */
 	if (comstate >= 0x008) {
 		freedata();
