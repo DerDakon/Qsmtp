@@ -61,8 +61,7 @@ struct smtpcomm commands[] = {
 
 #undef _C
 
-static char *rcpth;			/* string of rcpthosts */
-static char **rcpthosts;		/* array of hosts to accept mail for */
+static int rcpthfd;			/* file descriptor of control/rcpthosts */
 static char *vpopbounce;		/* the bounce command in vpopmails .qmail-default */
 static unsigned int rcptcount;		/* number of recipients in lists including rejected */
 static char *gcbuf;			/* buffer for globalconf array (see below) */
@@ -130,6 +129,7 @@ setup(void)
 {
 	int j;
 	struct sigaction sa;
+	struct stat st;
 
 #ifdef USESYSLOG
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
@@ -155,13 +155,18 @@ setup(void)
 		return EINVAL;
 	}
 
-	if ( (j = loadlistfd(open("control/rcpthosts", O_RDONLY), &rcpth, &rcpthosts, domainvalid))) {
-		if ((errno == ENOENT) || !rcpth)
-			log_write(LOG_ERR, "control/rcpthosts not found");
+	rcpthfd = open("control/rcpthosts", O_RDONLY);
+	if (rcpthfd < 0) {
+		log_write(LOG_ERR, "control/rcpthosts not found");
 		return errno;
 	}
-	if (!rcpthosts[0]) {
-		log_write(LOG_ERR, "found no valid names in control/rcpthosts");
+	if (fstat(rcpthfd, &st)) {
+		log_write(LOG_ERR, "cannot fstat() control/rcpthosts");
+		return errno;
+	}
+	if (st.st_size < 5) {
+		/* minimum length of domain name: xx.yy = 5 bytes */
+		log_write(LOG_ERR, "control/rcpthosts too short");
 		return 1;
 	}
 	xmitstat.remoteip = getenv("TCP6REMOTEIP");
@@ -541,26 +546,19 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		return 0;
 
 	/* at this point either @ is set or addrsyntax has already caught this */
-	while (rcpthosts[i]) {
-		if (!strcasecmp(rcpthosts[i], at + 1))
-			break;
-		i++;
-	}
-	if (!rcpthosts[i]) {
-		int rc = finddomainmm(open("control/morercpthosts", O_RDONLY), at + 1, 1);
+	i = finddomainmm(rcpthfd, at + 1, 0);
 
-		if (rc < 0) {
-			if (errno == ENOMEM) {
-				result = errno;
-			} else if (err_control("control/morercpthosts")) {
-				result = errno;
-			} else {
-				result = EDONE;
-			}
-			goto free_and_out;
-		} else if (!rc) {
-			return -2;
+	if (i < 0) {
+		if (errno == ENOMEM) {
+			result = errno;
+		} else if (err_control("control/morercpthosts")) {
+			result = errno;
+		} else {
+			result = EDONE;
 		}
+		goto free_and_out;
+	} else if (!i) {
+		return -2;
 	}
 
 /* get the domain directory from "users/cdb" */
