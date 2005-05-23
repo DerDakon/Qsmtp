@@ -551,7 +551,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	if (i < 0) {
 		if (errno == ENOMEM) {
 			result = errno;
-		} else if (err_control("control/morercpthosts")) {
+		} else if (err_control("control/rcpthosts")) {
 			result = errno;
 		} else {
 			result = EDONE;
