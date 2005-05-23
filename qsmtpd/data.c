@@ -9,6 +9,7 @@
 #include "antispam.h"
 #include "version.h"
 #include "tls.h"
+#include "qsdata.h"
 
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
 

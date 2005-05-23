@@ -27,6 +27,7 @@
 #include "version.h"
 #include "dns.h"
 #include "vpopmail.h"
+#include "qsdata.h"
 
 int smtp_noop(void);
 int smtp_quit(void);
@@ -35,7 +36,7 @@ int smtp_helo(void);
 int smtp_ehlo(void);
 int smtp_from(void);
 int smtp_rcpt(void);
-extern int smtp_data(void);
+/* int smtp_data(void); is declared in qsdata.h */
 int smtp_vrfy(void);
 extern int smtp_auth(void);
 extern int smtp_starttls(void);
