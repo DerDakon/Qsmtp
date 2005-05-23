@@ -126,7 +126,8 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		if (!*buf) {
 			free(inbuf);
 			j = -1;
-		}
+		} else
+			j = k;
 	} else {
 		for (j = 0; j < oldlen; j++) {
 			if (inbuf[j]) {
