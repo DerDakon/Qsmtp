@@ -526,7 +526,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 {
 	char *at;			/* guess! ;) */
 	int result = 0;			/* return code */
-	int i = 0, j;
+	int i, j;
 	string localpart;
 	size_t le;
 
