@@ -47,7 +47,7 @@ void DEBUG_IN(const size_t len)
 
 void DEBUG_OUT(const char *s, const size_t l)
 {
-	char buffer[l + 3];
+	char buffer[l + 4];
 	int en = 0;
 	const char *b, *c;
 	
@@ -62,7 +62,7 @@ void DEBUG_OUT(const char *s, const size_t l)
 	buffer[1 + en] = ' ';
 
 	b = s;
-	while ( (c = strchr(b, '\r')) ) {
+	while ( (c = strchr(b, '\r')) && (b < s + l) ) {
 		memcpy(buffer + 2 + en, b, c - b);
 		buffer[2 + c - b + en] = '\0';
 		log_write(LOG_DEBUG, buffer);
