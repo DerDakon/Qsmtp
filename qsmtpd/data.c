@@ -31,7 +31,6 @@ err_fork(void)
 	return netwrite(noqueue) ? errno : 0;
 }
 
-
 /**
  * rset_queue - reset queue descriptors
  */
@@ -44,6 +43,7 @@ rset_queue(void)
 	}
 	while (close(fd1[1]) && (errno == EINTR));
 }
+
 static const char *qqbin;
 
 static int
@@ -565,15 +565,14 @@ err_write:
 	}
 	switch (rc) {
 		case EMSGSIZE:
+		case E2BIG:
 		case ENOMEM:	return rc;
 		case EPIPE:	log_write(LOG_ERR, "broken pipe to qmail-queue");
 				return EDONE;
 		case EINTR:	log_write(LOG_ERR, "interrupt while writing to qmail-queue");
 				return EDONE;
-		/* This errors happen if client sends invalid data (e.g. bad <CRLF> sequences). 
-		 * Let them pass, this will kick the client some lines later. */
+		/* This errors happen if client sends invalid data (e.g. bad <CRLF> sequences). */
 		case EINVAL:	return netwrite("500 5.5.2 bad <CRLF> sequence\r\n") ? errno : EBOGUS;
-		case E2BIG:	return rc;
 		/* normally none of the other errors may ever occur. But who knows what I'm missing here? */
 		default:	{
 					const char *logmsg[] = {"error in DATA: ", strerror(rc), NULL};
