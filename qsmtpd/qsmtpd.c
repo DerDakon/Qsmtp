@@ -383,7 +383,6 @@ user_exists(const string *localpart, struct userconf *ds)
 {
 	char filetmp[PATH_MAX];
 	DIR *dirp;
-	unsigned int i = 0;
 
 	/* '/' is a valid character for localparts but we don't want it because
 	 * it could be abused to check the existence of files */
@@ -399,6 +398,7 @@ user_exists(const string *localpart, struct userconf *ds)
 		int e = errno;
 		int fd;
 		string dotqm;
+		size_t i;
 
 		free(ds->userpath.s);
 		ds->userpath.s = NULL;
@@ -517,7 +517,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	int result = 0;			/* return code */
 	int i = 0, j;
 	string localpart;
-	unsigned int le;
+	size_t le;
 
 	STREMPTY(ds->domainpath);
 	STREMPTY(ds->userpath);
