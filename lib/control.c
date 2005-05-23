@@ -279,13 +279,14 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
  *
  * @fd: file descriptor
  * @domain: domain name to find
+ * @cl: close fd or not
  *
  * returns: 1 on match, 0 if none, -1 on error
  *
  * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, '\r' in file will cause trouble
  */
 int
-finddomainmm(int fd, const char *domain)
+finddomainmm(int fd, const char *domain, const int cl)
 {
 	struct stat st;
 	char *map, *cur;
@@ -296,7 +297,7 @@ finddomainmm(int fd, const char *domain)
 		return (errno == ENOENT) ? 0 : fd;
 	}
 
-	while (flock(fd,LOCK_SH)) {
+	while (flock(fd, LOCK_SH)) {
 		if (errno != EINTR) {
 			log_write(LOG_WARNING, "cannot lock input file");
 			errno = ENOLCK;	/* not the right error code, but good enough */
@@ -356,9 +357,19 @@ finddomainmm(int fd, const char *domain)
 	} while (cur);
 
 	munmap(map, st.st_size);
-	while ((i = close(fd))) {
-		if (errno != EINTR) {
-			break;
+	if (cl) {
+		while ((i = close(fd))) {
+			if (errno != EINTR) {
+				break;
+			}
+		}
+	} else {
+		while ( (i = flock(fd, LOCK_UN)) ) {
+			if (errno != EINTR) {
+				log_write(LOG_WARNING, "cannot unlock input file");
+				errno = ENOLCK;	/* not the right error code, but good enough */
+				return -1;
+			}
 		}
 	}
 	return i ? i : rc;

@@ -547,7 +547,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		i++;
 	}
 	if (!rcpthosts[i]) {
-		int rc = finddomainmm(open("control/morercpthosts", O_RDONLY), at + 1);
+		int rc = finddomainmm(open("control/morercpthosts", O_RDONLY), at + 1, 1);
 
 		if (rc < 0) {
 			if (errno == ENOMEM) {
@@ -947,7 +947,7 @@ next:
 		xmitstat.frommx = NULL;
 		s = HELOSTR;
 	}
-	if (!xmitstat.remotehost.len || !(i = finddomainmm(open("control/spffriends", O_RDONLY), xmitstat.remotehost.s))) {
+	if (!xmitstat.remotehost.len || !(i = finddomainmm(open("control/spffriends", O_RDONLY), xmitstat.remotehost.s, 1))) {
 		i = check_host(s);
 		if (i < 0)
 			return errno;

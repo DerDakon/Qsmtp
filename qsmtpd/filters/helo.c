@@ -31,7 +31,7 @@ cb_helo(const struct userconf *ds, char **logmsg, int *t)
 		}
 	}
 
-	rc = finddomainmm(getfileglobal(ds, "badhelo", t), HELOSTR);
+	rc = finddomainmm(getfileglobal(ds, "badhelo", t), HELOSTR, 1);
 	if (rc <= 0)
 		return rc;
 
