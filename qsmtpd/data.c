@@ -30,6 +30,19 @@ err_fork(void)
 	return netwrite(noqueue) ? errno : 0;
 }
 
+
+/**
+ * rset_queue - reset queue descriptors
+ */
+void
+rset_queue(void)
+{
+	if (fd0[1]) {
+		while (close(fd0[1]) && (errno == EINTR));
+		fd0[1] = 0;
+	}
+	while (close(fd1[1]) && (errno == EINTR));
+}
 static const char *qqbin;
 
 static int
@@ -531,10 +544,7 @@ loop_data:
 	return rc;
 err_write:
 	rc = errno;
-	if (fd0[1]) {
-		while (close(fd0[1]) && (errno == EINTR));
-	}
-	while (close(fd1[1]) && (errno == EINTR));
+	rset_queue();
 	freedata();
 
 /* first check, then read: if the error happens on the last line nothing will be read here */
