@@ -605,7 +605,11 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 
 		tarpit();
 		result = net_writen(logmsg) ? errno : -1;
-		goto free_and_out;
+		free(ds->domainpath.s);
+		STREMPTY(ds->domainpath);
+		free(ds->userpath.s);
+		STREMPTY(ds->userpath);
+		return result;
 	}
 	return 0;
 free_and_out:
@@ -638,8 +642,6 @@ smtp_rcpt(void)
 	if  (i > 0) {
 		return i;
 	} else if (i == -1) {
-		free(ds.userpath.s);
-		free(ds.domainpath.s);
 		logmsg[1] = tmp.s;
 		logmsg[7] = "no such user}";
 		logmsg[8] = NULL;
@@ -861,8 +863,10 @@ smtp_from(void)
 	free(ds.domainpath.s);
 	if (i > 0)
 		return i;
-	else if (i == -1)
+	else if (i == -1) {
+		free(xmitstat.mailfrom.s);
 		return EBOGUS;
+	}
 	xmitstat.thisbytes = 0;
 	/* data behind the <..> is only allowed in ESMTP */
 	if (more && !xmitstat.esmtp)
