@@ -638,6 +638,13 @@ smtp_rcpt(void)
 	if  (i > 0) {
 		return i;
 	} else if (i == -1) {
+		free(ds.userpath.s);
+		free(ds.domainpath.s);
+		logmsg[1] = tmp.s;
+		logmsg[7] = "no such user}";
+		logmsg[8] = NULL;
+		log_writen(LOG_INFO, logmsg);
+		free(tmp.s);
 		return EBOGUS;
 	} else if ((i == -2) && !xmitstat.authname.len && !xmitstat.tlsclient) {
 /* check if client is allowed to relay by IP */
