@@ -140,7 +140,7 @@ block:
 
 		if ((rc = net_writen(netmsg)))
 			return rc;
-	} else {
+	} else if (!r) {
 		if ((rc = netwrite("550 5.7.1 mail denied by SPF policy\r\n")))
 			return rc;
 	}
