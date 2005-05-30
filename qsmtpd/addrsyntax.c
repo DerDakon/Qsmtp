@@ -92,6 +92,7 @@ checkaddr(const char *addr)
 /**
  * addrsyntax - check an email address for syntax errors
  *
+ * @in:      address to parse
  * @flags:   1: rcpt to checks (e.g. source route is allowed), 0: mail from checks,
  *           2: checks for badmailfrom/goodmailfrom lists
  * @addr:    struct string to contain the address (memory will be malloced)
