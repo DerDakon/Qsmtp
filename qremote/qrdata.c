@@ -598,12 +598,7 @@ send_data(void)
 #ifdef DEBUG_IO
 	in_data = 0;
 #endif
-	if (netget() != 250) {
-		successmsg[2] = " rejected ";
-		successmsg[4] = "message after ";
-		successmsg[6] = "transfer";
-	}
-	checkreply("KZD", successmsg, 7);
+	checkreply("KZD", successmsg, 1);
 }
 
 void
@@ -641,10 +636,5 @@ send_bdat(void)
 #ifdef DEBUG_IO
 	in_data = 0;
 #endif
-	if (netget() != 250) {
-		successmsg[2] = " rejected ";
-		successmsg[4] = "message after ";
-		successmsg[6] = "transfer";
-	}
-	checkreply("KZD", successmsg, 7);
+	checkreply("KZD", successmsg, 1);
 }
