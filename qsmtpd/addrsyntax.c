@@ -7,26 +7,18 @@
 #include "qsmtpd.h"
 
 /**
- * parseaddr - check type and correctness of mail address
+ * parselocalpart - check syntax correctness of local part
  *
  * @addr: address to check
  *
- * returns: 0: address invalid
- *          1: address only contains a domain name
- *          2: address contains @domain
- *          3: address is a full email address
+ * returns: -1 on syntax error, length of localpart otherwise. If no '@' in addr, length of addr
  */
 static int __attribute__ ((pure))
-parseaddr(const char *addr)
+parselocalpart(const char *addr)
 {
-	const char *t = addr, *at = strchr(addr, '@');
+	const char *t = addr;
 	int quoted = 0;
 
-	if (!at)
-		return 1 - domainvalid(addr);
-	/* localpart too long */
-	if ((at - addr) > 64)
-		return 0;
 	/* RfC 2821, section 4.1.2
 	 * Systems MUST NOT define mailboxes in such a way as to require the use
 	 * in SMTP of non-ASCII characters (octets with the high order bit set
@@ -39,35 +31,62 @@ parseaddr(const char *addr)
 	 *
 	 * '/' is illegal because it can be misused to check for the existence of
 	 * arbitrary files. */
-	while (t < at) {
+	while (*t && (*t != '@')) {
 		if (*t == '"') {
 			quoted = 1 - quoted;
 		} else if (!quoted) {
+			/* these characters are allowed without quoting */
 			if (!(((*t >= 'a') && (*t <= 'z')) || ((*t >= 'A') && (*t <= 'Z')) || (*t == '.') ||
-				((*t >= '0') && (*t <= '9')) || (*t == '!') || ((*t >= '#') && (*t <= '\'')) ||
-				(*t == '*') || (*t == '+') || (*t == '-') || (*t == '/') || (*t == '=') ||
-				(*t == '?') || ((*t >= '^') && (*t <= '`')) || ((*t >= '{') && (*t <= '~')))) {
-						return 0;
+						((*t >= '0') && (*t <= '9')) || (*t == '!') || ((*t >= '#') && (*t <= '\'')) ||
+						(*t == '*') || (*t == '+') || (*t == '-') || (*t == '/') || (*t == '=') ||
+						(*t == '?') || ((*t >= '^') && (*t <= '`')) || ((*t >= '{') && (*t <= '~')))) {
+				return -1;
 			}
 		} else {
+			/* check for everything outside range of allowed characters in quoted string */
 			if (!(((*t >= 35) && (*t <= 91)) || (*t >= 93) || ((*t >= 1) && (*t <= 8)) || (*t == 11) ||
 						(*t == 12) || ((*t >= 14) && (*t <= 31)))) {
 				if (*t == '\\') {
+					/* '\\' may mask only '"' or '\\'. Skip this second character, else error */
 					if ((*(t + 1) == '"') || (*(t + 1) == '\\')) {
 						t++;
-						if (t == addr)
-							return 0;
 					} else {
-						return 0;
+						return -1;
 					}
 				} else {
-					return 0;
+					return -1;
 				}
 			}
 		}
 		t++;
 	}
 	if (quoted)
+		return -1;
+	return t - addr;
+}
+
+/**
+ * parseaddr - check type and correctness of mail address
+ *
+ * @addr: address to check
+ *
+ * returns: 0: address invalid
+ *          1: address only contains a domain name
+ *          2: address contains @domain
+ *          3: address is a full email address
+ */
+static int __attribute__ ((pure))
+parseaddr(const char *addr)
+{
+	const char *at = strchr(addr, '@');
+
+	if (!at)
+		return 1 - domainvalid(addr);
+	/* localpart too long */
+	if ((at - addr) > 64)
+		return 0;
+	/* paranoid ones would check for (at == addr+i) here */
+	if (parselocalpart(addr) < 0)
 		return 0;
 
 	/* domain name too long */
