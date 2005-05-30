@@ -215,7 +215,7 @@ syntax:
  *
  * @status: status codes to print or NULL if not to
  * @pre: text to write to stdout before server reply if mask matches
- * @mask: bitmask for pre: 1: 2xx, 2: 4xx, 3: 5xx
+ * @mask: bitmask for pre: 1: 2xx, 2: 4xx, 4: 5xx
  *
  * returns: the SMTP result code
  *
@@ -247,7 +247,7 @@ checkreply(const char *status, const char **pre, const int mask)
 			m = 2;
 		} else {
 			write(1, status + 2, 1);
-			m = 3;
+			m = 4;
 		}
 		if (!ignore) {
 			if (pre && (m & mask)) {
