@@ -174,7 +174,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 			return -1;
 		}
 	
-		strncpy(addr->s, f + 1, len);
+		strncpy(addr->s, f, len);
 		addr->s[len] = '\0';
 		addr->len = len;
 	}
