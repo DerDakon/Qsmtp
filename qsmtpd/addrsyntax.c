@@ -19,10 +19,9 @@
 static int __attribute__ ((pure))
 parseaddr(const char *addr)
 {
-	const char *t, *at = strchr(addr, '@');
+	const char *t = addr, *at = strchr(addr, '@');
 	int quoted = 0;
 
-	t = addr + 1;
 	/* RfC 2821, section 4.1.2
 	 * Systems MUST NOT define mailboxes in such a way as to require the use
 	 * in SMTP of non-ASCII characters (octets with the high order bit set
@@ -72,7 +71,7 @@ parseaddr(const char *addr)
 	if (strlen(at + 1) > 255)
 		return 0;
 	/* localpart too long */
-	if ((at - addr) > 65)
+	if ((at - addr) > 64)
 		return 0;
 	if (*addr == '@')
 		return domainvalid(addr + 1) ? 0 : 2;
@@ -143,7 +142,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	if (!l)
 		return 1;
 
-	len = l - f - 1;
+	len = l - f;
 	/* empty address is only allowed in MAIL FROM */
 	if (!flags && !len) {
 		if (addr) {

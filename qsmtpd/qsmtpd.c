@@ -638,7 +638,7 @@ smtp_rcpt(void)
 
 	if (linein[8] != '<')
 		return EINVAL;
-	i = addrparse(linein + 8, 1, &tmp, &more, &ds);
+	i = addrparse(linein + 9, 1, &tmp, &more, &ds);
 	if  (i > 0) {
 		return i;
 	} else if (i == -1) {
@@ -856,7 +856,7 @@ smtp_from(void)
 
 	if (linein[10] != '<')
 		return EINVAL;
-	i = addrparse(linein + 10, 0, &(xmitstat.mailfrom), &more, &ds);
+	i = addrparse(linein + 11, 0, &(xmitstat.mailfrom), &more, &ds);
 	xmitstat.frommx = NULL;
 	xmitstat.fromdomain = 0;
 	free(ds.userpath.s);
