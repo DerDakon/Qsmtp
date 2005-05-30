@@ -22,6 +22,8 @@ parseaddr(const char *addr)
 	const char *t = addr, *at = strchr(addr, '@');
 	int quoted = 0;
 
+	if (!at)
+		return 1 - domainvalid(addr);
 	/* RfC 2821, section 4.1.2
 	 * Systems MUST NOT define mailboxes in such a way as to require the use
 	 * in SMTP of non-ASCII characters (octets with the high order bit set
@@ -64,8 +66,6 @@ parseaddr(const char *addr)
 	}
 	if (quoted)
 		return 0;
-	if (!at)
-		return 1 - domainvalid(addr);
 
 	/* domain name too long */
 	if (strlen(at + 1) > 255)
