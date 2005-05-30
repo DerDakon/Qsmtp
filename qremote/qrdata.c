@@ -11,7 +11,7 @@
 #include "mime.h"
 #include "log.h"
 
-const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "./Remote_host_said: ", NULL};
+const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "", "./Remote host said: ", NULL};
 int ascii;			/* if message is plain ASCII or not */
 const char *msgdata;		/* message will be mmaped here */
 q_off_t msgsize;		/* size of the mmaped area */
@@ -598,7 +598,12 @@ send_data(void)
 #ifdef DEBUG_IO
 	in_data = 0;
 #endif
-	checkreply("KZD", successmsg, 1);
+	if (netget() != 250) {
+		successmsg[2] = " rejected ";
+		successmsg[4] = "message after ";
+		successmsg[6] = "transfer";
+	}
+	checkreply("KZD", successmsg, 7);
 }
 
 void
@@ -636,5 +641,10 @@ send_bdat(void)
 #ifdef DEBUG_IO
 	in_data = 0;
 #endif
-	checkreply("KZD", successmsg, 1);
+	if (netget() != 250) {
+		successmsg[2] = " rejected ";
+		successmsg[4] = "message after ";
+		successmsg[6] = "transfer";
+	}
+	checkreply("KZD", successmsg, 7);
 }
