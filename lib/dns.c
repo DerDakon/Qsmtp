@@ -251,10 +251,10 @@ domainvalid(const char *host)
 		}
 		*host++;
 	}
-	if ((host - h) > 255)
+	if (((host - h) > 255) || ((host - h) < 5))
 		return 1;
 	/* there is no top level domain ending with something different from a letter */
-	*host--;
+	host--;
 	if (!(((*host >= 'a') && (*host <= 'z')) || ((*host >= 'A') && (*host <= 'Z'))))
 		return 1;
 	return 1 - dot;
