@@ -162,7 +162,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 
 	/* postmaster is allowed without '@', all other valid addresses must have
 	 * localpart + '@' + domain */
-	if ((flags != 1) || strcasecmp(f + 1, "postmaster")) {
+	if ((flags != 1) || strcasecmp(f, "postmaster")) {
 		x = parseaddr(f);
 		if (x < 3)
 			return 1;
