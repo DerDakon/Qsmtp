@@ -1,0 +1,159 @@
+.\"TOPICS "Topics:"
+.TH filterconf 5 "June 2005" "Qsmtp Version 0.7" "Qsmtp"
+.SH NAME
+filterconf \- user configuration of SMTP level filtering
+.SH DESCRIPTION
+The users may configure a bunch of filter rules. There are two kinds of settings: settings configured by a 
+config directive in the file "filterconf" or settings configured by it's own file. The first are descriped in 
+this man page, the latter are documented in 
+.BR Qsmtp(8) .
+If the setting is not configured in the user directrory Qsmtpd will take the value from the domain directory. 
+If there is no domain setting also the global one is taken if the setting is marked "global".
+
+.SH SYNTAX
+
+These settings can occur in the file 
+.I filterconf 
+in the user or domain directory. Settings marked global can also occur in the global file
+.IR /var/qmail/control/filterconf . 
+There may be comments or empty lines in the 
+.I filterconf 
+file, both will be ignored. There are two kinds of settings, boolean and integer. If there is a
+boolean setting "foo" and there is a line containing just "foo" foo will be enabled. If there is no foo it will 
+be disabled. Integer settings are "key=value", e.g. "foo=2" will set foo to 2. Neither characters between the 
+key, the '=' and the value nor characters behind the value are permitted. Boolean expressions may be written as 
+integers, "foo" as a boolean is the same as "foo=1" and "foo=123877", no "foo" line in the file is the same 
+like "foo=0".
+
+There is a special value "-1" which means that if the user sets "foo=-1" foo will be disabled and the domain 
+config will 
+.I not
+be used.
+
+.SH KEYS
+
+.IP "\fIforcestarttls\fR" 4
+Recipient only accepts mail if the transmission is SSL-encrypted. Use this with care, this
+violates RfC 3207 and is only for the really paranoid users.
+
+.IP "\fIwhitelistauth\fR" 4
+.BR (global)
+If the user is authenticated by SMTP AUTH or by TLS client certificate the mail
+is accepted and no other filters will be checked.
+
+.IP "\fIcheck_strict_rfc2822\fR" 4
+The mail body is checked for compliance to RfC 2822 (e.g. only one From:). The mail is
+rejected if the mail is invalid. If only one of the recipients does not enable this check
+the mail will not be rejected. This is due to the fact that the mail must be completely
+transferred before it can be rejected but then only one reply code for all recipients
+can be returned.
+
+.IP "\fIfromdomain\fR" 4
+.BR (global)
+Do some checks to the domain of the "MAIL FROM:" address. The value is a bitwise
+.I OR
+of these bits and stored as one integer number.
+.RS 4
+.ie n .IP "bit 1" 4
+reject mail if from domain does not exist (dns query returns NXDOMAIN)
+.ie n .IP "bit 2" 4
+reject mail if from domain resolves only to localhost addresses (i.e. something in 127.0.0.0/8 
+or 0.0.0.0/8 for IPv4 or ::1 for IPv6)
+.ie n .IP "bit 3" 4
+reject mail if from domain resolves only to private nets (RfC 1918)
+.RE
+
+.IP "\fIreject_ipv6only\fR" 4
+.BR (global)
+Reject if all MX records of the "MAIL FROM:" domain point to real IPv6 addresses.
+This is useful only on an IPv4 only node where this addresses can't be routed.
+
+.IP "\fIspfpolicy\fR" 4
+.BR (global)
+Filter mail by the policy given by a DNS TXT record of the sender domain. The value
+has this meanings:
+.RS 4
+.ie n .IP "1:" 4
+temporary DNS errors will block mail temporary
+.ie n .IP "2:" 4
+reject mail if the SPF record says 'fail'
+.ie n .IP "3:" 4
+reject mail if the SPF record is syntactically invalid
+.ie n .IP "4:" 4
+reject mail when the SPF record says 'softfail'
+.ie n .IP "5:" 4
+reject mail when the SPF record says 'neutral'
+.ie n .IP "6:" 4
+rejects mail when no SPF records are found
+
+see also: 
+.I rspf 
+(file), 
+.I spfstrict 
+(file), 
+.I ignorespf 
+(file) in
+.B Qsmtpd(8)
+.RE
+
+.IP "\fInobounce\fR" 4
+Don't accept bounce messages to this recipients. This is useful if this address is never
+used to send mail (e.g. contact addresses on websites) to avoid backscatter of worms and 
+viruses. Never use this if the mail is used for sending mail.
+
+.IP "\fIusersize\fR" 4
+The maximum size of a message the user wants to accept. This only works if the client uses
+ESMTP SIZE (which most real mailservers do). The wide spread worms with own SMTP engines don't
+use this so this will not block them.
+
+.IP "\fIblock_SoberG\fR" 4
+.BR (global)
+Block a mail where the combination of 
+.I HELO 
+and 
+.I MAIL FROM 
+looks like SoberG:
+.I MAIL FROM:<foo@bar.com> 
+would lead to 
+.I HELO foo.com
+
+.IP "\fIhelovalid\fR" 4
+.BR (global)
+Mails with invalid helo are rejected. The value is a bitwise 
+.I OR
+of these bits and stored as one integer number:
+.RS 4
+.ie n .IP "bit 1" 4
+helo is "my name"
+.ie n .IP "bit 2" 4
+helo is "[
+.I my IP address
+]"
+.ie n .IP "bit 3" 4
+helo is syntactically invalid (e.g. contains invalid characters, is neither a full 
+qualified domain name nor an address literal)
+.ie n .IP "bit 4" 4
+currently unused
+.ie n .IP "bit 5" 4
+helo is my IP address, but not enclosed in '[]'. This is invalid and more or less a
+combination of
+.I 2 
+and 
+.I 3
+.ie n .IP "all other bits:" 4
+currently unused
+.RE
+
+.IP "\fIfail_hard_on_temp\fR" 4
+If any filter returns with a temporary reject (e.g. sending IP is listed in a IP blacklist)
+a permanent failure is announced instead of the temporary one.
+
+.IP "\fInonexist_on_block\fR" 4
+If any filter returns with a reject code the mail server will lie and tell the client the
+user does not exist instead of returning a policy error.
+.SH "SEE ALSO"
+Qsmtpd(8)
+.SH AUTHOR
+Rolf Eike Beer
+.SH WEBSITE
+http://opensource.sf-tec.de/Qsmtp/
