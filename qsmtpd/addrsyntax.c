@@ -171,10 +171,8 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 		return 0;
 	}
 	/* check if something follow the '>' */
-	if (more) {
-		*more = (l + 1);
-		if (!**more)
-			*more = NULL;
+	if (more && *(l + 1)) {
+		*more = l + 1;
 	}
 	*l = '\0'; /* from now on the complete mail address is just *f */
 
