@@ -44,4 +44,8 @@ extern int dnstxt(char **, const char *);
 extern int dnsmx(char **, unsigned int *, const char *);
 extern int dnsname(char **, const char *);
 
+#ifndef INET_ADDRSTRLEN
+#define INET_ADDRSTRLEN 16
+#endif
+
 #endif
