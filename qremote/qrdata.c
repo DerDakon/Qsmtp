@@ -43,7 +43,7 @@ need_recode(const char *buf, q_off_t len)
 			llen++;
 		}
 		if (llen > 998) {
-			res |= 2;
+			res = 2;
 			break;
 		}
 	}
