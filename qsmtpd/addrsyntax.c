@@ -129,33 +129,31 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	int x;
 
 	f = in;
-	if (flags == 1) {
+	if ((flags == 1) && (*f == '@')) {
 		/* strip source route
 		 * source route has the form
 		 * "{@f.q.dn,}*@fq.dn:"
 		 * we don't care if the host does not exist, we just look for syntax errors
 		 */
-		if (*f == '@') {
-			while ( ( t = strchr(f, ',') ) ) {
-				*t++ = '\0';
-				if (domainvalid(f + 1))
-					return 1;
-				f = t;
-				if (*f != '@')
-					return 1;
-			}
-			t = strchr(f, ':');
-			if (!t)
-				return 1;
+		while ( ( t = strchr(f, ',') ) ) {
 			*t++ = '\0';
 			if (domainvalid(f + 1))
 				return 1;
-			/* RfC 2821, Section 4.5.3.1: The maximum total length of a reverse-path or forward-path
-			 * is 256 characters (including the punctuation and element separators). */
-			if ((t - in + 5) > 256)
-				return 1;
 			f = t;
+			if (*f != '@')
+				return 1;
 		}
+		t = strchr(f, ':');
+		if (!t)
+			return 1;
+		*t++ = '\0';
+		if (domainvalid(f + 1))
+			return 1;
+		/* RfC 2821, Section 4.5.3.1: The maximum total length of a reverse-path or forward-path
+		 * is 256 characters (including the punctuation and element separators). */
+		if ((t - in + 5) > 256)
+			return 1;
+		f = t;
 	}
 	l = strchr(f, '>');
 	if (!l)
