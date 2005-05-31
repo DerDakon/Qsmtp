@@ -71,3 +71,5 @@ install:
 
 man-install:
 	install doc/man/Qremote.8 $(AUTOQMAIL)/man/man8
+	install doc/man/Qsmtpd.8 $(AUTOQMAIL)/man/man8
+	install doc/man/filterconf.5 $(AUTOQMAIL)/man/man5
