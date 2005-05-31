@@ -28,9 +28,7 @@ parselocalpart(const char *addr)
 	 *
 	 * RfC 2822, section 3.2.4
 	 * Any character except controls, SP and specials.
-	 *
-	 * '/' is illegal because it can be misused to check for the existence of
-	 * arbitrary files. */
+	 */
 	while (*t && (*t != '@')) {
 		if (*t == '"') {
 			quoted = 1 - quoted;
