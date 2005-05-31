@@ -135,9 +135,8 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 		 * "{@f.q.dn,}*@fq.dn:"
 		 * we don't care if the host does not exist, we just look for syntax errors
 		 */
-		if (*(f+1) == '@') {
-			f++;
-			while ( ( t = strchr(f,',') ) ) {
+		if (*f == '@') {
+			while ( ( t = strchr(f, ',') ) ) {
 				*t++ = '\0';
 				if (domainvalid(f + 1))
 					return 1;
@@ -177,7 +176,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 		if (!**more)
 			*more = NULL;
 	}
-	*l = '\0'; /* from now on the complete mail address is just *(f+1) */
+	*l = '\0'; /* from now on the complete mail address is just *f */
 
 	/* postmaster is allowed without '@', all other valid addresses must have
 	 * localpart + '@' + domain */
