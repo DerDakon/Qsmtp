@@ -14,7 +14,7 @@
  * returns: -1 on syntax error, length of localpart otherwise. If no '@' in addr, length of addr
  */
 static int __attribute__ ((pure))
-parselocalpart(const char *addr)
+parselocalpart(const char *const addr)
 {
 	const char *t = addr;
 	int quoted = 0;
