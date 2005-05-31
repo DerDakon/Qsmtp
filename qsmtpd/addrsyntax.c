@@ -135,7 +135,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 		 * "{@f.q.dn,}*@fq.dn:"
 		 * we don't care if the host does not exist, we just look for syntax errors
 		 */
-		while ( ( t = strchr(f, ',') ) ) {
+		while ( (t = strchr(f, ',')) ) {
 			*t++ = '\0';
 			if (domainvalid(f + 1))
 				return 1;
@@ -151,7 +151,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 			return 1;
 		/* RfC 2821, Section 4.5.3.1: The maximum total length of a reverse-path or forward-path
 		 * is 256 characters (including the punctuation and element separators). */
-		if ((t - in + 5) > 256)
+		if ((t - in) > 256)
 			return 1;
 		f = t;
 	}
