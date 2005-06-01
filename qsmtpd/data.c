@@ -110,6 +110,58 @@ queue_init(void)
 	return 0;
 }
 
+static inline void
+two_digit(char *buf, int num)
+{
+	*buf = '0' + (num / 10);
+	*(buf + 1) = '0' + (num % 10);
+}
+
+/**
+ * date822 - write RfC822 date information to buffer
+ *
+ * @buf: buffer to store string in, must have at least 32 bytes free
+ *
+ * exactly 31 bytes in buffer are filled, it will _not_ be 0-terminated
+ */
+static void
+date822(char *buf)
+{
+	time_t ti;
+	struct tm stm;
+	const char *weekday[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
+	const char *month[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+	long tz;
+
+	ti = time(NULL);
+	localtime_r(&ti, &stm);
+	memcpy(buf, weekday[stm.tm_wday], 3);
+	memcpy(buf + 3, ", ", 2);
+	two_digit(buf + 5, stm.tm_mday);
+	buf[7] = ' ';
+	memcpy(buf + 8, month[stm.tm_mon], 3);
+	buf[11] = ' ';
+	ultostr(1900 + stm.tm_year, buf + 12);
+	buf[16] = ' '; /* this will fail after 9999, but that I'll fix then */
+	two_digit(buf + 17, stm.tm_hour);
+	buf[19] = ':';
+	two_digit(buf + 20, stm.tm_min);
+	buf[22] = ':';
+	two_digit(buf + 23, stm.tm_sec);
+	buf[25] = ' ';
+	tzset();
+	tz = timezone / 60;
+	buf[26] = (tz <= 0) ? '+' : '-';
+	if (tz < 0)
+	    tz = -tz;
+	if (stm.tm_isdst > 0) {
+		two_digit(buf + 27, 1 + (tz / 60));
+	} else {
+		two_digit(buf + 27, tz / 60);
+	}
+	two_digit(buf + 29, tz % 60);
+}
+
 #define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
 					return rc
 
@@ -118,8 +170,7 @@ queue_header(void)
 {
 	int fd = fd0[1];
 	int rc;
-	char datebuf[36];			/* the date for the Received-line */
-	time_t ti;
+	char datebuf[35] = ">; ";		/* the date for the Received-line */
 	size_t i;
 	const char *afterprot = "A\n\tfor <";	/* the string to be written after the protocol */
 
@@ -154,9 +205,9 @@ queue_header(void)
 	i = xmitstat.authname.len ? 0 : 1;
 	WRITE(fd, afterprot + i, 8 - i);
 	WRITE(fd, head.tqh_first->to.s, head.tqh_first->to.len);
-	ti = time(NULL);
-	i = strftime(datebuf, sizeof(datebuf), ">; %a, %d %b %Y %H:%M:%S %z\n", localtime(&ti));
-	WRITE(fd, datebuf, i);
+	date822(datebuf + 3);
+	datebuf[34] = '\n';
+	WRITE(fd, datebuf, 35);
 /* write "Received-SPF: " line */
 	if (!(xmitstat.authname.len || xmitstat.tlsclient) && (relayclient != 1)) {
 		if ( (rc = spfreceived(fd, xmitstat.spf)) )
