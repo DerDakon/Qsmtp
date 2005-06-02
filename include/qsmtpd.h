@@ -29,7 +29,7 @@ struct xmitstat {			/* This contains some flags describing the transmission and 
 	string authname;		/* if SMTP AUTH is used (and successful) this is set */
 	char *tlsclient;		/* TLS client authenticated by certificate for relaying */
 	string remotehost;		/* the reverse lookup of the remote host */
-	char *remoteip;			/* ip of the remote host as set in the environment */
+	char remoteip[INET6_ADDRSTRLEN];/* ip of the remote host as set in the environment */
 	char *remoteinfo;		/* info gathered by tcpserver like remote username */
 	string helostr;			/* the helo string sent by the client if different from the reverse lookup
 					 * if the helo is identical to remotehost this is {NULL, 0} */

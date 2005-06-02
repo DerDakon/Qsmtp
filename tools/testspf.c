@@ -26,7 +26,7 @@ main(int argc, char *argv[])
 	if (!xmitstat.mailfrom.s)
 		xmitstat.mailfrom.s = "strong-bad@email.example.com";
 	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
-	xmitstat.remoteip = "5f05:2000:80ad:5800::1";
+	memcpy(xmitstat.remoteip, "5f05:2000:80ad:5800::1", 23);
 	xmitstat.remotehost.s = "mx.example.org";
 	xmitstat.remotehost.len = 14;
 	
@@ -36,7 +36,7 @@ main(int argc, char *argv[])
 		} else {
 			if (argc > 2) {
 				arg = argv[2];
-				xmitstat.remoteip = "::ffff:192.0.2.3";
+				memcpy(xmitstat.remoteip, "::ffff:192.0.2.3", 17);
 			} else {
 				arg = "%{i}";
 			}

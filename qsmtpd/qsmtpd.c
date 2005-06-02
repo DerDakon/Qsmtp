@@ -131,6 +131,7 @@ setup(void)
 	int j;
 	struct sigaction sa;
 	struct stat st;
+	char *tmp;
 
 #ifdef USESYSLOG
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
@@ -170,20 +171,14 @@ setup(void)
 		log_write(LOG_ERR, "control/rcpthosts too short");
 		return 1;
 	}
-	xmitstat.remoteip = getenv("TCP6REMOTEIP");
-	if (!xmitstat.remoteip || !*xmitstat.remoteip) {
-		xmitstat.remoteip = "unknown";
-		memset(xmitstat.sremoteip.s6_addr, 0, sizeof(xmitstat.sremoteip));
-	} else {
-		/* is this just too paranoid? */
-		if (inet_pton(AF_INET6, xmitstat.remoteip, &(xmitstat.sremoteip)) <= 0) {
-			xmitstat.remoteip = "unknown";
-			log_write(LOG_ERR, "TCP6REMOTEIP does not contain a valid AF_INET6 address");
-			memset(xmitstat.sremoteip.s6_addr, 0, sizeof(xmitstat.sremoteip));
-		} else {
-			xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr) ? 1 : 0;
-		}
+	tmp = getenv("TCP6REMOTEIP");
+	if (!tmp || !*tmp || (inet_pton(AF_INET6, tmp, &(xmitstat.sremoteip)) <= 0)) {
+		log_write(LOG_ERR, "can't figure out IP of remote host");
+		return 1;
 	}
+	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr) ? 1 : 0;
+	memcpy(xmitstat.remoteip, tmp, strlen(tmp));
+
 	xmitstat.remotehost.s = getenv("TCPREMOTEHOST");
 	if (xmitstat.remotehost.s)
 		xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
