@@ -176,19 +176,7 @@ setup(void)
 		log_write(LOG_ERR, "can't figure out IP of remote host");
 		return 1;
 	}
-	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr) ? 1 : 0;
 	memcpy(xmitstat.remoteip, tmp, strlen(tmp));
-
-	j = ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s);
-	if (j < 0) {
-		log_write(LOG_ERR, "can't look up remote host name");
-		return errno;
-	} else if (j) {
-		STREMPTY(xmitstat.remotehost);
-	} else {
-		xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
-	}
-	xmitstat.remoteinfo = getenv("TCPREMOTEINFO");
 
 	/* RfC 2821, section 4.5.3.2: "Timeouts"
 	 * An SMTP server SHOULD have a timeout of at least 5 minutes while it
@@ -231,13 +219,34 @@ setup(void)
 		return e;
 	}
 
-	/* block sigpipe. If we don't we can't handle the errors in smtp_data correctly and remote host
+	/* block sigpipe. If we don't we can't handle the errors in smtp_data() correctly and remote host
 	 * will see a connection drop on error (which is bad and violates RfC) */
 	sa.sa_handler = SIG_IGN;
 	j = sigaction(SIGPIPE, &sa, NULL);
 	relayclient = 0;
 
 	return j;
+}
+
+static int
+connsetup(void)
+{
+	int j;
+
+	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr) ? 1 : 0;
+
+	j = ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s);
+	if (j < 0) {
+		log_write(LOG_ERR, "can't look up remote host name");
+		return -1;
+	} else if (j) {
+		STREMPTY(xmitstat.remotehost);
+	} else {
+		xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
+	}
+	xmitstat.remoteinfo = getenv("TCPREMOTEINFO");
+
+	return 0;
 }
 
 /**
@@ -1270,5 +1279,7 @@ main(int argc, char *argv[]) {
 	} else if (argc != 1) {
 		log_write(LOG_ERR, "invalid number of parameters given");
 	}
+	if (connsetup() < 0)
+		flagbogus = errno;
 	smtploop();
 }
