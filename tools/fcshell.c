@@ -523,7 +523,9 @@ editadd(const int type)
 								char *l = linein + 4;
 								
 								while (l < tmp) {
-									
+									if ((*l < 32) || (*l >= 127))
+										goto parse;
+									l++;
 								}
 								tmp++;
 							} else {
