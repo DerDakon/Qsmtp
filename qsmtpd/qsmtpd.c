@@ -534,8 +534,11 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	STREMPTY(ds->domainpath);
 	STREMPTY(ds->userpath);
 
-	if (addrsyntax(in, flags, addr, more))
+	if ( (j = addrsyntax(in, flags, addr, more)) > 0) {
 		return netwrite("501 5.1.3 domain of mail address is syntactically incorrect\r\n") ? errno : EBOGUS;
+	} else if (j < 0) {
+		return errno;
+	}
 
 	/* empty mail address is valid in MAIL FROM:, this is checked by addrsyntax before
 	 * if we find an empty address here it's ok */
