@@ -35,9 +35,6 @@ static int spf_domainspec(const char *domain, char *token, char **domainspec, in
 int
 check_host(const char *domain)
 {
-	if (!strcmp("unknown", xmitstat.remoteip))
-		return SPF_TEMP_ERROR;
-
 	return spflookup(domain, 0);
 }
 
