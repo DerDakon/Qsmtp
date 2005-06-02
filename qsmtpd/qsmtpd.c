@@ -172,18 +172,22 @@ setup(void)
 		return 1;
 	}
 	tmp = getenv("TCP6REMOTEIP");
-	if (!tmp || !*tmp || (inet_pton(AF_INET6, tmp, &(xmitstat.sremoteip)) <= 0)) {
+	if (!tmp || !*tmp || (inet_pton(AF_INET6, tmp, &xmitstat.sremoteip) <= 0)) {
 		log_write(LOG_ERR, "can't figure out IP of remote host");
 		return 1;
 	}
 	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr) ? 1 : 0;
 	memcpy(xmitstat.remoteip, tmp, strlen(tmp));
 
-	xmitstat.remotehost.s = getenv("TCPREMOTEHOST");
-	if (xmitstat.remotehost.s)
+	j = ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s);
+	if (j < 0) {
+		log_write(LOG_ERR, "can't look up remote host name");
+		return errno;
+	} else if (j) {
+		STREMPTY(xmitstat.remotehost);
+	} else {
 		xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
-	else
-		xmitstat.remotehost.len = 0;
+	}
 	xmitstat.remoteinfo = getenv("TCPREMOTEINFO");
 
 	/* RfC 2821, section 4.5.3.2: "Timeouts"
