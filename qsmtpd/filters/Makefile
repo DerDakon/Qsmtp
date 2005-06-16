@@ -1,7 +1,7 @@
 TARGETS = rcptfilters.a
 
 OBJS = rcpt_filters.o badmailfrom.o check2822.o dnsbl.o ipbl.o badcc.o fromdomain.o spf.o boolean.o soberg.o \
-	  helo.o usersize.o forceesmtp.o namebl.o
+	  helo.o usersize.o forceesmtp.o namebl.o wildcardns.o
 
 .phony: all clean
 
@@ -41,6 +41,8 @@ rcpt_filters.o: log.h
 forceesmtp.o: antispam.h control.h qsmtpd.h
 
 namebl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
+
+wildcardmx.o: control.h qsmtpd.h
 
 %.o: %.c userfilters.h
 	$(CC) $(CFLAGS) $<

@@ -144,6 +144,11 @@ and
 currently unused
 .RE
 
+.IP "\fIblock_wildcardns\fR" 4
+If the top level domain uses wildcard entries in their nameserver for nonexisting domains
+(e.g. museum does this) then this will deny such mails if the top level domain of the
+sender address and the MX (typically implicit A) match one entry in control/wildcardns.
+
 .IP "\fIfail_hard_on_temp\fR" 4
 If any filter returns with a temporary reject (e.g. sending IP is listed in a IP blacklist)
 a permanent failure is announced instead of the temporary one.

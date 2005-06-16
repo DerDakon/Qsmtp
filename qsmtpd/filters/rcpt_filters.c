@@ -17,6 +17,7 @@ extern int cb_helo(const struct userconf *, char **, int *);
 extern int cb_usersize(const struct userconf *, char **, int *);
 extern int cb_forceesmtp(const struct userconf *, char **, int *);
 extern int cb_namebl(const struct userconf *, char **, int *);
+extern int cb_wildcardns(const struct userconf *, char **, int *);
 
 /* the filters will be called in the order in this array */
 
@@ -36,6 +37,7 @@ rcpt_cb rcpt_cbs[] = {	cb_boolean,
 			cb_namebl,
 /* this one is special: it will not block anything here so we need it only when mail is not blocked anyway */
 			cb_check2822,
+			cb_wildcardns,
 			NULL};
 
 /* string constants for the type of blocklists */
