@@ -94,7 +94,7 @@ if the envelope sender address is listed in
 A line in
 .I badmailfrom
 may be of the form
-.BR @\fIhost ,
+.BR @\fIhost\fR ,
 meaning every address at
 .IR host .
 If an entry does not contain a '@' the domain and all subdomains
@@ -266,6 +266,14 @@ of SPF entries.
 .TP 4
 .I spffriends
 List of hosts where no SPF checks will be done at all, neither there will be a "Received-SPF:"-line.
+
+.TP 4
+.I wildcardns
+A list of top level domains and their wildcard NS entries. Format is "TLD_IPv6address", where TLD is
+the name of the top level domain (without leading dot) and IPv6address is an IPv6 literal. There are
+no spaces allowed anywhere in a line containing an entry, but normal comments (lines beginning with #,
+empty lines) are allowed. If a TLD has multiple wildcard entries use multiple lines with the same TLD
+name and one entry each.
 
 .SH "SEE ALSO"
 tcp-env(1),
