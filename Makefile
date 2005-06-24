@@ -2,7 +2,7 @@ OWFATPATH=../../libowfat-0.22
 CDBPATH=../../qmail-1.03
 SHELL=/bin/sh
 CC=gcc
-CFLAGS=-O2 -c -Wall -W -Wshadow -I$(shell pwd)/include -DNOSTDERR -DUSESYSLOG -march=i686 -g
+CFLAGS=-O2 -c -Wall -W -Wshadow -I$(shell pwd)/include -DNOSTDERR -DUSESYSLOG -g
 LD=gcc
 LDFLAGS= #-lefence
 LDFLAGSSSL=-lssl -lcrypto
