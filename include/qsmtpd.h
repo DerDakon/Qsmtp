@@ -40,6 +40,7 @@ struct xmitstat {			/* This contains some flags describing the transmission and 
 
 extern struct smtpcomm commands[];
 
+extern int rcpthfd;
 extern struct xmitstat xmitstat;
 extern char *protocol;
 extern char *auth_host;			/* hostname for auth */

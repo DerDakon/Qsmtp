@@ -87,6 +87,10 @@ queue_init(void)
 					if (errno != EINTR)
 						_exit(120);
 				}
+				while (close(rcpthfd)) {
+					if (errno != EINTR)
+						_exit(120);
+				}
 				if (dup2(fd0[0], 0) == -1)
 					_exit(120);
 				if (dup2(fd1[0], 1) == -1)

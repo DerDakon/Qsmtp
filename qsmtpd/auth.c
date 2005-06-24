@@ -133,6 +133,10 @@ authenticate(void)
 					if (errno != EINTR)
 						_exit(1);
 				}
+				while (close(rcpthfd)) {
+					if (errno != EINTR)
+						_exit(1);
+				}
 				if (pi[0] != 3) {
 					if (dup2(pi[0],3) < 0) {
 						_exit(1);

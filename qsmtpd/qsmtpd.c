@@ -62,12 +62,12 @@ struct smtpcomm commands[] = {
 
 #undef _C
 
-static int rcpthfd;			/* file descriptor of control/rcpthosts */
 static char *vpopbounce;		/* the bounce command in vpopmails .qmail-default */
 static unsigned int rcptcount;		/* number of recipients in lists including rejected */
 static char *gcbuf;			/* buffer for globalconf array (see below) */
-int relayclient;			/* flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
 
+int relayclient;			/* flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
+int rcpthfd;				/* file descriptor of control/rcpthosts */
 unsigned long sslauth;			/* if SMTP AUTH is only allowed after STARTTLS */
 unsigned long databytes;		/* maximum message size */
 unsigned int goodrcpt;			/* number of valid recipients */
@@ -149,7 +149,7 @@ setup(void)
 		close(j);
 #endif
 
-	if ( ( j = loadoneliner("control/me", &heloname.s, 0) ) < 0 )
+	if ( (j = loadoneliner("control/me", &heloname.s, 0)) < 0)
 		return errno;
 	heloname.len = j;
 	if (domainvalid(heloname.s)) {
