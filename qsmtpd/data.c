@@ -79,11 +79,11 @@ queue_init(void)
 						qqbin = "bin/qmail-queue";
 					}
 				}
-				while ( (i = close(fd0[1])) ) {
+				while (close(fd0[1])) {
 					if (errno != EINTR)
 						_exit(120);
 				}
-				while ( (i = close(fd1[1])) ) {
+				while (close(fd1[1])) {
 					if (errno != EINTR)
 						_exit(120);
 				}
