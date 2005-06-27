@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include "sstring.h"
 #include "qrdata.h"
+#include "qoff.h"
 
 extern const char * __attribute__ ((pure)) skipwhitespace(const char *line, const size_t len);
 extern int __attribute__ ((pure)) is_multipart(const cstring *, cstring *);

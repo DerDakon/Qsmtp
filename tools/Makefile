@@ -16,5 +16,7 @@ testspf.o: qsmtpd.h antispam.h sstring.h
 fcshell.o: fcshell.c
 	$(CC) $(CFLAGS) --std=c99 $<
 
+qp.o: qoff.h
+
 %.o: %.c
 	$(CC) $(CFLAGS) $<

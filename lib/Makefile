@@ -21,7 +21,7 @@ netio.o: log.h ssl_timeoutio.h tls.h
 
 ssl_timeoutio.o: log.h tls.h
 
-mime.o: sstring.h qrdata.h
+mime.o: sstring.h qrdata.h qoff.h
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) $<

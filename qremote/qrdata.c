@@ -10,6 +10,7 @@
 #include "version.h"
 #include "mime.h"
 #include "log.h"
+#include "qoff.h"
 
 const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "", "./Remote host said: ", NULL};
 int ascii;			/* if message is plain ASCII or not */

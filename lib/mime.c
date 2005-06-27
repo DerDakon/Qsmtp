@@ -4,6 +4,7 @@
 #include "mime.h"
 #include "sstring.h"
 #include "qrdata.h"
+#include "qoff.h"
 
 /**
  * skipwhitespace - skip whitespaces
