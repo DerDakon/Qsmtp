@@ -13,7 +13,7 @@ clean:
 
 base64.o: sstring.h
 
-control.o: log.h dns.h
+control.o: log.h dns.h qoff.h
 
 getfile.o: userfilters.h control.h
 

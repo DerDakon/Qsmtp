@@ -119,14 +119,14 @@ strict:
 			fromdomain = HELOSTR;
 		}
 	}
-	rc = finddomainmm(getfileglobal(ds, "spfstrict", t), fromdomain, 1);
+	rc = finddomainfd(getfileglobal(ds, "spfstrict", t), fromdomain, 1);
 	if (rc <= 0)
 		return rc;
 block:
 	if (xmitstat.remotehost.len) {
 		int u;				/* if it is the user or domain policy */
 
-		rc = finddomainmm(getfileglobal(ds, "ignorespf", &u), xmitstat.remotehost.s, 1);
+		rc = finddomainfd(getfileglobal(ds, "ignorespf", &u), xmitstat.remotehost.s, 1);
 		if (rc > 0) {
 			logwhitelisted("SPF", *t, u);
 			return 0;

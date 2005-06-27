@@ -558,7 +558,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		return 0;
 
 	/* at this point either @ is set or addrsyntax has already caught this */
-	i = finddomainmm(rcpthfd, at + 1, 0);
+	i = finddomainfd(rcpthfd, at + 1, 0);
 
 	if (i < 0) {
 		if (errno == ENOMEM) {
@@ -968,7 +968,7 @@ next:
 		xmitstat.frommx = NULL;
 		s = HELOSTR;
 	}
-	if (!xmitstat.remotehost.len || !(i = finddomainmm(open("control/spffriends", O_RDONLY), xmitstat.remotehost.s, 1))) {
+	if (!xmitstat.remotehost.len || !(i = finddomainfd(open("control/spffriends", O_RDONLY), xmitstat.remotehost.s, 1))) {
 		i = check_host(s);
 		if (i < 0)
 			return errno;

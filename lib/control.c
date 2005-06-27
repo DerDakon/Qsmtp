@@ -11,6 +11,7 @@
 #include "log.h"
 #include "dns.h"
 #include "control.h"
+#include "qoff.h"
 
 /**
  * lloadfilefd - load a text file into a buffer using locked IO
@@ -275,7 +276,7 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
 }
 
 /**
- * finddomainmm - mmap a file and search a domain entry in it
+ * finddomainfd - mmap a file and search a domain entry in it
  *
  * @fd: file descriptor
  * @domain: domain name to find
@@ -286,12 +287,11 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
  * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, '\r' in file will cause trouble
  */
 int
-finddomainmm(int fd, const char *domain, const int cl)
+finddomainfd(int fd, const char *domain, const int cl)
 {
 	struct stat st;
-	char *map, *cur;
+	char *map;
 	int rc = 0, i;
-	size_t dl = strlen(domain);
 
 	if (fd < 0) {
 		return (errno == ENOENT) ? 0 : fd;
@@ -320,41 +320,7 @@ finddomainmm(int fd, const char *domain, const int cl)
 		return -1;
 	}
 
-	cur = map;
-	do {
-		char *cure = strchr(cur, '\n');
-		size_t len;
-
-		if (cure) {
-			len = cure - cur;
-		} else {
-			/* last entry, missing newline at end of file */
-			len = map + st.st_size - cur;
-		}
-		while (((*(cur + len) == ' ') || (*(cur + len) == '\t')) && len)
-			len--;
-		if ((*cur != '#') && len) {
-			if (*cur == '.') {
-				if (dl > len) {
-					if (!strncasecmp(domain + dl - len, cur, len)) {
-						rc = 1;
-						break;
-					}
-				}
-			} else {
-				if ((dl == len) && !strncasecmp(domain, cur, len)) {
-					rc = 1;
-					break;
-				}
-			}
-		}
-		cur = cure;
-		if (cure) {
-			while (*cur == '\n') {
-				cur++;
-			}
-		}
-	} while (cur);
+	rc = finddomainmm(map, st.st_size, domain);
 
 	munmap(map, st.st_size);
 	if (cl) {
@@ -373,4 +339,62 @@ finddomainmm(int fd, const char *domain, const int cl)
 		}
 	}
 	return i ? i : rc;
+}
+
+/**
+ * finddomainmm - search a domain entry in a mmaped memory area
+ *
+ * @fd: file descriptor
+ * @domain: domain name to find
+ * @cl: close fd or not
+ *
+ * returns: 1 on match, 0 if none, -1 on error
+ *
+ * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, '\r' in file will cause trouble
+ */
+int
+finddomainmm(const char *map, const q_off_t size, const char *domain)
+{
+	const char *cur;
+	size_t dl = strlen(domain);
+	q_off_t pos = 0;
+
+	cur = map;
+	do {
+		char *cure = memchr(cur, '\n', size - pos);
+		size_t len;
+
+		if (*cur != '#') {
+			if (cure) {
+				len = cure - cur;
+			} else {
+				/* last entry, missing newline at end of file */
+				len = size - pos - 1;
+			}
+			while (((*(cur + len) == ' ') || (*(cur + len) == '\t')) && len)
+				len--;
+			if (len) {
+				if (*cur == '.') {
+					if (dl > len) {
+						if (!strncasecmp(domain + dl - len, cur, len)) {
+							return 1;
+						}
+					}
+				} else {
+					if ((dl == len) && !strncasecmp(domain, cur, len)) {
+						return 1;
+					}
+				}
+			}
+		}
+		cur = cure;
+		if (cure) {
+			while (*cur == '\n') {
+				cur++;
+			}
+			pos = cur - map;
+		}
+	} while (cur);
+
+	return 0;
 }
