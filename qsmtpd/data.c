@@ -1,4 +1,5 @@
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <syslog.h>
 #include <unistd.h>
 #include <string.h>
@@ -87,6 +88,7 @@ queue_init(void)
 					if (errno != EINTR)
 						_exit(120);
 				}
+				munmap(rcpthosts, rcpthsize);
 				while (close(rcpthfd)) {
 					if (errno != EINTR)
 						_exit(120);

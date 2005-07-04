@@ -1,4 +1,5 @@
 #include <sys/wait.h>
+#include <sys/mman.h>
 #include <syslog.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -133,6 +134,7 @@ authenticate(void)
 					if (errno != EINTR)
 						_exit(1);
 				}
+				munmap(rcpthosts, rcpthsize);
 				while (close(rcpthfd)) {
 					if (errno != EINTR)
 						_exit(1);

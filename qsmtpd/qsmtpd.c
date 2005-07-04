@@ -4,6 +4,8 @@
 #include <sys/statvfs.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <sys/mman.h>
+#include <sys/file.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
@@ -68,6 +70,8 @@ static char *gcbuf;			/* buffer for globalconf array (see below) */
 
 int relayclient;			/* flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
 int rcpthfd;				/* file descriptor of control/rcpthosts */
+char *rcpthosts;			/* memory mapping of control/rcpthosts */
+q_off_t rcpthsize;			/* sizeof("control/rcpthosts") */
 unsigned long sslauth;			/* if SMTP AUTH is only allowed after STARTTLS */
 unsigned long databytes;		/* maximum message size */
 unsigned int goodrcpt;			/* number of valid recipients */
@@ -162,15 +166,32 @@ setup(void)
 		log_write(LOG_ERR, "control/rcpthosts not found");
 		return errno;
 	}
+	while (flock(rcpthfd, LOCK_SH)) {
+		if (errno != EINTR) {
+			log_write(LOG_WARNING, "cannot lock control/rcpthosts");
+			return ENOLCK; /* not the right error code, but good enough */
+		}
+	}
 	if (fstat(rcpthfd, &st)) {
 		log_write(LOG_ERR, "cannot fstat() control/rcpthosts");
 		return errno;
 	}
-	if (st.st_size < 5) {
+	rcpthsize = st.st_size;
+	if (rcpthsize < 5) {
 		/* minimum length of domain name: xx.yy = 5 bytes */
 		log_write(LOG_ERR, "control/rcpthosts too short");
 		return 1;
 	}
+	rcpthosts = mmap(NULL, rcpthsize, PROT_READ, MAP_SHARED, rcpthfd, 0);
+	if (rcpthosts == MAP_FAILED) {
+		int e = errno;
+
+		log_write(LOG_ERR, "cannot mmap() control/rcpthosts");
+		while (close(rcpthfd) && (errno == EINTR));
+		errno = e;
+		return -1;
+	}
+
 	tmp = getenv("TCP6REMOTEIP");
 	if (!tmp || !*tmp || (inet_pton(AF_INET6, tmp, &xmitstat.sremoteip) <= 0)) {
 		log_write(LOG_ERR, "can't figure out IP of remote host");
@@ -558,7 +579,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		return 0;
 
 	/* at this point either @ is set or addrsyntax has already caught this */
-	i = finddomainfd(rcpthfd, at + 1, 0);
+	i = finddomainmm(rcpthosts, rcpthsize, at + 1);
 
 	if (i < 0) {
 		if (errno == ENOMEM) {

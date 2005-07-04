@@ -4,6 +4,7 @@
 #include <sys/queue.h>
 #include "sstring.h"
 #include "dns.h"
+#include "qoff.h"
 
 struct smtpcomm {
 	char		*name;		/* the SMTP command */
@@ -41,6 +42,8 @@ struct xmitstat {			/* This contains some flags describing the transmission and 
 extern struct smtpcomm commands[];
 
 extern int rcpthfd;
+extern char *rcpthosts;
+extern q_off_t rcpthsize;
 extern struct xmitstat xmitstat;
 extern char *protocol;
 extern char *auth_host;			/* hostname for auth */
