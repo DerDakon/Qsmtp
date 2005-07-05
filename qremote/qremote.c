@@ -106,6 +106,7 @@ quitmsg(void)
 		}
 	} while ((linelen >= 4) && (linein[3] == '-'));
 	close(socketd);
+	socketd = -1;
 }
 
 void __attribute__ ((noreturn))
@@ -430,10 +431,10 @@ main(int argc, char *argv[])
 			getrhost(mx);
 			dropmsg[1] = rhost;
 			log_writen(LOG_WARNING, dropmsg);
+			while ((netget() == 220) && (linein[3] != ' ')) {}
 			quitmsg();
-			continue;
 		}
-	} while (greeting());
+	} while ((socketd < 0) || greeting());
 
 	getrhost(mx);
 	freeips(mx);
