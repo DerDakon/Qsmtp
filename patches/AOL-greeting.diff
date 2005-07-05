@@ -1,13 +1,8 @@
-This patch changes Qremote to be a bit more tolerant about the greeting
-of the remote server. RfC 2821, section 4.2 specifies that a greeting begins
-with "220 ", so multiline greetings are forbidden. Nevertheless there are
-some hosts doing this, normally Qremote will refuse to send a mail to them.
-
 Index: qremote/qremote.c
 ===================================================================
---- qremote/qremote.c	(revision 538)
+--- qremote/qremote.c	(revision 692)
 +++ qremote/qremote.c	(working copy)
-@@ -423,13 +423,36 @@
+@@ -419,13 +419,36 @@
  /* for all MX entries we got: try to enable connection, check if the SMTP server wants us
   * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
  	do {
