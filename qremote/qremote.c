@@ -119,7 +119,7 @@ quit(void)
 /**
  * getrhost - print remote host information to buffer
  *
- * @mx: list of MX entries, first with priority 0 is active
+ * @mx: list of MX entries, entry with priority 65538 is active
  */
 static inline void
 getrhost(const struct ips *mx)
@@ -130,7 +130,7 @@ getrhost(const struct ips *mx)
 	free(rhost);
 
 	/* find active mx */
-	while (m->priority)
+	while (m->priority != 65538)
 		m = m->next;
 
 	if (ask_dnsname(&m->addr, &partner_fqdn)) {

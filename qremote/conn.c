@@ -71,7 +71,8 @@ conn(const struct in6_addr remoteip)
  *
  * @mx: list of IP adresses to try
  *
- * Every entry where a connection attempt was made is marked with a priority of 65537
+ * Every entry where a connection attempt was made is marked with a priority of 65537,
+ * the last one with 65538
  */
 void
 tryconn(struct ips *mx)
@@ -89,6 +90,8 @@ tryconn(struct ips *mx)
 		}
 #endif
 		for (thisip = mx; thisip; thisip = thisip->next) {
+			if (thisip->priority == 65538)
+				thisip->priority = 65537;
 			if (thisip->priority < minpri)
 				minpri = thisip->priority;
 		}
@@ -100,7 +103,7 @@ tryconn(struct ips *mx)
 		for (thisip = mx; thisip; thisip = thisip->next) {
 			if (thisip->priority == minpri) {
 				/* set priority to 0 to allow getrhost() to find active MX */
-				thisip->priority = 0;
+				thisip->priority = 65538;
 
 				if (!conn(thisip->addr))
 					return;
