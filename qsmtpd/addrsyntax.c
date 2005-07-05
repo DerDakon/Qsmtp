@@ -101,7 +101,7 @@ parseaddr(const char *addr)
  * @addr: the address to check
  */
 int __attribute__ ((pure))
-checkaddr(const char *addr)
+checkaddr(const char *const addr)
 {
 	return !parseaddr(addr);
 }

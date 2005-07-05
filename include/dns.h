@@ -21,7 +21,7 @@ extern int __attribute__ ((pure)) domainvalid(const char *);
 
 /* qsmtpd/addrsyntax.c */
 
-extern int __attribute__ ((pure)) checkaddr(const char *);
+extern int __attribute__ ((pure)) checkaddr(const char *const);
 extern int __attribute__ ((pure)) addrsyntax(char *in, const int flags, string *addr, char **more);
 
 /* return codes of helovalid:
