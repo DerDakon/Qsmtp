@@ -177,7 +177,8 @@ tls_init(void)
 				const GENERAL_NAME *gn = sk_GENERAL_NAME_value(gens, i);
 
 				if (gn->type == GEN_DNS)
-				if (match_partner(gn->d.ia5->data, gn->d.ia5->length)) break;
+					if (match_partner(gn->d.ia5->data, gn->d.ia5->length))
+						break;
 			}
 			sk_GENERAL_NAME_free(gens);
 		}
