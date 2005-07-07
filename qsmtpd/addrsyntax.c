@@ -72,6 +72,7 @@ parselocalpart(const char *const addr)
  *          1: address only contains a domain name
  *          2: address contains @domain
  *          3: address is a full email address
+ *          4: address is a full email address with IPv4 or IPv6 address literal
  */
 static int __attribute__ ((pure))
 parseaddr(const char *addr)
@@ -92,7 +93,36 @@ parseaddr(const char *addr)
 		return 0;
 	if (*addr == '@')
 		return domainvalid(addr + 1) ? 0 : 2;
-	return domainvalid(at + 1) ? 0 : 3;
+	if (*(at + 1) == '[') {
+		const char *cl = strchr(at + 2, ']');
+		size_t addrlen;
+
+		if (!cl || *(cl + 1))
+			return 0;
+		if (!strncmp(cl + 1, "IPv6:", 5)) {
+			struct in6_addr ip6;
+			char ipbuf[INET6_ADDRSTRLEN];
+
+			addrlen = cl - at - 7;
+			if (addrlen > INET6_ADDRSTRLEN)
+				return 0;
+			memcpy(ipbuf, at + 7, addrlen);
+			ipbuf[addrlen] = '\0';
+			return (inet_pton(AF_INET6, ipbuf, &ip6) <= 0) ? 0 : 4;
+		} else {
+			char ipbuf[INET_ADDRSTRLEN];
+			struct in_addr ip4;
+
+			addrlen = cl - at - 2;
+			if (addrlen > INET_ADDRSTRLEN)
+				return 0;
+			memcpy(ipbuf, at + 2, addrlen);
+			ipbuf[addrlen] = '\0';
+			return (inet_pton(AF_INET, ipbuf, &ip4) <= 0) ? 0 : 4;
+		}
+	} else {
+		return domainvalid(at + 1) ? 0 : 3;
+	}
 }
 
 /**
@@ -113,9 +143,9 @@ checkaddr(const char *const addr)
  * @flags:   1: rcpt to checks (e.g. source route is allowed), 0: mail from checks,
  *           2: checks for badmailfrom/goodmailfrom lists
  * @addr:    struct string to contain the address (memory will be malloced)
- * @more:    here starts the data behind the first > behind the first < (or NULL if none)
+ * @more:    here starts the data behind the first '>' behind the first '<' (or NULL if none)
  *
- * returns: 0 on success, -1 on error (e.g. ENOMEM), 1 if address is invalid
+ * returns: >0 on success, -1 on error (e.g. ENOMEM), 0 if address is invalid
  */
 int
 addrsyntax(char *in, const int flags, string *addr, char **more)
@@ -124,7 +154,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 					 * in "in" (without source route and other crap) */
 	char *t;			/* temporary storage */
 	int len;			/* length of the recip address */
-	int x;
+	int x = 1;
 
 	f = in;
 	if ((flags == 1) && (*f == '@')) {
@@ -136,26 +166,26 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 		while ( (t = strchr(f, ',')) ) {
 			*t++ = '\0';
 			if (domainvalid(f + 1))
-				return 1;
+				return 0;
 			f = t;
 			if (*f != '@')
-				return 1;
+				return 0;
 		}
 		t = strchr(f, ':');
 		if (!t)
-			return 1;
+			return 0;
 		*t++ = '\0';
 		if (domainvalid(f + 1))
-			return 1;
+			return 0;
 		/* RfC 2821, Section 4.5.3.1: The maximum total length of a reverse-path or forward-path
 		 * is 256 characters (including the punctuation and element separators). */
 		if ((t - in) > 256)
-			return 1;
+			return 0;
 		f = t;
 	}
 	l = strchr(f, '>');
 	if (!l)
-		return 1;
+		return 0;
 
 	len = l - f;
 	/* empty address is only allowed in MAIL FROM */
@@ -164,7 +194,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 			addr->s = NULL;
 			addr->len = 0;
 		}
-		return 0;
+		return 1;
 	}
 	/* check if something follow the '>' */
 	if (more && *(l + 1)) {
@@ -177,21 +207,20 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	if ((flags != 1) || strcasecmp(f, "postmaster")) {
 		x = parseaddr(f);
 		if (x < 3)
-			return 1;
+			return 0;
 	}
 
 	if (addr) {
 		addr->s = malloc(len + 1);
-		if (!addr->s) {
+		if (!addr->s)
 			return -1;
-		}
 	
 		strncpy(addr->s, f, len);
 		addr->s[len] = '\0';
 		addr->len = len;
 	}
 
-	return 0;
+	return x;
 }
 
 /**
