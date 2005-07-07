@@ -279,9 +279,16 @@ queue_envelope(const unsigned long msgsize)
 
 		logmail[4] = l->to.s;
 		if (l->ok) {
+			const char *at = strchr(l->to.s, '@');
+
 			log_writen(LOG_INFO, logmail);
 			WRITE(fd, "T", 1);
-			WRITE(fd, l->to.s, l->to.len + 1);
+			if (at && (*(at + 1) == '[')) {
+				WRITE(fd, l->to.s, at - l->to.s + 1);
+				WRITE(fd, liphost.s, liphost.len + 1);
+			} else {
+				WRITE(fd, l->to.s, l->to.len + 1);
+			}
 		}
 		TAILQ_REMOVE(&head, head.tqh_first, entries);
 		free(l->to.s);

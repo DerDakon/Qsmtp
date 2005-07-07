@@ -34,7 +34,9 @@ struct xmitstat {			/* This contains some flags describing the transmission and 
 	char *remoteinfo;		/* info gathered by tcpserver like remote username */
 	string helostr;			/* the helo string sent by the client if different from the reverse lookup
 					 * if the helo is identical to remotehost this is {NULL, 0} */
-	struct in6_addr sremoteip;	/* parsed remoteip */
+	struct in6_addr sremoteip;	/* parsed remote ip */
+	char localip[INET6_ADDRSTRLEN]; /* ip of local socket. If ipv4conn in IPv4 form! */
+	struct in6_addr slocalip;	/* parsed local ip */
 	struct ips *frommx;		/* MX IPs of from domain */
 	char *spfexp;			/* the SPF explanation if provided by the domain or NULL if none */
 };
@@ -50,6 +52,7 @@ extern char *auth_host;			/* hostname for auth */
 extern char *auth_check;		/* checkpassword or one of his friends for auth */
 extern char **auth_sub;			/* subprogram and arguments to be invoked by auth_check (usually /bin/true) */
 extern string heloname;			/* the fqdn to show in helo */
+extern string liphost;			/* replacement domain if to address is <foo@[ip]> */
 extern unsigned int goodrcpt;		/* number of valid recipients */
 extern int badbounce;			/* bounce message with more than one recipient */
 extern unsigned long sslauth;		/* if SMTP AUTH is only allowed after STARTTLS */

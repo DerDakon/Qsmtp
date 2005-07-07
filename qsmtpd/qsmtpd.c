@@ -83,6 +83,7 @@ char *auth_check;			/* checkpassword or one of his friends for auth */
 char **auth_sub;			/* subprogram to be invoked by auth_check (usually /bin/true) */
 char **globalconf;			/* see userfilters.h */
 string heloname;			/* the fqdn to show in helo */
+string liphost;				/* replacement domain if to address is <foo@[ip]> */
 int socketd = 1;			/* the descriptor where messages to network are written to */
 long comstate = 0x001;			/* status of the command state machine, initialized to noop */
 
@@ -161,6 +162,19 @@ setup(void)
 		return EINVAL;
 	}
 
+	if (( (j = loadoneliner("control/localiphost", &liphost.s, 1)) < 0) && (errno != ENOENT))
+		return errno;
+	if (j > 0) {
+		liphost.len = j;
+		if (domainvalid(liphost.s)) {
+			log_write(LOG_ERR, "control/localiphost contains invalid name");
+			return EINVAL;
+		}
+	} else {
+		liphost.s = heloname.s;
+		liphost.len = heloname.len;
+	}
+
 	rcpthfd = open("control/rcpthosts", O_RDONLY);
 	if (rcpthfd < 0) {
 		log_write(LOG_ERR, "control/rcpthosts not found");
@@ -198,6 +212,16 @@ setup(void)
 		return 1;
 	}
 	memcpy(xmitstat.remoteip, tmp, strlen(tmp));
+	tmp = getenv("TCP6LOCALIP");
+	if (!tmp || !*tmp || (inet_pton(AF_INET6, tmp, &xmitstat.slocalip) <= 0)) {
+		log_write(LOG_ERR, "can't figure local IP");
+		return 1;
+	}
+	if (IN6_IS_ADDR_V4MAPPED(xmitstat.slocalip.s6_addr)) {
+		memcpy(xmitstat.localip, tmp + 7, strlen(tmp + 7));
+	} else {
+		memcpy(xmitstat.localip, tmp, strlen(tmp));
+	}
 
 	/* RfC 2821, section 4.5.3.2: "Timeouts"
 	 * An SMTP server SHOULD have a timeout of at least 5 minutes while it
@@ -563,7 +587,8 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	STREMPTY(ds->domainpath);
 	STREMPTY(ds->userpath);
 
-	if ( (j = addrsyntax(in, flags, addr, more)) == 0) {
+	j = addrsyntax(in, flags, addr, more);
+	if ((j == 0) || ((flags != 1) && (j == 4))) {
 		return netwrite("501 5.1.3 domain of mail address is syntactically incorrect\r\n") ? errno : EBOGUS;
 	} else if (j < 0) {
 		return errno;
@@ -577,25 +602,38 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	/* check if mail goes to global postmaster */
 	if (flags && !at)
 		return 0;
-
-	/* at this point either @ is set or addrsyntax has already caught this */
-	i = finddomainmm(rcpthosts, rcpthsize, at + 1);
-
-	if (i < 0) {
-		if (errno == ENOMEM) {
-			result = errno;
-		} else if (err_control("control/rcpthosts")) {
-			result = errno;
-		} else {
-			result = EDONE;
+	if (j < 4) {
+		/* at this point either @ is set or addrsyntax has already caught this */
+		i = finddomainmm(rcpthosts, rcpthsize, at + 1);
+	
+		if (i < 0) {
+			if (errno == ENOMEM) {
+				result = errno;
+			} else if (err_control("control/rcpthosts")) {
+				result = errno;
+			} else {
+				result = EDONE;
+			}
+			goto free_and_out;
+		} else if (!i) {
+			return -2;
 		}
-		goto free_and_out;
-	} else if (!i) {
-		return -2;
+		j = vget_assign(at + 1, &(ds->domainpath));
+	} else {
+		const size_t liplen = strlen(xmitstat.localip);
+
+		j = 0;
+		if (!strncmp(at + 2, "IPv6:", 5)) {
+			if (strncmp(at + 7, xmitstat.localip, liplen))
+				goto nouser;
+		} else {
+			if (strncmp(at + 2, xmitstat.localip, liplen))
+				goto nouser;
+		}
+		j = vget_assign(liphost.s, &(ds->domainpath));
 	}
 
 /* get the domain directory from "users/cdb" */
-	j = vget_assign(at + 1, &(ds->domainpath));
 	if (j < 0) {
 		if (errno == ENOENT)
 			return 0;
@@ -632,6 +670,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		goto free_and_out;
 	}
 
+nouser:
 	if (!j) {
 		const char *logmsg[] = {"550 5.1.1 no such user <", addr->s, ">", NULL};
 
