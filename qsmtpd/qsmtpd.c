@@ -1348,8 +1348,8 @@ main(int argc, char *argv[]) {
 		} else {
 			int fd = open(auth_check, O_RDONLY);
 
-			/* allow EPERM: mode may be 1711 */
-			if ((fd < 0) && (errno != EPERM)) {
+			/* allow EACCES: mode may be 1711 */
+			if ((fd < 0) && (errno != EACCES)) {
 				const char *msg[] = {"checkpassword program '", auth_check, "' does not exist", NULL};
 
 				log_writen(LOG_WARNING, msg);
