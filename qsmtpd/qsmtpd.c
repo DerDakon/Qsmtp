@@ -398,6 +398,7 @@ qmexists(const string *dirtempl, const char *suff1, const unsigned int len, cons
 	int fd;
 	unsigned int l = dirtempl->len;
 
+	errno = ENOENT;
 	if (l >= PATH_MAX)
 		return -1;
 	memcpy(filetmp, dirtempl->s, l);
