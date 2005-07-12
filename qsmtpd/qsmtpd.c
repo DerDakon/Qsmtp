@@ -429,7 +429,7 @@ qmexists(const string *dirtempl, const char *suff1, const unsigned int len, cons
 
 	fd = open(filetmp, O_RDONLY);
 	if (fd == -1)
-		if (errno != ENOENT)
+		if ((errno != ENOENT) && (errno != EACCES))
 			err_control(filetmp);
 	return fd;
 }
@@ -466,14 +466,21 @@ user_exists(const string *localpart, struct userconf *ds)
 		size_t i;
 
 		free(ds->userpath.s);
-		ds->userpath.s = NULL;
-		ds->userpath.len = 0;
-		/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
-		if (e != ENOENT) {
-			if (!err_control(filetmp))
+		STREMPTY(ds->userpath);
+		if (e == EACCES) {
+			/* Directory is not readable. Admins fault, we accept the mail. */
+			free(ds->domainpath.s);
+			STREMPTY(ds->domainpath);
+			return 1;
+		} else if (e != ENOENT) {
+			if (!err_control(filetmp)) {
 				errno = e;
+			} else {
+				errno = EDONE;
+			}
 			return -1;
 		}
+		/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
 		i = ds->domainpath.len;
 		memcpy(filetmp, ds->domainpath.s, i);
 		memcpy(filetmp + i, ".qmail-", 7);
@@ -486,26 +493,41 @@ user_exists(const string *localpart, struct userconf *ds)
 		fd = qmexists(&dotqm, localpart->s, localpart->len, 2);
 		/* try .qmail-user-default instead */
 		if (fd < 0) {
-			if (errno != ENOENT)
-				return fd;
-			fd = qmexists(&dotqm, localpart->s, localpart->len, 3);
+			if (errno == EACCES) {
+				/* User exists */
+				free(dotqm.s);
+				return 1;
+			} else if (errno != ENOENT) {
+				free(dotqm.s);
+				return EDONE;
+			} else {
+				fd = qmexists(&dotqm, localpart->s, localpart->len, 3);
+			}
 		}
 
 		if (fd < 0) {
 			char *p;
-			/* if username contains '-' there may be
-			  .qmail-partofusername-default */
-			if (errno != ENOENT) {
+
+			if (errno == EACCES) {
+				/* User exists */
 				free(dotqm.s);
-				return fd;
+				return 1;
+			} else if (errno != ENOENT) {
+				free(dotqm.s);
+				return EDONE;
 			}
+			/* if username contains '-' there may be
+			 .qmail-partofusername-default */
 			p = strchr(localpart->s, '-');
 			while (p) {
 				fd = qmexists(&dotqm, localpart->s, (p - localpart->s), 3);
 				if (fd < 0) {
-					if (errno != ENOENT) {
+					if (errno == EACCES) {
 						free(dotqm.s);
-						return fd;
+						return 1;
+					} else if (errno == ENOENT) {
+						free(dotqm.s);
+						return EDONE;
 					}
 				} else {
 					while (close(fd)) {
@@ -523,7 +545,13 @@ user_exists(const string *localpart, struct userconf *ds)
 			free(dotqm.s);
 			if (fd < 0) {
 				/* no local user with that address */
-				return (errno == ENOENT) ? 0 : fd;
+				if (errno == EACCES) {
+					return 1;
+				} else if (errno == ENOENT) {
+					return 0;
+				} else {
+					return EDONE;
+				}
 			} else if (vpopbounce) {
 				char buff[2*strlen(vpopbounce)+1];
 				int r;
@@ -532,7 +560,7 @@ user_exists(const string *localpart, struct userconf *ds)
 				if (r == -1) {
 					e = errno;
 					if (!err_control(filetmp))
-						errno = e;
+						errno = EDONE;
 					return -1;
 				}
 				while (close(fd)) {
