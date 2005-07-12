@@ -429,9 +429,12 @@ qmexists(const string *dirtempl, const char *suff1, const unsigned int len, cons
 	filetmp[l] = 0;
 
 	fd = open(filetmp, O_RDONLY);
-	if (fd == -1)
-		if ((errno != ENOENT) && (errno != EACCES))
+	if ((fd == -1) {
+		if ((errno == ENOMEM) || (errno == ENFILE) || (errno == EMFILE)) {
+			errno = ENOMEM;
+		} else if ((errno != ENOENT) && (errno != EACCES)) {
 			err_control(filetmp);
+		}
 	return fd;
 }
 
@@ -498,6 +501,8 @@ user_exists(const string *localpart, struct userconf *ds)
 				/* User exists */
 				free(dotqm.s);
 				return 1;
+			} else if (errno == ENOMEM) {
+				return fd;
 			} else if (errno != ENOENT) {
 				free(dotqm.s);
 				return EDONE;
@@ -513,6 +518,8 @@ user_exists(const string *localpart, struct userconf *ds)
 				/* User exists */
 				free(dotqm.s);
 				return 1;
+			} else if (errno == ENOMEM) {
+				return fd;
 			} else if (errno != ENOENT) {
 				free(dotqm.s);
 				return EDONE;
@@ -526,6 +533,8 @@ user_exists(const string *localpart, struct userconf *ds)
 					if (errno == EACCES) {
 						free(dotqm.s);
 						return 1;
+					} else if (errno == ENOMEM) {
+						return fd;
 					} else if (errno == ENOENT) {
 						free(dotqm.s);
 						return EDONE;
@@ -550,6 +559,8 @@ user_exists(const string *localpart, struct userconf *ds)
 					return 1;
 				} else if (errno == ENOENT) {
 					return 0;
+				} else if (errno == ENOMEM) {
+					return fd;
 				} else {
 					return EDONE;
 				}
