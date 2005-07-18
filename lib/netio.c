@@ -313,10 +313,15 @@ netnwrite(const char *s, const size_t l)
 /**
  * net_writen - write one line to the network, fold if needed
  *
+ * @s: array of strings to send
+ *
  * returns: 0 on success
  *          -1 on error (errno is set)
  *
  * does not return on timeout, programm will be cancelled
+ *
+ * -s[0] must be short enough to fit completely into the buffer
+ * -every s[] must not have a sequence longer then 506 characters without a space (' ') in them
  */
 int
 net_writen(const char *const *s)
@@ -330,9 +335,9 @@ net_writen(const char *const *s)
 	char msg[512];
 
 	for (i = 0; s[i]; i++) {
+		ssize_t off = 0;
 		size_t l = strlen(s[i]);
 
-		/* silently ignore the case if s[i] itself is too big */
 		if (len + l > sizeof(msg) - 2) {
 			char c = msg[3];
 
@@ -341,11 +346,33 @@ net_writen(const char *const *s)
 			msg[len++] = '\n';
 			/* ignore if this fails: if the last on succeeds this must be enough for the client */
 			(void) netnwrite(msg, len + 2);
-			msg[3] = c;
 			len = 4;
+			/* check if s[i] itself is too big */
+			if (l + 6 > sizeof(msg)) {
+				const char *sp = s[i], *nsp;
+
+				while (l > off + sizeof(msg) - 6) {
+					size_t m;
+
+					nsp = strchr(s[i] + off, ' ');
+
+					while (nsp - s[i] - off < sizeof(msg) - 6) {
+						sp = nsp;
+						nsp = strchr(sp + 1, ' ');
+					}
+					m = sp - s[i] - off;
+					memcpy(msg + 4, s[i] + off, m);
+					m += 4;
+					msg[m++] = '\r';
+					msg[m++] = '\n';
+					netnwrite(msg, m);
+					off += m - 6;
+				}
+			}
+			msg[3] = c;
 		}
-		memcpy(msg + len, s[i], l);
-		len += l;
+		memcpy(msg + len, s[i] + off, l - off);
+		len += l - off;
 	}
 	msg[len++] = '\r';
 	msg[len++] = '\n';
