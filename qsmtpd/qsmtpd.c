@@ -857,7 +857,7 @@ smtp_rcpt(void)
 		}
 	}
 
-	i = j = 0;
+	i = j = e = 0;
 	while (rcpt_cbs[j]) {
 		errmsg = NULL;
 		if ( (i = rcpt_cbs[j](&ds, &errmsg, &bt)) ) {
@@ -867,6 +867,7 @@ smtp_rcpt(void)
 			if (i == 4) {
 				int t;
 
+				e = 1;
 				if (getsetting(&ds, "fail_hard_on_temp", &t))
 					i = 1;
 			}
@@ -877,10 +878,13 @@ smtp_rcpt(void)
 					i = 3;
 			}
 
-			break;
+			if (i != 4)
+				break;
 		}
 		j++;
 	}
+	if ((i == 0) && e)
+		i = 4;
 	free(ds.userpath.s);
 	free(ds.domainpath.s);
 	free(ucbuf);
