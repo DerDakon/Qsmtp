@@ -429,12 +429,13 @@ qmexists(const string *dirtempl, const char *suff1, const unsigned int len, cons
 	filetmp[l] = 0;
 
 	fd = open(filetmp, O_RDONLY);
-	if ((fd == -1) {
+	if (fd == -1) {
 		if ((errno == ENOMEM) || (errno == ENFILE) || (errno == EMFILE)) {
 			errno = ENOMEM;
 		} else if ((errno != ENOENT) && (errno != EACCES)) {
 			err_control(filetmp);
 		}
+	}
 	return fd;
 }
 
