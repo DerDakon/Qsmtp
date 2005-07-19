@@ -536,9 +536,10 @@ user_exists(const string *localpart, struct userconf *ds)
 						return 1;
 					} else if (errno == ENOMEM) {
 						return fd;
-					} else if (errno == ENOENT) {
+					} else if (errno != ENOENT) {
 						free(dotqm.s);
-						return EDONE;
+						errno = EDONE;
+						return -1;
 					}
 				} else {
 					while (close(fd)) {
