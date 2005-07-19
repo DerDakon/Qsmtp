@@ -30,6 +30,7 @@ static struct params {
 	{ .name = "block_SoberG", .len = 12, .value = 0 },
 	{ .name = "spfpolicy", .len = 9, .value = 0 },
 	{ .name = "usersize", .len = 8, .value = 0 },
+	{ .name = "block_wildcardns", .len = 16, .value = 0 },
 	{ .name = "fail_hard_on_temp", .len = 17, .value = 0 },
 	{ .name = "nonexist_on_block", .len = 17, .value = 0 },
 	{ .name = NULL }
