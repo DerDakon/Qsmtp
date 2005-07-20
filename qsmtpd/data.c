@@ -177,25 +177,28 @@ queue_header(void)
 	int fd = fd0[1];
 	int rc;
 	char datebuf[35] = ">; ";		/* the date for the Received-line */
-	size_t i;
+	size_t i = (authhide && (xmitstat.authname.len || xmitstat.tlsclient)) ? 2 : 0;
 	const char *afterprot = "A\n\tfor <";	/* the string to be written after the protocol */
+	const char *authstr = ") (auth=";
 
 /* write the "Received: " line to mail header */
 	WRITE(fd, "Received: from ", 15);
-	if (xmitstat.remotehost.s) {
-		WRITE(fd, xmitstat.remotehost.s, xmitstat.remotehost.len);
-	} else {
-		WRITE(fd, "unknown", 7);
-	}
-	WRITE(fd, " ([", 3);
-	WRITE(fd, xmitstat.remoteip, strlen(xmitstat.remoteip));
-	WRITE(fd, "]", 1);
-	if (xmitstat.helostr.len) {
-		WRITE(fd, " HELO ", 6);
-		WRITE(fd, xmitstat.helostr.s, xmitstat.helostr.len);
+	if (!i) {
+		if (xmitstat.remotehost.s) {
+			WRITE(fd, xmitstat.remotehost.s, xmitstat.remotehost.len);
+		} else {
+			WRITE(fd, "unknown", 7);
+		}
+		WRITE(fd, " ([", 3);
+		WRITE(fd, xmitstat.remoteip, strlen(xmitstat.remoteip));
+		WRITE(fd, "]", 1);
+		if (xmitstat.helostr.len) {
+			WRITE(fd, " HELO ", 6);
+			WRITE(fd, xmitstat.helostr.s, xmitstat.helostr.len);
+		}
 	}
 	if (xmitstat.authname.len) {
-		WRITE(fd, ") (auth=", 8);
+		WRITE(fd, authstr + i, 8 - i);
 		WRITE(fd, xmitstat.authname.s, xmitstat.authname.len);
 	} else if (xmitstat.remoteinfo) {
 		WRITE(fd, ") (", 3);

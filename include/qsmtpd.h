@@ -59,6 +59,7 @@ extern unsigned long sslauth;		/* if SMTP AUTH is only allowed after STARTTLS */
 extern unsigned long databytes;		/* maximum message size */
 extern int relayclient;			/* flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
 extern long comstate;			/* status of the command state machine */
+extern int authhide;			/* hide source of authenticated mail */
 
 extern int err_control(const char *);
 extern void freedata(void);

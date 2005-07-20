@@ -86,6 +86,7 @@ string heloname;			/* the fqdn to show in helo */
 string liphost;				/* replacement domain if to address is <foo@[ip]> */
 int socketd = 1;			/* the descriptor where messages to network are written to */
 long comstate = 0x001;			/* status of the command state machine, initialized to noop */
+int authhide;				/* hide source of authenticated mail */
 
 struct tailhead *headp;			/* List head. */
 struct recip *thisrecip;
@@ -240,6 +241,10 @@ setup(void)
 		maxbytes = databytes;
 	} else {
 		maxbytes = -1UL - 1000;
+	}
+	if ( (j = loadintfd(open("control/authhide", O_RDONLY), &authhide, 0)) ) {
+		log_write(LOG_ERR, "parse error in control/authhide");
+		authhide = 0;
 	}
 
 	if ( (j = loadintfd(open("control/forcesslauth", O_RDONLY), &sslauth, 0)) ) {
