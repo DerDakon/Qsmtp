@@ -17,12 +17,12 @@ struct string heloname;
 int in_data;
 
 void quit(void) { return; }
-int net_writen(const char *const *a __attribute__ ((unused)))
+int net_writen(const char *const *s)
 {
 	int i = 0, rc = 0;
 
-	while (a[i] && (rc >= 0)) {
-		rc = write(1, a[i], strlen(a[i]));
+	while (s[i] && (rc >= 0)) {
+		rc = write(1, s[i], strlen(s[i]));
 		i++;
 	}
 	write(1, "\r\n", 2);
