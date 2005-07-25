@@ -1,3 +1,9 @@
+/** \file qsmtpd.c
+ \brief main part of Qsmtpd
+
+ This file contains the main function and the basic commands of Qsmtpd
+ SMTP server.
+ */
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/stat.h>
@@ -64,38 +70,41 @@ struct smtpcomm commands[] = {
 
 #undef _C
 
-static char *vpopbounce;		/* the bounce command in vpopmails .qmail-default */
-static unsigned int rcptcount;		/* number of recipients in lists including rejected */
-static char *gcbuf;			/* buffer for globalconf array (see below) */
+static char *vpopbounce;		/**< the bounce command in vpopmails .qmail-default */
+static unsigned int rcptcount;		/**< number of recipients in lists including rejected */
+static char *gcbuf;			/**< buffer for globalconf array (see below) */
 
-int relayclient;			/* flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
-int rcpthfd;				/* file descriptor of control/rcpthosts */
-char *rcpthosts;			/* memory mapping of control/rcpthosts */
-q_off_t rcpthsize;			/* sizeof("control/rcpthosts") */
-unsigned long sslauth;			/* if SMTP AUTH is only allowed after STARTTLS */
-unsigned long databytes;		/* maximum message size */
-unsigned int goodrcpt;			/* number of valid recipients */
-int badbounce;				/* bounce message with more than one recipient */
-struct xmitstat xmitstat;		/* This contains some flags describing the transmission and it's status. */
-char *protocol;				/* the protocol string to use (e.g. "ESMTP") */
-char *auth_host;			/* hostname for auth */
-char *auth_check;			/* checkpassword or one of his friends for auth */
-char **auth_sub;			/* subprogram to be invoked by auth_check (usually /bin/true) */
-char **globalconf;			/* see userfilters.h */
-string heloname;			/* the fqdn to show in helo */
-string liphost;				/* replacement domain if to address is <foo@[ip]> */
-int socketd = 1;			/* the descriptor where messages to network are written to */
-long comstate = 0x001;			/* status of the command state machine, initialized to noop */
-int authhide;				/* hide source of authenticated mail */
+int relayclient;			/**< flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
+int rcpthfd;				/**< file descriptor of control/rcpthosts */
+char *rcpthosts;			/**< memory mapping of control/rcpthosts */
+q_off_t rcpthsize;			/**< sizeof("control/rcpthosts") */
+unsigned long sslauth;			/**< if SMTP AUTH is only allowed after STARTTLS */
+unsigned long databytes;		/**< maximum message size */
+unsigned int goodrcpt;			/**< number of valid recipients */
+int badbounce;				/**< bounce message with more than one recipient */
+struct xmitstat xmitstat;		/**< This contains some flags describing the transmission and it's status. */
+char *protocol;				/**< the protocol string to use (e.g. "ESMTP") */
+char *auth_host;			/**< hostname for auth */
+char *auth_check;			/**< checkpassword or one of his friends for auth */
+char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
+char **globalconf;			/**< see userfilters.h */
+string heloname;			/**< the fqdn to show in helo */
+string liphost;				/**< replacement domain if TO address is <foo@[ip]> */
+int socketd = 1;			/**< the descriptor where messages to network are written to */
+long comstate = 0x001;			/**< status of the command state machine, initialized to noop */
+int authhide;				/**< hide source of authenticated mail */
 
-struct tailhead *headp;			/* List head. */
+struct tailhead *headp;			/**< List head. */
 struct recip *thisrecip;
 
-static int badcmds = 0;			/* bad commands in a row */
+static int badcmds = 0;			/**< bad commands in a row */
 
-#define MAXBADCMDS	5		/* maximum number of illegal commands in a row */
-#define MAXRCPT		500		/* maximum number of recipients in a single mail */
+#define MAXBADCMDS	5		/** maximum number of illegal commands in a row */
+#define MAXRCPT		500		/** maximum number of recipients in a single mail */
 
+/**
+ * write error message for messages with empty MAIL FROM and multiple recipients
+ */
 static inline int
 err_badbounce(void)
 {
@@ -103,6 +112,12 @@ err_badbounce(void)
 	return netwrite("550 5.5.3 bounce messages must not have more than one recipient\r\n");
 }
 
+/**
+ * write and log error message if opening config file leads to an error
+ *
+ * @param fn name of the file that caused the error
+ * @see err_control2
+ */
 int
 err_control(const char *fn)
 {
@@ -112,6 +127,13 @@ err_control(const char *fn)
 	return netwrite("421 4.3.5 unable to read controls\r\n");
 }
 
+/**
+ * write and log error message if opening config file leads to an error
+ *
+ * @param msg additional message to log
+ * @param fn name of the file that caused the error
+ * @see err_control
+ */
 static int
 err_control2(const char *msg, const char *fn)
 {
@@ -121,6 +143,11 @@ err_control2(const char *msg, const char *fn)
 	return netwrite("421 4.3.5 unable to read controls\r\n");
 }
 
+/**
+ * log error message and terminate program
+ *
+ * @param error error code that caused the program termination
+ */
 void __attribute__ ((noreturn))
 dieerror(int error)
 {

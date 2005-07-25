@@ -1,3 +1,6 @@
+/** \file base64.c
+ \brief Base64 encoding and decoding functions
+ */
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,9 +11,16 @@ static unsigned char *b64alpha =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 #define B64PAD ((unsigned char) '=')
 
-/* returns 0 ok, >0 illegal, -1 problem */
-
-int b64decode(const unsigned char *in, size_t l, string *out)
+/**
+ * decode base64 string to plain text
+ *
+ * @param in base64 text
+ * @param l length of in
+ * @param out string to store decoded string (memory will be malloced)
+ * @return -1 on error (errno will be set), 0 on success, 1 on parse error
+ */
+int
+b64decode(const unsigned char *in, size_t l, string *out)
 {
 	size_t i, j;
 	unsigned char a[4];
@@ -63,7 +73,15 @@ int b64decode(const unsigned char *in, size_t l, string *out)
 	return 0;
 }
 
-int b64encode(string *in, string *out)
+/**
+ * encode plain text string to Base64
+ *
+ * @param in plain text string
+ * @param out string to store Base64 string (memory will be malloced)
+ * @return -1 on error, 0 on success
+ */
+int
+b64encode(string *in, string *out)
 {
 	unsigned char a, b, c;
 	size_t i;

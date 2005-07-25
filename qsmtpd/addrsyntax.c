@@ -1,3 +1,6 @@
+/** \file addrsyntax.c
+ \brief check syntax of email addresses and SMTP helos
+ */
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
@@ -7,11 +10,10 @@
 #include "qsmtpd.h"
 
 /**
- * parselocalpart - check syntax correctness of local part
+ * check syntax correctness of local part
  *
- * @addr: address to check
- *
- * returns: -1 on syntax error, length of localpart otherwise. If no '@' in addr, length of addr
+ * @param addr address to check
+ * @return -1 on syntax error, length of localpart otherwise. If no '@' in addr, length of addr
  */
 static int __attribute__ ((pure))
 parselocalpart(const char *const addr)
@@ -64,15 +66,14 @@ parselocalpart(const char *const addr)
 }
 
 /**
- * parseaddr - check type and correctness of mail address
+ * check type and correctness of mail address
  *
- * @addr: address to check
- *
- * returns: 0: address invalid
- *          1: address only contains a domain name
- *          2: address contains @domain
- *          3: address is a full email address
- *          4: address is a full email address with IPv4 or IPv6 address literal
+ * @param addr address to check
+ * @return 0: address invalid
+ *         1: address only contains a domain name
+ *         2: address contains @domain
+ *         3: address is a full email address
+ *         4: address is a full email address with IPv4 or IPv6 address literal
  */
 static int __attribute__ ((pure))
 parseaddr(const char *addr)
@@ -126,9 +127,10 @@ parseaddr(const char *addr)
 }
 
 /**
- * checkaddr - check an email address for validity, use as loadlistfd callback
+ * check an email address for validity, use as loadlistfd callback
  *
- * @addr: the address to check
+ * @param addr the address to check
+ * @return 0 if address valid
  */
 int __attribute__ ((pure))
 checkaddr(const char *const addr)
@@ -137,15 +139,14 @@ checkaddr(const char *const addr)
 }
 
 /**
- * addrsyntax - check an email address for syntax errors
+ * check an email address for syntax errors
  *
- * @in:      address to parse
- * @flags:   1: rcpt to checks (e.g. source route is allowed), 0: mail from checks,
- *           2: checks for badmailfrom/goodmailfrom lists
- * @addr:    struct string to contain the address (memory will be malloced)
- * @more:    here starts the data behind the first '>' behind the first '<' (or NULL if none)
- *
- * returns: >0 on success, -1 on error (e.g. ENOMEM), 0 if address is invalid
+ * @param in address to parse
+ * @param flags 1: rcpt to checks (e.g. source route is allowed), 0: mail from checks,
+ *              2: checks for badmailfrom/goodmailfrom lists
+ * @param addr struct string to contain the address (memory will be malloced)
+ * @param more here starts the data behind the first '>' behind the first '<' (or NULL if none)
+ * @return >0 on success, -1 on error (e.g. ENOMEM), 0 if address is invalid
  */
 int
 addrsyntax(char *in, const int flags, string *addr, char **more)
@@ -224,9 +225,12 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 }
 
 /**
- * helovalid - check if the argument given to HELO/EHLO is syntactically correct
+ * check if the argument given to HELO/EHLO is syntactically correct
  *
- * @helo: helo to check
+ * @param helo helo to check
+ * @return 0 on successful call, -1 on error
+ *
+ * the status of the helo string ist stored in xmitstat.helostatus
  */
 int
 helovalid(const char *helo)

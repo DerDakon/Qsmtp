@@ -1,3 +1,6 @@
+/** \file auth.c
+ \brief functions for SMTP AUTH
+ */
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <syslog.h>
@@ -402,6 +405,11 @@ static struct authcmd {
 	{	.text = NULL,}
 };
 
+/**
+ * check if user sends valid authentication
+ *
+ * @return 0 if user is successfully authenticated, error code else
+ */
 int
 smtp_auth(void)
 {

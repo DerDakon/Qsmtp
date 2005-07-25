@@ -1,3 +1,10 @@
+/** \file qrdata.c
+ \brief send message body to remote host
+
+ This file contains the functions to send the message body to the remote host.
+ Both DATA and BDAT modes are supported. In DATA mode the message will be recoded
+ to quoted-printable if neccessary.
+ */
 #include <sys/types.h>
 #include <errno.h>
 #include <unistd.h>
@@ -19,12 +26,11 @@ q_off_t msgsize;		/* size of the mmaped area */
 static int lastlf = 1;		/* set if last byte sent was a LF */
 
 /**
- * need_recode - check if buffer has to be recoded for SMTP transfer
+ * check if buffer has to be recoded for SMTP transfer
  *
- * @buf: buffer to scan
- * @len: length of buffer
- *
- * returns: logical or of: 1 if buffer has 8bit characters, 2 if buffer contains line longer 998 chars
+ * @param buf buffer to scan
+ * @param len length of buffer
+ * @return logical or of: 1 if buffer has 8bit characters, 2 if buffer contains line longer 998 chars
  */
 int
 need_recode(const char *buf, q_off_t len)
@@ -73,10 +79,10 @@ need_recode(const char *buf, q_off_t len)
 }
 
 /**
- * send_plain - send message body, only fix broken line endings if present
+ * send message body, only fix broken line endings if present
  *
- * @buf: buffer to send
- * @len: length of data in buffer
+ * @param buf buffer to send
+ * @param len length of data in buffer
  *
  * lastlf will be set if last 2 bytes sent were CRLF
  */
@@ -171,16 +177,15 @@ recodeheader(void)
 }
 
 /**
- * qp_header - scan and recode header: fix Content-Transfer-Encoding, check for boundary
+ * scan and recode header: fix Content-Transfer-Encoding, check for boundary
  *
- * @buf: buffer to scan
- * @len: length of buffer
- * @boundary: if this is a multipart message a pointer to the boundary-string is stored here
- * @multipart: will be set to 1 if this is a multipart message
+ * @param buf buffer to scan
+ * @param len length of buffer
+ * @param boundary if this is a multipart message a pointer to the boundary-string is stored here
+ * @param multipart will be set to 1 if this is a multipart message
+ * @return offset of end of header
  *
- * returns: offset of end of header
- *
- * Warning: boundary will not be 0-terminated! Use boundary->len!
+ * \warning boundary will not be 0-terminated! Use boundary->len!
  */
 static q_off_t
 qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
@@ -282,10 +287,10 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 }
 
 /**
- * recode_qp - recode buffer to quoted-printable and send it to remote host
+ * recode buffer to quoted-printable and send it to remote host
  *
- * @buf: data to send
- * @len: length of buffer
+ * @param buf data to send
+ * @param len length of buffer
  */
 static void
 recode_qp(const char *buf, q_off_t len)
@@ -421,10 +426,10 @@ recode_qp(const char *buf, q_off_t len)
 }
 
 /**
- * send_qp - send message body, do quoted-printable recoding where needed
+ * send message body, do quoted-printable recoding where needed
  *
- * @buf: buffer to encode
- * @len: length of buffer
+ * @param buf buffer to encode
+ * @param len length of buffer
  */
 static void
 send_qp(const char *buf, const q_off_t len)

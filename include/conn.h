@@ -1,3 +1,6 @@
+/** \file conn.h
+ \brief headers of Qremote functions for connection establishing
+ */
 #ifndef CONN_H
 #define CONN_H
 

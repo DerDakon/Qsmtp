@@ -1,3 +1,6 @@
+/** \file log.c
+ \brief syslog interface
+ */
 #include <unistd.h>
 #include <stdlib.h>
 #include <syslog.h>
@@ -5,6 +8,12 @@
 #include <errno.h>
 #include "log.h"
 
+/**
+ * combine line and write it to syslog
+ *
+ * @param priority syslog priority
+ * @param s array of log messages
+ */
 void
 log_writen(int priority, const char **s)
 {
@@ -41,6 +50,13 @@ log_writen(int priority, const char **s)
 	free(buf);
 }
 
+/**
+ * write single message to syslog
+ *
+ * @param priority syslog priority
+ * @param s message to write
+ * @see log_writen
+ */
 inline void
 log_write(int priority, const char *s)
 {

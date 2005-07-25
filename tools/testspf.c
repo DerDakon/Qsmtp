@@ -1,3 +1,6 @@
+/** \file testspf.c
+ \brief tool for checking SPF entries
+ */
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <string.h>

@@ -1,3 +1,6 @@
+/** \file fcshell.c
+ \brief shell program to allow a user to modify his filterconf setting from remote host
+ */
 #include <sys/queue.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -36,7 +39,7 @@ static struct params {
 	{ .name = NULL }
 };
 
-static int commstat;		/* status of the last command, for use in "echo $?" */
+static int commstat;		/**< status of the last command, for use in "echo $?" */
 
 static void
 dolog(const char *s)

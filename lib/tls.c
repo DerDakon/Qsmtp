@@ -1,3 +1,6 @@
+/** \file tls.c
+ \brief helper functions for STARTTLS
+ */
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <string.h>

@@ -1,3 +1,6 @@
+/** \file getfile.c
+ \brief functions to get information from filterconf files
+ */
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
@@ -6,17 +9,13 @@
 #include "userfilters.h"
 #include "control.h"
 
-/* WARNING: if lloadfilfd can't get a lock on the input file (e.g. currently opened for
- * writing by another process) the file is treated as non existent */
-
 /**
- * getfile - check in user and domain directory if a file with given filename exists
+ * check in user and domain directory if a file with given filename exists
  *
- * @ds: strings of user and domain directory
- * @fn: filename to search
- * @type: if user (0) or domain (1) directory matched, ignore this if (result == -1)
- *
- * returns: file descriptor of opened file, -1 on error (errno is set)
+ * @param ds strings of user and domain directory
+ * @param fn filename to search
+ * @param type if user (0) or domain (1) directory matched, ignore this if (result == -1)
+ * @return file descriptor of opened file, -1 on error (errno is set)
  */
 int
 getfile(const struct userconf *ds, const char *fn, int *type)
@@ -71,13 +70,12 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 }
 
 /**
- * getfileglobal - use getfile and fall back to /var/qmail/control if this finds nothing
+ * use getfile and fall back to /var/qmail/control if this finds nothing
  *
- * @ds: strings of user and domain directory
- * @fn: filename to search
- * @type: if user (0), domain (1) or global (2) directory matched, ignore this if (result == -1)
- *
- * returns: file descriptor of opened file, -1 on error (errno is set)
+ * @param ds strings of user and domain directory
+ * @param fn filename to search
+ * @param type if user (0), domain (1) or global (2) directory matched, ignore this if (result == -1)
+ * @return file descriptor of opened file, -1 on error (errno is set)
  */
 int
 getfileglobal(const struct userconf *ds, const char *fn, int *type)
@@ -106,11 +104,12 @@ getfileglobal(const struct userconf *ds, const char *fn, int *type)
 }
 
 /**
- * checkconfig - search a value in a given list of config values
+ * search a value in a given list of config values
  *
- * @config: list of settings, last entry has to be NULL, list may be NULL
- * @flag: the value to find
- * @l: strlen(flag)
+ * @param config list of settings, last entry has to be NULL, list may be NULL
+ * @param flag the value to find
+ * @param l strlen(flag)
+ * @return the value assotiated with flag, 0 if no match, -1 on syntax error
  */
 static long
 checkconfig(char *const *config, const char *flag, const size_t l)
@@ -146,13 +145,12 @@ checkconfig(char *const *config, const char *flag, const size_t l)
 }
 
 /**
- * getsetting - get setting from user or domain filterconf file
+ * get setting from user or domain filterconf file
  *
- * @ds: struct with the user/domain config info
- * @flag: name of the setting to find (case sensitive)
- * @type: if user (0) or domain (1) directory matched, ignore this if (result == -1)
- *
- * returns: value of setting, 1 if boolean setting (or no number given), 0 if setting not found, -1 on syntax error
+ * @param ds struct with the user/domain config info
+ * @param flag name of the setting to find (case sensitive)
+ * @param type if user (0) or domain (1) directory matched, ignore this if (result == -1)
+ * @return value of setting, 1 if boolean setting (or no number given), 0 if setting not found, -1 on syntax error
  */
 long
 getsetting(const struct userconf *ds, const char *flag, int *type)
@@ -178,13 +176,12 @@ getsetting(const struct userconf *ds, const char *flag, int *type)
 }
 
 /**
- * getsettingglobal - use getsetting and fall back to /var/qmail/control if this finds nothing
+ * use getsetting and fall back to /var/qmail/control if this finds nothing
  *
- * @ds: struct with the user/domain config info
- * @flag: name of the setting to find (case sensitive)
- * @type: if user (0), domain (1) or global (2) file matched, ignore this if (result == -1)
- *
- * returns: value of setting, 1 if boolean setting (or no number given), 0 if setting not found, -1 on syntax error
+ * @param ds struct with the user/domain config info
+ * @param flag name of the setting to find (case sensitive)
+ * @param type if user (0), domain (1) or global (2) file matched, ignore this if (result == -1)
+ * @return value of setting, 1 if boolean setting (or no number given), 0 if setting not found, -1 on syntax error
  */
 long
 getsettingglobal(const struct userconf *ds, const char *flag, int *type)

@@ -1,3 +1,6 @@
+/** \file data.c
+ \brief receive and queue message data
+ */
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <syslog.h>
@@ -35,7 +38,7 @@ err_fork(void)
 }
 
 /**
- * rset_queue - reset queue descriptors
+ * reset queue descriptors
  */
 void
 rset_queue(void)
@@ -124,9 +127,9 @@ two_digit(char *buf, int num)
 }
 
 /**
- * date822 - write RfC822 date information to buffer
+ * write RfC822 date information to buffer
  *
- * @buf: buffer to store string in, must have at least 32 bytes free
+ * @param buf buffer to store string in, must have at least 32 bytes free
  *
  * exactly 31 bytes in buffer are filled, it will _not_ be 0-terminated
  */
@@ -382,6 +385,11 @@ queue_result(void)
 
 static unsigned long msgsize;
 
+/**
+ * handle DATA command and store data into queue
+ *
+ * @return 0 on success, else error code
+ */
 int
 smtp_data(void)
 {
@@ -657,6 +665,11 @@ err_write:
 
 static int bdaterr;
 
+/**
+ * handle BDAT command and store data into queue
+ *
+ * @return 0 on success, else error code
+ */
 int
 smtp_bdat(void)
 {

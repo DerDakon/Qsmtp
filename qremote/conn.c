@@ -1,3 +1,6 @@
+/** \file conn.c
+ \brief functions for establishing connection to remote SMTP server
+ */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -67,9 +70,9 @@ conn(const struct in6_addr remoteip)
 }
 
 /**
- * tryconn - try to estabish an SMTP connection to one of the hosts in the ip list
+ * try to estabish an SMTP connection to one of the hosts in the ip list
  *
- * @mx: list of IP adresses to try
+ * @param mx list of IP adresses to try
  *
  * Every entry where a connection attempt was made is marked with a priority of 65537,
  * the last one with 65538
@@ -123,6 +126,12 @@ hascolon(const char *s)
 	return (*(colon + 1) == ':');
 }
 
+/**
+ * get all IPs for the MX entries of target address
+ *
+ * @param remhost target address
+ * @param mx list of MX entries will be stored here, memory will be malloced
+ */
 void
 getmxlist(char *remhost, struct ips **mx)
 {

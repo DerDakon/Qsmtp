@@ -1,3 +1,6 @@
+/** @file mime.c
+  \brief MIME handling functions
+ */
 #include <strings.h>
 #include <string.h>
 #include <unistd.h>
@@ -7,12 +10,11 @@
 #include "qoff.h"
 
 /**
- * skipwhitespace - skip whitespaces
+ * skip whitespaces in header line
  *
- * @line: header field
- * @len: length of data, must be > 0
- *
- * returns: pointer to first character after whitespace, NULL on syntax error (e.g. unfinished comment)
+ * @param line header field
+ * @param len length of data, must be > 0
+ * @return pointer to first character after whitespace, NULL on syntax error (e.g. unfinished comment)
  *
  * This function skips whitespace from the current position. If a RfC 822 section 2.8 style comment is
  * found this is also skipped. If a newline is encountered before a non-whitespace and non-comment
@@ -103,11 +105,10 @@ skipwhitespace(const char *line, const size_t len)
 }
 
 /**
- * is_multipart: scan "Content-Type" header line and check if type is multipart/(*) or message/(*)
+ * scan "Content-Type" header line and check if type is multipart/(*) or message/(*)
  *
- * @line: header field
- *
- * returns: 1 if line contains multipart/(*) or message/(*) declaration, 0 if other type, -1 on syntax error
+ * @param line header field
+ * @return 1 if line contains multipart/(*) or message/(*) declaration, 0 if other type, -1 on syntax error
  */
 int __attribute__ ((pure))
 is_multipart(const cstring *line, cstring *boundary)
@@ -206,12 +207,11 @@ is_multipart(const cstring *line, cstring *boundary)
 }
 
 /**
- * getfieldlen - get length of a MIME header field, even if it is folded
+ * get length of a MIME header field, even if it is folded
  *
- * @msg: message data to scan
- * @len: length of data
- *
- * returns: length of header field, 0 if field does not end until end of data
+ * @param msg message data to scan
+ * @param len length of data
+ * @return length of header field, 0 if field does not end until end of data
  */
 size_t __attribute__ ((pure))
 getfieldlen(const char *msg, const size_t len)
@@ -238,12 +238,11 @@ getfieldlen(const char *msg, const size_t len)
 }
 
 /**
- * mime_param - get length of MIME header parameter
+ * get length of MIME header parameter
  *
- * @line: header line to scan
- * @len: length of line
- *
- * returns: length of parameter, 0 on syntax error
+ * @param line header line to scan
+ * @param len length of line
+ * @return length of parameter, 0 on syntax error
  */
 size_t __attribute__ ((pure))
 mime_param(const char *line, const size_t len)
@@ -283,12 +282,11 @@ mime_param(const char *line, const size_t len)
 }
 
 /**
- * mime_param - get length of MIME header token as defined in RfC 2045, section 5.1
+ * get length of MIME header token as defined in RfC 2045, section 5.1
  *
- * @line: header line to scan
- * @len: length of line
- *
- * returns: length of parameter, 0 on syntax error
+ * @param line header line to scan
+ * @param len length of line
+ * @return length of parameter, 0 on syntax error
  */
 size_t __attribute__ ((pure))
 mime_token(const char *line, const size_t len)
@@ -313,13 +311,12 @@ mime_token(const char *line, const size_t len)
 }
 
 /**
- * find_boundary - find next mime boundary
+ * find next mime boundary
  *
- * @buf: buffer to scan
- * @len: length of buffer
- * @boundary: boundary limit string
- *
- * returns: offset of first character behind next boundary, 0 if no boundary found
+ * @param buf buffer to scan
+ * @param len length of buffer
+ * @param boundary boundary limit string
+ * @return offset of first character behind next boundary, 0 if no boundary found
  */
 q_off_t __attribute__ ((pure))
 find_boundary(const char *buf, const q_off_t len, const cstring *boundary)

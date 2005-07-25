@@ -1,3 +1,6 @@
+/** \file antispam.c
+ \brief several helper functions for spam filters
+ */
 #include <openssl/ssl.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -19,10 +22,10 @@
 #include "netio.h"
 
 /**
- * nibbletohex - take a nibble and output it as hex to a buffer, followed by '.'
+ * take a nibble and output it as hex to a buffer, followed by '.'
  *
- * @dest: pointer where the output should go to
- * @n: the input value. Must really be a nibble, anything else makes strange output
+ * @param dest pointer where the output should go to
+ * @param n the input value. Must really be a nibble, anything else makes strange output
  */
 static inline void
 nibbletohex(char *dest, const char n)
@@ -31,6 +34,11 @@ nibbletohex(char *dest, const char n)
 	*dest = '.';
 }
 
+/**
+ * print IPv6 address of remote host in dotted form in buffer
+ *
+ * @param buffer buffer to store result
+ */
 void
 dotip6(char *buffer)
 {		
@@ -42,9 +50,10 @@ dotip6(char *buffer)
 	}
 }
 /**
- * reverseip4 - print client IPv4 address in reverse order into a given buffer
+ * print client IPv4 address in reverse order into a given buffer
  *
- * @buf: buffer to write in (must have at least INET_ADDRSTRLEN (16) bytes)
+ * @param buf buffer to write in (must have at least INET_ADDRSTRLEN (16) bytes)
+ * @return length of string in buffer
  */
 int
 reverseip4(char *buf)
@@ -58,12 +67,11 @@ reverseip4(char *buf)
 }
 
 /**
- * check_rbl - do a rbl lookup for remoteip
+ * do a rbl lookup for remoteip
  *
- * @rbls: a NULL terminated array of rbls
- * @txt: pointer to "char *" where the TXT record of the listing will be stored if !NULL
- *
- * returns: on match the index of the first match is returned
+ * @param rbls a NULL terminated array of rbls
+ * @param txt pointer to "char *" where the TXT record of the listing will be stored if !NULL
+ * @return on match the index of the first match is returned
  *          -1 if not listed or error (if not listed errno is set to 0)
  */
 int
@@ -122,7 +130,7 @@ check_rbl(char *const *rbls, char **txt)
 static unsigned int tarpitcount = 0;	/* number of extra seconds from tarpit */
 
 /**
- * tarpit - delay the next reply to the client
+ * delay the next reply to the client
  *
  * This should be used in all places where the client seems to be a spammer. This will
  * delay him so he can't send so much spams.
@@ -160,12 +168,11 @@ tarpit(void)
 }
 
 /**
- * check_ip4 - check an IPv4 mapped IPv6 address against a local blocklist
+ * check an IPv4 mapped IPv6 address against a local blocklist
  *
- * @buf: buffer of local blocklist, each entry is 5 bytes long
- * @len: length of the buffer
- *
- * returns: 1 if match, 0 if not, -1 if data malformed
+ * @param buf buffer of local blocklist, each entry is 5 bytes long
+ * @param len length of the buffer
+ * @returns 1 if match, 0 if not, -1 if data malformed
  *
  * IP entries in the buffer must be network byte order
  */
@@ -190,12 +197,11 @@ check_ip4(const unsigned char *buf, const unsigned int len)
 }
 
 /**
- * check_ip6 - check an IPv6 address against a local blocklist
+ * check an IPv6 address against a local blocklist
  *
- * @buf: buffer of local blocklist, each entry is 9 bytes long
- * @len: length of the buffer
- *
- * returns: 1 if match, 0 if not, -1 if data malformed
+ * @param buf buffer of local blocklist, each entry is 9 bytes long
+ * @param len length of the buffer
+ * @return 1 if match, 0 if not, -1 if data malformed
  */
 static int
 check_ip6(const unsigned char *buf, const unsigned int len)
@@ -217,14 +223,14 @@ check_ip6(const unsigned char *buf, const unsigned int len)
 }
 
 /**
- * domainmatch - check if a given host name matches against domain list
+ * check if a given host name matches against domain list
  *
- * @fqdn: hostname to check
- * @list: list of domains and hosts to check against, NULL terminated
+ * @param fqdn hostname to check
+ * @param len length of fqdn
+ * @param list list of domains and hosts to check against, NULL terminated
+ * @return 1 on match, 0 otherwise
  *
- * returns: 1 on match, 0 otherwise
- *
- * -if list is NULL terminated and every list[x] and fqdn are '\0' terminated there can't be any errors
+ * -if list is NULL terminated and every list[x] and fqdn are 0-terminated there can't be any errors
  * -list is always freed
  */
 int
@@ -245,9 +251,10 @@ domainmatch(const char *fqdn, const unsigned int len, const char **list)
 }
 
 /**
- * lookupipbl - check if the remote host is listed in local IP map file given by fd
+ * check if the remote host is listed in local IP map file given by fd
  *
- * @fd: file descriptor to file
+ * @param fd file descriptor to file
+ * @return <0 on error, >0 on match, 0 otherwise
  */
 int
 lookupipbl(int fd)

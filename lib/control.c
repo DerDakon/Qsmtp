@@ -1,3 +1,6 @@
+/** \file control.c
+ \brief function to load data from configuration files
+ */
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -14,18 +17,21 @@
 #include "qoff.h"
 
 /**
- * lloadfilefd - load a text file into a buffer using locked IO
+ * load a text file into a buffer using locked IO
  *
- * @fd: file descriptor of the file to load
- * @buf: the contents of the file will go here, memory will be malloced
- * @striptab: 2: strip trailing whitespace
+ * @param fd file descriptor of the file to load
+ * @param buf the contents of the file will go here, memory will be malloced
+ * @param striptab 2: strip trailing whitespace
  *            1: compact {'\0'}* to a single '\0'
  *            0: do nothing but load the file into the buffer
  *
- * returns: length of buffer on success, -1 on error (errno is set)
+ * @return length of buffer on success, -1 on error (errno is set)
  *
  * if the file is empty (size 0 or only comments and blank lines) 0
  * is returned and buf is set to NULL
+ *
+ * \warning if lloadfilfd can't get a lock on the input file (e.g. currently opened for
+ *          writing by another process) the file is treated as non existent
  */
 size_t
 lloadfilefd(int fd, char **buf, const int striptab)
@@ -144,13 +150,12 @@ lloadfilefd(int fd, char **buf, const int striptab)
 }
 
 /**
- * loadintfd - read a control file containing a single integer
+ * read a control file containing a single integer
  *
- * @fd: file descriptor to read from (will be closed)
- * @result: value will be stored here
- * @def: default value if file does not exist
- *
- * returns: 0 on success, -1 on error. Parse errors in the file will set errno to EINVAL
+ * @param fd file descriptor to read from (will be closed)
+ * @param result value will be stored here
+ * @param def default value if file does not exist
+ * @return 0 on success, -1 on error. Parse errors in the file will set errno to EINVAL
  */
 int
 loadintfd(int fd, unsigned long *result, const unsigned long def)
@@ -176,13 +181,12 @@ loadintfd(int fd, unsigned long *result, const unsigned long def)
 }
 
 /**
- * loadoneliner - read a configuration file that only may contain one line
+ * read a configuration file that only may contain one line
  *
- * @filename: don't know what this can ever mean ;)
- * @buf: the buffer where the contents of the file will go, memory will be malloced
- * @optional: if set to 0 write an error message to syslog if the file does not exist
- *
- * returns: length of the string, -1 on error
+ * @param filename don't know what this can ever mean ;)
+ * @param buf the buffer where the contents of the file will go, memory will be malloced
+ * @param optional if set to 0 write an error message to syslog if the file does not exist
+ * @return length of the string, -1 on error
  */
 size_t
 loadoneliner(const char *filename, char **buf, int optional)
@@ -212,14 +216,13 @@ loadoneliner(const char *filename, char **buf, int optional)
 }
 
 /**
- * loadlistfd - read a list from config file and validate entries
+ * read a list from config file and validate entries
  *
- * @fd: file descriptor to read from (is closed on exit!)
- * @buf: the buffer where the data should be stored (memory will be malloced)
- * @bufa: array to be build from buf (memory will be malloced)
- * @cf: function to check if an entry is valid or NULL if not to
- *
- * returns: 0 on success, -1 on error
+ * @param fd file descriptor to read from (is closed on exit!)
+ * @param buf the buffer where the data should be stored (memory will be malloced)
+ * @param bufa array to be build from buf (memory will be malloced)
+ * @param cf function to check if an entry is valid or NULL if not to
+ * @return 0 on success, -1 on error
  *
  * if the file does not exist or has no content *buf and *bufa will be set to NULL
  */
@@ -276,13 +279,12 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
 }
 
 /**
- * finddomainfd - mmap a file and search a domain entry in it
+ * mmap a file and search a domain entry in it
  *
- * @fd: file descriptor
- * @domain: domain name to find
- * @cl: close fd or not
- *
- * returns: 1 on match, 0 if none, -1 on error
+ * @param fd file descriptor
+ * @param domain domain name to find
+ * @param cl close fd or not
+ * @return 1 on match, 0 if none, -1 on error
  *
  * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, '\r' in file will cause trouble
  */
@@ -342,13 +344,12 @@ finddomainfd(int fd, const char *domain, const int cl)
 }
 
 /**
- * finddomainmm - search a domain entry in a mmaped memory area
+ * search a domain entry in a mmaped memory area
  *
- * @fd: file descriptor
- * @domain: domain name to find
- * @cl: close fd or not
- *
- * returns: 1 on match, 0 if none, -1 on error
+ * @param fd file descriptor
+ * @param domain domain name to find
+ * @param cl close fd or not
+ * @return 1 on match, 0 if none, -1 on error
  *
  * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, '\r' in file will cause trouble
  */

@@ -1,3 +1,9 @@
+/** \file qremote.c
+ \brief main functions of Qremote
+
+ This file contains the main function, the configuration and error handling of Qremote,
+ the drop-in replacement for qmail-remote.
+ */
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -117,9 +123,9 @@ quit(void)
 }
 
 /**
- * getrhost - print remote host information to buffer
+ * print remote host information to buffer
  *
- * @mx: list of MX entries, entry with priority 65538 is active
+ * @param mx list of MX entries, entry with priority 65538 is active
  */
 static inline void
 getrhost(const struct ips *mx)
@@ -167,9 +173,9 @@ getrhost(const struct ips *mx)
 }
 
 /**
- * netget - get one line from the network, handle all error cases
+ * get one line from the network, handle all error cases
  *
- * returns: SMTP return code of the message
+ * @return SMTP return code of the message
  */
 int
 netget(void)
@@ -212,13 +218,12 @@ syntax:
 }
 
 /**
- * checkreply - check the reply of the server
+ * check the reply of the server
  *
- * @status: status codes to print or NULL if not to
- * @pre: text to write to stdout before server reply if mask matches
- * @mask: bitmask for pre: 1: 2xx, 2: 4xx, 4: 5xx
- *
- * returns: the SMTP result code
+ * @param status status codes to print or NULL if not to
+ * @param pre text to write to stdout before server reply if mask matches
+ * @param mask bitmask for pre: 1: 2xx, 2: 4xx, 4: 5xx
+ * @return the SMTP result code
  *
  * status must be at least 3 bytes long but only the first 3 will have any effect. The first
  * one is the status code writen on success (server response is 2xx), the second on on temporary
@@ -294,9 +299,9 @@ cb_size(void)
 }
 
 /**
- * greeting - greet the server, try ehlo and fall back to helo if needed
+ * greet the server, try ehlo and fall back to helo if needed
  *
- * returns: 0 if greeting succeeded or 1 on error
+ * @return 0 if greeting succeeded, 1 on error
  */
 static int
 greeting(void)

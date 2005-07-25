@@ -1,3 +1,6 @@
+/** \file control.h
+ \brief headers of functions for control file handling
+ */
 #ifndef CONTROL_H
 #define CONTROL_H
 

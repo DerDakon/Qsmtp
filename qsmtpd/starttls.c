@@ -1,3 +1,6 @@
+/** \file starttls.c
+ \brief functions for STARTTLS SMTP command
+ */
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
@@ -14,6 +17,11 @@ int tls_verify(void);
 int ssl_verified = 0;
 const char *ssl_verify_err = 0;
 
+/**
+ * initialize STARTTLS mode
+ *
+ * @return 0 on successful initialization, else error code
+ */
 int
 smtp_starttls(void)
 {
@@ -22,7 +30,8 @@ smtp_starttls(void)
 	return tls_init();
 }
 
-RSA *tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
+static RSA *
+tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 {
 	if (!export)
 		keylen = 512;
@@ -39,7 +48,8 @@ RSA *tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 	return RSA_generate_key(keylen, RSA_F4, NULL, NULL);
 }
 
-DH *tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
+static DH *
+tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 {
 	FILE *in = NULL;
 
@@ -60,7 +70,8 @@ DH *tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 	return DH_generate_parameters(keylen, DH_GENERATOR_2, NULL, NULL);
 }
 
-void tls_out(const char *s1, const char *s2)
+void
+tls_out(const char *s1, const char *s2)
 {
 	const char *msg[] = {"454 4.3.0 TLS ", s1, NULL, NULL, NULL};
 
@@ -77,7 +88,13 @@ void tls_err(const char *s) { tls_out(s, ssl_error()); }
 #define CLIENTCRL "control/clientcrl.pem"
 #define SERVERCERT "control/servercert.pem"
 
-int tls_verify(void)
+/**
+ * verify is authenticated to relay by SSL certificate
+ *
+ * @return -1 on error, 0 if client is not authenticated, >0 if client is authenticated
+ */
+int
+tls_verify(void)
 {
 	char *clientbuf, **clients;
 	STACK_OF(X509_NAME) *sk = SSL_load_client_CA_file(CLIENTCA);

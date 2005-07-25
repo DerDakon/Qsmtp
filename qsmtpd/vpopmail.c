@@ -1,3 +1,6 @@
+/** \file vpopmail.c
+ \brief function to get domain directory of vpopmail virtual domain
+ */
 #include <stdlib.h>
 #include <fcntl.h>
 #include <string.h>
@@ -17,7 +20,7 @@ extern int cdb_seek(int fd, char *key, unsigned int len, unsigned int *dlen);
 
 /*
  * Given the domain name:
- * 
+ *
  *   get dir  users/cdb file (if they are not passed as NULL)
  *
  * Function will return 1 on success, memory for domaindir will be malloced.

@@ -1,14 +1,16 @@
+/** \file dns.c
+ \brief DNS query functions
+ */
 #include <errno.h>
 #include <string.h>
 #include "dns.h"
 
 /**
- * ask_dnsmx - get info out of the DNS
+ * get info out of the DNS
  *
- * @name: the name to look up
- * @ips: first element of a list of results will be placed
- *
- * returns: 0 on success
+ * @param name the name to look up
+ * @param result first element of a list of results will be placed
+ * @return  0 on success
  *          1 if host is not existent
  *          2 if temporary DNS error
  *          3 if permanent DNS error
@@ -98,12 +100,11 @@ ask_dnsmx(const char *name, struct ips **result)
 }
 
 /**
- * ask_dnsaaaa - get AAAA record from of the DNS
+ * get AAAA record from of the DNS
  *
- * @name: the name to look up
- * @result: first element of a list of results will be placed
- *
- * returns: 0 on success
+ * @param name the name to look up
+ * @param result first element of a list of results will be placed
+ * @return  0 on success
  *          1 if host is not existent
  *          2 if temporary DNS error
  *          3 if permanent DNS error
@@ -157,12 +158,11 @@ ask_dnsaaaa(const char *name, struct ips **result)
 }
 
 /**
- * ask_dnsa - get A record from of the DNS
+ * get A record from of the DNS
  *
- * @name: the name to look up
- * @result: first element of a list of results will be placed, or NULL if only return code is of interest
- *
- * returns: 0 on success
+ * @param name the name to look up
+ * @param result first element of a list of results will be placed, or NULL if only return code is of interest
+ * @return  0 on success
  *          1 if host is not existent
  *          2 if temporary DNS error
  *          3 if permanent DNS error
@@ -220,12 +220,11 @@ ask_dnsa(const char *name, struct ips **result)
 }
 
 /**
- * domainvalid - check if a string is a valid fqdn
+ * check if a string is a valid fqdn
  *
- * @host:     the name to check
- *
- * returns:  0 if everything is ok 
- *           1 on syntax error
+ * @param host the name to check
+ * @return 0 if everything is ok 
+ *         1 on syntax error
  *
  * if there is a standard function doing the same throw this one away
  */
@@ -261,12 +260,11 @@ domainvalid(const char *host)
 }
 
 /**
- * ask_dnsname - get host name for IP address
+ * get host name for IP address
  *
- * @ip: the IP to look up
- * @result: name will be stored here
- *
- * returns: 0 on success
+ * @param ip the IP to look up
+ * @param result name will be stored here
+ * @return  0 on success
  *          1 if host is not existent
  *          2 if temporary DNS error
  *          3 if permanent DNS error
@@ -292,6 +290,11 @@ ask_dnsname(const struct in6_addr *ip, char **result)
 	}
 }
 
+/**
+ * free memory of IP list
+ *
+ * @param p IP list to free
+ */
 void
 freeips(struct ips *p)
 {

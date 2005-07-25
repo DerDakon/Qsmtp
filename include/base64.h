@@ -1,3 +1,6 @@
+/** \file base64.h
+ \brief headers of Base64 encode and decode functions
+ */
 #ifndef BASE64_H
 #define BASE64_H
 

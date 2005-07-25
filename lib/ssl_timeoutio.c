@@ -1,3 +1,6 @@
+/** \file ssl_timeoutio.c
+ \brief SSL encoding and decoding functions for network I/O
+ */
 #include <sys/select.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -10,7 +13,19 @@
 
 int ssl_rfd = -1, ssl_wfd = -1; /* SSL_get_Xfd() are broken */
 
-int ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
+/**
+ * call SSL function for given data buffer
+ *
+ * @param fun OpenSSL function to call
+ * @param t timeout
+ * @param buf data buffer
+ * @param len length of buf
+ * @return return code of fun
+ *
+ * on timeout program is terminated
+ */
+int
+ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 {
 	int n = 0;
 	const time_t end = t + time(NULL);
@@ -52,7 +67,8 @@ int ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 	return n;
 }
 
-int ssl_timeoutaccept(time_t t)
+int
+ssl_timeoutaccept(time_t t)
 {
 	int r;
 
@@ -71,7 +87,8 @@ int ssl_timeoutaccept(time_t t)
 	return r;
 }
 
-int ssl_timeoutconn(time_t t)
+int
+ssl_timeoutconn(time_t t)
 {
 	int r;
 
@@ -91,7 +108,8 @@ int ssl_timeoutconn(time_t t)
 	return r;
 }
 
-int ssl_timeoutrehandshake(time_t t)
+int
+ssl_timeoutrehandshake(time_t t)
 {
 	int r;
 	
@@ -112,7 +130,16 @@ int ssl_timeoutread(time_t t, char *buf, const int len)
 	return ssl_timeoutio(SSL_read, t, buf, len);
 }
 
-inline int ssl_timeoutwrite(time_t t, const char *buf, const int len)
+/**
+ * write data SSL encrypted to network
+ *
+ * @param t timeout
+ * @param buf data to send
+ * @param len length of buf
+ * @return return code of SSL_write
+ */
+inline int
+ssl_timeoutwrite(time_t t, const char *buf, const int len)
 {
 	/* SSL_write takes a const char* as second argument so
 	 * we do not need to worry here, just shut up the compiler */

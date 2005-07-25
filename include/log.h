@@ -1,3 +1,6 @@
+/** \file log.h
+ \brief header for syslog interface functions
+ */
 #ifndef LOG_H
 #define LOG_H
 

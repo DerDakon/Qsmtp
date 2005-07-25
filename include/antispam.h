@@ -1,3 +1,6 @@
+/** \file antispam.h
+ \brief headers of antispam helper functions
+ */
 #ifndef ANTISPAM_H
 #define ANTISPAM_H
 
@@ -15,18 +18,21 @@ extern int reverseip4(char *);
 extern int check_host(const char *);
 extern int spfreceived(int, const int);
 
-#define SPF_NONE	0
-#define SPF_PASS	1
-#define SPF_NEUTRAL	2
-#define SPF_SOFTFAIL	3
-#define SPF_FAIL_PERM	4
-#define SPF_FAIL_MALF	5
-#define SPF_FAIL_NONEX	6
-#define SPF_UNKNOWN	7
-#define SPF_TEMP_ERROR	8
-#define SPF_HARD_ERROR	9
-#define SPF_IGNORE	15
+#define SPF_NONE	0	/**< no SPF policy given */
+#define SPF_PASS	1	/**< host matches SPF policy */
+#define SPF_NEUTRAL	2	/**< host has neutral match in SPF policy */
+#define SPF_SOFTFAIL	3	/**< host has softfail match in SPF policy */
+#define SPF_FAIL_PERM	4	/**< host is denied by SPF policy */
+#define SPF_FAIL_MALF	5	/**< SPF entry is malformed */
+#define SPF_FAIL_NONEX	6	/**< SPF entry has nonexistent include */
+#define SPF_UNKNOWN	7	/**< SPF policy is not tested */
+#define SPF_TEMP_ERROR	8	/**< temporary DNS error while SPF testing */
+#define SPF_HARD_ERROR	9	/**< permanent DNS error while SPF testing */
+#define SPF_IGNORE	15	/**< SPF policy for this host will not be tested */
 
+/** \def SPF_FAIL
+ check if one of the conditions is given to fail SPF policy
+ */
 #define SPF_FAIL(x) (((x) == SPF_FAIL_PERM) || ((x) == SPF_FAIL_MALF) || ((x) == SPF_FAIL_NONEX))
 
 #endif

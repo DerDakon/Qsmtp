@@ -1,14 +1,18 @@
+/** \file match.c
+ \brief IP and domain matching functions
+ */
 #include <netinet/in.h>
 #include <string.h>
 #include <strings.h>
 #include "match.h"
 
 /**
- * ip4_matchnet - check if an IPv4 address is in a given network
+ * check if an IPv4 address is in a given network
  *
- * @ip: the IP address to check (network byte order)
- * @net: the network to check (network byte order)
- * @mask: the network mask, must be 8 <= netmask <= 32
+ * @param ip the IP address to check (network byte order)
+ * @param net the network to check (network byte order)
+ * @param mask the network mask, must be 8 <= netmask <= 32
+ * @return 1 on match, 0 else
  */
 int
 ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigned char mask)
@@ -24,11 +28,12 @@ ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigne
 }
 
 /**
- * ip6_matchnet - check if an IPv6 address is in a given network
+ * check if an IPv6 address is in a given network
  *
- * @ip: the IP address to check (network byte order)
- * @net: the network to check (network byte order)
- * @mask: the network mask, must be 8 <= netmask <= 128
+ * @param ip the IP address to check (network byte order)
+ * @param net the network to check (network byte order)
+ * @param mask the network mask, must be 8 <= netmask <= 128
+ * @return 1 on match, 0 else
  */
 int
 ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsigned char mask)
@@ -74,12 +79,11 @@ ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsign
 }
 
 /**
- * matchdomain - check if a given expression matches a domain
+ * check if a given expression matches a domain
  *
- * @domain: the domain to check
- * @expr: the expression to match
- *
- * returns: 1 on match, 0 otherwise
+ * @param domain the domain to check
+ * @param expr the expression to match
+ * @return 1 on match, 0 otherwise
  */
 int
 matchdomain(const char *domain, const size_t dl, const char *expr)

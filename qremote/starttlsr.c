@@ -1,3 +1,6 @@
+/** \file starttlsr.c
+ \brief functions for SSL encoding and decoding of network I/O
+ */
 #include <openssl/x509v3.h>
 #include <sys/stat.h>
 #include <unistd.h>

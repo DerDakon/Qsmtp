@@ -1,3 +1,9 @@
+/** \file qp.c
+ \brief program to convert a file to quoted-printable
+
+ qp converts the contents of the given filename to quoted-printable,
+ using Qremotes recoding engine. The result will be written to stdout.
+ */
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <sys/stat.h>

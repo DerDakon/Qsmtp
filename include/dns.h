@@ -1,3 +1,6 @@
+/** \file dns.h
+ \brief headers of functions for DNS lookups and address validating
+ */
 #ifndef DNS_H
 #define DNS_H
 

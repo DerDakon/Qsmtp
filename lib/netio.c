@@ -1,3 +1,6 @@
+/** \file netio.c
+ \brief functions for network I/O
+ */
 #include <sys/select.h>
 #include <unistd.h>
 #include <errno.h>
@@ -7,12 +10,12 @@
 #include "ssl_timeoutio.h"
 #include "tls.h"
 
-char linein[1002];			/* buffer for the line to read: max 1000 chars including CRLF,
+char linein[1002];			/**< buffer for the line to read: max 1000 chars including CRLF,
 					 * leading extra '.', closing '\0' */
-size_t linelen;				/* length of the line */
-static char lineinn[sizeof(linein)];	/* if more than one line was in linein the rest is stored here */
-size_t linenlen;			/* length of the lineinn */
-time_t timeout;				/* how long to wait for data */
+size_t linelen;				/**< length of the line */
+static char lineinn[sizeof(linein)];	/**< if more than one line was in linein the rest is stored here */
+size_t linenlen;			/**< length of the lineinn */
+time_t timeout;				/**< how long to wait for data */
 
 #ifdef DEBUG_IO
 #include <syslog.h>
@@ -78,12 +81,11 @@ void DEBUG_OUT(const char *s, const size_t l)
 #endif
 
 /**
- * readinput - read characters from (network) input
+ * read characters from (network) input
  *
- * @buffer: buffer to put the data in
- * @len: maximum length of data to read (one char less is read, the last one is set to '\0')
- *
- * returns: -1 on error (errno is set), number of bytes read otherwise
+ * @param buffer buffer to put the data in
+ * @param len maximum length of data to read (one char less is read, the last one is set to '\0')
+ * @return -1 on error (errno is set), number of bytes read otherwise
  */
 static size_t
 readinput(char *buffer, const size_t len)
@@ -119,12 +121,12 @@ readinput(char *buffer, const size_t len)
 }
 
 /**
- * net_read - read one line from the network
+ * read one line from the network
  *
- * returns: 0 on success
- *          -1 on error (errno is set)
+ * @return  0 on success
+ *         -1 on error (errno is set)
  *
- *          does not return on timeout, programm will be cancelled
+ * does not return on timeout, programm will be cancelled
  */
 int
 net_read(void)
@@ -247,14 +249,13 @@ loop_long:
 }
 
 /**
- * netwrite - write one line to the network
+ * write one line to the network
  *
- * @s: line to be written (nothing else it written so it should contain <CRLF>)
+ * @param s line to be written (nothing else it written so it should contain CRLF)
+ * @return 0 on success
+ *         -1 on error (errno is set)
  *
- * returns: 0 on success
- *          -1 on error (errno is set)
- *
- *          does not return on timeout, programm will be cancelled
+ * does not return on timeout, programm will be cancelled
  */
 inline int
 netwrite(const char *s)
@@ -263,15 +264,14 @@ netwrite(const char *s)
 }
 
 /**
- * netnwrite - write one line to the network
+ * write one line to the network
  *
- * @s: line to be written (nothing else it written so it should contain <CRLF>)
- * @l: length of s
+ * @param s line to be written (nothing else it written so it should contain CRLF)
+ * @param l length of s
+ * @return 0 on success
+ *         -1 on error (errno is set)
  *
- * returns: 0 on success
- *          -1 on error (errno is set)
- *
- *          does not return on timeout, programm will be cancelled
+ * does not return on timeout, programm will be cancelled
  */
 int
 netnwrite(const char *s, const size_t l)
@@ -311,17 +311,16 @@ netnwrite(const char *s, const size_t l)
 }
 
 /**
- * net_writen - write one line to the network, fold if needed
+ * write one line to the network, fold if needed
  *
- * @s: array of strings to send
- *
- * returns: 0 on success
- *          -1 on error (errno is set)
+ * @param s array of strings to send
+ * @return 0 on success
+ *         -1 on error (errno is set)
  *
  * does not return on timeout, programm will be cancelled
  *
- * -s[0] must be short enough to fit completely into the buffer
- * -every s[] must not have a sequence longer then 506 characters without a space (' ') in them
+ * \warning s[0] must be short enough to fit completely into the buffer
+ * \warning every s[] must not have a sequence longer then 506 characters without a space (' ') in them
  */
 int
 net_writen(const char *const *s)
@@ -380,10 +379,10 @@ net_writen(const char *const *s)
 }
 
 /**
- * ultostr - print unsigned long into a given buffer
+ * print unsigned long into a given buffer
  *
- * @u: number to convert
- * @res: pointer to memory where result is stored, should be ULSTRLEN bytes long
+ * @param u number to convert
+ * @param res pointer to memory where result is stored, should be ULSTRLEN bytes long
  */
 void
 ultostr(const unsigned long u, char *res)
@@ -404,12 +403,11 @@ ultostr(const unsigned long u, char *res)
 }
 
 /**
- * net_readbin - read a given number of bytes from network as binary data (i.e. without any mangling)
+ * read a given number of bytes from network as binary data (i.e. without any mangling)
  *
- * @num: number of bytes to read
- * @buf: buffer to store data (must have enough space for (num + 1) bytes)
- *
- * returns: number of bytes read, -1 on error
+ * @param num number of bytes to read
+ * @param buf buffer to store data (must have enough space for (num + 1) bytes)
+ * @return number of bytes read, -1 on error
  */
 size_t
 net_readbin(size_t num, char *buf)
@@ -442,12 +440,11 @@ net_readbin(size_t num, char *buf)
 }
 
 /**
- * net_readline - read up to a given number of bytes from network but stop at the first CRLF
+ * read up to a given number of bytes from network but stop at the first CRLF
  *
- * @num: number of bytes to read, must be < 1002 so everything behind the CRLF can be copied back to lineinn
- * @buf: buffer to store data (must have enough space)
- *
- * returns: number of bytes read, -1 on error
+ * @param num number of bytes to read, must be < 1002 so everything behind the CRLF can be copied back to lineinn
+ * @param buf buffer to store data (must have enough space)
+ * @return number of bytes read, -1 on error
  */
 size_t
 net_readline(size_t num, char *buf)
@@ -500,9 +497,9 @@ net_readline(size_t num, char *buf)
 }
 
 /**
- * data_pending - check if there is data ready to be read without blocking
+ * check if there is data ready to be read without blocking
  *
- * returns: 0 if no data, 1 if data, -1 on error
+ * @return 0 if no data, 1 if data, -1 on error
  */
 int
 data_pending(void)

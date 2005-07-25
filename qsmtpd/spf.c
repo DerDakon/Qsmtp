@@ -1,3 +1,6 @@
+/** \file qsmtpd/spf.c
+ \brief functions to query and parse SPF entries
+ */
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #define __USE_GNU
@@ -23,14 +26,13 @@ static int spfexists(const char *domain, char *token);
 static int spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr, int *ip6cidr);
 
 /**
- * check_host - look up SPF records for domain
- *
- * @domain: no idea what this might be for
- *
- * returns: one of the SPF_* constants defined in include/antispam.h
+ * look up SPF records for domain
  *
  * This works a like the check_host in the SPF draft but takes two arguments less. The remote ip and the full
  * sender address can be taken directly from xmitstat.
+ *
+ * @param domain no idea what this might be for ;)
+ * @return one of the SPF_* constants defined in include/antispam.h
  */
 int
 check_host(const char *domain)
@@ -39,12 +41,11 @@ check_host(const char *domain)
 }
 
 /**
- * spflookup - look up SPF records for domain
+ * look up SPF records for domain
  *
- * @domain: no idea what this might be for
- * @rec: recursion level
- *
- * returns: one of the SPF_* constants defined in include/antispam.h or -1 on ENOMEM
+ * @param domain no idea what this might be for
+ * @param rec recursion level
+ * @return one of the SPF_* constants defined in include/antispam.h or -1 on ENOMEM
  */
 static int
 spflookup(const char *domain, const int rec)
@@ -211,6 +212,13 @@ spflookup(const char *domain, const int rec)
 
 #define WRITE(fd, s, l) if ( (rc = write((fd), (s), (l))) < 0 ) return rc
 
+/**
+ * print "Received-SPF:" to message header
+ *
+ * @param fd file descriptor of message body
+ * @param spf SPF status of mail transaction
+ * @return 0 if everything goes right, -1 on write error
+ */
 int
 spfreceived(int fd, const int spf) {
 	int rc;
@@ -514,14 +522,13 @@ spfip6(char *domain)
 }
 
 /**
- * spf_makroparam - parse the options in an SPF macro
+ * parse the options in an SPF macro
  *
- * @token: token to parse
- * @num: DIGIT
- * @r: if reverse is given
- * @delim: bitmask of delimiters
- *
- * returns: number of bytes parsed, -1 on error
+ * @param token token to parse
+ * @param num DIGIT
+ * @param r if reverse is given
+ * @param delim bitmask of delimiters
+ * @return number of bytes parsed, -1 on error
  */
 static int
 spf_makroparam(char *token, int *num, int *r, int *delim)
@@ -636,17 +643,16 @@ urlencode(char *token, char **result)
 }
 
 /**
- * spf_appendmakro - append a makro content to the result
+ * append a makro content to the result
  *
- * @res: result string
- * @l: current length of res
- * @s: the raw string to appended, does not need to be terminated by '\0'
- * @sl: strlen(s), must not be 0
- * @num: DIGIT
- * @r: Bit 1: reverse of not; Bit 2: use URL encoding
- * @delim: bit mask of delimiters
- *
- * returns: 0 on success, -1 on error
+ * @param res result string
+ * @param l current length of res
+ * @param s the raw string to appended, does not need to be terminated by '\0'
+ * @param sl strlen(s), must not be 0
+ * @param num DIGIT
+ * @param r Bit 1: reverse of not; Bit 2: use URL encoding
+ * @param delim bit mask of delimiters
+ * @return 0 on success, -1 on error
  */
 static int
 spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned int sl, int num,
@@ -778,15 +784,14 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 #define PARSEERR	{free(*res); return -1;}
 
 /**
- * spf_makroletter - expand a SPF makro letter
+ * expand a SPF makro letter
  *
- * @p: the token to parse
- * @domain: the current domain string
- * @ex: if this is an exp string
- * @res: the resulting string is stored here
- * @l: offset into res
- *
- * returns: number of bytes parsed, -1 on error
+ * @param p the token to parse
+ * @param domain the current domain string
+ * @param ex if this is an exp string
+ * @param res the resulting string is stored here
+ * @param l offset into res
+ * @return number of bytes parsed, -1 on error
  */
 static int
 spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l)
@@ -959,14 +964,13 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 
 
 /**
- * spf_makro - expand a SPF makro
+ * expand a SPF makro
  *
- * @token: the token to parse
- * @domain: the current domain string
- * @ex: if this is an exp string
- * @result: the resulting string is stored here
- *
- * returns: 0 on success, -1 on ENOMEM, SPF_{HARD,TEMP}_ERROR on problems
+ * @param token the token to parse
+ * @param domain the current domain string
+ * @param ex if this is an exp string
+ * @param result the resulting string is stored here
+ * @return 0 on success, -1 on ENOMEM, SPF_{HARD,TEMP}_ERROR on problems
  *
  * not static, is called from targets/testspf.c
  */
@@ -1034,14 +1038,13 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 }
 
 /**
- * spf_domainspec - parse the domainspec 
+ * parse the domainspec 
  *
- * @token: pointer to the string after the token
- * @domain: here the expanded domain string is stored (memory will be malloced)
- * @ip4cidr: the length of the IPv4 net (parsed if present in token, -1 if none given)
- * @ip6cidr: same for IPv6 net length
- *
- * returns:	 0 if everything is ok
+ * @param token pointer to the string after the token
+ * @param dparam omain here the expanded domain string is stored (memory will be malloced)
+ * @param ip4cidr the length of the IPv4 net (parsed if present in token, -1 if none given)
+ * @param ip6cidr same for IPv6 net length
+ * @returns:	 0 if everything is ok
  *		-1 on error (ENOMEM)
  *		SPF_TEMP_ERROR, SPF_HARD_ERROR
  */

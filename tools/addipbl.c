@@ -1,3 +1,6 @@
+/** \file addipbl.c
+ \brief helper program to an an IPv4 or IPv6 host or net address to a IP list for Qsmtp's filters
+ */
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/stat.h>
