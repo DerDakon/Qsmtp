@@ -35,7 +35,7 @@ char *partner_fqdn;
 
 static void quitmsg(void);
 
-void __attribute__ ((noreturn))
+void
 err_mem(const int doquit)
 {
 	if (doquit)
@@ -45,14 +45,14 @@ err_mem(const int doquit)
 	_exit(0);
 }
 
-void __attribute__ ((noreturn))
+void
 err_conf(const char *errmsg)
 {
 	const char *msg[] = {errmsg, NULL};
 	err_confn(msg);
 }
 
-void __attribute__ ((noreturn))
+void
 err_confn(const char **errmsg)
 {
 	log_writen(LOG_ERR, errmsg);
@@ -115,7 +115,7 @@ quitmsg(void)
 	socketd = -1;
 }
 
-void __attribute__ ((noreturn))
+void
 quit(void)
 {
 	quitmsg();
@@ -365,7 +365,7 @@ greeting(void)
 	return 0;
 }
 
-void __attribute__ ((noreturn))
+void
 dieerror(int error)
 {
 	switch (error) {
