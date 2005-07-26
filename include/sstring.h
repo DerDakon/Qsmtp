@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
-/** \struct cstring
+/** \struct string
  \brief record of a string
  */
 typedef struct string {
