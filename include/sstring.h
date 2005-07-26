@@ -25,6 +25,8 @@ typedef struct cstring {
 
 #define STREMPTY(x) {(x).s = NULL; (x).len = 0; }
 
+static inline int newstr(string *, const size_t) __attribute__ ((nonnull (1)));
+
 static inline int
 newstr(string *s, const size_t len)
 {

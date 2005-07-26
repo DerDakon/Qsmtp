@@ -6,7 +6,7 @@
 
 #include "sstring.h"
 
-extern int b64decode(const unsigned char *, size_t, string *);
-extern int b64encode(string *, string *);
+extern int b64decode(const unsigned char *, size_t, string *) __attribute__ ((nonnull (3)));
+extern int b64encode(string *, string *) __attribute__ ((nonnull (1,2)));
 
 #endif
