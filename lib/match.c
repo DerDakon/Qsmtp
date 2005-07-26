@@ -82,6 +82,7 @@ ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsign
  * check if a given expression matches a domain
  *
  * @param domain the domain to check
+ * @param dl length of domain
  * @param expr the expression to match
  * @return 1 on match, 0 otherwise
  */

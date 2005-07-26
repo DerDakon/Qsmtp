@@ -286,7 +286,7 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
  * @param cl close fd or not
  * @return 1 on match, 0 if none, -1 on error
  *
- * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, '\r' in file will cause trouble
+ * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, CR in file will cause trouble
  */
 int
 finddomainfd(int fd, const char *domain, const int cl)
@@ -346,12 +346,12 @@ finddomainfd(int fd, const char *domain, const int cl)
 /**
  * search a domain entry in a mmaped memory area
  *
- * @param fd file descriptor
+ * @param map memory region where file ist mmapped to
+ * @param size size of mmapped area
  * @param domain domain name to find
- * @param cl close fd or not
  * @return 1 on match, 0 if none, -1 on error
  *
- * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, '\r' in file will cause trouble
+ * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, CR in file will cause trouble
  */
 int
 finddomainmm(const char *map, const q_off_t size, const char *domain)

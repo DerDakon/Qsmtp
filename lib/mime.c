@@ -24,10 +24,10 @@
  *
  * line has to be a valid (but unparsed) and may be a folded header line. For this it has to meet this
  * constraints:
- *  * it has to end with CR, LF or CRLF
- *  * it may have CR, LF or CRLF in the middle, but this has to be directly followed by either ' ' or '\t'
+ * -it has to end with CR, LF or CRLF
+ * -it may have CR, LF or CRLF in the middle, but this has to be directly followed by either SPACE or TAB
  */
-const char * __attribute__ ((pure))
+const char *
 skipwhitespace(const char *line, const size_t len)
 {
 	int ws = 0;	/* found at least one whitespace */
@@ -108,9 +108,10 @@ skipwhitespace(const char *line, const size_t len)
  * scan "Content-Type" header line and check if type is multipart/(*) or message/(*)
  *
  * @param line header field
+ * @param boundary reference to boundary is stored here
  * @return 1 if line contains multipart/(*) or message/(*) declaration, 0 if other type, -1 on syntax error
  */
-int __attribute__ ((pure))
+int
 is_multipart(const cstring *line, cstring *boundary)
 {
 	const char *ch;
@@ -213,7 +214,7 @@ is_multipart(const cstring *line, cstring *boundary)
  * @param len length of data
  * @return length of header field, 0 if field does not end until end of data
  */
-size_t __attribute__ ((pure))
+size_t
 getfieldlen(const char *msg, const size_t len)
 {
 	const char *cr = msg;
@@ -244,7 +245,7 @@ getfieldlen(const char *msg, const size_t len)
  * @param len length of line
  * @return length of parameter, 0 on syntax error
  */
-size_t __attribute__ ((pure))
+size_t
 mime_param(const char *line, const size_t len)
 {
 	size_t i = mime_token(line, len);
@@ -288,7 +289,7 @@ mime_param(const char *line, const size_t len)
  * @param len length of line
  * @return length of parameter, 0 on syntax error
  */
-size_t __attribute__ ((pure))
+size_t
 mime_token(const char *line, const size_t len)
 {
 	size_t i = 0;
@@ -318,7 +319,7 @@ mime_token(const char *line, const size_t len)
  * @param boundary boundary limit string
  * @return offset of first character behind next boundary, 0 if no boundary found
  */
-q_off_t __attribute__ ((pure))
+q_off_t
 find_boundary(const char *buf, const q_off_t len, const cstring *boundary)
 {
 	q_off_t pos = 0;

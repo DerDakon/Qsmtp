@@ -228,7 +228,7 @@ ask_dnsa(const char *name, struct ips **result)
  *
  * if there is a standard function doing the same throw this one away
  */
-int __attribute__ ((pure))
+int
 domainvalid(const char *host)
 {
 	int dot = 0;	/* if there is a '.' in the address */

@@ -99,8 +99,8 @@ struct recip *thisrecip;
 
 static int badcmds = 0;			/**< bad commands in a row */
 
-#define MAXBADCMDS	5		/** maximum number of illegal commands in a row */
-#define MAXRCPT		500		/** maximum number of recipients in a single mail */
+#define MAXBADCMDS	5		/**< maximum number of illegal commands in a row */
+#define MAXRCPT		500		/**< maximum number of recipients in a single mail */
 
 /**
  * write error message for messages with empty MAIL FROM and multiple recipients
@@ -148,7 +148,7 @@ err_control2(const char *msg, const char *fn)
  *
  * @param error error code that caused the program termination
  */
-void __attribute__ ((noreturn))
+void
 dieerror(int error)
 {
 	switch (error) {

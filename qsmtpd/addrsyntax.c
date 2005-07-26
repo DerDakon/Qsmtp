@@ -15,7 +15,7 @@
  * @param addr address to check
  * @return -1 on syntax error, length of localpart otherwise. If no '@' in addr, length of addr
  */
-static int __attribute__ ((pure))
+static int __attribute__ ((pure)) __attribute__ ((nonnull (1)))
 parselocalpart(const char *const addr)
 {
 	const char *t = addr;
@@ -75,7 +75,7 @@ parselocalpart(const char *const addr)
  *         3: address is a full email address
  *         4: address is a full email address with IPv4 or IPv6 address literal
  */
-static int __attribute__ ((pure))
+static int __attribute__ ((pure)) __attribute__ ((nonnull (1)))
 parseaddr(const char *addr)
 {
 	const char *at = strchr(addr, '@');
@@ -132,7 +132,7 @@ parseaddr(const char *addr)
  * @param addr the address to check
  * @return 0 if address valid
  */
-int __attribute__ ((pure))
+int
 checkaddr(const char *const addr)
 {
 	return !parseaddr(addr);

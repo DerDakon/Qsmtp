@@ -1,3 +1,6 @@
+/** \file qsmtpd.h
+ \brief definitions for common parts from Qsmtpd exported from qsmtpd.c
+ */
 #ifndef QSMTPD_H
 #define QSMTPD_H
 #include <netinet/in.h>
@@ -76,10 +79,19 @@ extern int hasinput(void);
 
 TAILQ_HEAD(tailhead, recip) head;
 
+/** \struct recip
+ \brief list of recipients given for this transaction
+ 
+ All mail addresses given as recipients for the current mail transfer are stored in
+ this list, regardless if they are accepted or not. If there are more recipients given
+ then permitted by MAXRCPT they will be _not_ stored here, every following one will be
+ rejected with a temporary error anyway. Receipients that rejected the mail basing on
+ their spam filter rules are stored here so cb_badcc() can take them into account.
+ */
 struct recip {
-	TAILQ_ENTRY(recip) entries;	/* List. */
-	string to;			/* the mail address */
-	int ok;				/* if this address is accepted or not */
+	TAILQ_ENTRY(recip) entries;	/**< List. */
+	string to;			/**< the mail address */
+	int ok;				/**< if this address is accepted or not */
 };
 
 extern struct recip *thisrecip;

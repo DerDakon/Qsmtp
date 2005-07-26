@@ -255,7 +255,8 @@ loop_long:
  * @return 0 on success
  *         -1 on error (errno is set)
  *
- * does not return on timeout, programm will be cancelled
+ * -does not return on timeout, programm will be cancelled
+ * -same as net_write but expects that line is <= 512 characters and includes CRLF
  */
 inline int
 netwrite(const char *s)
