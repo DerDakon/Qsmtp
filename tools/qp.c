@@ -50,13 +50,13 @@ int netget(void)
 	return 354;
 }
 
-int netwrite(const char *a) {
-	return netnwrite(a, strlen(a));
+int netwrite(const char *s) {
+	return netnwrite(s, strlen(s));
 }
 
-void ultostr(const unsigned long u, char *buf)
+void ultostr(const unsigned long u, char *res)
 {
-	snprintf(buf, ULSTRLEN, "%lu", u);
+	snprintf(res, ULSTRLEN, "%lu", u);
 }
 
 char linein[10];
