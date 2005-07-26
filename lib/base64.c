@@ -88,7 +88,7 @@ b64encode(string *in, string *out)
 	char *s;
 
 	if (in->len == 0) {
-		STREMPTY(*in);
+		STREMPTY(*out);
 		return 0;
 	}
 
