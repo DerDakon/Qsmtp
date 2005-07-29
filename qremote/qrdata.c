@@ -165,7 +165,7 @@ static void
 recodeheader(void)
 {
 	char buf[64 + heloname.len + strlen(VERSIONSTRING)];
-	
+
 	memcpy(buf, "Content-Transfer-Encoding: quoted-printable (recoded by: ", 57);
 	memcpy(buf + 57, VERSIONSTRING, strlen(VERSIONSTRING));
 	memcpy(buf + 57 + strlen(VERSIONSTRING), " at ", 4);
