@@ -1,3 +1,6 @@
+/** \file rcpt_filters.c
+ \brief collection of all user filters for access by qsmtpd.c
+ */
 #include <syslog.h>
 #include "log.h"
 #include "userfilters.h"
@@ -19,10 +22,10 @@ extern int cb_forceesmtp(const struct userconf *, char **, int *);
 extern int cb_namebl(const struct userconf *, char **, int *);
 extern int cb_wildcardns(const struct userconf *, char **, int *);
 
-/* the filters will be called in the order in this array */
-
+/** the user filters will be called in the order in this array */
+rcpt_cb rcpt_cbs[] = {
 /* offline checks first */
-rcpt_cb rcpt_cbs[] = {	cb_boolean,
+			cb_boolean,
 			cb_usersize,
 			cb_soberg,
 			cb_fromdomain,
@@ -40,10 +43,15 @@ rcpt_cb rcpt_cbs[] = {	cb_boolean,
 			cb_wildcardns,
 			NULL};
 
-/* string constants for the type of blocklists */
-
+/** string constants for the type of blocklists */
 const char *blocktype[] = {"user", "domain", "global"};
 
+/** write message to syslog that a otherwise rejected mail has been passed because of whitelisting
+ *
+ * \param reason reason of whitelisting
+ * \param t which type of filter caused blacklisting
+ * \param u which type of filter caused whitelisting
+ */
 void
 logwhitelisted(const char *reason, const int t, const int u)
 {

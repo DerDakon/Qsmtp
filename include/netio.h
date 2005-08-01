@@ -1,3 +1,6 @@
+/** \file netio.h
+ \brief functiosn for network I/O
+ */
 #ifndef NETIO_H
 #define NETIO_H
 

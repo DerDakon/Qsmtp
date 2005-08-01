@@ -1,3 +1,6 @@
+/** \file match.h
+ \brief functions for matching IP and domains against patterns
+ */
 #ifndef MATCH_H
 #define MATCH_H
 

@@ -1,3 +1,6 @@
+/** \file qsdata.h
+ \brief function definitions for Qsmtpd's handling of message bodies
+ */
 #ifndef QSDATA_H
 #define QSDATA_H
 

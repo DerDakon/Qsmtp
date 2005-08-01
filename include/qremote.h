@@ -1,3 +1,6 @@
+/** \file qremote.h
+ \brief definitions for common parts from Qremote exported from qremote.c
+ */
 #ifndef QREMOTE_H
 #define QREMOTE_H 1
 

@@ -1,3 +1,6 @@
+/** \file qrdata.h
+ \brief function definitions for Qremote's handling of message bodies
+ */
 #ifndef QRDATA_H
 #define QRDATA_H
 

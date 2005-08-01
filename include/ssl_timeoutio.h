@@ -1,3 +1,6 @@
+/** \file ssl_timeoutio.h
+ \brief definition of wrappers around OpenSSL functions
+ */
 #ifndef SSL_TIMEOUTIO_H
 #define SSL_TIMEOUTIO_H
 

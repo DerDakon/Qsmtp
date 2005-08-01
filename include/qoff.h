@@ -1,3 +1,6 @@
+/** \file qoff.h
+ \brief define type for file offsets
+ */
 #ifndef QOFF_H
 #define QOFF_H
 

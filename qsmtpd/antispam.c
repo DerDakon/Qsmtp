@@ -71,8 +71,8 @@ reverseip4(char *buf)
  *
  * @param rbls a NULL terminated array of rbls
  * @param txt pointer to "char *" where the TXT record of the listing will be stored if !NULL
- * @return on match the index of the first match is returned
- *          -1 if not listed or error (if not listed errno is set to 0)
+ * @return \arg \c index of first match
+ *         \arg \c -1 if not listed or error (if not listed errno is set to 0)
  */
 int
 check_rbl(char *const *rbls, char **txt)
@@ -172,7 +172,7 @@ tarpit(void)
  *
  * @param buf buffer of local blocklist, each entry is 5 bytes long
  * @param len length of the buffer
- * @returns 1 if match, 0 if not, -1 if data malformed
+ * @returns \arg \c 1 if match \arg \c 0 if no match \arg \c -1 if data malformed
  *
  * IP entries in the buffer must be network byte order
  */
@@ -254,7 +254,7 @@ domainmatch(const char *fqdn, const unsigned int len, const char **list)
  * check if the remote host is listed in local IP map file given by fd
  *
  * @param fd file descriptor to file
- * @return <0 on error, >0 on match, 0 otherwise
+ * @return \arg \c <0 on error \arg \c >0 on match \arg \c 0 otherwise
  */
 int
 lookupipbl(int fd)

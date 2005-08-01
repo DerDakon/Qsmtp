@@ -87,7 +87,7 @@ char *protocol;				/**< the protocol string to use (e.g. "ESMTP") */
 char *auth_host;			/**< hostname for auth */
 char *auth_check;			/**< checkpassword or one of his friends for auth */
 char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
-char **globalconf;			/**< see userfilters.h */
+char **globalconf;			/**< contents of the global "filterconf" file (or NULL) */
 string heloname;			/**< the fqdn to show in helo */
 string liphost;				/**< replacement domain if TO address is <foo@[ip]> */
 int socketd = 1;			/**< the descriptor where messages to network are written to */
@@ -305,6 +305,7 @@ setup(void)
 	return j;
 }
 
+/** initialize variables related to this connection */
 static int
 connsetup(void)
 {
@@ -471,14 +472,17 @@ qmexists(const string *dirtempl, const char *suff1, const unsigned int len, cons
 	return fd;
 }
 
-/* Return codes:
-
-  0: user doesn't exist
-  1: user exists
-  2: mail would be catched by .qmail-default and .qmail-default != vpopbounce
-  3: domain is not filtered (use for domains not local)
-  4: mail would be catched by .qmail-foo-default (i.e. mailinglist)
-  -1: error, errno is set.
+/** check if the user identified by localpart and userconf->domainpath exists
+ *
+ * \param localpart localpart of mail address
+ * \param ds path of domain and user
+ *
+ * \return \arg \c 0: user doesn't exist
+ *         \arg \c 1: user exists
+ *         \arg \c 2: mail would be catched by .qmail-default and .qmail-default != vpopbounce
+ *         \arg \c 3: domain is not filtered (use for domains not local)
+ *         \arg \c 4: mail would be catched by .qmail-foo-default (i.e. mailinglist)
+ *         \arg \c -1: error, errno is set.
 */
 static int
 user_exists(const string *localpart, struct userconf *ds)
@@ -637,15 +641,16 @@ user_exists(const string *localpart, struct userconf *ds)
 /**
  * addrparse - check an email address for syntax errors and/or existence
  *
- * @in:      input to parse
- * @flags:   1: rcpt to checks (e.g. source route is allowed), 0: mail from checks
- * @addr:    struct string to contain the address (memory will be malloced)
- * @more:    here starts the data behind the first '>' behind the first '<' (or NULL if none)
- * @ds:      store the userconf of the user here
+ * @param in input to parse
+ * @param flags \arc \c bit 1: rcpt to checks (e.g. source route is allowed) \arg \c bit 0: mail from checks
+ * @param addr struct string to contain the address (memory will be malloced)
+ * @param more here starts the data behind the first '>' behind the first '<' (or NULL if none)
+ * @param ds store the userconf of the user here
  *
- * returns: 0 on success, >0 on error (e.g. ENOMEM), -2 if address not local
- *          (this is of course no error condition for MAIL FROM), -1 if
- *          address local but nonexistent (expired or most probably faked) _OR_ if
+ * \return \arg \c 0 on success
+ *         \arg \c >0 on error (e.g. ENOMEM, return code is error code)
+ *         \arg \c -2 if address not local (this is of course no error condition for MAIL FROM)
+ *         \arg \c -1 if address local but nonexistent (expired or most probably faked) _OR_ if
  *          domain of address does not exist (in both cases error is sent to network
  *          before leaving)
  */

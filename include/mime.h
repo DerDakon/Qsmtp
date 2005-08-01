@@ -1,3 +1,6 @@
+/** \file mime.h
+ \brief functions for parsing MIME messages
+ */
 #ifndef MIME_H
 #define MIME_H
 

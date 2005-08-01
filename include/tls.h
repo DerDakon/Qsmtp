@@ -1,3 +1,6 @@
+/** \file tls.h
+ \brief global SSL error handling definitions
+ */
 #ifndef TLS_H
 #define TLS_H
 

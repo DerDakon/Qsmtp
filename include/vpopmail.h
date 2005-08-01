@@ -1,3 +1,6 @@
+/** \file vpopmail.h
+ \brief declaration of function for accessing vpopmail data files
+ */
 #ifndef VPOPMAIL_H
 #define VPOPMAIL_H
 
