@@ -231,7 +231,6 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 								ctype.s = cr;
 								off += ctype.len - 2;
 							}
-							off += 12 + ctype.len;
 							llen = 1;
 							break;
 						} else if (!llen && (rest >= 25) &&
@@ -243,7 +242,6 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 								cenc.s = cr;
 								off += cenc.len - 2;
 							}
-							off += 25 + cenc.len;
 							llen = 1;
 							break;
 						}
