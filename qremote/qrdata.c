@@ -249,6 +249,9 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 					}
 			default:	off++;
 					llen = 1;
+					while ((off < len) && (buf[off] != '\r') && (buf[off] != '\n')) {
+						off++;
+					}
 		}
 	}
 	if (!header || (need_recode(buf, header) & 1)) {
