@@ -198,11 +198,8 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 /* scan header */
 	/* first: find the newline between header and body */
 	while (!header && (off < len)) {
-		int llen = 0;		/* flag if we are at beginning of line or not */
-
 		switch (buf[off]) {
 			case '\r':	off++;
-					llen = 0;
 					if ((off < len) && (buf[off] == '\n'))
 						off++;
 					if (off == len)
@@ -212,7 +209,6 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 					}
 					break;
 			case '\n':	off++;
-					llen = 0;
 					if (off == len)
 						break;
 					if ((buf[off] == '\r') || (buf[off] == '\n')) {
@@ -223,7 +219,7 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 			case 'C':	{
 						q_off_t rest = len - off;
 
-						if (!llen && (rest >= 12) && !strncasecmp(buf + off + 1, "ontent-Type:", 11)) {
+						if ((rest >= 12) && !strncasecmp(buf + off + 1, "ontent-Type:", 11)) {
 							const char *cr = buf + off;
 
 							ctype.len = getfieldlen(cr, len - off);
@@ -231,9 +227,8 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 								ctype.s = cr;
 								off += ctype.len - 2;
 							}
-							llen = 1;
 							break;
-						} else if (!llen && (rest >= 25) &&
+						} else if ((rest >= 25) &&
 								!strncasecmp(buf + off + 1, "ontent-Transfer-Encoding:", 25)) {
 							const char *cr = buf + off;
 			
@@ -242,13 +237,11 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 								cenc.s = cr;
 								off += cenc.len - 2;
 							}
-							llen = 1;
 							break;
 						}
 						/* fallthrough */
 					}
 			default:	off++;
-					llen = 1;
 					while ((off < len) && (buf[off] != '\r') && (buf[off] != '\n')) {
 						off++;
 					}
