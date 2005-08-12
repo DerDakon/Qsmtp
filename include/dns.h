@@ -1,8 +1,8 @@
 /** \file dns.h
  \brief headers of functions for DNS lookups and address validating
  */
-#ifndef DNS_H
-#define DNS_H
+#ifndef QSMTP_DNS_H
+#define QSMTP_DNS_H
 
 #include <netinet/in.h>
 #include "sstring.h"
