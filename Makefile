@@ -43,17 +43,18 @@ clean:
 targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.o qsmtpd/spf.o \
 		qsmtpd/vpopmail.o qsmtpd/data.o qsmtpd/addrsyntax.o qsmtpd/filters/rcptfilters.a \
 		lib/dns.o lib/control.o lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o \
-		lib/match.o lib/log.o lib/netio.o \
+		lib/match.o lib/log.o lib/netio.o lib/libowfatconn.o \
 		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
 targets/Qremote: qremote/qremote.o qremote/conn.o qremote/starttlsr.o qremote/qrdata.o lib/dns.o \
 		lib/netio.o lib/ssl_timeoutio.o lib/log.o lib/tls.o lib/control.o lib/log.o \
-		lib/match.o lib/ssl_timeoutio.o lib/tls.o lib/mime.o $(OWFATPATH)/libowfat.a
+		lib/match.o lib/ssl_timeoutio.o lib/tls.o lib/mime.o lib/libowfatconn.o \
+		$(OWFATPATH)/libowfat.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
 targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/match.o \
-		lib/netio.o lib/tls.o lib/ssl_timeoutio.o $(OWFATPATH)/libowfat.a
+		lib/netio.o lib/tls.o lib/ssl_timeoutio.o lib/libowfatconn.o $(OWFATPATH)/libowfat.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 	strip $@
 
