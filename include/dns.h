@@ -49,14 +49,6 @@ extern int addrsyntax(char *in, const int flags, string *addr, char **more) __at
 */
 extern int helovalid(const char *) __attribute__ ((nonnull (1)));
 
-/* these functions are from libowfat somehow, you must apply the supplied patch to libowfat to get them */
-
-extern int dnsip4(char **, unsigned int *, const char *) __attribute__ ((nonnull (1,2,3)));
-extern int dnsip6(char **, unsigned int *, const char *) __attribute__ ((nonnull (1,2,3)));
-extern int dnstxt(char **, const char *) __attribute__ ((nonnull (1,2)));
-extern int dnsmx(char **, unsigned int *, const char *) __attribute__ ((nonnull (1,2,3)));
-extern int dnsname(char **, const char *) __attribute__ ((nonnull (1,2)));
-
 #ifndef INET_ADDRSTRLEN
 #define INET_ADDRSTRLEN 16
 #endif

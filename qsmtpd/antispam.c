@@ -14,7 +14,7 @@
 #include <fcntl.h>
 #include "antispam.h"
 #include "log.h"
-#include "dns.h"
+#include "libowfatconn.h"
 #include "qsmtpd.h"
 #include "control.h"
 #include "tls.h"

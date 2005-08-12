@@ -23,5 +23,7 @@ ssl_timeoutio.o: log.h tls.h
 
 mime.o: sstring.h qrdata.h qoff.h
 
+dns.o: libowfatconn.h
+
 %.o: %.c %.h
 	$(CC) $(CFLAGS) $<

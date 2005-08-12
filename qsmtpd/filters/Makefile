@@ -40,7 +40,7 @@ rcpt_filters.o: log.h
 
 forceesmtp.o: antispam.h control.h qsmtpd.h
 
-namebl.o: antispam.h control.h dns.h log.h netio.h qsmtpd.h
+namebl.o: antispam.h control.h libowfatconn.h log.h netio.h qsmtpd.h
 
 wildcardmx.o: control.h qsmtpd.h
 

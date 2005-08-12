@@ -19,9 +19,9 @@ auth.o: qsmtpd.h sstring.h netio.h base64.h log.h tls.h
 
 starttls.o: tls.h netio.h control.h dns.h ssl_timeoutio.h qsmtpd.h
 
-antispam.o: antispam.h dns.h log.h match.h netio.h
+antispam.o: antispam.h libowfatconn.h log.h match.h netio.h
 
-spf.o: dns.h sstring.h antispam.h match.h netio.h
+spf.o: libowfatconn.h sstring.h antispam.h match.h netio.h
 
 vpopmail.o: vpopmail.h sstring.h
 

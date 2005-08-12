@@ -5,7 +5,7 @@
 #include "antispam.h"
 #include "userfilters.h"
 #include "control.h"
-#include "dns.h"
+#include "libowfatconn.h"
 #include "log.h"
 #include "netio.h"
 #include "qsmtpd.h"

@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string.h>
 #include "dns.h"
+#include "libowfatconn.h"
 
 /**
  * get info out of the DNS

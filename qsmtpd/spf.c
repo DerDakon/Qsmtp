@@ -10,7 +10,7 @@
 #include "qsmtpd.h"
 #include "antispam.h"
 #include "sstring.h"
-#include "dns.h"
+#include "libowfatconn.h"
 #include "match.h"
 #include "netio.h"
 
