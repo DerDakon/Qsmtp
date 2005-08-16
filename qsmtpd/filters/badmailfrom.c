@@ -1,3 +1,6 @@
+/** \file badmailfrom.c
+ \brief reject mail based on envelope from
+ */
 #include <errno.h>
 #include <string.h>
 #include <strings.h>

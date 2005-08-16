@@ -1,3 +1,6 @@
+/** \file boolean.c
+ \brief boolean reject decisions
+ */
 #include <syslog.h>
 #include "userfilters.h"
 #include "qsmtpd.h"

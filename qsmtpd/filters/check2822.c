@@ -1,3 +1,6 @@
+/** \file check2822.c
+ \brief check RfC2822 syntax of mail body
+ */
 #include "userfilters.h"
 #include "qsmtpd.h"
 

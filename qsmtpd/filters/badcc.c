@@ -1,3 +1,6 @@
+/** \file badcc.c
+ \brief reject multiple recipients mail if specific other recipients are given
+ */
 #include <errno.h>
 #include <string.h>
 #include <strings.h>
