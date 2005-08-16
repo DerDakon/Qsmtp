@@ -2,8 +2,8 @@
  \brief connector functions for libowfat DNS functions
  */
 #include <stdlib.h>
-#include <stralloc.h>
-#include <dns.h>
+#include <libowfat/stralloc.h>
+#include <libowfat/dns.h>
 #include "libowfatconn.h"
 
 /**
@@ -84,12 +84,18 @@ int
 dnstxt(char **out, const char *host)
 {
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
+	stralloc fqdn = {.a = 0, .len = 0, .s = NULL};
 	int r;
 
-	r = dns_txt(&sa, host);
+	if (!stralloc_copys(&fqdn, host))
+		return -1;
+
+	r = dns_txt(&sa, &fqdn);
 	if (r)
 		return r;
-	if (!(r = stralloc_0(&sa))) {
+	r = stralloc_0(&sa);
+	free(fqdn.s);
+	if (!r) {
 		free(sa.s);
 		return -1;
 	}
