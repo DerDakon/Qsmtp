@@ -1408,7 +1408,7 @@ main(int argc, char *argv[]) {
 				const char *msg[] = {"checkpassword program '", auth_check, "' does not exist", NULL};
 
 				log_writen(LOG_WARNING, msg);
-			} else {
+			} else if (rc >= 0) {
 				int r;
 
 				while ((r = close(fd)) && (errno == EINTR));
@@ -1417,6 +1417,8 @@ main(int argc, char *argv[]) {
 				} else {
 					flagbogus = errno;
 				}
+			} else {
+				auth_host = argv[1];
 			}
 		}
 	} else if (argc != 1) {
