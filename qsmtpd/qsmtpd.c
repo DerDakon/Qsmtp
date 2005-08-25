@@ -1408,7 +1408,7 @@ main(int argc, char *argv[]) {
 				const char *msg[] = {"checkpassword program '", auth_check, "' does not exist", NULL};
 
 				log_writen(LOG_WARNING, msg);
-			} else if (rc >= 0) {
+			} else if (fd >= 0) {
 				int r;
 
 				while ((r = close(fd)) && (errno == EINTR));
