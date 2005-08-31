@@ -28,12 +28,12 @@ rcpt_cb rcpt_cbs[] = {
 			cb_boolean,
 			cb_usersize,
 			cb_soberg,
-			cb_fromdomain,
 			cb_ipbl,
 			cb_helo,
 			cb_spf,
 			cb_badmailfrom,
 			cb_badcc,
+			cb_fromdomain,
 /* now online checks */
 			cb_dnsbl,
 			cb_forceesmtp,
