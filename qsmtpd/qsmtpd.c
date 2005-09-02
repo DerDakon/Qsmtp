@@ -1289,12 +1289,15 @@ smtploop(void)
 			 * we are very short of resources or the client is really really broken */
 			switch (flagbogus) {
 				case EBADRQC:	tarpit();
+						log_write(LOG_INFO, "bad SMTP command parameter");
 						flagbogus = netwrite("501 5.5.2 unrecognized command parameter\r\n") ? errno : 0;
 						break;
 				case EINVAL:	tarpit();
+						log_write(LOG_INFO, "bad SMTP command syntax");
 						flagbogus = netwrite("500 5.5.2 command syntax error\r\n") ? errno : 0;
 						break;
 				case E2BIG:	tarpit();
+						log_write(LOG_INFO, "too long SMTP line");
 						flagbogus = netwrite("500 5.5.2 line too long\r\n") ? errno : 0;
 						break;
 				case ENOMEM:	/* ignore errors for the first 2 messages: if the third
@@ -1304,9 +1307,11 @@ smtploop(void)
 						netwrite("452-4.3.0 give me some time to recover\r\n");
 						sleep(30);
 						badcmds = 0;
+						log_write(LOG_ERR, "out of memory");
 						flagbogus = netwrite("452 4.3.0 please try again later\r\n") ? errno : 0;
 						break;
 				case EIO:	badcmds = 0;
+						log_write(LOG_ERR, "IO error");
 						flagbogus = netwrite("451 4.3.0 IO error, please try again later\r\n") ? errno : 0;
 						break;
 				case EMSGSIZE:	badcmds = 0;
