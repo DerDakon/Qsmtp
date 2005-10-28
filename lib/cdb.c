@@ -59,12 +59,13 @@ cdb_seekmm(int fd, char *key, unsigned int len, char **mm, struct stat *st)
 
 	pos = 8 * (h & 255);
 
-	pos = cdb_unpack(*mm + pos);
 	lenhash = cdb_unpack(*mm + pos + 4);
 
 	if (!lenhash)
 		goto out;
 	h2 = (h >> 8) % lenhash;
+
+	pos = cdb_unpack(*mm + pos);
 
 	for (loop = 0; loop < lenhash; ++loop) {
 		cur = *mm + pos + 8 * h2;
