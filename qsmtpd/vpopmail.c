@@ -61,7 +61,7 @@ int vget_assign(const char *domain, string *domaindir)
 	}
 
 	/* search the cdb file for our requested domain */
-	if ( !(cdb_buf = cdb_seekmm(fd, cdb_key, cdbkeylen, &cdb_mmap, &st)) ) {
+	if ( (cdb_buf = cdb_seekmm(fd, cdb_key, cdbkeylen, &cdb_mmap, &st)) ) {
 		unsigned int len;
 
 		/* format of cdb_buf is :
