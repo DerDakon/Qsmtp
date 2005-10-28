@@ -1,8 +1,7 @@
-OWFATPATH=../../libowfat-0.22
-CDBPATH=../../qmail-1.03
+OWFATPATH=/mnt/misc/qmail/libowfat/lib
 SHELL=/bin/sh
 CC=gcc
-CFLAGS=-O2 -c -Wall -W -Wshadow -I$(shell pwd)/include -DNOSTDERR -DUSESYSLOG -g
+CFLAGS=-O2 -c -Wall -W -Wshadow -I$(shell pwd)/include -DNOSTDERR -DUSESYSLOG -g -I/mnt/misc/qmail/libowfat/include
 LD=gcc
 LDFLAGS= #-lefence
 LDFLAGSSSL=-lssl -lcrypto
@@ -43,8 +42,8 @@ clean:
 targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.o qsmtpd/spf.o \
 		qsmtpd/vpopmail.o qsmtpd/data.o qsmtpd/addrsyntax.o qsmtpd/filters/rcptfilters.a \
 		lib/dns.o lib/control.o lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o \
-		lib/match.o lib/log.o lib/netio.o lib/libowfatconn.o \
-		$(OWFATPATH)/libowfat.a $(CDBPATH)/cdb.a
+		lib/match.o lib/log.o lib/netio.o lib/libowfatconn.o lib/cdb.o \
+		$(OWFATPATH)/libowfat.a
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
 targets/Qremote: qremote/qremote.o qremote/conn.o qremote/starttlsr.o qremote/qrdata.o lib/dns.o \

@@ -23,7 +23,7 @@ antispam.o: antispam.h libowfatconn.h log.h match.h netio.h
 
 spf.o: libowfatconn.h sstring.h antispam.h match.h netio.h
 
-vpopmail.o: vpopmail.h sstring.h
+vpopmail.o: vpopmail.h sstring.h cdb.h
 
 data.o: netio.h log.h qsmtpd.h antispam.h version.h tls.h qsdata.h
 
