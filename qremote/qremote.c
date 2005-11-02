@@ -395,7 +395,7 @@ static const char *mailerrmsg[] = {"Connected to ", NULL, " but sender was rejec
 int
 main(int argc, char *argv[])
 {
-	const char *netmsg[7];
+	const char *netmsg[6];
 	int rcptstat = 1;	/* this means: all recipients have been rejected */
 	int i;
 	struct ips *mx = NULL;
@@ -479,31 +479,33 @@ main(int argc, char *argv[])
 
 	netmsg[0] = "MAIL FROM:<";
 	netmsg[1] = argv[2];
-	netmsg[2] = ">";
 	netmsg[3] = NULL;
 /* ESMTP SIZE extension */
 	if (smtpext & 0x01) {
-		netmsg[3] = " SIZE=";
+		netmsg[2] = "> SIZE=";
 		ultostr(msgsize, sizebuf);
-		netmsg[4] = sizebuf;
-		netmsg[5] = NULL;
+		netmsg[3] = sizebuf;
+		netmsg[4] = NULL;
+	} else {
+		netmsg[2] = ">";
 	}
 /* ESMTP 8BITMIME extension */
 	if (smtpext & 0x08) {
 		int idx;
 
-		idx = (smtpext & 0x01) ? 5 : 3;
+		idx = (smtpext & 0x01) ? 4 : 3;
 
 		netmsg[idx++] = (ascii & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
 		netmsg[idx] = NULL;
 	}
 	net_writen(netmsg);
 
+	netmsg[0] = "RCPT TO:<";
+	netmsg[2] = ">";
 	netmsg[3] = NULL;
 	if (smtpext & 0x02) {
 /* server allows PIPELINING: first send all the messages, then check the replies.
  * This allows to hide network latency. */
-		netmsg[0] = "RCPT TO:<";
 		for (i = 3; i < argc; i++) {
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
@@ -527,7 +529,6 @@ main(int argc, char *argv[])
 /* server does not allow pipelining: we must do this one by one */
 		if (checkreply(" ZD", mailerrmsg, 6) >= 300)
 			quit();
-		netmsg[0] = "RCPT TO:<";
 		for (i = 3; i < argc; i++) {
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
