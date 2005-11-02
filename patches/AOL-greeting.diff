@@ -1,16 +1,17 @@
 Index: qremote/qremote.c
 ===================================================================
---- qremote/qremote.c	(revision 692)
+--- qremote/qremote.c	(revision 741)
 +++ qremote/qremote.c	(working copy)
-@@ -419,13 +419,36 @@
+@@ -435,6 +435,8 @@
  /* for all MX entries we got: try to enable connection, check if the SMTP server wants us
   * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
  	do {
 +		int flagerr = 0;
 +
- 		tryconn(mx);
- 		dup2(socketd, 0);
- 		if (netget() != 220) {
+ /*		if (i < 0) {
+ 			if (errno == ENOMEM)
+ 				err_mem(1);
+@@ -449,7 +451,28 @@
  			quitmsg();
  			continue;
  		}
