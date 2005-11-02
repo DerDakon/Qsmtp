@@ -35,7 +35,6 @@ cdb_unpack(const unsigned char *buf)
 char *
 cdb_seekmm(int fd, char *key, unsigned int len, char **mm, struct stat *st)
 {
-	char packbuf[8];
 	uint32_t pos;
 	uint32_t h;
 	uint32_t lenhash;
@@ -74,12 +73,12 @@ cdb_seekmm(int fd, char *key, unsigned int len, char **mm, struct stat *st)
 		if (!poskd)
 			break;
 
-		if (cdb_unpack(packbuf) == h) {
+		if (cdb_unpack(cur) == h) {
 			cur = *mm + poskd;
 
 			if (cdb_unpack(cur) == len)
 				if (!strncmp(cur + 8, key, len))
-					return cur + 8;
+					return cur + 8 + len;
 		}
 		if (++h2 == lenhash)
 			h2 = 0;
