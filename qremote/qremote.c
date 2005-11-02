@@ -435,9 +435,7 @@ main(int argc, char *argv[])
 /* for all MX entries we got: try to enable connection, check if the SMTP server wants us
  * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
 	do {
-		int flagerr = 0;
-/*
-		if (i < 0) {
+/*		if (i < 0) {
 			if (errno == ENOMEM)
 				err_mem(1);
 			log_write(LOG_ERR, "error parsing EHLO response");
