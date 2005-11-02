@@ -333,9 +333,20 @@ greeting(void)
 			while (extensions[j].name) {
 				if (!strncasecmp(linein + 4, extensions[j].name, extensions[j].len)) {
 					if (extensions[j].func) {
-						if (!extensions[j].func()) {
+						int r;
+
+						r = extensions[j].func();
+						if (!r) {
 							smtpext |= (1 << j);
 							break;
+/*						} else if (r < 0) {
+							return r;
+*/						} else {
+							const char *logmsg[4] = {"syntax error in EHLO response \"",
+									    extensions[j].name,
+									    "\"", NULL};
+
+							log_writen(LOG_WARNING, logmsg);
 						}
 					} else {
 						if (!*(linein + 4 + extensions[j].len)) {
@@ -424,6 +435,16 @@ main(int argc, char *argv[])
 /* for all MX entries we got: try to enable connection, check if the SMTP server wants us
  * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
 	do {
+		int flagerr = 0;
+/*
+		if (i < 0) {
+			if (errno == ENOMEM)
+				err_mem(1);
+			log_write(LOG_ERR, "error parsing EHLO response");
+			write(1, "Zinternal error: can't parse EHLO response\n", 33);
+			return 0;
+		}
+*/
 		tryconn(mx);
 		dup2(socketd, 0);
 		if (netget() != 220) {
@@ -439,7 +460,7 @@ main(int argc, char *argv[])
 			while ((netget() == 220) && (linein[3] != ' ')) {}
 			quitmsg();
 		}
-	} while ((socketd < 0) || greeting());
+	} while ((socketd < 0) || (i = greeting()));
 
 	getrhost(mx);
 	freeips(mx);
