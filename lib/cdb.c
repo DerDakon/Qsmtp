@@ -23,7 +23,7 @@ cdb_hash(const unsigned char *buf, unsigned int len)
 }
 
 static inline uint32_t
-cdb_unpack(const char *buf)
+cdb_unpack(const unsigned char *buf)
 {
 #ifdef __le32_to_cpup
 	return __le32_to_cpup((uint32_t *) buf);
