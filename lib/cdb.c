@@ -45,11 +45,12 @@ cdb_seekmm(int fd, char *key, unsigned int len, char **mm, struct stat *st)
 	int err;
 
 	*mm = mmap(NULL, st->st_size, PROT_READ, MAP_SHARED, fd, 0);
+	err = errno;
+	
+	while (close(fd) && (errno == EINTR));
+	
 	if (*mm == MAP_FAILED) {
-		int e = errno;
-
-		while (close(fd) && (errno == EINTR));
-		errno = e;
+		errno = err;
 		return NULL;
 	}
 
@@ -86,7 +87,6 @@ cdb_seekmm(int fd, char *key, unsigned int len, char **mm, struct stat *st)
 out:
 	err = errno;
 	munmap(*mm, st->st_size);
-	while (close(fd) && (errno == EINTR));
 	errno = err;
 	return NULL;
 }

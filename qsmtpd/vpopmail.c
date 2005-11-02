@@ -88,7 +88,6 @@ int vget_assign(const char *domain, string *domaindir)
 	}
 	err = errno;
 	munmap(cdb_mmap, st.st_size);
-	while (close(fd) && (errno == EINTR));
 	free(cdb_key);
 	errno = err;
 	return i;
