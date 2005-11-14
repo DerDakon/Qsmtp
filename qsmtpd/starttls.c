@@ -197,12 +197,14 @@ int tls_init()
 {
 	SSL *myssl;
 	SSL_CTX *ctx;
-	const char *ciphers, *prot;
+	const char *ciphers = NULL, *prot;
 	string saciphers;
 	unsigned int l;
 	X509_STORE *store;
 	X509_LOOKUP *lookup;
 	char *newprot;
+	const char *ciphfn = "control/tlsserverciphers";
+	int e;
 
 	SSL_library_init();
 	STREMPTY(saciphers);
@@ -248,32 +250,26 @@ int tls_init()
 		return EDONE;
 	}
 
-	ciphers = getenv("TLSCIPHERS");
-	if (!ciphers) {
-		const char *ciphfn = "control/tlsserverciphers";
-		int e = lloadfilefd(open(ciphfn, O_RDONLY), &(saciphers.s), 1);
+	e = lloadfilefd(open(ciphfn, O_RDONLY), &(saciphers.s), 1);
+	if ((e < 0) && (errno != ENOENT)) {
+		e = errno;
+		SSL_free(myssl);
+		err_control(ciphfn);
+		errno = e;
+		return -1;
+	} else if (e >= 0) {
+		saciphers.len = e;
+		if (saciphers.len) {
+			/* convert all '\0's except the last one to ':' */
+			unsigned int i;
 
-		if ((e < 0) && (errno != ENOENT)) {
-			e = errno;
-
-			SSL_free(myssl);
-			err_control(ciphfn);
-			errno = e;
-			return -1;
-		}
-		if ( e >= 0) {
-			saciphers.len = e;
-			if (saciphers.len) {
-				/* convert all '\0's except the last one to ':' */
-				unsigned int i;
-
-				for (i = 0; i < saciphers.len - 1; ++i)
-					if (!saciphers.s[i])
-						saciphers.s[i] = ':';
-				ciphers = saciphers.s;
-			}
+			for (i = 0; i < saciphers.len - 1; ++i)
+				if (!saciphers.s[i])
+					saciphers.s[i] = ':';
+			ciphers = saciphers.s;
 		}
 	}
+
 	if (!ciphers || !*ciphers) ciphers = "DEFAULT";
 	SSL_set_cipher_list(myssl, ciphers);
 	free(saciphers.s);
