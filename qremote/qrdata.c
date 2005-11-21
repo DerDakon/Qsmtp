@@ -515,6 +515,8 @@ send_qp(const char *buf, const q_off_t len)
 					while ((off < len) && (buf[off] != '\r') && (buf[off] != '\n')) {
 						off++;
 					}
+					if ((off + 2 <= len) && (buf[off] == '\r') && (buf[off + 1] == '\n'))
+						off++;
 					if (off == len) {
 						netnwrite("--\r\n", 4);
 						lastlf = 1;
@@ -544,7 +546,6 @@ send_qp(const char *buf, const q_off_t len)
 					send_plain(buf + off, len - off);
 				}
 			}
-			
 		} else if (nextoff) {
 			/* this can only be whitespace or CR or LF, find_boundary had complained otherwise */
 			netnwrite("\r\n", 2);
