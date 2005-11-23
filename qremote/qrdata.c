@@ -190,12 +190,21 @@ recodeheader(void)
 static q_off_t
 qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 {
-	q_off_t off = 0, header = 0;
+	q_off_t off, header = 0;
 	cstring cenc, ctype;
 
 	STREMPTY(cenc);
 	STREMPTY(ctype);
 /* scan header */
+
+	/* check if this is an empty header */
+	if (buf[0] == '\r') {
+		header = ((len > 1) && (buf[1] == '\n')) ? 2 : 1;
+	} else if (buf[0] == '\n') {
+		header = 1;
+	}
+	off = header;
+
 	/* first: find the newline between header and body */
 	while (!header && (off < len)) {
 		switch (buf[off]) {
@@ -273,8 +282,8 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 			recodeheader();
 			send_plain(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
 		} else {
-			send_plain(buf, header);
 			recodeheader();
+			send_plain(buf, header);
 		}
 	}
 	return header;
