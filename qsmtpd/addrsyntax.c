@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 #include "sstring.h"
 #include "dns.h"
@@ -83,7 +84,7 @@ parseaddr(const char *addr)
 	if (!at)
 		return 1 - domainvalid(addr);
 	/* localpart too long */
-	if ((at - addr) > 64)
+	if ((at - addr) > 256)
 		return 0;
 	/* paranoid ones would check for (at == addr+i) here */
 	if (parselocalpart(addr) < 0)
@@ -219,6 +220,10 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 		strncpy(addr->s, f, len);
 		addr->s[len] = '\0';
 		addr->len = len;
+		while (len > 0) {
+			len--;
+			addr->s[len] = tolower(addr->s[len]);
+		}
 	}
 
 	return x;
