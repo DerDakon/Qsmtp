@@ -464,7 +464,9 @@ send_qp(const char *buf, const q_off_t len)
 
 	off = qp_header(buf, len, &boundary, &multipart);
 
-	if (multipart > 0) {
+	if (!multipart) {
+		recode_qp(buf + off, len - off);
+	} else {
 		q_off_t nextoff = find_boundary(buf + off, len - off, &boundary);
 		int nr;
 		int islast = 0;	/* set to one if MIME end boundary was found */
@@ -560,8 +562,6 @@ send_qp(const char *buf, const q_off_t len)
 		} else {
 			send_plain(buf + off, len - off);
 		}
-	} else {
-		recode_qp(buf + off, len - off);
 	}
 }
 
