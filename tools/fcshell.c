@@ -718,7 +718,7 @@ edit(void)
 				if (linein[strlen(linein) - 1] == '\n')
 					break;
 			}
-			/* error are not caught */
+			/* errors are not caught */
 			continue;
 		}
 
