@@ -6,7 +6,6 @@ RfCs interesting for a mail server (and used for implementing this one):
 1893	Enhanced Mail System Status Codes
 2034	SMTP Service Extension for Returning Enhanced Error Codes
 2045ff  Multipurpose Internet Mail Extensions (MIME)
-2487	SMTP Service Extension for Secure SMTP over TLS
 2505	Anti-Spam Recommendations for SMTP MTAs
 2554	SMTP Service Extension for Authentication
 2821	Simple Mail Transfer Protocol
