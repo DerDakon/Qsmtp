@@ -1,4 +1,3 @@
-OWFATPATH=/mnt/misc/qmail/libowfat/lib
 SHELL=/bin/sh
 CC=gcc
 CFLAGS=-O2 -c -Wall -W -Wshadow -I$(shell pwd)/include -DNOSTDERR -DUSESYSLOG -g -I/mnt/misc/qmail/libowfat/include
@@ -43,17 +42,17 @@ targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.
 		qsmtpd/vpopmail.o qsmtpd/data.o qsmtpd/addrsyntax.o qsmtpd/filters/rcptfilters.a \
 		lib/dns.o lib/control.o lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o \
 		lib/match.o lib/log.o lib/netio.o lib/libowfatconn.o lib/cdb.o \
-		$(OWFATPATH)/libowfat.a
+		-lowfat
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
 targets/Qremote: qremote/qremote.o qremote/conn.o qremote/starttlsr.o qremote/qrdata.o lib/dns.o \
 		lib/netio.o lib/ssl_timeoutio.o lib/log.o lib/tls.o lib/control.o lib/log.o \
 		lib/match.o lib/ssl_timeoutio.o lib/tls.o lib/mime.o lib/libowfatconn.o \
-		$(OWFATPATH)/libowfat.a
+		-lowfat
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 
 targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/match.o \
-		lib/netio.o lib/tls.o lib/ssl_timeoutio.o lib/libowfatconn.o $(OWFATPATH)/libowfat.a
+		lib/netio.o lib/tls.o lib/ssl_timeoutio.o lib/libowfatconn.o -lowfat
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^
 	strip $@
 
