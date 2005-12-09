@@ -1,0 +1,41 @@
+Index: qsmtpd/qsmtpd.c
+===================================================================
+--- qsmtpd/qsmtpd.c	(revision 757)
++++ qsmtpd/qsmtpd.c	(working copy)
+@@ -785,10 +785,16 @@
+ 	const char *logmsg[] = {"rejected message to <", NULL, "> from <", MAILFROM,
+ 					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL};
+ 	const char *okmsg[] = {"250 2.1.0 recipient <", NULL, "> OK", NULL};
++	int bugoffset = 0;
+ 
+-	if (linein[8] != '<')
++	if (xmitstat.authname.len) {
++		while ((bugoffset < linelen - 8) && (linein[8 + bugoffset] == ' '))
++			bugoffset++;
++	}
++	if (linein[8 + bugoffset] != '<')
+ 		return EINVAL;
+-	i = addrparse(linein + 9, 1, &tmp, &more, &ds);
++	i = addrparse(linein + 9 + bugoffset, 1, &tmp, &more, &ds);
++
+ 	if  (i > 0) {
+ 		return i;
+ 	} else if (i == -1) {
+@@ -1007,10 +1013,15 @@
+ 	struct statvfs sbuf;
+ 	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> is syntactically correct", NULL};
+ 	char *s;
++	int bugoffset = 0;
+ 
+-	if (linein[10] != '<')
++	if (xmitstat.authname.len) {
++		while ((bugoffset < linelen - 10) && (linein[10 + bugoffset] == ' '))
++			bugoffset++;
++	}
++	if (linein[10 + bugoffset] != '<')
+ 		return EINVAL;
+-	i = addrparse(linein + 11, 0, &(xmitstat.mailfrom), &more, &ds);
++	i = addrparse(linein + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, &ds);
+ 	xmitstat.frommx = NULL;
+ 	xmitstat.fromdomain = 0;
+ 	free(ds.userpath.s);
