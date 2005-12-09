@@ -222,7 +222,8 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 		addr->len = len;
 		while (len > 0) {
 			len--;
-			addr->s[len] = tolower(addr->s[len]);
+			if ((addr->s[len] >= 'A') && (addr->s[len] <= 'Z'))
+				addr->s[len] = addr->s[len] + ('a' - 'A');
 		}
 	}
 
