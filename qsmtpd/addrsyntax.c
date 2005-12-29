@@ -84,7 +84,7 @@ parseaddr(const char *addr)
 	if (!at)
 		return 1 - domainvalid(addr);
 	/* localpart too long */
-	if ((at - addr) > 256)
+	if ((at - addr) > 64)
 		return 0;
 	/* paranoid ones would check for (at == addr+i) here */
 	if (parselocalpart(addr) < 0)
