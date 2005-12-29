@@ -75,7 +75,7 @@ conn(const struct in6_addr remoteip)
  * @param mx list of IP adresses to try
  *
  * Every entry where a connection attempt was made is marked with a priority of 65537,
- * the last one with 65538
+ * the last one tried with 65538
  */
 void
 tryconn(struct ips *mx)
