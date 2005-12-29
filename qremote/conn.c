@@ -83,29 +83,24 @@ tryconn(struct ips *mx)
 	struct ips *thisip;
 
 	while (1) {
-		unsigned int minpri = 65537;
-
 		for (thisip = mx; thisip; thisip = thisip->next) {
 			if (thisip->priority == 65538)
 				thisip->priority = 65537;
-			if (thisip->priority < minpri)
-				minpri = thisip->priority;
+			if (thisip->priority <= 65536)
+				break;
 		}
-		if (minpri == 65537) {
+		if (thisip->priority == 65537) {
 			close(socketd);
 			write(1, "Zcan't connect to any server\n", 30);
 			exit(0);
 		}
-		for (thisip = mx; thisip; thisip = thisip->next) {
-			if (thisip->priority == minpri) {
-				/* set priority to 0 to allow getrhost() to find active MX */
-				thisip->priority = 65538;
 
-				if (!conn(thisip->addr))
-					return;
-				thisip->priority = 65537;
-			}
+		if (!conn(thisip->addr)) {
+			/* set priority to 65538 to allow getrhost() to find active MX */
+			thisip->priority = 65538;
+			return;
 		}
+		thisip->priority = 65537;
 	}
 }
 

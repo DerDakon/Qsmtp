@@ -412,6 +412,7 @@ main(int argc, char *argv[])
 	}
 
 	getmxlist(argv[1], &mx);
+	sortmx(&mx);
 
 	/* this shouldn't fail normally: qmail-rspawn did it before successfully */
 	i = fstat(0, &st);
