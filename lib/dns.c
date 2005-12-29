@@ -306,3 +306,40 @@ freeips(struct ips *p)
 		free(thisip);
 	}
 }
+
+/**
+ * sort MX list by priority
+ *
+ * @param p list of MX entries
+ */
+void
+sortmx(struct ips **p)
+{
+	struct ips *next, *res = NULL;
+
+	/* make us live easy: copy first entry */
+	res = *p;
+	next = (*p)->next;
+	(*p)->next = NULL;
+	*p = next;
+
+	while (next) {
+		struct ips *this = res;
+		struct ips *tmp = next->next;
+
+		if (res->priority > next->priority) {
+			next->next = res;
+			res = next;
+		} else {
+			while (this->next && (this->next->priority <= next->priority)) {
+				this = this->next;
+			}
+			tmp = next->next;
+			next->next = this->next;
+			this->next = next;
+		}
+		next = tmp;
+	}
+
+	*p = res;
+}
