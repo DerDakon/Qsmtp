@@ -82,16 +82,9 @@ tryconn(struct ips *mx)
 {
 	struct ips *thisip;
 
-	thisip = mx;
 	while (1) {
 		unsigned int minpri = 65537;
 
-#ifdef IPV4ONLY
-		for (thisip = mx; thisip; thisip = thisip->next) {
-			if (!IN6_IS_ADDR_V4MAPPED(&thisip->addr))
-				thisip->priority = 65537;
-		}
-#endif
 		for (thisip = mx; thisip; thisip = thisip->next) {
 			if (thisip->priority == 65538)
 				thisip->priority = 65537;
@@ -137,6 +130,9 @@ getmxlist(char *remhost, struct ips **mx)
 {
 	char **smtproutes, *smtproutbuf;
 	size_t reml = strlen(remhost);
+#ifdef IPV4ONLY
+	struct ips *thisip;
+#endif
 
 	if (remhost[0] == '[') {
 		if (remhost[reml - 1] == ']') {
@@ -225,6 +221,13 @@ getmxlist(char *remhost, struct ips **mx)
 		free(smtproutbuf);
 	}
 
+#ifdef IPV4ONLY
+	for (thisip = *mx; thisip; thisip = thisip->next) {
+		if (!IN6_IS_ADDR_V4MAPPED(&thisip->addr))
+			thisip->priority = 65537;
+	}
+#endif
+	
 	if (!*mx) {
 		if (ask_dnsmx(remhost, mx)) {
 			write(1, "Z4.4.3 cannot find a mail exchanger for ", 40);
