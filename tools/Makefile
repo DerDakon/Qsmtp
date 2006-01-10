@@ -1,4 +1,4 @@
-TARGETS=addipbl.o testspf.o fcshell.o
+TARGETS=addipbl.o testspf.o fcshell.o clearpass.o
 
 .phony: all clean
 
@@ -15,6 +15,8 @@ testspf.o: qsmtpd.h antispam.h sstring.h
 
 fcshell.o: fcshell.c
 	$(CC) $(CFLAGS) --std=c99 $<
+
+clearpass.o: sstring.h base64.h
 
 qp.o: qoff.h
 
