@@ -177,6 +177,138 @@ recodeheader(void)
 }
 
 /**
+ * fold one long header line
+ *
+ * @param buf beginning of line
+ * @param len length of line without CR, LF or CRLF
+ */
+static q_off_t
+wrap_line(const char *buf, q_off_t len)
+{
+	q_off_t off = len;
+	q_off_t pos = 0;
+	char sendbuf[1048];	/* long enough for 2 lines to fit in */
+	size_t bo = 0;	/* offset in sendbuf */
+
+	while (off >= 970) {
+		q_off_t partoff = 800;
+
+		while (partoff && (buf[pos + partoff] != ' '))
+			partoff--;
+
+		/* make sure that the parts are not too short */
+		if (partoff < 50) {
+			/* too short: look if we can find a longer part */
+			partoff = 800;
+			while ((partoff < 970) && (buf[pos + partoff] != ' '))
+				partoff++;
+			if (partoff >= 970)
+				partoff = 800;
+		}
+		if (partoff + bo >= sizeof(sendbuf) - 4) {
+			netnwrite(sendbuf, bo);
+			bo = 0;
+		}
+		/* add the whitespace at the beginning of this line if this is not the first */
+		if (pos)
+			sendbuf[bo++] = ' ';
+		partoff++;	/* the space must stay at the end of the line *
+				 * all whitespace at the beginning of the new line
+				 * will be ignored */
+		memcpy(sendbuf + bo, buf + pos, partoff);
+		bo += partoff;
+		memcpy(sendbuf + bo, "\r\n", 2);
+		bo += 2;
+		pos += partoff;
+		off -= partoff;
+	}
+	sendbuf[bo++] = ' ';
+	if (off + bo >= sizeof(sendbuf) - 2) {
+		/* The end of the line will be send by the calling function.
+		 * Only make sure the whitespace at the beginning of the new
+		 * line is there */
+		netnwrite(sendbuf, bo);
+		return pos;
+	}
+	memcpy(sendbuf + bo, buf + pos, off);
+	bo += off;
+	memcpy(sendbuf + bo, "\r\n", 2);
+	netnwrite(sendbuf, bo + 2);
+	return len;
+}
+
+/**
+ * fold long lines in header
+ *
+ * @param buf buffer to send
+ * @param len length of buffer
+ */
+static void
+wrap_header(const char *buf, const q_off_t len)
+{
+	q_off_t pos = 0, off = 0;
+	q_off_t ll = 0;	/* length of current line */
+
+	if (!(need_recode(buf, len) & 2)) {
+		send_plain(buf, len);
+		return;
+	}
+
+	while (pos + off + ll < len) {
+		int l = 0;	/* length of CR, LF or CRLF sequence at end of line */
+
+		if (buf[pos + off] == '\r') {
+			l = 1;
+		}
+		if (buf[pos + off] == '\n') {
+			l++;
+		}
+		if (!l) {
+			ll++;
+			continue;
+		}
+		/* found a line. Check if it's too long */
+		if (ll >= 999) {
+			q_off_t po;
+
+			send_plain(buf + pos, off);
+			pos += off;
+			po = wrap_line(buf + pos, ll);
+			pos += po;
+			/* if wrap_line() has not send the entire line we can skip over
+                         * the last part, we now know it's short enough */
+			if (po != ll) {
+				ll = ll - po;
+			} else {
+				ll = 0;
+				pos += l;
+			}
+		} else {
+			ll = 0;
+		}
+	}
+	if (ll < 999) {
+		off += ll;
+		send_plain(buf + pos, off);
+	} else {
+		q_off_t po;
+
+		send_plain(buf + pos, off);
+		pos += off;
+		po = wrap_line(buf + pos, ll);
+		pos += po;
+		/* if wrap_line() has not send the entire line we can skip over
+			* the last part, we now know it's short enough */
+		if (po != ll) {
+			ll = ll - po;
+		} else {
+			ll = 0;
+		}
+		send_plain(buf + pos, off + ll);
+	}
+}
+
+/**
  * scan and recode header: fix Content-Transfer-Encoding, check for boundary
  *
  * @param buf buffer to scan
@@ -263,27 +395,25 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 		exit(0);
 	}
 
-#warning FIXME: fold long header lines if (need_redode() & 3)
-
 	if ((*multipart = is_multipart(&ctype, boundary)) > 0) {
 		/* content is implicitely 7bit if no declaration is present */
 		if (cenc.len) {
-			send_plain(buf, cenc.s - buf);
-			send_plain(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
+			wrap_header(buf, cenc.s - buf);
+			wrap_header(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
 		} else {
-			send_plain(buf, header);
+			wrap_header(buf, header);
 		}
 	} else if (*multipart < 0) {
 		write(1, "D5.6.3 syntax error in Content-Type message header\n", 52);
 		exit(0);
 	} else {
 		if (cenc.len) {
-			send_plain(buf, cenc.s - buf);
+			wrap_header(buf, cenc.s - buf);
 			recodeheader();
-			send_plain(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
+			wrap_header(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
 		} else {
 			recodeheader();
-			send_plain(buf, header);
+			wrap_header(buf, header);
 		}
 	}
 	return header;
