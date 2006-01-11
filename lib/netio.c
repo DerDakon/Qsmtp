@@ -335,7 +335,7 @@ net_writen(const char *const *s)
 	char msg[512];
 
 	for (i = 0; s[i]; i++) {
-		ssize_t off = 0;
+		size_t off = 0;
 		size_t l = strlen(s[i]);
 
 		if (len + l > sizeof(msg) - 2) {
