@@ -324,9 +324,9 @@ find_boundary(const char *buf, const q_off_t len, const cstring *boundary)
 {
 	q_off_t pos = 0;
 
-	if (len < boundary->len + 3)
+	if (len < (q_off_t) (boundary->len + 3))
 		return 0;
-	while (pos < len - 3 - boundary->len) {
+	while (pos < len - 3 - (q_off_t) boundary->len) {
 		if (((buf[pos] == '\r') || (buf[pos] == '\n')) && (buf[pos + 1] == '-') && (buf[pos + 2] == '-')) {
 			if (!strncmp(buf + pos + 3, boundary->s, boundary->len)) {
 				pos += 3 + boundary->len;
