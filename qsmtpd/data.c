@@ -717,7 +717,7 @@ smtp_bdat(void)
 		size_t chunk;
 		char inbuf[2048];
 
-		if (chunksize >= sizeof(inbuf)) {
+		if (chunksize >= (long) sizeof(inbuf)) {
 			chunk = net_readbin(sizeof(inbuf) - 1, inbuf);
 		} else {
 			chunk = net_readbin(chunksize, inbuf);
