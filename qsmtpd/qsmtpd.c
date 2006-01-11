@@ -170,6 +170,9 @@ setup(void)
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
 #endif
 
+	/* make sure to have a reasonable default timeout if errors happen */
+	timeout = 320;
+
 	if (chdir(AUTOQMAIL)) {
 		log_write(LOG_ERR, "cannot chdir to qmail directory");
 		return EINVAL;
