@@ -11,7 +11,7 @@ export SHELL CC CFLAGS LD LDFLAGS AUTOQMAIL
 SUBDIRS = lib qsmtpd qsmtpd/filters qremote
 
 TARGETS = targets/Qsmtpd targets/Qremote
-TOOLS = targets/addipbl targets/testspf targets/fcshell targets/qp targets/clearpass
+TOOLS = targets/addipbl targets/testspf targets/fcshell targets/qp targets/clearpass targets/Qsurvey
 
 .PHONY: all clean toolsub install targets tools $(SUBDIRS)
 .SECONDARY:
