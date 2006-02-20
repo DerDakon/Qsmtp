@@ -49,6 +49,11 @@ targets/Qremote: qremote/qremote.o qremote/conn.o qremote/starttlsr.o qremote/qr
 		lib/match.o lib/ssl_timeoutio.o lib/tls.o lib/mime.o lib/libowfatconn.o
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^ -lowfat
 
+targets/Qsurvey: tools/qsurvey.o qremote/conn.o qremote/starttlsr.o lib/dns.o \
+		lib/netio.o lib/ssl_timeoutio.o lib/log.o lib/tls.o lib/control.o lib/log.o \
+		lib/match.o lib/ssl_timeoutio.o lib/tls.o lib/libowfatconn.o
+	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^ -lowfat
+
 targets/testspf: tools/testspf.o qsmtpd/spf.o qsmtpd/antispam.o lib/dns.o lib/match.o \
 		lib/netio.o lib/tls.o lib/ssl_timeoutio.o lib/libowfatconn.o
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^ -lowfat
