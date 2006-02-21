@@ -401,12 +401,12 @@ makelog(const char *ext)
 	memcpy(fn + strlen(ipname), ext, strlen(ext) + 1);
 	logfd = open(fn, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
 	if (logfd == -1) {
-		write(2, "can not create ", 15);
-		write(2, fn, strlen(fn));
-		write(2, "\n", 1);
-		if (strcmp(ext, "conn"))
+		if (strcmp(ext, "conn")) {
+			write(2, "can not create ", 15);
+			write(2, fn, strlen(fn));
+			write(2, "\n", 1);
 			quit();
-		else
+		} else
 			exit(1);
 	}
 }
