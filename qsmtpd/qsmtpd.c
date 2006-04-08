@@ -95,7 +95,6 @@ int socketd = 1;			/**< the descriptor where messages to network are written to 
 long comstate = 0x001;			/**< status of the command state machine, initialized to noop */
 int authhide;				/**< hide source of authenticated mail */
 
-struct tailhead *headp;			/**< List head. */
 struct recip *thisrecip;
 
 static int badcmds = 0;			/**< bad commands in a row */
