@@ -21,6 +21,7 @@ extern int cb_usersize(const struct userconf *, char **, int *);
 extern int cb_forceesmtp(const struct userconf *, char **, int *);
 extern int cb_namebl(const struct userconf *, char **, int *);
 extern int cb_wildcardns(const struct userconf *, char **, int *);
+extern int cb_postfix(const struct userconf *, char **, int *);
 
 /** the user filters will be called in the order in this array */
 rcpt_cb rcpt_cbs[] = {
@@ -34,6 +35,8 @@ rcpt_cb rcpt_cbs[] = {
 			cb_badmailfrom,
 			cb_badcc,
 			cb_fromdomain,
+/* now postfix policy daemons: they may be on- or offline */
+			cb_postfix,
 /* now online checks */
 			cb_dnsbl,
 			cb_forceesmtp,

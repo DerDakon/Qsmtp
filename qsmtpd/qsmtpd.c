@@ -23,6 +23,7 @@
 #include <syslog.h>
 #include <dirent.h>
 #include <signal.h>
+#include <dirent.h>
 #include "antispam.h"
 #include "log.h"
 #include "netio.h"
@@ -158,6 +159,28 @@ dieerror(int error)
 	_exit(error);
 }
 
+static void
+freeppol(void)
+{
+	while (pfixhead.tqh_first != NULL) {
+		struct pfixpol *l = pfixhead.tqh_first;
+
+		TAILQ_REMOVE(&pfixhead, pfixhead.tqh_first, entries);
+		if (l->pid) {
+			int res;
+
+			close(l->fd);
+			kill(l->pid, SIGTERM);
+			if (!waitpid(l->pid, &res, WNOHANG)) {
+				sleep(3);
+				kill(l->pid, SIGKILL);
+			}
+		}
+		free(l->name);
+		free(l);
+	}
+}
+
 static int
 setup(void)
 {
@@ -165,6 +188,9 @@ setup(void)
 	struct sigaction sa;
 	struct stat st;
 	char *tmp;
+	struct pfixpol *pf;
+	DIR *dir;
+	struct dirent *de;
 
 #ifdef USESYSLOG
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
@@ -297,6 +323,40 @@ setup(void)
 		int e = errno;
 		err_control("control/vpopbounce");
 		return e;
+	}
+
+	dir = opendir(PFIXPOLDIR);
+	TAILQ_INIT(&pfixhead);
+	if (dir) {
+		/* read all entries in the directory. End on EOVERFLOW or end of list */
+		while ( (de = readdir(dir)) ) {
+			if (de->d_name[0] == '.')
+				continue;
+			if (strlen(de->d_name) > 88) {
+				char *emsg[] = {"name of policy daemon too long, ignoring \"", de->d_name, "\"", NULL};
+				log_writen(LOG_WARNING, emsg);
+				continue;
+			}
+
+			pf = malloc(sizeof(*pf));
+			if (pf)
+				pf->name = malloc(strlen(de->d_name) + 1);
+
+			if (!pf || !pf->name) {
+				closedir(dir);
+				freeppol();
+				return ENOMEM;
+			}
+
+			memcpy(pf->name, de->d_name, strlen(de->d_name));
+			pf->name[strlen(de->d_name)] = '\0';
+
+			log_write(LOG_DEBUG, pf->name);
+			pf->pid = 0;
+			TAILQ_INSERT_TAIL(&pfixhead, pf, entries);
+		}
+		closedir(dir);
+	} else if (errno != ENOENT) {
 	}
 
 	/* block sigpipe. If we don't we can't handle the errors in smtp_data() correctly and remote host
@@ -1188,6 +1248,7 @@ smtp_quit(void)
 
 	rc = net_writen(msg);
 	freedata();
+	freeppol();
 
 	free(protocol);
 	free(gcbuf);

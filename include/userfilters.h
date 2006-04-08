@@ -3,6 +3,8 @@
  */
 #ifndef USERFILTERS_H
 #define USERFILTERS_H
+#include <sys/types.h>
+#include <sys/queue.h>
 #include "sstring.h"
 #include "qsmtpd.h"
 
@@ -44,5 +46,20 @@ extern const char *blocktype[];
 extern void logwhitelisted(const char *, const int, const int);
 
 #define THISRCPT (thisrecip->to.s)
+
+TAILQ_HEAD(pftailhead, pfixpol) pfixhead;
+
+/*! \struct smtpcomm
+ Describes a single SMTP command and it's transitions in the SMTP state machine.
+ */
+struct pfixpol {
+	TAILQ_ENTRY(pfixpol) entries;	/**< List pointers of policy daemons. */
+	char	*name;			/**< name for this filter (to be used in log and userconf) */
+	pid_t	pid;			/**< pid of daemon or 0 if not running */
+	int	fd;			/**< pipe for communication */
+};
+
+#define PFIXPOLDIR	"/var/qmail/control/postfixpol"
+#define PFIXSPOOLDIR	"/var/spool/Qsmtp"
 
 #endif
