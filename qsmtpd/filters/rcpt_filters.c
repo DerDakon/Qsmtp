@@ -38,9 +38,9 @@ rcpt_cb rcpt_cbs[] = {
 			cb_dnsbl,
 			cb_forceesmtp,
 			cb_namebl,
+			cb_wildcardns,
 /* this one is special: it will not block anything here so we need it only when mail is not blocked anyway */
 			cb_check2822,
-			cb_wildcardns,
 			NULL};
 
 /** string constants for the type of blocklists */
