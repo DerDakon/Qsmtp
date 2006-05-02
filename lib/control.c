@@ -360,6 +360,9 @@ finddomainmm(const char *map, const q_off_t size, const char *domain)
 	size_t dl = strlen(domain);
 	q_off_t pos = 0;
 
+	if (!map)
+		return 0;
+
 	cur = map;
 	do {
 		char *cure = memchr(cur, '\n', size - pos);

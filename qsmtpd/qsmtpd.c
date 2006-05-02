@@ -233,33 +233,38 @@ setup(void)
 
 	rcpthfd = open("control/rcpthosts", O_RDONLY);
 	if (rcpthfd < 0) {
-		log_write(LOG_ERR, "control/rcpthosts not found");
-		return errno;
-	}
-	while (flock(rcpthfd, LOCK_SH)) {
-		if (errno != EINTR) {
-			log_write(LOG_WARNING, "cannot lock control/rcpthosts");
-			return ENOLCK; /* not the right error code, but good enough */
+		if (errno != ENOENT) {
+			log_write(LOG_ERR, "control/rcpthosts not found");
+			return errno;
 		}
-	}
-	if (fstat(rcpthfd, &st)) {
-		log_write(LOG_ERR, "cannot fstat() control/rcpthosts");
-		return errno;
-	}
-	rcpthsize = st.st_size;
-	if (rcpthsize < 5) {
-		/* minimum length of domain name: xx.yy = 5 bytes */
-		log_write(LOG_ERR, "control/rcpthosts too short");
-		return 1;
-	}
-	rcpthosts = mmap(NULL, rcpthsize, PROT_READ, MAP_SHARED, rcpthfd, 0);
-	if (rcpthosts == MAP_FAILED) {
-		int e = errno;
-
-		log_write(LOG_ERR, "cannot mmap() control/rcpthosts");
-		while (close(rcpthfd) && (errno == EINTR));
-		errno = e;
-		return -1;
+		rcpthsize = 0;
+		rcpthosts = NULL;
+	} else {
+		while (flock(rcpthfd, LOCK_SH)) {
+			if (errno != EINTR) {
+				log_write(LOG_WARNING, "cannot lock control/rcpthosts");
+				return ENOLCK; /* not the right error code, but good enough */
+			}
+		}
+		if (fstat(rcpthfd, &st)) {
+			log_write(LOG_ERR, "cannot fstat() control/rcpthosts");
+			return errno;
+		}
+		rcpthsize = st.st_size;
+		if (rcpthsize < 5) {
+			/* minimum length of domain name: xx.yy = 5 bytes */
+			log_write(LOG_ERR, "control/rcpthosts too short");
+			return 1;
+		}
+		rcpthosts = mmap(NULL, rcpthsize, PROT_READ, MAP_SHARED, rcpthfd, 0);
+		if (rcpthosts == MAP_FAILED) {
+			int e = errno;
+	
+			log_write(LOG_ERR, "cannot mmap() control/rcpthosts");
+			while (close(rcpthfd) && (errno == EINTR));
+			errno = e;
+			return -1;
+		}
 	}
 
 	tmp = getenv("TCP6REMOTEIP");
