@@ -1,8 +1,8 @@
-/** \file vpopmail.h
+/** \file vpop.h
  \brief declaration of function for accessing vpopmail data files
  */
-#ifndef VPOPMAIL_H
-#define VPOPMAIL_H
+#ifndef VPOP_H
+#define VPOP_H
 
 #include "sstring.h"
 

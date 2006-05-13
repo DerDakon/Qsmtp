@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "vpopmail.h"
+#include "vpop.h"
 #include "sstring.h"
 #include "cdb.h"
 
