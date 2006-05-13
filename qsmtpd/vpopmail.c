@@ -22,12 +22,12 @@
 /*
  * Given the domain name:
  *
- *   get dir  users/cdb file (if they are not passed as NULL)
+ *   get dir from users/cdb file (if they are not passed as NULL)
  *
  * Function will return 1 on success, memory for domaindir will be malloced.
  * The directory name will always end with a single '/'. If the domain does not exist 0 is returned, -1 on error;
  */
-int vget_assign(const char *domain, string *domaindir)
+int vget_assign(const char *domain, string *domaindir, char **realdomain)
 {
 	int fd;
 	int i;
@@ -63,25 +63,35 @@ int vget_assign(const char *domain, string *domaindir)
 	/* search the cdb file for our requested domain */
 	if ( (cdb_buf = cdb_seekmm(fd, cdb_key, cdbkeylen, &cdb_mmap, &st)) ) {
 		unsigned int len;
+		char *ch = cdb_buf;
 
 		/* format of cdb_buf is :
 		 * realdomain\0uid\0gid\0path\0
 		 */
-		while( *cdb_buf++ != '\0' );	/* advance pointer past the realdomain */
+		len = strlen(cdb_buf);
+		if (realdomain) {
+			*realdomain = malloc(len + 1);
+			if (!*realdomain)
+				return -1;
+			memcpy(*realdomain, cdb_buf, len + 1);
+		}
+		cdb_buf += len + 1;	/* advance pointer past the realdomain */
 		while( *cdb_buf++ != '\0' );	/* skip over the uid */
 		while( *cdb_buf++ != '\0' );	/* skip over the gid */
 
 		/* get the domain directory */
-		len = strlen(cdb_buf);
-		while (*(cdb_buf + len - 1) == '/')
-			--len;
-		i = newstr(domaindir, len + 2);
-		if (!i) {
-			memcpy(domaindir->s, cdb_buf, len);
-			domaindir->s[len] = '/';
-			domaindir->s[--domaindir->len] = '\0';
-
-			i++;
+		if (domaindir) {
+			len = strlen(cdb_buf);
+			while (*(cdb_buf + len - 1) == '/')
+				--len;
+			i = newstr(domaindir, len + 2);
+			if (!i) {
+				memcpy(domaindir->s, cdb_buf, len);
+				domaindir->s[len] = '/';
+				domaindir->s[--domaindir->len] = '\0';
+	
+				i++;
+			}
 		}
 	} else {
 		return errno ? -1 : 0;

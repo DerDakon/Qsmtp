@@ -6,6 +6,6 @@
 
 #include "sstring.h"
 
-extern int vget_assign(const char *, string *);
+extern int vget_assign(const char *, string *, char **);
 
 #endif
