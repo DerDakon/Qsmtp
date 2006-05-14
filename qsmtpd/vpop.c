@@ -13,7 +13,7 @@
 #include "cdb.h"
 
 /*
- * The function vget_assign is a modified copy of the one from vpopmail. It gets the domain directory out of
+ * The function vget_dir is a modified copy of vget_assign from vpopmail. It gets the domain directory out of
  * the /var/qmail/users/cdb file. All the unneeded code (buffering, rewrite the domain name, uid, gid) is ripped out,
  * the ugly snprintf stuff is gone, the result of malloc() is checked and the code is much prettier (at least IMHO,
  * but that's the only one that counts here *g*).
@@ -27,7 +27,7 @@
  * Function will return 1 on success, memory for domaindir will be malloced.
  * The directory name will always end with a single '/'. If the domain does not exist 0 is returned, -1 on error;
  */
-int vget_assign(const char *domain, string *domaindir, char **realdomain)
+int vget_dir(const char *domain, string *domaindir, char **realdomain)
 {
 	int fd;
 	int i;

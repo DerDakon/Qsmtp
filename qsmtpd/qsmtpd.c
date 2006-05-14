@@ -764,7 +764,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		} else if (!i) {
 			return -2;
 		}
-		j = vget_assign(at + 1, &(ds->domainpath), NULL);
+		j = vget_dir(at + 1, &(ds->domainpath), NULL);
 	} else {
 		const size_t liplen = strlen(xmitstat.localip);
 
@@ -776,7 +776,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 			if (strncmp(at + 2, xmitstat.localip, liplen))
 				goto nouser;
 		}
-		j = vget_assign(liphost.s, &(ds->domainpath), NULL);
+		j = vget_dir(liphost.s, &(ds->domainpath), NULL);
 	}
 
 /* get the domain directory from "users/cdb" */
