@@ -1134,12 +1134,14 @@ smtp_from(void)
 			char *authstr = more + 6;
 			ssize_t xlen = xtextlen(authstr);
 
-			if (xlen > 0) {
-				validlength += 500;
-				more += xlen;
-				continue;
-			} else
+			if (xlen <= 0)
 				return EINVAL;
+
+			validlength += 500;
+			more += xlen + 6;
+			if (*more && (*more != ' '))
+				return EINVAL;
+			continue;
 		}
 		return EBADRQC;
 	}
