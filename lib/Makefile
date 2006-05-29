@@ -1,4 +1,5 @@
-TARGETS = netio.o dns.o log.o control.o ssl_timeoutio.o tls.o getfile.o base64.o match.o mime.o libowfatconn.o cdb.o
+TARGETS = netio.o dns.o log.o control.o ssl_timeoutio.o tls.o getfile.o base64.o \
+	match.o mime.o libowfatconn.o cdb.o xtext.o
 
 .phony: all clean
 

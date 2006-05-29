@@ -37,6 +37,7 @@
 #include "dns.h"
 #include "vpop.h"
 #include "qsdata.h"
+#include "xtext.h"
 
 int smtp_noop(void);
 int smtp_quit(void);
@@ -1129,6 +1130,16 @@ smtp_from(void)
 			if (*more && (*more != ' '))
 				return EINVAL;
 			continue;
+		} else if (!strncasecmp(more, " AUTH=", 6)) {
+			char *authstr = more + 6;
+			ssize_t xlen = xtextlen(authstr);
+
+			if (xlen > 0) {
+				validlength += 500;
+				more += xlen;
+				continue;
+			} else
+				return EINVAL;
 		}
 		return EBADRQC;
 	}

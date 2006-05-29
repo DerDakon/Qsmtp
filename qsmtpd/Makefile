@@ -12,7 +12,7 @@ clean:
 	rm -f *.o *~ \#* $(TARGETS)
 
 qsmtpd.o: qsmtpd.c qsmtpd.h antispam.h log.h netio.h dns.h control.h tls.h sstring.h userfilters.h version.h \
-		vpop.h qsdata.h
+		vpop.h qsdata.h xtext.h
 	$(CC) $(CFLAGS) -DAUTOQMAIL='"$(AUTOQMAIL)"' $<
 
 auth.o: qsmtpd.h sstring.h netio.h base64.h log.h tls.h
