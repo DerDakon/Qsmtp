@@ -6,7 +6,7 @@ xtextlen(const char *str)
 {
 	ssize_t result = 0;
 
-	while (*str) {
+	while (*str && (*str != ' ')) {
 		if ((*str < '!') || (*str > '~'))
 			return -1;
 		if (*str == '+') {
