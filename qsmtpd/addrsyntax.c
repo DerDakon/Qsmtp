@@ -190,6 +190,10 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 		return 0;
 
 	len = l - f;
+	/* check if something follow the '>' */
+	if (more && *(l + 1)) {
+		*more = l + 1;
+	}
 	/* empty address is only allowed in MAIL FROM */
 	if (!flags && !len) {
 		if (addr) {
@@ -197,10 +201,6 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 			addr->len = 0;
 		}
 		return 1;
-	}
-	/* check if something follow the '>' */
-	if (more && *(l + 1)) {
-		*more = l + 1;
 	}
 	*l = '\0'; /* from now on the complete mail address is just *f */
 
