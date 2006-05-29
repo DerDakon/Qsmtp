@@ -11,11 +11,11 @@ xtextlen(const char *str)
 			return -1;
 		if (*str == '+') {
 			str++;
-			if (!(((*str >= '0') && (*str < '9')) ||
+			if (!(((*str >= '0') && (*str <= '9')) ||
 					((*str >= 'A') && (*str <= 'F'))))
 				return -1;
 			str++;
-			if (!(((*str >= '0') && (*str < '9')) ||
+			if (!(((*str >= '0') && (*str <= '9')) ||
 					((*str >= 'A') && (*str <= 'F'))))
 				return -1;
 			str++;
