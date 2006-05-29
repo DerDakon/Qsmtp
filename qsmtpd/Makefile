@@ -1,4 +1,4 @@
-TARGETS=qsmtpd.o antispam.o auth.o starttls.o spf.o data.o addrsyntax.o
+TARGETS=qsmtpd.o antispam.o auth.o starttls.o spf.o data.o addrsyntax.o vpop.o
 
 .phony: all clean
 

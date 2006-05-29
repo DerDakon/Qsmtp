@@ -39,7 +39,7 @@ clean:
 	done
 
 targets/Qsmtpd: qsmtpd/qsmtpd.o qsmtpd/antispam.o qsmtpd/auth.o qsmtpd/starttls.o qsmtpd/spf.o \
-		qsmtpd/vpopmail.o qsmtpd/data.o qsmtpd/addrsyntax.o qsmtpd/filters/rcptfilters.a \
+		qsmtpd/vpop.o qsmtpd/data.o qsmtpd/addrsyntax.o qsmtpd/filters/rcptfilters.a \
 		lib/dns.o lib/control.o lib/getfile.o lib/ssl_timeoutio.o lib/tls.o lib/base64.o \
 		lib/match.o lib/log.o lib/netio.o lib/libowfatconn.o lib/cdb.o lib/xtext.o
 	$(LD) $(LDFLAGS) $(LDFLAGSSSL) -o $@ $^ -lowfat
