@@ -1103,15 +1103,17 @@ smtp_from(void)
 			if ((*sizenum >= '0') && (*sizenum <= '9')) {
 				char *end;
 				xmitstat.thisbytes = strtoul(sizenum, &end, 10);
-				if (*end && (*end != ' '))
-					return EINVAL;
 				/* the line length limit is raised by 26 characters
 				 * in RfC 1870, section 3. */
 				validlength += 26;
 				more = end;
-				continue;
 			} else
 				return EINVAL;
+
+			if (*more && (*more != ' '))
+				return EINVAL;
+			continue;
+			
 		} else if (!strncasecmp(more, " BODY=", 6)) {
 			char *bodytype = more + 6;
 
