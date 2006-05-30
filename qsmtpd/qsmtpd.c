@@ -1109,11 +1109,6 @@ smtp_from(void)
 				more = end;
 			} else
 				return EINVAL;
-
-			if (*more && (*more != ' '))
-				return EINVAL;
-			continue;
-			
 		} else if (!strncasecmp(more, " BODY=", 6)) {
 			char *bodytype = more + 6;
 
@@ -1128,10 +1123,6 @@ smtp_from(void)
 				xmitstat.datatype = 1;
 			} else
 				return EINVAL;
-
-			if (*more && (*more != ' '))
-				return EINVAL;
-			continue;
 		} else if (!strncasecmp(more, " AUTH=", 6)) {
 			char *authstr = more + 6;
 			ssize_t xlen = xtextlen(authstr);
@@ -1141,11 +1132,12 @@ smtp_from(void)
 
 			validlength += 500;
 			more += xlen + 6;
-			if (*more && (*more != ' '))
-				return EINVAL;
-			continue;
-		}
-		return EBADRQC;
+		} else
+			return EBADRQC;
+
+		if (*more && (*more != ' '))
+			return EINVAL;
+		continue;
 	}
 	if (linelen > validlength)
 		return E2BIG;
