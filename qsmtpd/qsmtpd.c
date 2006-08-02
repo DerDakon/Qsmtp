@@ -152,10 +152,13 @@ err_control2(const char *msg, const char *fn)
 void
 dieerror(int error)
 {
+	const char *logmsg[] = {"connection from [", xmitstat.remoteip, NULL, NULL};
+
 	switch (error) {
-		case ETIMEDOUT:	log_write(LOG_WARNING, "connection timed out"); break;
-		case ECONNRESET:log_write(LOG_WARNING, "connection died"); break;
+		case ETIMEDOUT:	logmsg[2] = "] timed out"; break;
+		case ECONNRESET:logmsg[2] = "] died"; break;
 	}
+	log_writen(LOG_WARNING, logmsg);
 	_exit(error);
 }
 
