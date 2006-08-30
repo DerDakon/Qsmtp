@@ -341,7 +341,7 @@ setup(void)
 			if (de->d_name[0] == '.')
 				continue;
 			if (strlen(de->d_name) > 88) {
-				char *emsg[] = {"name of policy daemon too long, ignoring \"", de->d_name, "\"", NULL};
+				const char *emsg[] = {"name of policy daemon too long, ignoring \"", de->d_name, "\"", NULL};
 				log_writen(LOG_WARNING, emsg);
 				continue;
 			}
