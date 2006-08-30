@@ -243,13 +243,13 @@ domainvalid(const char *host)
 			 return 1;
 		}
 		if (*host == '.') {
-			*host++;
+			host++;
 			dot = 1;
 			if (*host == '.')
 				return 1;
 			continue;
 		}
-		*host++;
+		host++;
 	}
 	if (((host - h) > 255) || ((host - h) < 5))
 		return 1;
