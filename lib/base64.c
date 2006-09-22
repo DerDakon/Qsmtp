@@ -7,7 +7,7 @@
 #include "base64.h"
 #include "sstring.h"
 
-static unsigned char *b64alpha =
+static const unsigned char *b64alpha = (unsigned char *)
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 #define B64PAD ((unsigned char) '=')
 
