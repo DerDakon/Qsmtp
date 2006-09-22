@@ -194,6 +194,7 @@ setup(void)
 	struct pfixpol *pf;
 	DIR *dir;
 	struct dirent *de;
+	unsigned long tl;
 
 #ifdef USESYSLOG
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
@@ -306,9 +307,11 @@ setup(void)
 	} else {
 		maxbytes = -1UL - 1000;
 	}
-	if ( (j = loadintfd(open("control/authhide", O_RDONLY), &authhide, 0)) ) {
+	if ( (j = loadintfd(open("control/authhide", O_RDONLY), &tl, 0)) ) {
 		log_write(LOG_ERR, "parse error in control/authhide");
 		authhide = 0;
+	} else {
+		authhide = tl ? 1 : 0;
 	}
 
 	if ( (j = loadintfd(open("control/forcesslauth", O_RDONLY), &sslauth, 0)) ) {
