@@ -462,7 +462,7 @@ smtp_ehlo(void)
 	if (auth_host && (!sslauth || (sslauth && ssl))) {
 #warning FIXME: read AUTH types to announce from config file
 #ifdef AUTHCRAM
-		msg[next++] = "250-AUTH PLAIN LOGIN CRAMMD5\r\n";
+		msg[next++] = "250-AUTH CRAMMD5 PLAIN LOGIN\r\n";
 #else
 		msg[next++] = "250-AUTH PLAIN LOGIN\r\n";
 #endif
