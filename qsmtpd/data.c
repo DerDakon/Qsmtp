@@ -664,6 +664,7 @@ err_write:
 }
 
 static int bdaterr;
+static int lastcr;
 
 /**
  * handle BDAT command and store data into queue
@@ -726,10 +727,38 @@ smtp_bdat(void)
 			if (!bdaterr) {
 				bdaterr = errno;
 			}
-		} else {
-			WRITE(fd, inbuf, chunk);
+		} else if (chunk) {
+			int o;
+			int offs = 0;
+
 			chunksize -= chunk;
 			msgsize += chunk;
+			if (lastcr && (inbuf[0] != '\n'))
+				WRITE(fd, "\r", 1);
+			lastcr = (inbuf[chunk - 1] == '\r');
+
+			o = 0;
+			while (offs + o < chunk - 1) {
+				offs += o;
+				do {
+					for (; o < chunk; o++)
+						if (inbuf[o] == '\r')
+							break;
+				} while ((o < chunk - 1) && (inbuf[++o] != '\n'));
+				if (o != chunk - 1) {
+				/* overwrite CR with LF to keep number of writes low
+				 * then write it all out */
+					inbuf[o - 1] = '\n';
+					WRITE(fd, inbuf + offs, o);
+					o++;	/* skip the original LF */
+				}
+			}
+
+			if (!*more && (inbuf[o] == '\r')) {
+				/* keep '\r' in last chunk */
+				chunk--;
+			}
+			WRITE(fd, inbuf + offs, chunk - offs);
 		}
 	}
 
