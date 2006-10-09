@@ -60,7 +60,7 @@ cb_postfix(const struct userconf *ds, char **logmsg, int *t)
 
 						memcpy(sockf, "unix:", 5);
 						memcpy(sockf + 5, sa.sun_path, strlen(sa.sun_path));
-						sockf[sizeof(sockf)] = '\0';
+						sockf[sizeof(sockf) - 1] = '\0';
 
 						munmap(rcpthosts, rcpthsize);
 
