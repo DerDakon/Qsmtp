@@ -739,7 +739,6 @@ send_bdat(void)
 	size_t lenlen;			/* "reserved" length for "BDAT <len> (LAST)?" */
 	int i;
 
-#define chunksize 32768
 	chunkbuf = mmap(NULL, chunksize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
 	
 	if (chunkbuf == MAP_FAILED) {

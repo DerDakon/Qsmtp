@@ -32,6 +32,7 @@ unsigned int smtpext;
 char *rhost;
 size_t rhostlen;
 char *partner_fqdn;
+size_t chunksize;
 
 static void quitmsg(void);
 
@@ -65,6 +66,7 @@ static void
 setup(void)
 {
 	int j;
+	unsigned long chunk;
 
 #ifdef USESYSLOG
 	openlog("Qremote", LOG_PID, LOG_MAIL);
@@ -88,6 +90,15 @@ setup(void)
 	}
 	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY), &timeout, 320)) < 0) {
 		err_conf("parse error in control/timeoutremote");
+	}
+
+	if ( (j = loadintfd(open("control/chunksizeremote", O_RDONLY), &chunk, 32768)) < 0) {
+		err_conf("parse error in control/chunksizeremote");
+	} else {
+		if (chunk >= (1 << 31)) {
+			err_conf("chunksize in control/chunksizeremote too big");
+		}
+		chunksize = chunk & 0xffffffff;
 	}
 
 	heloname.len = j;
