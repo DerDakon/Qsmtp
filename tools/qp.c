@@ -21,6 +21,7 @@ extern void send_qp(const char *, const q_off_t);
 unsigned int smtpext;
 struct string heloname;
 int in_data;
+size_t chunksize;
 
 void quit(void) { return; }
 int net_writen(const char *const *s)
