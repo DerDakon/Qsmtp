@@ -105,11 +105,11 @@ skipwhitespace(const char *line, const size_t len)
 }
 
 /**
- * scan "Content-Type" header line and check if type is multipart/(*) or message/(*)
+ * scan "Content-Type" header line and check if type is multipart/(*)
  *
  * @param line header field
  * @param boundary reference to boundary is stored here
- * @return 1 if line contains multipart/(*) or message/(*) declaration, 0 if other type, -1 on syntax error
+ * @return 1 if line contains multipart/(*) declaration, 0 if other type, -1 on syntax error
  */
 int
 is_multipart(const cstring *line, cstring *boundary)
@@ -127,14 +127,10 @@ is_multipart(const cstring *line, cstring *boundary)
 
 	STREMPTY(*boundary);
 
-	if (!strncasecmp(ch, "multipart/", 10) || !strncasecmp(ch, "message/", 8)) {
-		size_t i, j;
+	/* the 10 is just strlen("multipart/") */
+	if (!strncasecmp(ch, "multipart/", 10)) {
+		size_t i = 10, j;
 
-		if ((*(ch + 1) == 'u') || (*(ch + 1) == 'U')) {
-			i = 10;
-		} else {
-			i = 8;
-		}
 		j = mime_token(ch + i, line->len - (ch - line->s) - i);
 		i += j;
 		if (!j || (ch[i] == '='))
@@ -146,7 +142,7 @@ is_multipart(const cstring *line, cstring *boundary)
 		for (;;) {
 			ch += i;
 			ch = skipwhitespace(ch, line->len - (ch - line->s));
-			/* multipart/(*) or message/(*) without boundary is invalid */
+			/* multipart/(*) without boundary is invalid */
 			if (ch == line->s + line->len)
 				return -1;
 			i = mime_param(ch, line->len - (ch - line->s));
