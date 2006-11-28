@@ -19,11 +19,11 @@
  * 5: rejects mail when the SPF record says 'neutral'
  * 6: rejects mail when there is no SPF record
  *
- * If the reverse lookup matches a line in "ignorespf" file the mail will be accepted even if it would normally fail.
+ * If the reverse lookup matches a line in "spfignore" file the mail will be accepted even if it would normally fail.
  * Use this e.g. if you are forwarding a mail from another account without changing the envelope from.
  *
  * If there is a domain "spfstrict" all mails from this domains must be a valid mail forwarder of this domain, so
- * a mail with SPF_NEUTRAL and spfpolicy == 2 from this domain will be blocked if client is not in ignorespf
+ * a mail with SPF_NEUTRAL and spfpolicy == 2 from this domain will be blocked if client is not in spfignore.
  *
  * If no SPF record is found in DNS then the locally given sources will be searched for SPF records. This might set
  * a secondary SPF record for domains often abused for phishing.
@@ -129,7 +129,7 @@ block:
 	if (xmitstat.remotehost.len) {
 		int u;				/* if it is the user or domain policy */
 
-		rc = finddomainfd(getfileglobal(ds, "ignorespf", &u), xmitstat.remotehost.s, 1);
+		rc = finddomainfd(getfileglobal(ds, "spfignore", &u), xmitstat.remotehost.s, 1);
 		if (rc > 0) {
 			logwhitelisted("SPF", *t, u);
 			return 0;

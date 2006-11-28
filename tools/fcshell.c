@@ -663,7 +663,7 @@ edit(void)
 		{ .name = "ipwlv6", .len = 6, .type = 4 },
 		{ .name = "rspf", .len = 4, .type = 2 },
 		{ .name = "spfstrict", .len = 9, .type = 1 },
-		{ .name = "ignorespf", .len = 9, .type = 1 },
+		{ .name = "spfignore", .len = 9, .type = 1 },
 		{ .name = "namebl", .len = 6, .type = 2 },
 		{ .name = NULL }
 	};

@@ -52,6 +52,6 @@ ipwlv6:			(global) [IPv6 match]
 
 rspf:			(global) [blacklist]
 spfstrict:		(global) [domain]
-ignorespf:		(global) [domain]
+spfignore:		(global) [domain]
 
 namebl:			(global) [blacklist]
