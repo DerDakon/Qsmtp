@@ -89,7 +89,7 @@ tryconn(struct ips *mx)
 			if (thisip->priority <= 65536)
 				break;
 		}
-		if (!thisip || thisip->priority == 65537) {
+		if (!thisip) {
 			close(socketd);
 			write(1, "Zcan't connect to any server\n", 30);
 			exit(0);
