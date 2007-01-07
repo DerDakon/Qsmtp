@@ -63,7 +63,6 @@ int vget_dir(const char *domain, string *domaindir, char **realdomain)
 	/* search the cdb file for our requested domain */
 	if ( (cdb_buf = cdb_seekmm(fd, cdb_key, cdbkeylen, &cdb_mmap, &st)) ) {
 		unsigned int len;
-		char *ch = cdb_buf;
 
 		/* format of cdb_buf is :
 		 * realdomain\0uid\0gid\0path\0
