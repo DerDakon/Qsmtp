@@ -4,9 +4,10 @@
 #ifndef CONN_H
 #define CONN_H
 
+#include <netinet/in.h>
 #include "dns.h"
 
-extern void tryconn(struct ips *);
+extern void tryconn(struct ips *, const struct in6_addr *);
 extern void getmxlist(char *, struct ips **);
 
 #endif

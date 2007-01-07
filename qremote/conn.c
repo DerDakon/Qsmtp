@@ -21,7 +21,7 @@ static char *user;
 static char *pass;
 
 static int
-conn(const struct in6_addr remoteip)
+conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 {
 	int rc;
 #ifdef IPV4ONLY
@@ -34,7 +34,7 @@ conn(const struct in6_addr remoteip)
 
 	sock.sin_family = AF_INET;
 	sock.sin_port = 0;
-	sock.sin_addr.s_addr = INADDR_ANY;
+	sock.sin_addr.s_addr = outip->s6_addr32[3];
 
 	rc = bind(socketd, (struct sockaddr *) &sock, sizeof(sock));
 
@@ -54,7 +54,7 @@ conn(const struct in6_addr remoteip)
 	sock.sin6_family = AF_INET6;
 	sock.sin6_port = 0;
 	sock.sin6_flowinfo = 0;
-	sock.sin6_addr = in6addr_any;
+	sock.sin6_addr = *outip;
 	sock.sin6_scope_id = 0;
 
 	rc = bind(socketd, (struct sockaddr *) &sock, sizeof(sock));
@@ -78,7 +78,7 @@ conn(const struct in6_addr remoteip)
  * the last one tried with 65538
  */
 void
-tryconn(struct ips *mx)
+tryconn(struct ips *mx, const struct in6_addr *outip)
 {
 	struct ips *thisip;
 
@@ -95,7 +95,7 @@ tryconn(struct ips *mx)
 			exit(0);
 		}
 
-		if (!conn(thisip->addr)) {
+		if (!conn(thisip->addr, outip)) {
 			/* set priority to 65538 to allow getrhost() to find active MX */
 			thisip->priority = 65538;
 			return;

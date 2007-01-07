@@ -33,6 +33,7 @@ char *rhost;
 size_t rhostlen;
 char *partner_fqdn;
 size_t chunksize;
+struct in6_addr outip;
 
 static void quitmsg(void);
 
@@ -67,6 +68,7 @@ setup(void)
 {
 	int j;
 	unsigned long chunk;
+	char *ipbuf;
 
 #ifdef USESYSLOG
 	openlog("Qremote", LOG_PID, LOG_MAIL);
@@ -102,6 +104,19 @@ setup(void)
 	}
 
 	heloname.len = j;
+
+	if ( (j = loadoneliner("control/outgoingip", &ipbuf, 0) ) >= 0 ) {
+		if (inet_pton(AF_INET6, ipbuf, &outip) <= 0) {
+			err_conf("parse error in control/outgoingip");
+		}
+#ifdef IPV4ONLY
+		if (!IN6_IS_ADDR_V4MAPPED(&outip)) {
+			err_conf("compiled for IPv4 only but control/outgoingip has IPv6 address");
+		}
+#endif
+	} else {
+		outip = in6addr_any;
+	}
 
 #ifdef DEBUG_IO
 	j = open("control/Qremote_debug", O_RDONLY);
@@ -455,7 +470,7 @@ main(int argc, char *argv[])
 			return 0;
 		}
 */
-		tryconn(mx);
+		tryconn(mx, &outip);
 		dup2(socketd, 0);
 		if (netget() != 220) {
 			quitmsg();
