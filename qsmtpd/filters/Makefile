@@ -1,7 +1,7 @@
 TARGETS = rcptfilters.a
 
 OBJS = rcpt_filters.o badmailfrom.o check2822.o dnsbl.o ipbl.o badcc.o fromdomain.o spf.o boolean.o soberg.o \
-	  helo.o usersize.o forceesmtp.o namebl.o wildcardns.o postfix_policy.o
+	  helo.o usersize.o forceesmtp.o namebl.o wildcardns.o
 
 .phony: all clean
 
