@@ -18,7 +18,7 @@
 
 static char linein[300];
 
-static struct params {
+static struct {
 	char *name;
 	unsigned int len;
 	long value;
@@ -304,7 +304,7 @@ struct addrlist {
 	char *address;
 };
 
-struct edbuf {
+struct {
 	const char *name;
 	union {
 		struct {
@@ -626,7 +626,7 @@ parse:
 	puts("ERROR: invalid argument");
 }
 
-static struct ecommands {
+static struct {
 	const char *name;
 	const unsigned int len;
 	void (*func)(const int);
