@@ -1,3 +1,6 @@
+/** \file cdb.c
+ * \brief functions to read from CDB database
+ */
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
