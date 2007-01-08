@@ -1,4 +1,4 @@
-/** \file qremote.c
+/** \file qsurvey.c
  \brief main functions of Qsurvey
 
  This file contains the main functions of Qsurvey, a simple SMTP server survey

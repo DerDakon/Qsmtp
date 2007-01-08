@@ -1,4 +1,4 @@
-/** \file vpopmail.c
+/** \file vpop.c
  \brief function to get domain directory of vpopmail virtual domain
  */
 #include <sys/mman.h>
