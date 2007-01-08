@@ -7,7 +7,7 @@
 #include "libowfatconn.h"
 
 /**
- * @param res result string will be stored here, memory is malloced
+ * @param out result string will be stored here, memory is malloced
  * @param len length of res
  * @param host host name to look up
  * @return -1 on error, 0 on success
@@ -30,7 +30,7 @@ dnsip6(char **out, unsigned int *len, const char *host)
 }
 
 /**
- * @param res result string will be stored here, memory is malloced
+ * @param out result string will be stored here, memory is malloced
  * @param len length of res
  * @param host host name to look up
  * @return -1 on error, 0 on success
@@ -53,7 +53,7 @@ dnsip4(char **out, unsigned int *len, const char *host)
 }
 
 /**
- * @param res result string will be stored here, memory is malloced
+ * @param out result string will be stored here, memory is malloced
  * @param len length of res
  * @param host host name to look up
  * @return -1 on error, 0 on success
@@ -77,7 +77,7 @@ dnsmx(char **out, unsigned int *len, const char *host)
 
 /**
  * @param out TXT record of host will be stored here, memory is malloced
- * @param ip name of host to look up
+ * @param host name of host to look up
  * @return -1 on error, 0 on success
  */
 int
