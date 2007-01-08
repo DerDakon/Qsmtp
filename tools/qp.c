@@ -63,9 +63,9 @@ void ultostr(const unsigned long u, char *res)
 char linein[10];
 size_t linelen;
 
-int netnwrite(const char *buffer, size_t len)
+int netnwrite(const char *s, size_t l)
 {
-	return write(1, buffer, len);
+	return write(1, s, l);
 }
 
 int main(int argc, char *argv[])
