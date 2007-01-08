@@ -308,10 +308,10 @@ struct {
 	const char *name;
 	union {
 		struct {
-			char *mem;				/* for IPv4/IPv6 maps */
-			unsigned int len;			/* length of map */
+			char *mem;			/**< for IPv4/IPv6 maps */
+			unsigned int len;		/**< length of map */
 		} map;
-		TAILQ_HEAD(addrlhead, addrlist) lhead;	/* list of addresses/domain/blacklists */
+		TAILQ_HEAD(addrlhead, addrlist) lhead;	/**< list of addresses/domain/blacklists */
 	} buf;
 } editbuffer;
 
