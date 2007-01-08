@@ -1,3 +1,6 @@
+/** \file clearpass.c
+ * \brief decode a base64 encoded password
+ */
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>

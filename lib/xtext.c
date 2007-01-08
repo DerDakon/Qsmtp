@@ -1,3 +1,6 @@
+/** \file xtext.c
+ * \brief functions for xtext parsing
+ */
 #include <sys/types.h>
 #include "xtext.h"
 
