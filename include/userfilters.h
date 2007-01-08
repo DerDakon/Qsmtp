@@ -49,8 +49,8 @@ extern void logwhitelisted(const char *, const int, const int);
 
 TAILQ_HEAD(pftailhead, pfixpol) pfixhead;
 
-/*! \struct smtpcomm
- Describes a single SMTP command and it's transitions in the SMTP state machine.
+/*! \struct pfixpol
+ Describes the settings for one Postfix policy daemon
  */
 struct pfixpol {
 	TAILQ_ENTRY(pfixpol) entries;	/**< List pointers of policy daemons. */
