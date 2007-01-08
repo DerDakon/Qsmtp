@@ -11,7 +11,7 @@
 #include "tls.h"
 
 char linein[1002];			/**< buffer for the line to read: max 1000 chars including CRLF,
-					 * leading extra '.', closing '\0' */
+					 * leading extra '.', closing '\\0' */
 size_t linelen;				/**< length of the line */
 static char lineinn[sizeof(linein)];	/**< if more than one line was in linein the rest is stored here */
 size_t linenlen;			/**< length of the lineinn */

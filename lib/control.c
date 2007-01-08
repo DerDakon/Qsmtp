@@ -22,7 +22,7 @@
  * @param fd file descriptor of the file to load
  * @param buf the contents of the file will go here, memory will be malloced
  * @param striptab 2: strip trailing whitespace
- *            1: compact {'\0'}* to a single '\0'
+ *            1: compact {'\\0'}* to a single '\\0'
  *            0: do nothing but load the file into the buffer
  *
  * @return length of buffer on success, -1 on error (errno is set)
