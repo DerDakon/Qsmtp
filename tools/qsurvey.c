@@ -470,7 +470,7 @@ work:
 
 	makelog("conn");
 
-	tryconn(mx);
+	tryconn(mx, &in6addr_any);
 	close(0);
 	dup2(socketd, 0);
 	if (netget() != 220)
