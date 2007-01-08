@@ -90,6 +90,8 @@ setup(void)
 			err_conf("control/helohost contains invalid name");
 		}
 	}
+	heloname.len = j;
+
 	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY), &timeout, 320)) < 0) {
 		err_conf("parse error in control/timeoutremote");
 	}
@@ -102,8 +104,6 @@ setup(void)
 		}
 		chunksize = chunk & 0xffffffff;
 	}
-
-	heloname.len = j;
 
 	if ( (j = loadoneliner("control/outgoingip", &ipbuf, 0) ) >= 0 ) {
 		if (inet_pton(AF_INET6, ipbuf, &outip) <= 0) {
