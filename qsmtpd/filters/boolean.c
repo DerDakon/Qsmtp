@@ -42,5 +42,15 @@ cb_boolean(const struct userconf *ds, char **logmsg __attribute__ ((unused)), in
 		log_writen(LOG_INFO, logmess);
 		return rc ? rc : 1;
 	}
+
+	if ((getsetting(ds, "noapos", t) > 0) && xmitstat.mailfrom.len) {
+		const char *at = strchr(xmitstat.mailfrom.s, '@');
+
+		if (memchr(xmitstat.mailfrom.s, '\'', at - xmitstat.mailfrom.s)) {
+			rc = netwrite("501 5.7.1 recipient does not like you\r\n");
+			*logmsg = "apostroph in from";
+			return rc ? rc : 1;
+		}
+	}
 	return 0;
 }
