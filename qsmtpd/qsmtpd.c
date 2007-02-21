@@ -1379,7 +1379,7 @@ smtploop(void)
 						break;
 				case E2BIG:	tarpit();
 						log_write(LOG_INFO, "too long SMTP line");
-						flagbogus = netwrite("500 5.5.2 line too long\r\n") ? errno : 0;
+						flagbogus = netwrite("500-5.5.2 line too long\r\n500-This is usually a bug in your mail client\r\n500 Try to use a different encoding like quoted-printable for this mail.\r\n") ? errno : 0;
 						break;
 				case ENOMEM:	/* ignore errors for the first 2 messages: if the third
 						 * one succeeds everything is ok */
