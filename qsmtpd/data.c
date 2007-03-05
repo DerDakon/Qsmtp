@@ -440,7 +440,7 @@ smtp_data(void)
 	 * calculating the offset to fd0[1] */
 	fd = fd0[1];
 	if ( (rc = queue_header()) )
-		goto err_write;
+		goto loop_data;
 
 	/* loop until:
 	 * -the message is bigger than allowed
@@ -448,7 +448,7 @@ smtp_data(void)
 	 * -we reach the end of the transmission
 	 */
 	if (net_read())
-		goto err_write;
+		goto loop_data;
 /* write the data to mail */
 	while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes) && linelen && (hops <= MAXHOPS)) {
 
@@ -530,7 +530,7 @@ smtp_data(void)
 		/* this has to stay here and can't be combined with the net_read before the while loop:
 		 * if we combine them we add an extra new line for the line that ends the transmission */
 		if (net_read())
-			goto err_write;
+			goto loop_data;
 	}
 	if (xmitstat.check2822 & 1) {
 		if (!flagdate) {
@@ -547,7 +547,7 @@ smtp_data(void)
 		/* if(linelen) message has no body and we already are at the end */
 		WRITE(fd, "\n", 1);
 		if (net_read())
-			goto err_write;
+			goto loop_data;
 		while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes)) {
 			int offset;
 
@@ -566,7 +566,7 @@ smtp_data(void)
 
 			WRITE(fd, "\n", 1);
 			if (net_read())
-				goto err_write;
+				goto loop_data;
 		}
 	}
 	if (msgsize > maxbytes) {
@@ -590,6 +590,7 @@ smtp_data(void)
 	commands[7].state = (0x008 << xmitstat.esmtp);
 	return queue_result();
 loop_data:
+	rc = errno;
 	while (close(fd0[1]) && (errno == EINTR));
 	fd0[1] = 0;
 	/* eat all data until the transmission ends. But just drop it and return
@@ -598,8 +599,7 @@ loop_data:
 		msgsize += linelen + 2;
 		if (linein[0] == '.')
 			msgsize--;
-		if (net_read())
-			goto err_write;
+		net_read();
 	} while ((linelen != 1) && (linein[0] != '.'));
 	while (close(fd1[1]) && (errno == EINTR));
 	ultostr(msgsize, s);
