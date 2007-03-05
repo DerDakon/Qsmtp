@@ -280,7 +280,7 @@ setup(void)
 	memcpy(xmitstat.remoteip, tmp, strlen(tmp));
 	tmp = getenv("TCP6LOCALIP");
 	if (!tmp || !*tmp || (inet_pton(AF_INET6, tmp, &xmitstat.slocalip) <= 0)) {
-		log_write(LOG_ERR, "can't figure local IP");
+		log_write(LOG_ERR, "can't figure out local IP");
 		return 1;
 	}
 	if (IN6_IS_ADDR_V4MAPPED(xmitstat.slocalip.s6_addr)) {
