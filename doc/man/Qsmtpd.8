@@ -28,10 +28,14 @@ see
 
 .B Qsmtpd
 accepts messages sent as SMTP or ESMTP. The extensions ENHANCEDSTATUSCODES, PIPELINING, 8BITMIME, SIZE and 
-CHUNKING are always announced in ESMTP mode. If .IR hostname
-, .IR checkprogram
- and .IR subprogram
-arguments are present and .IR checkprogram
+CHUNKING are always announced in ESMTP mode. If 
+.IR hostname
+, 
+.IR checkprogram
+ and 
+.IR subprogram
+arguments are present and 
+.IR checkprogram
 exists the AUTH extension is announced. If a TLS certificate is present the STARTTLS extension is also announced.
 
 .B Qsmtpd
