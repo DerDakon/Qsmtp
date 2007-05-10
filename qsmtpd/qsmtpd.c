@@ -921,7 +921,7 @@ smtp_rcpt(void)
 		free(ds.userpath.s);
 		free(ds.domainpath.s);
 		free(tmp.s);
-		return netwrite("452 4.5.3 Too many recipients") ? errno : 0;
+		return netwrite("452 4.5.3 Too many recipients\r\n") ? errno : 0;
 	}
 	r = malloc(sizeof(*r));
 	if (!r) {
