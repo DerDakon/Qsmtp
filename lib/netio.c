@@ -144,11 +144,9 @@ net_read(void)
 
 		c = memchr(linein, '\n', linenlen);
 		if (c) {
-			if (*(c - 1) != '\r') {
-				errno = EINVAL;
-				return -1;
-			}
-			*(c - 1) = '\0';
+			/* First skip the input, then check for error.
+			 * In case of input error we can still loop until
+			 * end of input. */
 			linelen = c - linein - 1;
 			/* at this point the new linein is ready */
 
@@ -158,6 +156,12 @@ net_read(void)
 				memcpy(lineinn, c + 1, linenlen);
 			}
 			
+			if (*(c - 1) != '\r') {
+				errno = EINVAL;
+				return -1;
+			}
+			*(c - 1) = '\0';
+
 			DEBUG_IN(linelen);
 
 			return 0;
@@ -236,6 +240,11 @@ loop_long:
 			if (p == linein + sizeof(linein) - 1) {
 				readoffset = 1;
 				goto loop_long;
+			}
+			/* catch "\r\r" */
+			if (*p == '\r') {
+				p++;
+				j--;
 			}
 			p = memchr(p, '\r', j);
 			j -= (p - linein);
