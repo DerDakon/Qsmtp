@@ -15,6 +15,7 @@
 #include "dns.h"
 #include "control.h"
 #include "qoff.h"
+#include "mmap.h"
 
 /**
  * load a text file into a buffer using locked IO
@@ -291,9 +292,9 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
 int
 finddomainfd(int fd, const char *domain, const int cl)
 {
-	struct stat st;
 	char *map;
 	int rc = 0, i;
+	q_off_t len;
 
 	if (fd < 0) {
 		return (errno == ENOENT) ? 0 : fd;
@@ -306,15 +307,10 @@ finddomainfd(int fd, const char *domain, const int cl)
 			return -1;
 		}
 	}
-	if ( (rc = fstat(fd, &st)) )
-		return rc;
-	if (!st.st_size) {
-		while ( (rc = close(fd)) && (errno == EINTR) );
-		return rc;
-	}
 
-	map = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (map == MAP_FAILED) {
+	map = mmap_fd(fd, &len);
+
+	if (map == NULL) {
 		int e = errno;
 
 		while (close(fd) && (errno == EINTR));
@@ -322,9 +318,9 @@ finddomainfd(int fd, const char *domain, const int cl)
 		return -1;
 	}
 
-	rc = finddomainmm(map, st.st_size, domain);
+	rc = finddomainmm(map, len, domain);
 
-	munmap(map, st.st_size);
+	munmap(map, len);
 	if (cl) {
 		while ((i = close(fd))) {
 			if (errno != EINTR) {
