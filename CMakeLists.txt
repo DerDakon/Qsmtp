@@ -1,7 +1,6 @@
 PROJECT(Qsmtp)
 
 SET(AUTOQMAIL /var/qmail)
-SET(CMAKE_INSTALL_PREFIX ${AUTOQMAIL})
 
 ADD_DEFINITIONS(-O0 -c -Wall -W -Wshadow -Wno-sign-compare -Wno-pointer-sign -DNOSTDERR -DUSESYSLOG -g)
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
