@@ -67,6 +67,9 @@ INSTALL(TARGETS addipbl DESTINATION bin COMPONENT tools)
 #	install -s -g qmail -o qmaild Qsmtpd $(AUTOQMAIL)/bin
 #	install -s -g qmail -o qmailr Qremote $(AUTOQMAIL)/bin
 
+INSTALL(FILES doc/man/Qremote.8 doc/man/Qsmtpd.8 DESTINATION man/man8)
+INSTALL(FILES doc/man/filterconf.5 DESTINATION man/man5)
+
 #man-install:
 #	install doc/man/Qremote.8 $(AUTOQMAIL)/man/man8
 #	install doc/man/Qsmtpd.8 $(AUTOQMAIL)/man/man8
