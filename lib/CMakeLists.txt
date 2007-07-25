@@ -1,17 +1,21 @@
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
-ADD_LIBRARY(netio netio.c)
-ADD_LIBRARY(dns dns.c)
-ADD_LIBRARY(log log.c)
-ADD_LIBRARY(control control.c)
-ADD_LIBRARY(ssl_timeoutio ssl_timeoutio.c)
-ADD_LIBRARY(tls tls.c)
-ADD_LIBRARY(getfile getfile.c)
-ADD_LIBRARY(base64 base64.c)
-ADD_LIBRARY(match match.c)
-ADD_LIBRARY(mime mime.c)
-ADD_LIBRARY(libowfatconn libowfatconn.c)
-ADD_LIBRARY(cdb cdb.c)
-ADD_LIBRARY(xtext xtext.c)
-ADD_LIBRARY(mmap mmap.c)
-ADD_LIBRARY(fmt fmt.c)
+SET(QSMTP_LIB_SRCS
+	netio.c
+	dns.c
+	log.c
+	control.c
+	ssl_timeoutio.c
+	tls.c
+	getfile.c
+	base64.c
+	match.c
+	mime.c
+	libowfatconn.c
+	cdb.c
+	xtext.c
+	mmap.c
+	fmt.c
+)
+
+ADD_LIBRARY(qsmtp_lib ${QSMTP_LIB_SRCS})

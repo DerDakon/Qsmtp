@@ -13,14 +13,21 @@ ADD_SUBDIRECTORY(tools)
 
 SET_SOURCE_FILES_PROPERTIES(qremote/qremote.c PROPERTIES COMPILE_FLAGS -DAUTOQMAIL='"${AUTOQMAIL}"')
 ADD_EXECUTABLE(Qremote qremote/qremote.c qremote/conn.c qremote/starttlsr.c qremote/qrdata.c)
-TARGET_LINK_LIBRARIES(Qremote dns netio ssl_timeoutio log tls control match mime mmap
-			libowfatconn ssl crypto owfat fmt)
+TARGET_LINK_LIBRARIES(Qremote
+	qsmtp_lib
+	ssl
+	owfat
+)
 
 SET_SOURCE_FILES_PROPERTIES(qsmtpd/qsmtpd.c PROPERTIES COMPILE_FLAGS -DAUTOQMAIL='"${AUTOQMAIL}"')
 ADD_EXECUTABLE(Qsmtpd qsmtpd/qsmtpd.c qsmtpd/antispam.c qsmtpd/auth.c qsmtpd/starttls.c
 		qsmtpd/spf.c qsmtpd/vpop.c qsmtpd/data.c qsmtpd/addrsyntax.c)
-TARGET_LINK_LIBRARIES(Qsmtpd dns control getfile ssl_timeoutio tls base64 match mmap
-			log netio libowfatconn cdb xtext ssl crypto owfat rcptfilters fmt)
+TARGET_LINK_LIBRARIES(Qsmtpd
+	qsmtp_lib
+	rcptfilters
+	ssl
+	owfat
+)
 
 INSTALL(TARGETS Qsmtpd DESTINATION bin)
 INSTALL(TARGETS Qremote DESTINATION bin)
@@ -31,16 +38,24 @@ SET_SOURCE_FILES_PROPERTIES(tools/fcshell.c PROPERTIES COMPILE_FLAGS --std=c99)
 
 SET_SOURCE_FILES_PROPERTIES(tools/qsurvey.c PROPERTIES COMPILE_FLAGS -DAUTOQMAIL='"${AUTOQMAIL}"')
 ADD_EXECUTABLE(Qsurvey tools/qsurvey.c qremote/conn.c qremote/starttlsr.c)
-TARGET_LINK_LIBRARIES(Qsurvey dns netio ssl_timeoutio log tls control mmap match libowfatconn ssl crypto owfat fmt)
+TARGET_LINK_LIBRARIES(Qsurvey
+	qsmtp_lib
+	ssl
+	owfat
+)
 INSTALL(TARGETS Qsurvey DESTINATION bin COMPONENT tools)
 
 ADD_EXECUTABLE(testspf tools/testspf.c qsmtpd/spf.c qsmtpd/antispam.c)
-TARGET_LINK_LIBRARIES(testspf dns match netio tls ssl_timeoutio libowfatconn ssl crypto owfat fmt)
+TARGET_LINK_LIBRARIES(testspf
+	qsmtp_lib
+	ssl
+	owfat
+)
 
 ADD_EXECUTABLE(qpencode tools/qp.c qremote/qrdata.c)
-TARGET_LINK_LIBRARIES(qpencode mime)
+TARGET_LINK_LIBRARIES(qpencode qsmtp_lib)
 ADD_EXECUTABLE(clearpass tools/clearpass.c)
-TARGET_LINK_LIBRARIES(clearpass base64)
+TARGET_LINK_LIBRARIES(clearpass qsmtp_lib)
 ADD_EXECUTABLE(addipbl tools/addipbl.c)
 
 INSTALL(TARGETS testspf DESTINATION bin COMPONENT tools)
