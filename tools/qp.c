@@ -16,6 +16,7 @@
 #include "netio.h"
 #include "sstring.h"
 #include "qoff.h"
+#include "fmt.h"
 
 extern void send_qp(const char *, const q_off_t);
 unsigned int smtpext;

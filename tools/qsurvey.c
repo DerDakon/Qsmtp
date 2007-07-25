@@ -24,6 +24,7 @@
 #include "conn.h"
 #include "starttlsr.h"
 #include "qremote.h"
+#include "fmt.h"
 
 int socketd;
 string heloname;

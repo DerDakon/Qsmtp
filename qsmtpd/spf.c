@@ -13,6 +13,7 @@
 #include "libowfatconn.h"
 #include "match.h"
 #include "netio.h"
+#include "fmt.h"
 
 #define WSPACE(x) (((x) == ' ') || ((x) == '\t') || ((x) == '\r') || ((x) == '\n'))
 

@@ -25,6 +25,7 @@
 #include "qremote.h"
 #include "starttlsr.h"
 #include "qrdata.h"
+#include "fmt.h"
 
 int socketd;
 string heloname;

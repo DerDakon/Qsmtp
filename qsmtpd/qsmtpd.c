@@ -38,6 +38,7 @@
 #include "vpop.h"
 #include "qsdata.h"
 #include "xtext.h"
+#include "fmt.h"
 
 int smtp_noop(void);
 int smtp_quit(void);
