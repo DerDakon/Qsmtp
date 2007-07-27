@@ -1,4 +1,4 @@
-PROJECT(Qsmtp)
+PROJECT(Qsmtp C)
 
 SET(AUTOQMAIL /var/qmail)
 
