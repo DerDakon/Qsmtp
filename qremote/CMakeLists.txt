@@ -4,6 +4,7 @@ ADD_EXECUTABLE(Qremote
 	conn.c
 	starttlsr.c
 	qrdata.c
+	smtproutes.c
 )
 TARGET_LINK_LIBRARIES(Qremote
 	qsmtp_lib

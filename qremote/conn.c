@@ -9,6 +9,7 @@
 #include <string.h>
 #include <syslog.h>
 #include <fcntl.h>
+#include <assert.h>
 #include "dns.h"
 #include "control.h"
 #include "match.h"
@@ -16,9 +17,7 @@
 #include "qremote.h"
 
 extern int socketd;
-static unsigned long targetport = 25;
-static char *user;
-static char *pass;
+static unsigned int targetport = 25;
 
 static int
 conn(const struct in6_addr remoteip, const struct in6_addr *outip)
@@ -105,16 +104,6 @@ tryconn(struct ips *mx, const struct in6_addr *outip)
 	}
 }
 
-static int
-hascolon(const char *s)
-{
-	char *colon = strchr(s, ':');
-
-	if (!*colon)
-		return 0;
-	return (*(colon + 1) == ':');
-}
-
 /**
  * get all IPs for the MX entries of target address
  *
@@ -124,7 +113,6 @@ hascolon(const char *s)
 void
 getmxlist(char *remhost, struct ips **mx)
 {
-	char **smtproutes, *smtproutbuf;
 	size_t reml = strlen(remhost);
 #ifdef IPV4ONLY
 	struct ips *thisip;
@@ -154,67 +142,10 @@ getmxlist(char *remhost, struct ips **mx)
 		exit(0);
 	}
 
-	if (!loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutbuf, &smtproutes, hascolon) && smtproutbuf) {
-		char *target;
-		unsigned int k = 0;
-
-		while (smtproutes[k]) {
-			target = strchr(smtproutes[k], ':');
-			*target++ = '\0';
-
-			if (!*(smtproutes[k]) || matchdomain(remhost, reml, smtproutes[k])) {
-				char *port;
-
-				port = strchr(target, ':');
-				if (port) {
-					char *more;
-
-					*port++ = '\0';
-					if ((more = strchr(port, ':'))) {
-						char *tmp;
-
-						*more++ = '\0';
-						tmp = strchr(more, ':');
-						if (tmp && *(tmp + 1)) {
-							user = malloc(tmp - more + 1);
-							pass = malloc(strlen(tmp));
-							if (!pass || !user) {
-								err_mem(0);
-							}
-							memcpy(user, more, tmp - more);
-							user[tmp - more] = '\0';
-							memcpy(pass, tmp + 1, strlen(tmp + 1));
-							pass[strlen(tmp + 1)] = '\0';
-						}
-					}
-					targetport = strtoul(port, &more, 10);
-					if (*more || (targetport >= 65536)) {
-						const char *logmsg[] = {"invalid port number given for \"",
-									target, "\" given as target for \"",
-									remhost, "\"", NULL};
-
-						err_confn(logmsg);
-					}
-				}
-				if (ask_dnsaaaa(target, mx)) {
-					const char *logmsg[] = {"cannot find IP address for static route \"",
-									target, "\" given as target for \"",
-									remhost, "\"", NULL};
-
-					err_confn(logmsg);
-				} else {
-					struct ips *m = *mx;
-					while (m) {
-						m->priority = 0;
-						m = m->next;
-					}
-					break;
-				}
-			}
-			k++;
-		}
-		free(smtproutes);
-		free(smtproutbuf);
+	*mx = smtproute(remhost, reml, &targetport);
+	if ((*mx == NULL) && (errno != 0)) {
+		assert(errno == ENOMEM);
+		err_mem(0);
 	}
 
 #ifdef IPV4ONLY

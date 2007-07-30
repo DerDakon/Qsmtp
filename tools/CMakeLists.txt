@@ -7,6 +7,7 @@ ADD_EXECUTABLE(Qsurvey
 	qsurvey.c
 	${CMAKE_SOURCE_DIR}/qremote/conn.c
 	${CMAKE_SOURCE_DIR}/qremote/starttlsr.c
+	${CMAKE_SOURCE_DIR}/qremote/smtproutes.c
 )
 TARGET_LINK_LIBRARIES(Qsurvey
 	qsmtp_lib

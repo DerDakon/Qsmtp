@@ -20,4 +20,6 @@ extern unsigned int smtpext;
 extern string heloname;
 extern size_t chunksize;
 
+struct ips *smtproute(const char *, const size_t, unsigned int *);
+
 #endif
