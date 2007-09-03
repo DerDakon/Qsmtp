@@ -342,7 +342,9 @@ greeting(void)
 		{ .name = "PIPELINING",	.len = 10,	.func = NULL	}, /* 0x02 */
 		{ .name = "STARTTLS",	.len = 8,	.func = NULL	}, /* 0x04 */
 		{ .name = "8BITMIME",	.len = 8,	.func = NULL	}, /* 0x08 */
+#ifdef CHUNKING
 		{ .name = "CHUNKING",	.len = 8,	.func = NULL	}, /* 0x10 */
+#endif
 		{ .name = NULL }
 	};
 	const char *cmd[3];
@@ -569,9 +571,13 @@ main(int argc, char *argv[])
 			quit();
 	}
 	successmsg[0] = rhost;
+#ifdef CHUNKING
 	if (smtpext & 0x10) {
 		send_bdat();
 	} else {
+#else
+	{
+#endif
 		send_data();
 	}
 	quit();

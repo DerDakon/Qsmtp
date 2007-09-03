@@ -3,6 +3,10 @@ PROJECT(Qsmtp C)
 SET(AUTOQMAIL /var/qmail)
 
 ADD_DEFINITIONS(-Wall -W -Wshadow -Wno-sign-compare -Wno-pointer-sign -DNOSTDERR -DUSESYSLOG)
+
+# uncomment this if you want support for CHUNKING
+#ADD_DEFINITIONS(-DCHUNKING)
+
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 
 ADD_SUBDIRECTORY(lib)

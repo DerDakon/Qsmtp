@@ -67,7 +67,9 @@ struct smtpcomm commands[] = {
 	_C("STARTTLS",	 8, 0x0010, smtp_starttls, 0x1, 0), /* 0x0100 */
 	_C("AUTH",	 4, 0x0010, smtp_auth,     -1, 1),  /* 0x0200 */
 	_C("VRFY",	 4, 0xffff, smtp_vrfy,     -1, 1),  /* 0x0400 */
+#ifdef CHUNKING
 	_C("BDAT",	 4, 0x0840, smtp_bdat,     -1, 1),  /* 0x0800 */ /* the status to change to is changed in smtp_bdat */
+#endif
 	_C("POST",	 4, 0xffff, http_post,     -1, 1)   /* 0x1000 */ /* this should stay last */
 };
 
@@ -446,7 +448,11 @@ int
 smtp_ehlo(void)
 {
 	/* can this be self-growing? */
+#ifdef CHUNKING
 	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n250-CHUNKING\r\n",
+#else
+	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n",
+#endif
 				NULL, NULL, NULL, NULL, NULL};
 	unsigned int next = 3;	/* next index in to be used */
 	char sizebuf[ULSTRLEN];
