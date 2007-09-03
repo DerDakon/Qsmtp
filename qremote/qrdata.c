@@ -732,6 +732,7 @@ send_data(void)
 	checkreply("KZD", successmsg, 1);
 }
 
+#ifdef CHUNKING
 void
 send_bdat(void)
 {
@@ -852,3 +853,4 @@ send_bdat(void)
 	munmap(chunkbuf, chunksize);
 	checkreply("KZD", successmsg, 1);
 }
+#endif

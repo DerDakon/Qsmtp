@@ -664,6 +664,7 @@ err_write:
 	}
 }
 
+#ifdef CHUNKING
 static int bdaterr;
 static int lastcr;
 
@@ -835,3 +836,4 @@ err_write:
 				}
 	}
 }
+#endif
