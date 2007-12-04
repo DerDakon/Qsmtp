@@ -6,7 +6,7 @@ ADD_DEFINITIONS(-Wall -W -Wshadow -Wno-sign-compare -Wno-pointer-sign)
 
 OPTION(NOSTDERR "Do not print error messages to stderr" ON)
 IF(NOSTDERR)
-ADD_DEFINITION(-DNOSTDERR)
+ADD_DEFINITIONS(-DNOSTDERR)
 ENDIF(NOSTDERR)
 
 OPTION(USESYSLOG "Use syslog() for logging" ON)
