@@ -1,7 +1,7 @@
 Index: qremote.c
 ===================================================================
---- qremote.c	(Revision 856)
-+++ qremote.c	(Arbeitskopie)
+--- qremote/qremote.c	(Revision 856)
++++ qremote/qremote.c	(Arbeitskopie)
 @@ -268,14 +268,14 @@
  	if (status) {
  		int m;
