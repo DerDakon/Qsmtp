@@ -1,5 +1,5 @@
 .\"TOPICS "Topics:"
-.TH Qsmtpd 8 "June 2005" "Qsmtp Version 0.7" "Qsmtpd"
+.TH Qsmtpd 8 "April 2008" "Qsmtp Version 0.11" "Qsmtpd"
 .SH NAME
 Qsmtpd \- receive mail via (E)SMTP
 .SH SYNOPSIS
@@ -12,9 +12,9 @@ Qsmtpd \- receive mail via (E)SMTP
 .SH DESCRIPTION
 .B Qsmtpd
 behaves more or less like
-.B qmail-smtpd(8) ,
+.B qmail-smtpd(8)
 , but adds better spam filtering capabilities, better RfC compliance, IPv6 support and more SMTP extensions
-out-of-the box.
+out-of-the-box.
 
 .B Qsmtpd
 receives mail messages via the Simple Mail Transfer Protocol (SMTP)
@@ -27,12 +27,12 @@ see
 .BR tcp-environ(5) .
 
 .B Qsmtpd
-accepts messages sent as SMTP or ESMTP. The extensions ENHANCEDSTATUSCODES, PIPELINING, 8BITMIME, SIZE and 
-CHUNKING are always announced in ESMTP mode. If 
+accepts messages sent as SMTP or ESMTP. The extensions ENHANCEDSTATUSCODES, PIPELINING, 8BITMIME and SIZE 
+are always announced in ESMTP mode. CHUNKING is also announced if it has been enabled at compile time. If 
 .IR hostname
 , 
 .IR checkprogram
- and 
+and 
 .IR subprogram
 arguments are present and 
 .IR checkprogram

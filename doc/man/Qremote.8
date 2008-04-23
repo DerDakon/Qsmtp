@@ -1,5 +1,5 @@
 .\"TOPICS "Topics:"
-.TH Qremote 8 "May 2005" "Qremote Version 0.7" "Qremote"
+.TH Qremote 8 "April 2008" "Qremote Version 0.11" "Qremote"
 .SH NAME
 Qremote \- send mail via (E)SMTP
 .SH SYNOPSIS
@@ -57,7 +57,7 @@ The envelope sender address is listed as
 .SH TRANSPARENCY
 End-of-file in SMTP is encoded as dot CR LF.
 A dot at the beginning of a line is encoded as dot dot.
-It is impossible in SMTP to send a message that does not end with a newline
+It is impossible in SMTP to send a message that does not end with a newline.
 .B Qremote
 converts single CR or LF into the SMTP newline convention by converting them
 to CRLF.
