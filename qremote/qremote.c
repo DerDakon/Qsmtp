@@ -338,11 +338,16 @@ greeting(void)
 		unsigned int len;	/* strlen(name) */
 		int (*func)(void);	/* used to handle arguments to this extension, NULL if no arguments allowed */
 	} extensions[] = {
+#define SMTPEXT_SIZE 0x01
 		{ .name = "SIZE",	.len = 4,	.func = cb_size	}, /* 0x01 */
+#define SMTPEXT_PIPELINING 0x02
 		{ .name = "PIPELINING",	.len = 10,	.func = NULL	}, /* 0x02 */
+#define SMTPEXT_STARTTLS 0x04
 		{ .name = "STARTTLS",	.len = 8,	.func = NULL	}, /* 0x04 */
+#define SMTPEXT_8BITMIME 0x08
 		{ .name = "8BITMIME",	.len = 8,	.func = NULL	}, /* 0x08 */
 #ifdef CHUNKING
+#define SMTPEXT_CHUNKING 0x10
 		{ .name = "CHUNKING",	.len = 8,	.func = NULL	}, /* 0x10 */
 #endif
 		{ .name = NULL }
@@ -431,6 +436,7 @@ main(int argc, char *argv[])
 	int rcptcount = argc - 3;
 	struct stat st;
 	char sizebuf[ULSTRLEN];
+	unsigned int lastmsg;	/* last message in array */
 
 	setup();
 
@@ -494,7 +500,7 @@ main(int argc, char *argv[])
 	freeips(mx);
 	mailerrmsg[1] = rhost;
 
-	if (smtpext & 0x04) {
+	if (smtpext & SMTPEXT_STARTTLS) {
 		if (tls_init()) {
 			if (greeting()) {
 				write(1, "ZEHLO failed after STARTTLS\n", 29);
@@ -509,31 +515,26 @@ main(int argc, char *argv[])
 
 	netmsg[0] = "MAIL FROM:<";
 	netmsg[1] = argv[2];
-	netmsg[3] = NULL;
+	lastmsg = 2;
 /* ESMTP SIZE extension */
-	if (smtpext & 0x01) {
-		netmsg[2] = "> SIZE=";
+	if (smtpext & SMTPEXT_SIZE) {
+		netmsg[lastmsg++] = "> SIZE=";
 		ultostr(msgsize, sizebuf);
-		netmsg[3] = sizebuf;
-		netmsg[4] = NULL;
+		netmsg[lastmsg++] = sizebuf;
 	} else {
-		netmsg[2] = ">";
+		netmsg[lastmsg++] = ">";
 	}
 /* ESMTP 8BITMIME extension */
-	if (smtpext & 0x08) {
-		int idx;
-
-		idx = (smtpext & 0x01) ? 4 : 3;
-
-		netmsg[idx++] = (ascii & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
-		netmsg[idx] = NULL;
+	if (smtpext & SMTPEXT_8BITMIME) {
+		netmsg[lastmsg++] = (ascii & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
 	}
+	netmsg[lastmsg] = NULL;
 	net_writen(netmsg);
 
 	netmsg[0] = "RCPT TO:<";
 	netmsg[2] = ">";
 	netmsg[3] = NULL;
-	if (smtpext & 0x02) {
+	if (smtpext & SMTPEXT_PIPELINING) {
 /* server allows PIPELINING: first send all the messages, then check the replies.
  * This allows to hide network latency. */
 		for (i = 3; i < argc; i++) {
@@ -572,7 +573,7 @@ main(int argc, char *argv[])
 	}
 	successmsg[0] = rhost;
 #ifdef CHUNKING
-	if (smtpext & 0x10) {
+	if (smtpext & SMTPEXT_CHUNKING) {
 		send_bdat();
 	} else {
 #else
