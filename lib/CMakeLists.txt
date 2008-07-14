@@ -18,4 +18,23 @@ SET(QSMTP_LIB_SRCS
 	fmt.c
 )
 
-ADD_LIBRARY(qsmtp_lib ${QSMTP_LIB_SRCS})
+SET(QSMTP_LIB_HDRS
+	../include/base64.h
+	../include/cdb.h
+	../include/control.h
+	../include/dns.h
+	../include/fmt.h
+	../include/log.h
+	../include/match.h
+	../include/mime.h
+	../include/mmap.h
+	../include/netio.h
+	../include/qoff.h
+	../include/ssl_timeoutio.h
+	../include/sstring.h
+	../include/tls.h
+	../include/version.h
+	../include/xtext.h
+)
+
+ADD_LIBRARY(qsmtp_lib ${QSMTP_LIB_SRCS} ${QSMTP_LIB_HDRS})

@@ -1,7 +1,8 @@
 ADD_SUBDIRECTORY(filters)
 
 SET_SOURCE_FILES_PROPERTIES(qsmtpd.c PROPERTIES COMPILE_FLAGS -DAUTOQMAIL='"${AUTOQMAIL}"')
-ADD_EXECUTABLE(Qsmtpd
+
+SET(QSMTPD_SRCS
 	qsmtpd.c
 	antispam.c
 	auth.c
@@ -11,6 +12,21 @@ ADD_EXECUTABLE(Qsmtpd
 	data.c
 	addrsyntax.c
 )
+
+SET(QSMTPD_HDRS
+	../include/antispam.h
+	../include/qsauth.h
+	../include/qsdata.h
+	../include/qsmtpd.h
+	../include/userfilters.h
+	../include/vpop.h
+)
+
+ADD_EXECUTABLE(Qsmtpd
+	${QSMTPD_SRCS}
+	${QSMTPD_HDRS}
+)
+
 TARGET_LINK_LIBRARIES(Qsmtpd
 	qsmtp_lib
 	rcptfilters
