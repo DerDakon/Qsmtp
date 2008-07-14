@@ -10,12 +10,16 @@
 #include <signal.h>
 #include <string.h>
 #include <time.h>
+#include <fcntl.h>
+#include <ctype.h>
 #include "qsmtpd.h"
 #include "sstring.h"
 #include "netio.h"
 #include "base64.h"
 #include "log.h"
 #include "tls.h"
+#include "control.h"
+#include "qsauth.h"
 
 const char *tempnoauth = "454 4.3.0 AUTH temporaryly not available\r\n";
 
@@ -435,4 +439,97 @@ smtp_auth(void)
 		}
 	}
 	return netwrite("504 5.5.1 Unrecognized authentication type.\r\n") ? errno : EDONE;
+}
+
+/**
+ * return a list of all enabled auth types
+ *
+ * @return string of enabled auth types or NULL if out of memory
+ */
+char *
+smtp_authstring(void)
+{
+	size_t conflen, slen, confpos, wpos;
+	char *confbuf, *ret, *tmp;
+	unsigned int i;
+	uint8_t usedtype;	/* make sure this is big enough to hold all auth types */
+
+	conflen = lloadfilefd(open("control/authtypes", O_RDONLY), &confbuf, 3);
+
+	if (conflen == (size_t) -1)
+		return NULL;
+
+	i = 0;
+	slen = 0;
+	while (authcmds[i].text != NULL) {
+		slen += strlen(authcmds[i].text) + 1;
+		i++;
+	}
+
+	ret = malloc(slen);
+	if (ret == NULL) {
+		free(confbuf);
+		return NULL;
+	}
+
+	if (conflen == 0) {
+		wpos = 0;
+		i = 0;
+
+		while (authcmds[i].text != NULL) {
+			ret[wpos++] = ' ';
+			strcpy(ret + wpos, authcmds[i].text);
+			wpos += strlen(authcmds[i].text);
+			i++;
+		}
+
+		for (wpos = 0; wpos < slen; wpos++)
+			ret[wpos] = toupper(ret[wpos]);
+
+		return ret;
+	}
+
+	confpos = 0;
+	usedtype = 0;
+	wpos = 0;
+	while (confpos < conflen) {
+		int found = 0;
+
+		i = 0;
+		while (authcmds[i].text != NULL) {
+			if (strcasecmp(authcmds[i].text, confbuf + confpos) == 0) {
+				if (usedtype & (1 << i)) {
+					const char *logmsg[] = {"error: duplicate auth type \"",
+								confbuf + confpos,
+								"\" found in control/authtypes\n", NULL};
+					log_writen(LOG_ERR, logmsg);
+					found = 1;
+					break;
+				}
+				found = 1;
+				usedtype |= (1 << i);
+				ret[wpos++] = ' ';
+				strcpy(ret + wpos, authcmds[i].text);
+				while (ret[wpos]) {
+					ret[wpos] = toupper(ret[wpos]);
+					wpos++;
+				}
+				break;
+			}
+			i++;
+		}
+
+		if (found == 0) {
+			const char *logmsg[] = {"error: unknown auth type \"", confbuf + confpos,
+						"\" found in control/authtypes\n", NULL};
+			log_writen(LOG_ERR, logmsg);
+		}
+		confpos += strlen(confbuf + confpos) + 1;
+	}
+
+	tmp = realloc(ret, wpos);
+	if (tmp == NULL)
+		return ret;
+	else
+		return tmp;
 }

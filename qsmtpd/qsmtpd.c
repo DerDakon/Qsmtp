@@ -36,6 +36,7 @@
 #include "version.h"
 #include "dns.h"
 #include "vpop.h"
+#include "qsauth.h"
 #include "qsdata.h"
 #include "xtext.h"
 #include "fmt.h"
@@ -49,7 +50,6 @@ int smtp_from(void);
 int smtp_rcpt(void);
 /* int smtp_data(void); is declared in qsdata.h */
 int smtp_vrfy(void);
-extern int smtp_auth(void);
 extern int smtp_starttls(void);
 int http_post(void);
 
@@ -457,6 +457,7 @@ smtp_ehlo(void)
 	unsigned int next = 3;	/* next index in to be used */
 	char sizebuf[ULSTRLEN];
 	int rc;
+	char *authtypes = NULL;
 
 	if (!ssl) {
 		protocol = realloc(protocol, 6);
@@ -467,12 +468,14 @@ smtp_ehlo(void)
 	if (helovalid(linein + 5) < 0)
 		return errno;
 	if (auth_host && (!sslauth || (sslauth && ssl))) {
-#warning FIXME: read AUTH types to announce from config file
-#ifdef AUTHCRAM
-		msg[next++] = "250-AUTH CRAMMD5 PLAIN LOGIN\r\n";
-#else
-		msg[next++] = "250-AUTH PLAIN LOGIN\r\n";
-#endif
+		authtypes = smtp_authstring();
+
+		if (authtypes == NULL) {
+		} else {
+			msg[next++] = "250-AUTH";
+			msg[next++] = authtypes;
+			msg[next++] = "\r\n";
+		}
 	}
 /* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
 	if (!ssl) {
@@ -496,6 +499,7 @@ smtp_ehlo(void)
 	xmitstat.spf = 0;
 	xmitstat.esmtp = 1;
 	xmitstat.datatype = 1;
+	free(authtypes);
 	return rc;
 }
 

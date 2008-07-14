@@ -1,5 +1,5 @@
 .\"TOPICS "Topics:"
-.TH Qsmtpd 8 "April 2008" "Qsmtp Version 0.11" "Qsmtpd"
+.TH Qsmtpd 8 "July 2008" "Qsmtp Version 0.11" "Qsmtpd"
 .SH NAME
 Qsmtpd \- receive mail via (E)SMTP
 .SH SYNOPSIS
@@ -45,7 +45,10 @@ It rejects any message with 100 or more
 header fields.
 
 .B Qsmtpd
-can accept LOGIN, PLAIN, and CRAM-MD5 AUTH types.  It invokes
+can accept LOGIN, PLAIN, and CRAM-MD5 AUTH types.  They can be limited
+using the
+.IR authtypes
+file. It invokes
 .IR checkprogram ,
 which reads on file descriptor 3 the username, a 0 byte, the password
 or challenge derived from
@@ -80,12 +83,18 @@ that fail this check will be rejected. These tests only work for virtual domains
 
 .SH "CONTROL FILES"
 
-These files are used for configuring several aspects of .B Qsmtpd
+These files are used for configuring several aspects of
+.B Qsmtpd
 . Some of them may also be present in the recipient or recipient domain directory
 if the domain is controlled by vpopmail. In this case the more local file overrides
 the global files. Only files marked with
 .I (user)
 can be used in user or domain directories.
+
+.TP 4
+.I authtypes
+A list of all auth types that should be announced. Empty lines and lines beginning
+with # are ignored.
 
 .TP 4
 .I badmailfrom
