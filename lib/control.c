@@ -31,7 +31,7 @@
  * if the file is empty (size 0 or only comments and blank lines) 0
  * is returned and buf is set to NULL
  *
- * \warning if lloadfilfd can't get a lock on the input file (e.g. currently opened for
+ * \warning if lloadfilefd can't get a lock on the input file (e.g. currently opened for
  *          writing by another process) the file is treated as non existent
  */
 size_t
@@ -49,7 +49,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		} else
 			return -1;
 	}
-	while (flock(fd,LOCK_SH)) {
+	while (flock(fd, LOCK_SH)) {
 		if (errno != EINTR) {
 			log_write(LOG_WARNING, "cannot lock input file");
 			errno = ENOLCK;	/* not the right error code, but good enough */
