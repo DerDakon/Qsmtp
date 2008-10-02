@@ -1320,6 +1320,21 @@ http_post(void)
 	return EINVAL;
 }
 
+/**
+ * line_valid - check if input line contains only syntactically correct characters
+ * @returns: 0 on success, else error code
+ */
+static int
+line_valid()
+{
+	for (i = 0; i < linelen; i++) {
+		/* linein is signed char, so non-ASCII characters are <0 */
+		if (linein[i] <= 0)
+			return EINVAL;
+	}
+	return 0;
+}
+
 static int flagbogus;
 
 static void __attribute__ ((noreturn))
@@ -1351,12 +1366,7 @@ smtploop(void)
 			/* we are not in DATA here so there MUST NOT be a non-ASCII character,
 			* '\0' is also bogus */
 			if (!flagbogus) {
-				for (i = 0; i < linelen; i++)
-					/* linein is signed char, so non-ASCII characters are <0 */
-					if (linein[i] <= 0) {
-						flagbogus = EINVAL;
-						break;
-					}
+				flagbogus = line_valid();
 			} else
 				flagbogus = errno;
 		}
