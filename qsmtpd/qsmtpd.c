@@ -1327,6 +1327,8 @@ http_post(void)
 static int
 line_valid()
 {
+	int i;
+
 	for (i = 0; i < linelen; i++) {
 		/* linein is signed char, so non-ASCII characters are <0 */
 		if (linein[i] <= 0)
