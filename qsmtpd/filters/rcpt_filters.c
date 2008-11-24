@@ -7,6 +7,7 @@
 
 /* add all your filters here */
 
+extern int cb_nomail(const struct userconf *, char **, int *);
 extern int cb_boolean(const struct userconf *, char **, int *);
 extern int cb_badmailfrom(const struct userconf *, char **, int *);
 extern int cb_dnsbl(const struct userconf *, char **, int *);
@@ -26,6 +27,7 @@ extern int cb_wildcardns(const struct userconf *, char **, int *);
 /** the user filters will be called in the order in this array */
 rcpt_cb rcpt_cbs[] = {
 /* offline checks first */
+			cb_nomail,
 			cb_boolean,
 			cb_usersize,
 			cb_soberg,
