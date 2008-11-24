@@ -14,7 +14,6 @@
 #include "log.h"
 #include "dns.h"
 #include "control.h"
-#include "qoff.h"
 #include "mmap.h"
 
 /**
@@ -294,7 +293,7 @@ finddomainfd(int fd, const char *domain, const int cl)
 {
 	char *map;
 	int rc = 0, i;
-	q_off_t len;
+	off_t len;
 
 	if (fd < 0) {
 		return (errno == ENOENT) ? 0 : fd;
@@ -350,11 +349,11 @@ finddomainfd(int fd, const char *domain, const int cl)
  * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, CR in file will cause trouble
  */
 int
-finddomainmm(const char *map, const q_off_t size, const char *domain)
+finddomainmm(const char *map, const off_t size, const char *domain)
 {
 	const char *cur;
 	size_t dl = strlen(domain);
-	q_off_t pos = 0;
+	off_t pos = 0;
 
 	if (!map)
 		return 0;

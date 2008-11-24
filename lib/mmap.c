@@ -12,7 +12,7 @@
 #include "log.h"
 
 void *
-mmap_fd(int fd, q_off_t *len)
+mmap_fd(int fd, off_t *len)
 {
 	int i;
 	struct stat st;
@@ -30,7 +30,7 @@ mmap_fd(int fd, q_off_t *len)
 }
 
 void *
-mmap_name(const char *fname, q_off_t *len, int *fd)
+mmap_name(const char *fname, off_t *len, int *fd)
 {
 	void *buf;
 

@@ -18,13 +18,12 @@
 #include "version.h"
 #include "mime.h"
 #include "log.h"
-#include "qoff.h"
 #include "fmt.h"
 
 const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "", "./Remote host said: ", NULL};
 int ascii;			/* if message is plain ASCII or not */
 const char *msgdata;		/* message will be mmaped here */
-q_off_t msgsize;		/* size of the mmaped area */
+off_t msgsize;		/* size of the mmaped area */
 static int lastlf = 1;		/* set if last byte sent was a LF */
 
 /**
@@ -35,7 +34,7 @@ static int lastlf = 1;		/* set if last byte sent was a LF */
  * @return logical or of: 1 if buffer has 8bit characters, 2 if buffer contains line longer 998 chars
  */
 int
-need_recode(const char *buf, q_off_t len)
+need_recode(const char *buf, off_t len)
 {
 	int res = 0;
 	int llen = 0;
@@ -89,25 +88,25 @@ need_recode(const char *buf, q_off_t len)
  * lastlf will be set if last 2 bytes sent were CRLF
  */
 static void
-send_plain(const char *buf, const q_off_t len)
+send_plain(const char *buf, const off_t len)
 {
 	char sendbuf[1205];
 	unsigned int idx = 0;
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
-	q_off_t off = 0;
+	off_t off = 0;
 	int llen = 0;		/* flag if start of line */
 
 	if (!len)
 		return;
 
 	while (off < len) {
-		while (idx + (q_off_t) chunk < sizeof(sendbuf) - 5) {
-			if (off + (q_off_t) chunk == len) {
+		while (idx + (off_t) chunk < sizeof(sendbuf) - 5) {
+			if (off + (off_t) chunk == len) {
 				break;
 			}
 			switch (buf[off + chunk]) {
 				case '\r':	{
-							int last = (off + (q_off_t) ++chunk == len);
+							int last = (off + (off_t) ++chunk == len);
 		
 							llen = 0;
 							if (!last && (buf[off + chunk] == '\n')) {
@@ -184,16 +183,16 @@ recodeheader(void)
  * @param buf beginning of line
  * @param len length of line without CR, LF or CRLF
  */
-static q_off_t
-wrap_line(const char *buf, q_off_t len)
+static off_t
+wrap_line(const char *buf, off_t len)
 {
-	q_off_t off = len;
-	q_off_t pos = 0;
+	off_t off = len;
+	off_t pos = 0;
 	char sendbuf[1048];	/* long enough for 2 lines to fit in */
 	size_t bo = 0;	/* offset in sendbuf */
 
 	while (off >= 970) {
-		q_off_t partoff = 800;
+		off_t partoff = 800;
 
 		while (partoff && (buf[pos + partoff] != ' '))
 			partoff--;
@@ -246,10 +245,10 @@ wrap_line(const char *buf, q_off_t len)
  * @param len length of buffer
  */
 static void
-wrap_header(const char *buf, const q_off_t len)
+wrap_header(const char *buf, const off_t len)
 {
-	q_off_t pos = 0, off = 0;
-	q_off_t ll = 0;	/* length of current line */
+	off_t pos = 0, off = 0;
+	off_t ll = 0;	/* length of current line */
 
 	if (!(need_recode(buf, len) & 2)) {
 		send_plain(buf, len);
@@ -271,7 +270,7 @@ wrap_header(const char *buf, const q_off_t len)
 		}
 		/* found a line. Check if it's too long */
 		if (ll >= 999) {
-			q_off_t po;
+			off_t po;
 
 			send_plain(buf + pos, off);
 			pos += off;
@@ -293,7 +292,7 @@ wrap_header(const char *buf, const q_off_t len)
 		off += ll;
 		send_plain(buf + pos, off);
 	} else {
-		q_off_t po;
+		off_t po;
 
 		send_plain(buf + pos, off);
 		pos += off;
@@ -321,10 +320,10 @@ wrap_header(const char *buf, const q_off_t len)
  *
  * \warning boundary will not be 0-terminated! Use boundary->len!
  */
-static q_off_t
-qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
+static off_t
+qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart)
 {
-	q_off_t off, header = 0;
+	off_t off, header = 0;
 	cstring cenc, ctype;
 
 	STREMPTY(cenc);
@@ -360,7 +359,7 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
 					break;
 			case 'c':
 			case 'C':	{
-						q_off_t rest = len - off;
+						off_t rest = len - off;
 
 						if ((rest >= 12) && !strncasecmp(buf + off + 1, "ontent-Type:", 11)) {
 							const char *cr = buf + off;
@@ -428,17 +427,17 @@ qp_header(const char *buf, const q_off_t len, cstring *boundary, int *multipart)
  * @param len length of buffer
  */
 static void
-recode_qp(const char *buf, q_off_t len)
+recode_qp(const char *buf, off_t len)
 {
 	unsigned int idx = 0;
 	char sendbuf[1280];
 	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
-	q_off_t off = 0;
+	off_t off = 0;
 	int llen = 0;		/* length of this line, needed for qp line break */
 
 	while (off < len) {
-		while (idx + (q_off_t) chunk < sizeof(sendbuf) - 11) {
-			if (off + (q_off_t) chunk == len) {
+		while (idx + (off_t) chunk < sizeof(sendbuf) - 11) {
+			if (off + (off_t) chunk == len) {
 				break;
 			}
 
@@ -499,7 +498,7 @@ recode_qp(const char *buf, q_off_t len)
 				chunk = 0;
 			} else if ((buf[off + chunk] == '\t') || (buf[off + chunk] == ' ')) {
 				/* recode whitespace if a linebreak follows */
-				if ((off + (q_off_t) chunk < len) &&
+				if ((off + (off_t) chunk < len) &&
 						((buf[off + chunk + 1] == '\r') || (buf[off + chunk + 1] == '\n'))) {
 					memcpy(sendbuf + idx, buf + off, chunk);
 					off += chunk;
@@ -567,10 +566,10 @@ recode_qp(const char *buf, q_off_t len)
  * @param len length of buffer
  * @return number of bytes skipped
  */
-static q_off_t
-skip_tpad(const char *buf, const q_off_t len)
+static off_t
+skip_tpad(const char *buf, const off_t len)
 {
-	q_off_t off = 0;
+	off_t off = 0;
 
 	while ((off < len) && ((buf[off] == ' ') || (buf[off] == '\t')))
 		off++;
@@ -588,9 +587,9 @@ skip_tpad(const char *buf, const q_off_t len)
  * @param len length of buffer
  */
 static void
-send_qp(const char *buf, const q_off_t len)
+send_qp(const char *buf, const off_t len)
 {
-	q_off_t off = 0;
+	off_t off = 0;
 	cstring boundary;
 	int multipart;		/* set to one if this is a multipart message */
 
@@ -599,7 +598,7 @@ send_qp(const char *buf, const q_off_t len)
 	if (!multipart) {
 		recode_qp(buf + off, len - off);
 	} else {
-		q_off_t nextoff = find_boundary(buf + off, len - off, &boundary);
+		off_t nextoff = find_boundary(buf + off, len - off, &boundary);
 		int nr;
 		int islast = 0;	/* set to one if MIME end boundary was found */
 
@@ -648,7 +647,7 @@ send_qp(const char *buf, const q_off_t len)
 		netnwrite("\r\n", 2);
 
 		while ((off < len) && !islast && (nextoff = find_boundary(buf + off, len - off, &boundary))) {
-			q_off_t partlen = nextoff - boundary.len - 2;
+			off_t partlen = nextoff - boundary.len - 2;
 
 			nr = need_recode(buf + off, partlen);
 			if (!(smtpext & 0x008) || (nr & 2)) {
@@ -736,7 +735,7 @@ send_data(void)
 void
 send_bdat(void)
 {
-	q_off_t off = 0;		/* offset in incoming message data */
+	off_t off = 0;		/* offset in incoming message data */
 	char *chunkbuf;
 	size_t lenlen;			/* "reserved" length for "BDAT <len> (LAST)?" */
 	int i;

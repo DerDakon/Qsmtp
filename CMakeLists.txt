@@ -2,7 +2,7 @@ PROJECT(Qsmtp C)
 
 SET(AUTOQMAIL /var/qmail)
 
-ADD_DEFINITIONS(-Wall -W -Wshadow -Wno-sign-compare -Wno-pointer-sign)
+ADD_DEFINITIONS(-Wall -W -Wshadow -Wno-sign-compare -Wno-pointer-sign -D_FILE_OFFSET_BITS=64)
 
 OPTION(NOSTDERR "Do not print error messages to stderr" ON)
 IF(NOSTDERR)

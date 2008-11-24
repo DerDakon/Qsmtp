@@ -7,7 +7,6 @@
 #include <sys/queue.h>
 #include "sstring.h"
 #include "dns.h"
-#include "qoff.h"
 
 /*! \struct smtpcomm
  Describes a single SMTP command and it's transitions in the SMTP state machine.
@@ -54,7 +53,7 @@ extern struct smtpcomm commands[];	/**< all supported SMTP commands */
 
 extern int rcpthfd;			/**< file descriptor of control/rcpthosts */
 extern char *rcpthosts;
-extern q_off_t rcpthsize;
+extern off_t rcpthsize;
 extern struct xmitstat xmitstat;
 extern char *protocol;
 extern char *auth_host;			/**< hostname for auth */

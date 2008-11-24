@@ -7,7 +7,6 @@
 #include "mime.h"
 #include "sstring.h"
 #include "qrdata.h"
-#include "qoff.h"
 
 /**
  * skip whitespaces in header line
@@ -315,14 +314,14 @@ mime_token(const char *line, const size_t len)
  * @param boundary boundary limit string
  * @return offset of first character behind next boundary, 0 if no boundary found
  */
-q_off_t
-find_boundary(const char *buf, const q_off_t len, const cstring *boundary)
+off_t
+find_boundary(const char *buf, const off_t len, const cstring *boundary)
 {
-	q_off_t pos = 0;
+	off_t pos = 0;
 
-	if (len < (q_off_t) (boundary->len + 3))
+	if (len < (off_t) (boundary->len + 3))
 		return 0;
-	while (pos < len - 3 - (q_off_t) boundary->len) {
+	while (pos < len - 3 - (off_t) boundary->len) {
 		if (((buf[pos] == '\r') || (buf[pos] == '\n')) && (buf[pos + 1] == '-') && (buf[pos + 2] == '-')) {
 			if (!strncmp(buf + pos + 3, boundary->s, boundary->len)) {
 				pos += 3 + boundary->len;

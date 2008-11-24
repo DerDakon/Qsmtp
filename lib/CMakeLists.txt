@@ -29,7 +29,6 @@ SET(QSMTP_LIB_HDRS
 	../include/mime.h
 	../include/mmap.h
 	../include/netio.h
-	../include/qoff.h
 	../include/ssl_timeoutio.h
 	../include/sstring.h
 	../include/tls.h
