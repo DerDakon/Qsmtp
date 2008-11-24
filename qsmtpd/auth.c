@@ -460,7 +460,7 @@ smtp_authstring(void)
 		return NULL;
 
 	i = 0;
-	slen = 0;
+	slen = 1;
 	while (authcmds[i].text != NULL) {
 		slen += strlen(authcmds[i].text) + 1;
 		i++;
