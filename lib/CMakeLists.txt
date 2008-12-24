@@ -32,7 +32,7 @@ SET(QSMTP_LIB_HDRS
 	../include/ssl_timeoutio.h
 	../include/sstring.h
 	../include/tls.h
-	../include/version.h
+	${CMAKE_BINARY_DIR}/version.h
 	../include/xtext.h
 )
 
