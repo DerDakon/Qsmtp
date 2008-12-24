@@ -32,6 +32,8 @@
  *
  * \warning if lloadfilefd can't get a lock on the input file (e.g. currently opened for
  *          writing by another process) the file is treated as non existent
+ *
+ * If this function returns <= 0 fd will be closed.
  */
 size_t
 lloadfilefd(int fd, char **buf, const int striptab)
@@ -189,29 +191,75 @@ loadintfd(int fd, unsigned long *result, const unsigned long def)
  * @return length of the string, -1 on error
  */
 size_t
-loadoneliner(const char *filename, char **buf, int optional)
+loadoneliner(const char *filename, char **buf, const int optional)
 {
 	size_t j;
+	int fd;
 
-	if ( (j = lloadfilefd(open(filename, O_RDONLY), buf, 3)) == (size_t) -1)
-		return j;
+	fd = open(filename, O_RDONLY);
+	if (fd == -1) {
+		j = (size_t)-1;
+	} else {
+		j = loadonelinerfd(fd, buf);
+	}
 
-	if (!*buf) {
-		if (!optional) {
+	if (j == (size_t)-1) {
+		if ((errno == ENOENT) && !optional) {
 			const char *logmsg[] = {filename, " not found", NULL};
 
 			log_writen(LOG_ERR, logmsg);
-		}
-		errno = ENOENT;
-		return -1;
-	}
-	if (strlen(*buf) + 1 != j) {
-		const char *logmsg[] = {"more than one line in ", filename, NULL};
+			errno = ENOENT;
+		} else if (errno == EINVAL) {
+			const char *logmsg[] = {"more than one line in ", filename, NULL};
 
-		log_writen(LOG_ERR, logmsg);
-		errno = EINVAL;
-		return -1;
+			log_writen(LOG_ERR, logmsg);
+			errno = EINVAL;
+		}
 	}
+	return j;
+}
+
+/**
+* read a configuration file that only may contain one line
+*
+* @param fd opened file descriptor
+* @param buf the buffer where the contents of the file will go, memory will be malloced
+* @return length of the string, -1 on error
+*
+* fd will be closed.
+*/
+size_t
+loadonelinerfd(int fd, char **buf)
+{
+	size_t j;
+	int i;
+
+	if ( (j = lloadfilefd(fd, buf, 3)) == (size_t) -1)
+		return j;
+
+	if (!*buf) {
+		errno = ENOENT;
+		return (size_t)-1;
+	}
+
+	do {
+		i = close(fd);
+	} while ((i == -1) && (errno == EINTR));
+
+	if (strlen(*buf) + 1 != j) {
+		errno = EINVAL;
+		i = -1;
+	}
+
+	if (i == -1) {
+		int e = errno;
+
+		free(*buf);
+
+		errno = e;
+		return (size_t)-1;
+	}
+
 	return j - 1;
 }
 
