@@ -295,6 +295,24 @@ If this file contains a positive integer number the name and IP address of the s
 be written to the \fIReceived:\fR line in the mail body if the client is authenticated. Use this if
 your users want some extra privacy.
 
+.TP 4
+.I nomail
+.B (user)
+Reject all mail to this user with the given message. If the file exists but is empty a general
+rejection message will be announced. The message may start with a rejection code like:
+
+.EX
+550 5.7.1
+.EE
+
+The rejection code must be of the form given in the example. The first digit of both blocks must match, 
+all other digits may be of any value. The two blocks must be separated by exactly one space. After the 
+second block must be at least one more space.
+
+If the code does not match this requirements or is not found at all the code given in the example will be 
+used. The rejection line may be of any length, the message will be folded if necessary. The file may contain 
+comments, but only one valid line.
+
 .SH "SEE ALSO"
 tcp-env(1),
 filterconf(5),

@@ -1,8 +1,6 @@
-#include <sys/mman.h>
-#include <sys/stat.h>
 #include <ctype.h>
 #include <syslog.h>
-#include <unistd.h>
+#include "control.h"
 #include "log.h"
 #include "netio.h"
 #include "qsmtpd.h"
@@ -23,46 +21,24 @@ int
 cb_nomail(const struct userconf *ds, char **logmsg, int *t)
 {
 	int rc = 0;		/* return code */
-	struct stat st;
+	size_t len;
 	char *rejmsg;
 	int fd;
 	int i;
 	int codebeg;		/* message begins with reject code */
 
-	if ( (fd = getfile(ds, "nomail", t)) < 0)
+	fd = getfile(ds, "nomail", t);
+	if (fd == -1)
 		return (errno != ENOENT) ? fd : 0;
-
-	rc = fstat(fd, &st);
-	if (rc == -1) {
-		int e = errno;
-		do {
-			i = close(fd);
-		} while ((i == -1) && (errno == EINTR));
-		errno = e;
-		return rc;
-	}
 
 	*logmsg = "nomail";
 
-	if (st.st_size == 0) {
-		do {
-			rc = close(fd);
-		} while ((rc == -1) && (errno == EINTR));
-		return rc ? rc : 2;
-	}
-
-	rejmsg = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (rejmsg == MAP_FAILED) {
-		int e = errno;
-		do {
-			i = close(fd);
-		} while ((i == -1) && (errno == EINTR));
-		errno = e;
-		return -1;
-	}
+	len = loadonelinerfd(fd, &rejmsg);
+	if (len == (size_t)-1)
+		return (errno != ENOENT) ? fd : 2;
 
 	codebeg = 0;
-	if (st.st_size > 10) {
+	if (len > 10) {
 		codebeg = 1;
 		for (i = 0; (i < 10) && codebeg; i++) {
 			switch (i) {
@@ -95,10 +71,7 @@ cb_nomail(const struct userconf *ds, char **logmsg, int *t)
 		rc = net_writen(netmsg);
 	}
 
-	munmap(rejmsg, st.st_size);
-	do {
-		i = close(fd);
-	} while ((i == -1) && (errno == EINTR));
+	free(rejmsg);
 
 	return rc ? rc : 1;
 }
