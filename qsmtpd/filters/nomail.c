@@ -74,6 +74,8 @@ cb_nomail(const struct userconf *ds, char **logmsg, int *t)
 			case 9:
 				codebeg = (rejmsg[i] == ' ');
 				break;
+			case 4: codebeg = (rejmsg[4] == rejmsg[0]);
+				break;
 			case 5:
 			case 7:
 				codebeg = (rejmsg[i] == '.');
