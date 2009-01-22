@@ -33,7 +33,7 @@
  * \warning if lloadfilefd can't get a lock on the input file (e.g. currently opened for
  *          writing by another process) the file is treated as non existent
  *
- * If this function returns <= 0 fd will be closed.
+ * The input file will be closed before this function returns.
  */
 size_t
 lloadfilefd(int fd, char **buf, const int striptab)
@@ -53,6 +53,9 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	while (flock(fd, LOCK_SH)) {
 		if (errno != EINTR) {
 			log_write(LOG_WARNING, "cannot lock input file");
+			do {
+				i = close(fd);
+			} while ((i == -1) && (errno == EINTR));
 			errno = ENOLCK;	/* not the right error code, but good enough */
 			return -1;
 		}
@@ -61,19 +64,28 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		return -1;
 	if (!st.st_size) {
 		*buf = NULL;
-		while ( (i = close(fd)) && (errno == EINTR));
+		do {
+			i = close(fd);
+		} while ((i == -1) && (errno == EINTR));
 		return i;
 	}
 	oldlen = st.st_size + 1;
 	inbuf = malloc(oldlen);
-	if (!inbuf)
+	if (!inbuf) {
+		do {
+			i = close(fd);
+		} while ((i == -1) && (errno == EINTR));
+		errno = ENOMEM;
 		return -1;
+	}
 	j = 0;
 	while (j < oldlen - 1) {
 		if ( ((i = read(fd, inbuf + j, oldlen - 1 - j)) == -1) && (errno != EINTR) ) {
 			int e = errno;
 
-			while (close(fd) && (errno == EINTR));
+			do {
+				i = close(fd);
+			} while ((i == -1) && (errno == EINTR));
 			errno = e;
 			return -1;
 		}
@@ -241,10 +253,6 @@ loadonelinerfd(int fd, char **buf)
 		errno = ENOENT;
 		return (size_t)-1;
 	}
-
-	do {
-		i = close(fd);
-	} while ((i == -1) && (errno == EINTR));
 
 	if (strlen(*buf) + 1 != j) {
 		errno = EINVAL;
