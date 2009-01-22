@@ -106,7 +106,7 @@ setup(void)
 		chunksize = chunk & 0xffffffff;
 	}
 
-	if ( (j = loadoneliner("control/outgoingip", &ipbuf, 0) ) >= 0 ) {
+	if ( (j = loadoneliner("control/outgoingip", &ipbuf, 1) ) >= 0 ) {
 		if (inet_pton(AF_INET6, ipbuf, &outip) <= 0) {
 			err_conf("parse error in control/outgoingip");
 		}
