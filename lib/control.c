@@ -107,7 +107,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			/* this line contains a comment: strip it */
 			while ( (inbuf[j] != '\0') && (inbuf[j] != '\n') )
 				inbuf[j++] = '\0';
-		} else if ((striptab  & 2) && ((inbuf[j] == ' ') || (inbuf[j] == '\t') )) {
+		} else if ((striptab & 2) && ((inbuf[j] == ' ') || (inbuf[j] == '\t') )) {
 			/* if there is a space or tab from here to the end of the line
 			 * should not be anything else */
 			do {
@@ -246,7 +246,7 @@ loadonelinerfd(int fd, char **buf)
 	size_t j;
 	int i;
 
-	if ( (j = lloadfilefd(fd, buf, 3)) == (size_t) -1)
+	if ( (j = lloadfilefd(fd, buf, 1)) == (size_t) -1)
 		return j;
 
 	if (!*buf) {
