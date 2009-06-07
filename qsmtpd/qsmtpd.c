@@ -1500,7 +1500,7 @@ main(int argc, char *argv[]) {
 		TAILQ_INIT(&head);		/* Initialize the recipient list. */
 	}
 
-	/* Check if parameters given. If they are given assume they are for auth checking*/
+	/* Check if parameters given. If they are given assume they are for auth checking */
 	auth_host = NULL;
 	if (argc >= 4) {
 		auth_check = argv[2];
