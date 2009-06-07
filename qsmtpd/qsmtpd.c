@@ -984,25 +984,29 @@ smtp_rcpt(void)
 	while (rcpt_cbs[j]) {
 		errmsg = NULL;
 		if ( (i = rcpt_cbs[j](&ds, &errmsg, &bt)) ) {
+			int t;
+
 			if (i == 5)
 				break;
 
 			if (i == 4) {
-				int t;
-
 				e = 1;
 				if (getsetting(&ds, "fail_hard_on_temp", &t))
 					i = 1;
 			}
 			if (i == 1) {
-				int t;
-
 				if (getsetting(&ds, "nonexist_on_block", &t))
 					i = 3;
 			}
 
-			if (i != 4)
+			if (i == -1) {
+				const char *logmess[] = {"error in filter for user ", r->to.s, NULL};
+
+				log_writen(LOG_WARNING, logmess);
+				e = 1;
+			} else if (i != 4) {
 				break;
+			}
 		}
 		j++;
 	}
