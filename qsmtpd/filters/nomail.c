@@ -1,7 +1,5 @@
 #include <ctype.h>
-#include <syslog.h>
 #include "control.h"
-#include "log.h"
 #include "netio.h"
 #include "qsmtpd.h"
 #include "userfilters.h"
@@ -35,31 +33,29 @@ cb_nomail(const struct userconf *ds, char **logmsg, int *t)
 
 	len = loadonelinerfd(fd, &rejmsg);
 	if (len == (size_t)-1)
-		return (errno != ENOENT) ? fd : 2;
+		return (errno != ENOENT) ? -1 : 2;
 
-	codebeg = 0;
-	if (len > 10) {
-		codebeg = 1;
-		for (i = 0; (i < 10) && codebeg; i++) {
-			switch (i) {
-			case 0:
-				codebeg = ((rejmsg[0] == '4') ||
-						(rejmsg[0] == '5'));
-				break;
-			case 3:
-			case 9:
-				codebeg = (rejmsg[i] == ' ');
-				break;
-			case 4: codebeg = (rejmsg[4] == rejmsg[0]);
-				break;
-			case 5:
-			case 7:
-				codebeg = (rejmsg[i] == '.');
-				break;
-			default:
-				codebeg = isdigit(rejmsg[i]);
-				break;
-			}
+	codebeg = (len > 10);
+
+	for (i = 0; (i < 10) && codebeg; i++) {
+		switch (i) {
+		case 0:
+			codebeg = ((rejmsg[0] == '4') ||
+					(rejmsg[0] == '5'));
+			break;
+		case 3:
+		case 9:
+			codebeg = (rejmsg[i] == ' ');
+			break;
+		case 4: codebeg = (rejmsg[4] == rejmsg[0]);
+			break;
+		case 5:
+		case 7:
+			codebeg = (rejmsg[i] == '.');
+			break;
+		default:
+			codebeg = isdigit(rejmsg[i]);
+			break;
 		}
 	}
 
