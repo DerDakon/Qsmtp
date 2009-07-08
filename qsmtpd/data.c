@@ -592,6 +592,14 @@ smtp_data(void)
 	return queue_result();
 loop_data:
 	rc = errno;
+	if (logmail[9] == NULL) {
+		if (rc == EINVAL) {
+			logmail[9] = "bad CRLF sequence}";
+			errmsg = "500 5.5.2 bad <CRLF> sequence\r\n";
+		} else {
+			logmail[9] = "read error}";
+		}
+	}
 	while (close(fd0[1]) && (errno == EINTR));
 	fd0[1] = 0;
 	/* eat all data until the transmission ends. But just drop it and return
