@@ -3,6 +3,7 @@
  */
 #include <sys/mman.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/stat.h>

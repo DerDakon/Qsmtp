@@ -1,6 +1,7 @@
 /** \file qsmtpd/filters/spf.c
  \brief reject mail based on SPF policy
  */
+#include <errno.h>
 #include <string.h>
 #include <syslog.h>
 #include "control.h"

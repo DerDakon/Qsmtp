@@ -3,6 +3,7 @@
  */
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <errno.h>
 #define __USE_GNU
 #include <string.h>
 #include <unistd.h>

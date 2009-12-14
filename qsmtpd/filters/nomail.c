@@ -1,4 +1,5 @@
 #include <ctype.h>
+#include <errno.h>
 #include "control.h"
 #include "netio.h"
 #include "qsmtpd.h"

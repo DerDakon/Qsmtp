@@ -6,6 +6,7 @@
 #include <syslog.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 #include <time.h>
 #include "netio.h"
 #include "log.h"
