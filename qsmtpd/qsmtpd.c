@@ -870,10 +870,15 @@ smtp_rcpt(void)
 	const char *logmsg[] = {"rejected message to <", NULL, "> from <", MAILFROM,
 					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL};
 	const char *okmsg[] = {"250 2.1.0 recipient <", NULL, "> OK", NULL};
+	int bugoffset = 0;
 
-	if (linein[8] != '<')
+	while ((bugoffset < linelen - 8) && (linein[8 + bugoffset] == ' '))
+		bugoffset++;
+	if (linein[8 + bugoffset] != '<')
 		return EINVAL;
-	i = addrparse(linein + 9, 1, &tmp, &more, &ds);
+	if (bugoffset != 0)
+		xmitstat.spacebug = 1;
+	i = addrparse(linein + 9 + bugoffset, 1, &tmp, &more, &ds);
 	if  (i > 0) {
 		return i;
 	} else if (i == -1) {
@@ -1096,10 +1101,16 @@ smtp_from(void)
 	struct statvfs sbuf;
 	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> is syntactically correct", NULL};
 	char *s;
+	int bugoffset = 0;
 
-	if (linein[10] != '<')
+	/* detect broken clients that have spaces between ':' and '<' */
+	while ((bugoffset < linelen - 10) && (linein[10 + bugoffset] == ' '))
+		bugoffset++;
+	if (linein[10 + bugoffset] != '<')
 		return EINVAL;
-	i = addrparse(linein + 11, 0, &(xmitstat.mailfrom), &more, &ds);
+	if (bugoffset != 0)
+		xmitstat.spacebug = 1;
+	i = addrparse(linein + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, &ds);
 	xmitstat.frommx = NULL;
 	xmitstat.fromdomain = 0;
 	free(ds.userpath.s);

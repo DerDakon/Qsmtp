@@ -33,6 +33,7 @@ struct xmitstat {
 	int fromdomain:3;		/**< result of the lookup for fromips */
 	unsigned int ipv4conn:1;	/**< if this connection is made from a real IPv6 address or not */
 	unsigned int datatype:1;	/**< the datatype announced by the client (7BIT or 8BITMIME) */
+	unsigned int spacebug:1;	/**< if client sends spaces between ':' and '<' */
 	unsigned long thisbytes;	/**< size of the message announced by the remote host */
 	string mailfrom;		/**< the current from address */
 	string authname;		/**< if SMTP AUTH is used (and successful) this is set */

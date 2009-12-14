@@ -12,6 +12,7 @@ SET(filterSrc
 	helo.c
 	usersize.c
 	forceesmtp.c
+	smtpbugs.c
 	namebl.c
 	wildcardns.c
 	nomail.c

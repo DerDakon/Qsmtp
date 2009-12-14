@@ -15,6 +15,7 @@ extern int cb_check2822(const struct userconf *, char **, int *);
 extern int cb_ipbl(const struct userconf *, char **, int *);
 extern int cb_badcc(const struct userconf *, char **, int *);
 extern int cb_fromdomain(const struct userconf *, char **, int *);
+extern int cb_smtpbugs(const struct userconf *, char **, int *);
 extern int cb_spf(const struct userconf *, char **, int *);
 extern int cb_soberg(const struct userconf *, char **, int *);
 extern int cb_helo(const struct userconf *, char **, int *);
@@ -29,6 +30,7 @@ rcpt_cb rcpt_cbs[] = {
 /* offline checks first */
 			cb_nomail,
 			cb_boolean,
+			cb_smtpbugs,
 			cb_usersize,
 			cb_soberg,
 			cb_ipbl,

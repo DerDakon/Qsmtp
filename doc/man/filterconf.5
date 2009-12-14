@@ -113,7 +113,7 @@ Block a mail where the combination of
 and 
 .I MAIL FROM 
 looks like SoberG:
-.I MAIL FROM:<foo@bar.com> 
+.I MAIL FROM:<foo@example.com>
 would lead to 
 .I HELO foo.com
 
@@ -130,15 +130,15 @@ helo is "[
 .I my IP address
 ]"
 .ie n .IP "bit 3" 4
-helo is syntactically invalid (e.g. contains invalid characters, is neither a full 
+helo is syntactically invalid (e.g. contains invalid characters, is neither a full
 qualified domain name nor an address literal)
 .ie n .IP "bit 4" 4
 currently unused
 .ie n .IP "bit 5" 4
 helo is my IP address, but not enclosed in '[]'. This is invalid and more or less a
 combination of
-.I 2 
-and 
+.I 2
+and
 .I 3
 .ie n .IP "all other bits:" 4
 currently unused
@@ -148,6 +148,23 @@ currently unused
 If the top level domain uses wildcard entries in their nameserver for nonexisting domains
 (e.g. museum does this) then this will deny such mails if the top level domain of the
 sender address and the MX (typically implicit A) match one entry in control/wildcardns.
+
+.IP "\fIsmtp_space_bug\fR" 4
+.BR (global)
+If the mail sender has a broken SMTP engine that inserts spaces at places not permitted by
+RfC 2822 the mail will get rejected. The following values are supported:
+.RS 4
+.ie n .IP "0:" 4
+permit these SMTP engines
+.ie n .IP "1:" 4
+permit if the sender uses ESMTP
+.ie n .IP "2:" 4
+permit if the sender uses STARTTLS or is authenticated
+.ie n .IP "3:" 4
+permit if the sender is authenticated
+.ie n .IP "255:" 4
+rejects all mails from those senders
+.RE
 
 .IP "\fIfail_hard_on_temp\fR" 4
 If any filter returns with a temporary reject (e.g. sending IP is listed in a IP blacklist)
