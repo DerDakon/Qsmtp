@@ -105,44 +105,46 @@ send_plain(const char *buf, const off_t len)
 				break;
 			}
 			switch (buf[off + chunk]) {
-				case '\r':	{
-							int last = (off + (off_t) ++chunk == len);
-		
-							llen = 0;
-							if (!last && (buf[off + chunk] == '\n')) {
-								chunk++;
-							} else {
-								memcpy(sendbuf + idx, buf + off, chunk);
-								off += chunk;
-								idx += chunk;
-								sendbuf[idx++] = '\n';
-								chunk = 0;
-							}
-							break;
-						}
-				case '\n':	{
-							/* bare '\n' */
-							memcpy(sendbuf + idx, buf + off, chunk);
-							off += chunk + 1;
-							idx += chunk;
-							sendbuf[idx++] = '\r';
-							sendbuf[idx++] = '\n';
-							chunk = 0;
-							llen = 0;
-							break;
-						}
-				case '.':	if (!llen) {
+				case '\r': {
+						int last = (off + (off_t) ++chunk == len);
+
+						llen = 0;
+						if (!last && (buf[off + chunk] == '\n')) {
 							chunk++;
+						} else {
 							memcpy(sendbuf + idx, buf + off, chunk);
 							off += chunk;
 							idx += chunk;
-							sendbuf[idx++] = '.';
+							sendbuf[idx++] = '\n';
 							chunk = 0;
-							break;
 						}
-						/* fallthrough */
-				default:	chunk++;
-						llen = 1;
+						break;
+					}
+				case '\n': {
+						/* bare '\n' */
+						memcpy(sendbuf + idx, buf + off, chunk);
+						off += chunk + 1;
+						idx += chunk;
+						sendbuf[idx++] = '\r';
+						sendbuf[idx++] = '\n';
+						chunk = 0;
+						llen = 0;
+						break;
+					}
+				case '.':
+					if (!llen) {
+						chunk++;
+						memcpy(sendbuf + idx, buf + off, chunk);
+						off += chunk;
+						idx += chunk;
+						sendbuf[idx++] = '.';
+						chunk = 0;
+						break;
+					}
+					/* fallthrough */
+				default:
+					chunk++;
+					llen = 1;
 			}
 		}
 		if (chunk) {
