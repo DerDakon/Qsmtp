@@ -173,8 +173,13 @@ date822(char *buf)
 	two_digit(buf + 29, tz % 60);
 }
 
-#define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
-					return rc
+#define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) { \
+					return rc; \
+				}
+
+#define WRITEL(fd, str)		if ( (rc = write(fd, str, strlen(str))) < 0) { \
+					return rc; \
+				}
 
 static int
 queue_header(void)
@@ -183,41 +188,46 @@ queue_header(void)
 	int rc;
 	char datebuf[35] = ">; ";		/* the date for the Received-line */
 	size_t i = (authhide && (xmitstat.authname.len || xmitstat.tlsclient)) ? 2 : 0;
-	const char afterprot[] = "A\n\tfor <";	/* the string to be written after the protocol */
+	/* do not bother that the next two messages are basically the same:
+	 * the compiler is usually clever enought to find that out, too */
+	const char afterprot[]     =  "\n\tfor <";	/* the string to be written after the protocol */
+	const char afterprotauth[] = "A\n\tfor <";	/* the string to be written after the protocol for authenticated mails*/
 	const char authstr[] = ") (auth=";
 
 /* write the "Received: " line to mail header */
-	WRITE(fd, "Received: from ", 15);
+	WRITEL(fd, "Received: from ");
 	if (!i) {
 		if (xmitstat.remotehost.s) {
 			WRITE(fd, xmitstat.remotehost.s, xmitstat.remotehost.len);
 		} else {
-			WRITE(fd, "unknown", 7);
+			WRITEL(fd, "unknown");
 		}
-		WRITE(fd, " ([", 3);
+		WRITEL(fd, " ([");
 		WRITE(fd, xmitstat.remoteip, strlen(xmitstat.remoteip));
-		WRITE(fd, "]", 1);
+		WRITEL(fd, "]");
 		if (xmitstat.helostr.len) {
-			WRITE(fd, " HELO ", 6);
+			WRITEL(fd, " HELO ");
 			WRITE(fd, xmitstat.helostr.s, xmitstat.helostr.len);
 		}
 	}
 	if (xmitstat.authname.len) {
-		WRITE(fd, authstr + i, 8 - i);
+		WRITE(fd, authstr + i, strlen(authstr) - i);
 		WRITE(fd, xmitstat.authname.s, xmitstat.authname.len);
 	} else if (xmitstat.remoteinfo) {
-		WRITE(fd, ") (", 3);
+		WRITEL(fd, ") (");
 		WRITE(fd, xmitstat.remoteinfo, strlen(xmitstat.remoteinfo));
 	}
-	WRITE(fd, ")\n\tby ", 6);
+	WRITEL(fd, ")\n\tby ");
 	WRITE(fd, heloname.s, heloname.len);
-	WRITE(fd, " (" VERSIONSTRING ") with ", 9 + strlen(VERSIONSTRING));
+	WRITEL(fd, " (" VERSIONSTRING ") with ");
 	if (chunked)
-		WRITE(fd, "(chunked) ", 10);
+		WRITEL(fd, "(chunked) ");
 	WRITE(fd, protocol, strlen(protocol));
 	/* add the 'A' to the end of ESMTP or ESMTPS as described in RfC 3848 */
-	i = xmitstat.authname.len ? 0 : 1;
-	WRITE(fd, afterprot + i, 8 - i);
+	if (xmitstat.authname.len != 0)
+		WRITEL(fd, afterprotauth);
+	else
+		WRITEL(fd, afterprot);
 	WRITE(fd, head.tqh_first->to.s, head.tqh_first->to.len);
 	date822(datebuf + 3);
 	datebuf[34] = '\n';
@@ -231,8 +241,10 @@ queue_header(void)
 }
 
 #undef WRITE
-#define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) \
-					goto err_write
+#undef WRITEL
+#define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) { \
+					goto err_write; \
+				}
 
 static int
 queue_envelope(const unsigned long msgsize)
