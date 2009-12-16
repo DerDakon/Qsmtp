@@ -19,7 +19,7 @@
 
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
 
-static const char *noqueue = "451 4.3.2 can not connect to queue\r\n";
+static const char noqueue[] = "451 4.3.2 can not connect to queue\r\n";
 static int fd0[2], fd1[2];		/* the fds to communicate with qmail-queue */
 static pid_t qpid;			/* the pid of qmail-queue */
 unsigned long maxbytes;
@@ -183,8 +183,8 @@ queue_header(void)
 	int rc;
 	char datebuf[35] = ">; ";		/* the date for the Received-line */
 	size_t i = (authhide && (xmitstat.authname.len || xmitstat.tlsclient)) ? 2 : 0;
-	const char *afterprot = "A\n\tfor <";	/* the string to be written after the protocol */
-	const char *authstr = ") (auth=";
+	const char afterprot[] = "A\n\tfor <";	/* the string to be written after the protocol */
+	const char authstr[] = ") (auth=";
 
 /* write the "Received: " line to mail header */
 	WRITE(fd, "Received: from ", 15);

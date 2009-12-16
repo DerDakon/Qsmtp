@@ -203,7 +203,7 @@ int tls_init()
 	X509_STORE *store;
 	X509_LOOKUP *lookup;
 	char *newprot;
-	const char *ciphfn = "control/tlsserverciphers";
+	const char ciphfn[] = "control/tlsserverciphers";
 	int e;
 
 	SSL_library_init();

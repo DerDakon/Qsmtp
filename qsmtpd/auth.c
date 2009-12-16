@@ -21,7 +21,7 @@
 #include "control.h"
 #include "qsauth.h"
 
-const char *tempnoauth = "454 4.3.0 AUTH temporaryly not available\r\n";
+const char tempnoauth[] = "454 4.3.0 AUTH temporaryly not available\r\n";
 
 static int err_child(void)
 {

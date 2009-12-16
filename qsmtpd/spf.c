@@ -18,6 +18,8 @@
 
 #define WSPACE(x) (((x) == ' ') || ((x) == '\t') || ((x) == '\r') || ((x) == '\n'))
 
+static const char spf_delimiters[] = ".-+,/_=";
+
 static int spfmx(const char *domain, char *token);
 static int spfa(const char *domain, char *token);
 static int spfip4(char *domain);
@@ -563,11 +565,10 @@ spf_makroparam(char *token, int *num, int *r, int *delim)
 	}
 	do {
 		int k;
-		const char *delims = ".-+,/_=";
 
 		t = token;
-		for (k = 0; k < 7; k++) {
-			if (delims[k] == *token) {
+		for (k = 0; k < strlen(spf_delimiters); k++) {
+			if (spf_delimiters[k] == *token) {
 				*delim |= (1 << k);
 				token++;
 				res++;
@@ -683,16 +684,15 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 			 }
 		}
 	} else {
-		const char *delims = ".-+,/_=";
 		char actdelim[8];
 		unsigned int k = 0;
 		int m;
 		char *d = news;
 
 		/* This constructs the list of actually used delimiters. */
-		for (m = 7; m >= 0; m--) {
+		for (m = strlen(spf_delimiters); m >= 0; m--) {
 			if (delim & (1 << m))
-				actdelim[k++] = delims[m];
+				actdelim[k++] = spf_delimiters[m];
 		}
 		actdelim[k] = '\0';
 
