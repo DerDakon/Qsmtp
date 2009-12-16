@@ -300,7 +300,7 @@ queue_envelope(const unsigned long msgsize)
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
 
-		logmail[4] = l->to.s;
+		logmail[6] = l->to.s;
 		if (l->ok) {
 			const char *at = strchr(l->to.s, '@');
 
