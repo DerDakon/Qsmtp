@@ -462,9 +462,11 @@ smtp_ehlo(void)
 	char *authtypes = NULL;
 
 	if (!ssl) {
-		protocol = realloc(protocol, 6);
-		if (!protocol)
+		char *tmp;
+		tmp = realloc(protocol, 6);
+		if (tmp == NULL)
 			return ENOMEM;
+		protocol = tmp;
 		memcpy(protocol, "ESMTP", 6);	/* also copy trailing '\0' */
 	}
 	if (helovalid(linein + 5) < 0)
@@ -472,8 +474,7 @@ smtp_ehlo(void)
 	if (auth_host && (!sslauth || (sslauth && ssl))) {
 		authtypes = smtp_authstring();
 
-		if (authtypes == NULL) {
-		} else {
+		if (authtypes != NULL) {
 			msg[next++] = "250-AUTH";
 			msg[next++] = authtypes;
 			msg[next++] = "\r\n";
