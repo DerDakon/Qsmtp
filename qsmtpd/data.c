@@ -224,10 +224,11 @@ queue_header(void)
 		WRITEL(fd, "(chunked) ");
 	WRITE(fd, protocol, strlen(protocol));
 	/* add the 'A' to the end of ESMTP or ESMTPS as described in RfC 3848 */
-	if (xmitstat.authname.len != 0)
+	if (xmitstat.authname.len != 0) {
 		WRITEL(fd, afterprotauth);
-	else
+	} else {
 		WRITEL(fd, afterprot);
+	}
 	WRITE(fd, head.tqh_first->to.s, head.tqh_first->to.len);
 	date822(datebuf + 3);
 	datebuf[34] = '\n';
@@ -252,7 +253,7 @@ queue_envelope(const unsigned long msgsize)
 	char s[ULSTRLEN];		/* msgsize */
 	char t[ULSTRLEN];		/* goodrcpt */
 	char bytes[] = " bytes, ";
-	const char *logmail[] = {"received ", "", "", "message to <", NULL, "> from <", MAILFROM,
+	const char *logmail[] = {"received ", "", "", "message ", "", "to <", NULL, "> from <", MAILFROM,
 					"> ", "from ip [", xmitstat.remoteip, "] (", s, bytes,
 					NULL, " recipients)", NULL};
 	char *authmsg = NULL;
@@ -263,10 +264,12 @@ queue_envelope(const unsigned long msgsize)
 		logmail[1] = "encrypted ";
 	if (chunked)
 		logmail[2] = "chunked ";
+	if (xmitstat.spacebug)
+		logmail[4] = "with SMTP space bug ";
 	ultostr(msgsize, s);
 	if (goodrcpt > 1) {
 		ultostr(goodrcpt, t);
-		logmail[13] = t;
+		logmail[15] = t;
 	} else {
 		bytes[6] = ')';
 		bytes[7] = '\0';
@@ -282,9 +285,9 @@ queue_envelope(const unsigned long msgsize)
 			memcpy(authmsg, "> (authenticated as ", 20);
 			memcpy(authmsg + 20, xmitstat.authname.s, xmitstat.authname.len);
 			memcpy(authmsg + 20 + xmitstat.authname.len, ") ", 3);
-			logmail[7] = authmsg;
+			logmail[9] = authmsg;
 		} else {
-			logmail[7] = "> (authenticated) ";
+			logmail[9] = "> (authenticated) ";
 		}
 	}
 
