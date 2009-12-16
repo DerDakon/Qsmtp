@@ -430,11 +430,13 @@ int
 smtp_helo(void)
 {
 	const char *s[] = {"250 ", heloname.s, NULL};
+	char *tmp;
 
 	freedata();
-	protocol = realloc(protocol, 5);
-	if (!protocol)
+	tmp = realloc(protocol, 5);
+	if (tmp == NULL)
 		return ENOMEM;
+	protocol = tmp;
 	memcpy(protocol, "SMTP", 5);
 	xmitstat.esmtp = 0;
 	xmitstat.spf = 0;
