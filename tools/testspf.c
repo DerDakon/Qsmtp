@@ -32,7 +32,7 @@ main(int argc, char *argv[])
 	memcpy(xmitstat.remoteip, "5f05:2000:80ad:5800::1", 23);
 	xmitstat.remotehost.s = "mx.example.org";
 	xmitstat.remotehost.len = 14;
-	
+
 	if (argc > 1) {
 		if (strcmp(argv[1], "-4")) {
 			arg = argv[1];
