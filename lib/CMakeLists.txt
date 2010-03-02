@@ -3,6 +3,7 @@ INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
 SET(QSMTP_LIB_SRCS
 	netio.c
 	dns.c
+	dns_helpers.c
 	log.c
 	control.c
 	ssl_timeoutio.c
