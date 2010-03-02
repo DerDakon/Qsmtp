@@ -1041,10 +1041,10 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 }
 
 /**
- * parse the domainspec 
+ * parse the domainspec
  *
  * @param token pointer to the string after the token
- * @param dparam omain here the expanded domain string is stored (memory will be malloced)
+ * @param dparam domain here the expanded domain string is stored (memory will be malloced)
  * @param ip4cidr the length of the IPv4 net (parsed if present in token, -1 if none given)
  * @param ip6cidr same for IPv6 net length
  * @returns:	 0 if everything is ok
