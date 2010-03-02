@@ -168,7 +168,9 @@ spflookup(const char *domain, const int rec)
 				case -1:	break;
 				default:	result = SPF_NONE;
 			}
-			token = n + flagnext;
+			token = n;
+			if (flagnext)
+				*n = ' ';
 		} else if (!strncasecmp(token, "redirect=", 9)) {
 			token += 9;
 			if (!redirect) {
