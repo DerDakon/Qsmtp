@@ -21,7 +21,6 @@ ADD_EXECUTABLE(Qremote
 )
 TARGET_LINK_LIBRARIES(Qremote
 	qsmtp_lib
-	ssl
 	owfat
 )
 
