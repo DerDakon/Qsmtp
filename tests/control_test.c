@@ -6,9 +6,10 @@
 #include <stdio.h>
 
 static const char contents[] =
+	"\t\t\n"
 	"domain.example.com\n\n"
-	"domain2.example.com\n\n"
-	"#comment.example.com\n\n"
+	"domain2.example.com\n  \n"
+	"#comment.example.com\n\t \n"
 	"whitespace.example.com \n"
 	"tab.example.org\t\n"
 	"ts.example.com\t \t\n\n"
