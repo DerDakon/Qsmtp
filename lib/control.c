@@ -60,8 +60,14 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			return -1;
 		}
 	}
-	if ( (i = fstat(fd, &st)) )
+	if ( (i = fstat(fd, &st)) ) {
+		int err = errno;
+		do {
+			i = close(fd);
+		} while ((i == -1) && (errno == EINTR));
+		errno = err;
 		return -1;
+	}
 	if (!st.st_size) {
 		*buf = NULL;
 		do {
@@ -357,6 +363,7 @@ finddomainfd(int fd, const char *domain, const int cl)
 
 	while (flock(fd, LOCK_SH)) {
 		if (errno != EINTR) {
+			while (close(fd) && (errno == EINTR));
 			log_write(LOG_WARNING, "cannot lock input file");
 			errno = ENOLCK;	/* not the right error code, but good enough */
 			return -1;
