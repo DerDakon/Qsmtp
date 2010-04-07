@@ -2,6 +2,7 @@
  \brief control file testcases
  */
 #include "control.h"
+#include "log.h"
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -61,4 +62,12 @@ int main(void)
 	}
 
 	return error;
+}
+
+void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
+{
+}
+
+inline void log_write(int priority __attribute__ ((unused)), const char *msg __attribute__ ((unused)))
+{
 }
