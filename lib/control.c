@@ -402,7 +402,7 @@ finddomainfd(int fd, const char *domain, const int cl)
  * @param domain domain name to find
  * @return 1 on match, 0 if none, -1 on error
  *
- * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, CR in file will cause trouble
+ * trailing spaces and tabs in a line are ignored, lines beginning with '#' are ignored, CR in file will cause trouble
  */
 int
 finddomainmm(const char *map, const off_t size, const char *domain)
