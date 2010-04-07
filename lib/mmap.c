@@ -23,7 +23,7 @@ mmap_fd(int fd, off_t *len)
 	if (!st.st_size)
 		return NULL;
 
-	*len = st.st_size + 1;
+	*len = st.st_size;
 	res = mmap(NULL, *len, PROT_READ, MAP_SHARED, fd, 0);
 
 	return (res == MAP_FAILED) ? NULL : res;

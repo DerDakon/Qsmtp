@@ -431,7 +431,7 @@ finddomainmm(const char *map, const off_t size, const char *domain)
 				len = cure - cur;
 			} else {
 				/* last entry, missing newline at end of file */
-				len = size - pos - 1;
+				len = size - pos;
 			}
 			while (len && ((*(cur + len - 1) == ' ') || (*(cur + len - 1) == '\t')))
 				len--;
