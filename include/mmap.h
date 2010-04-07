@@ -1,3 +1,6 @@
+/** \file mmap.h
+ \brief headers of functions for mapping files into memory
+ */
 #ifndef MMAP_H
 #define MMAP_H
 

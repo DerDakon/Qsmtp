@@ -1,5 +1,5 @@
 /** \file control.c
- \brief function to load data from configuration files
+ \brief functions to load data from configuration files
  */
 #include <sys/file.h>
 #include <sys/stat.h>
