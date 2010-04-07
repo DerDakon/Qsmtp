@@ -19,7 +19,7 @@ extern int ssl_rfd;
 extern int ssl_wfd;
 
 extern int ssl_timeoutread(time_t, char *, const int);
-extern inline int ssl_timeoutwrite(time_t, const char *, const int);
+extern int ssl_timeoutwrite(time_t, const char *, const int);
 
 extern int ssl_timeoutio(int (*fun)(), time_t, char *, int) __attribute__ ((nonnull (1)));
 
