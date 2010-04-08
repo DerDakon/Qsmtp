@@ -27,12 +27,12 @@ struct smtpcomm {
  */
 struct xmitstat {
 	unsigned int esmtp:1;		/**< if we are using ESMTP extensions */
+	unsigned int ipv4conn:1;	/**< if this connection is made from a real IPv6 address or not */
 	unsigned int check2822:2;	/**< if or not to check the message to strict compliance to RfC 2822 */
 	unsigned int helostatus:3;	/**< status of the given HELO/EHLO, see antispam.h for the meaning */
+	unsigned int datatype:1;	/**< the datatype announced by the client (7BIT or 8BITMIME) */
 	unsigned int spf:4;		/**< result of the SPF lookup */
 	int fromdomain:3;		/**< result of the lookup for fromips */
-	unsigned int ipv4conn:1;	/**< if this connection is made from a real IPv6 address or not */
-	unsigned int datatype:1;	/**< the datatype announced by the client (7BIT or 8BITMIME) */
 	unsigned int spacebug:1;	/**< if client sends spaces between ':' and '<' */
 	unsigned long thisbytes;	/**< size of the message announced by the remote host */
 	string mailfrom;		/**< the current from address */
