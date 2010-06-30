@@ -11,6 +11,14 @@
 #include "mmap.h"
 #include "log.h"
 
+/**
+ * map an already opened file into memory
+ *
+ * @param fd file descriptor of opened file
+ * @param len length of mapping will be stored here
+ * @return pointer to mapped area
+ * @retval NULL an error occured (errno is set)
+ */
 void *
 mmap_fd(int fd, off_t *len)
 {
@@ -29,6 +37,15 @@ mmap_fd(int fd, off_t *len)
 	return (res == MAP_FAILED) ? NULL : res;
 }
 
+/**
+ * map a file into memory
+ *
+ * @param fname path to file to map
+ * @param len length of mapping will be stored here
+ * @param fd file descriptor of opened file will be stored here
+ * @return pointer to mapped area
+ * @retval NULL an error occured (errno is set)
+ */
 void *
 mmap_name(const char *fname, off_t *len, int *fd)
 {
