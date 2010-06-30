@@ -44,7 +44,18 @@ b64decode(const unsigned char *in, size_t l, string *out)
 	for (i = 0; i < l; i += 4) {
 		for (j = 0; j < 4; j++) {
 			if (((i + j) < l) && (in[i + j] != B64PAD)) {
-				unsigned char *c = strchr(b64alpha, in[i + j]);
+				unsigned char *c;
+
+				if (in[i + j] == '\r') {
+					if (i + j + 1 == l)
+						return 1;
+					i++;
+					if (in[i + j] != '\n')
+						return 1;
+					i++;
+				}
+
+				c = strchr(b64alpha, in[i + j]);
 		
 				if (!c) {
 					return 1;
@@ -89,13 +100,17 @@ b64encode(const string *in, string *out)
 	unsigned char a, b, c;
 	size_t i;
 	char *s;
+	unsigned int oline = 0;
 
 	if (in->len == 0) {
 		STREMPTY(*out);
 		return 0;
 	}
 
-	out->s = malloc(in->len / 3 * 4 + 5);
+	/* how many output characters we need for the input stream */
+	i = in->len / 3 * 4;
+	/* add one CRLF every 76 characters and some space at the end for padding */
+	out->s = malloc(i + (i / 76) * 2 + 5);
 	if (!out->s) {
 		return -1;
 	}
@@ -108,16 +123,27 @@ b64encode(const string *in, string *out)
 
 		*s++ = b64alpha[a >> 2];
 		*s++ = b64alpha[((a & 3 ) << 4) | (b >> 4)];
+		oline += 2;
 
-		if (i + 1 >= in->len)
+		if (i + 1 >= in->len) {
 			*s++ = B64PAD;
-		else
+		} else {
 			*s++ = b64alpha[((b & 15) << 2) | (c >> 6)];
+			oline++;
+		}
 
-		if (i + 2 >= in->len)
+		if (i + 2 >= in->len) {
 			*s++ = B64PAD;
-		else
+		} else {
 			*s++ = b64alpha[c & 63];
+			if (oline >= 76) {
+				*s++ = '\r';
+				*s++ = '\n';
+				oline = 0;
+			} else {
+				oline++;
+			}
+		}
 	}
 	out->len = s - out->s;
 	*s = '\0';
