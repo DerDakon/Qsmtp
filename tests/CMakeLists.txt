@@ -15,3 +15,9 @@ ADD_EXECUTABLE(testcase_control
 		${CMAKE_SOURCE_DIR}/lib/mmap.c)
 
 ADD_TEST(NAME "Control" COMMAND testcase_control)
+
+ADD_EXECUTABLE(testcase_base64
+		base64_test.c
+		${CMAKE_SOURCE_DIR}/lib/base64.c)
+
+ADD_TEST(NAME "Base64" COMMAND testcase_base64)
