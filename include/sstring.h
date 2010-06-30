@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <sys/types.h>
 
 /** \struct string
  \brief record of a string
