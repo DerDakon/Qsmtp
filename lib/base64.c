@@ -1,10 +1,11 @@
 /** \file base64.c
  \brief Base64 encoding and decoding functions
  */
+#include "base64.h"
+#include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include "base64.h"
 #include "sstring.h"
 
 static const unsigned char *b64alpha = (unsigned char *)
@@ -31,6 +32,8 @@ b64decode(const unsigned char *in, size_t l, string *out)
 		STREMPTY(*out);
 		return 0;
 	}
+
+	assert(in != NULL);
 
 	out->s = malloc(l + 3);
 	if (!out->s) {
@@ -81,7 +84,7 @@ b64decode(const unsigned char *in, size_t l, string *out)
  * @return -1 on error, 0 on success
  */
 int
-b64encode(string *in, string *out)
+b64encode(const string *in, string *out)
 {
 	unsigned char a, b, c;
 	size_t i;
