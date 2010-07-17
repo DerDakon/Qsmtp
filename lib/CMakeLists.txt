@@ -1,8 +1,11 @@
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(
+		${CMAKE_SOURCE_DIR}/include
+		${OWFAT_INCLUDE_DIRS}
+)
 
 SET(QSMTP_LIB_SRCS
 	netio.c
-	dns.c
+	qdns.c
 	dns_helpers.c
 	log.c
 	control.c
@@ -23,7 +26,7 @@ SET(QSMTP_LIB_HDRS
 	../include/base64.h
 	../include/cdb.h
 	../include/control.h
-	../include/dns.h
+	../include/qdns.h
 	../include/fmt.h
 	../include/log.h
 	../include/match.h
@@ -39,4 +42,7 @@ SET(QSMTP_LIB_HDRS
 
 ADD_LIBRARY(qsmtp_lib ${QSMTP_LIB_SRCS} ${QSMTP_LIB_HDRS})
 
-TARGET_LINK_LIBRARIES(qsmtp_lib ${OPENSSL_LIBRARIES})
+TARGET_LINK_LIBRARIES(qsmtp_lib
+		${OPENSSL_LIBRARIES}
+		${OWFAT_LIBRARIES}
+)

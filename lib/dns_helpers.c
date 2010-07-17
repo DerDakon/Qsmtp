@@ -1,7 +1,7 @@
 /** \file dns_helpers.c
  \brief DNS helper functions that do no network actions
  */
-#include "dns.h"
+#include "qdns.h"
 
 /**
  * check if a string is a valid fqdn

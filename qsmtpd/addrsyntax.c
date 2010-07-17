@@ -7,7 +7,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include "sstring.h"
-#include "dns.h"
+#include "qdns.h"
 #include "qsmtpd.h"
 
 /**

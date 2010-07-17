@@ -2,8 +2,8 @@
  \brief connector functions for libowfat DNS functions
  */
 #include <stdlib.h>
-#include <libowfat/stralloc.h>
-#include <libowfat/dns.h>
+#include <stralloc.h>
+#include <dns.h>
 #include "libowfatconn.h"
 
 /**

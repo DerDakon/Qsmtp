@@ -6,7 +6,7 @@
 #include <netinet/in.h>
 #include <sys/queue.h>
 #include "sstring.h"
-#include "dns.h"
+#include "qdns.h"
 
 /*! \struct smtpcomm
  Describes a single SMTP command and it's transitions in the SMTP state machine.

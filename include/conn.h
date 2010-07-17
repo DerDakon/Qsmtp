@@ -5,7 +5,7 @@
 #define CONN_H
 
 #include <netinet/in.h>
-#include "dns.h"
+#include "qdns.h"
 
 extern void tryconn(struct ips *, const struct in6_addr *);
 extern void getmxlist(char *, struct ips **);

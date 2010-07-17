@@ -30,7 +30,6 @@ ADD_EXECUTABLE(Qsmtpd
 TARGET_LINK_LIBRARIES(Qsmtpd
 	qsmtp_lib
 	rcptfilters
-	owfat
 )
 
 INSTALL(TARGETS Qsmtpd DESTINATION bin COMPONENT core)

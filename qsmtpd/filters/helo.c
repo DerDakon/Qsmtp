@@ -19,7 +19,7 @@ cb_helo(const struct userconf *ds, char **logmsg, int *t)
 	long l;
 
 	if (xmitstat.helostatus) {
-		/* see dns.h for the meaning of helostatus */
+		/* see qdns.h for the meaning of helostatus */
 		l = getsettingglobal(ds, "helovalid", t);
 		if ((1 << xmitstat.helostatus) & l) {
 			const char *badtypes[] = {"HELO is my name", "HELO is [my IP]", "HELO is syntactically invalid",

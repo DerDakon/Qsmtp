@@ -16,7 +16,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include "netio.h"
-#include "dns.h"
+#include "qdns.h"
 #include "control.h"
 #include "log.h"
 #include "match.h"

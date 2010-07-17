@@ -10,7 +10,7 @@
 #include <syslog.h>
 #include <fcntl.h>
 #include <assert.h>
-#include "dns.h"
+#include "qdns.h"
 #include "control.h"
 #include "match.h"
 #include "log.h"

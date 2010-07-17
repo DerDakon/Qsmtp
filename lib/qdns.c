@@ -3,7 +3,7 @@
  */
 #include <errno.h>
 #include <string.h>
-#include "dns.h"
+#include "qdns.h"
 #include "libowfatconn.h"
 
 /**

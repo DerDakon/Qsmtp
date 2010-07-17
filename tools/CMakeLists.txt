@@ -11,13 +11,11 @@ ADD_EXECUTABLE(Qsurvey
 )
 TARGET_LINK_LIBRARIES(Qsurvey
 	qsmtp_lib
-	owfat
 )
 
 ADD_EXECUTABLE(testspf testspf.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
 TARGET_LINK_LIBRARIES(testspf
 	qsmtp_lib
-	owfat
 )
 
 ADD_EXECUTABLE(qpencode qp.c ${CMAKE_SOURCE_DIR}/qremote/qrdata.c)

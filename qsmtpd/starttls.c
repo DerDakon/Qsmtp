@@ -7,7 +7,7 @@
 #include "tls.h"
 #include "netio.h"
 #include "control.h"
-#include "dns.h"
+#include "qdns.h"
 #include "ssl_timeoutio.h"
 #include "qsmtpd.h"
 

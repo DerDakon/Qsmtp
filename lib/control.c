@@ -12,7 +12,7 @@
 #include <string.h>
 #include <strings.h>
 #include "log.h"
-#include "dns.h"
+#include "qdns.h"
 #include "control.h"
 #include "mmap.h"
 

@@ -1,4 +1,4 @@
-/** \file dns.h
+/** \file qdns.h
  \brief headers of functions for DNS lookups and address validating
  */
 #ifndef QSMTP_DNS_H
