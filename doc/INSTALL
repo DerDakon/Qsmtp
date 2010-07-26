@@ -1,7 +1,7 @@
 Your requirements:
  -IPv6 capable system (no need to have IPv6, but libc must know inet_pton and friends)
  -ucspi-tcp including IPv6 patches (get them at http://www.fefe.de/ucspi/)
- -libowfat (>=0.22, get from http://www.fefe.de/libowfat/)
+ -libowfat (>=0.25, get from http://www.fefe.de/libowfat/)
  -qmail
  -openssl
  -vpopmail (optional)
