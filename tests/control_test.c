@@ -42,6 +42,51 @@ static const char *absent[] = {
 	NULL
 };
 
+/* the even ones should be fines, the odd ones are off */
+static const char *onelines[] = {
+	"oneline",
+	"one\ntwo",
+	"\noneline",
+	"\noneline\ntwo",
+	"oneline\n",
+	"#ignore\nline\nline",
+	"#ignore\nline\n",
+	NULL
+};
+
+static int
+test_oneliner()
+{
+	unsigned int i;
+	int err = 0;
+
+	puts("== Running tests for loadoneliner()");
+
+	for (i = 0; onelines[i] != NULL; i++) {
+		char *buf = NULL;
+		size_t len;
+		int fd = open("oneliner_test", O_WRONLY | O_CREAT, 0600);
+		if (fd == -1) {
+			puts("ERROR: can not create temporary file for testcase");
+			return 1;
+		}
+		write(fd, onelines[i], strlen(onelines[i]));
+		close(fd);
+
+		len = loadoneliner("oneliner_test", &buf, 0);
+		if ((len == (size_t)-1) != (i & 1)) {
+			puts("ERROR: loadoneliner() test failed:");
+			puts(onelines[i]);
+		} else {
+			if (len != (size_t)-1)
+				free(buf);
+		}
+		unlink("oneliner_test");
+	}
+
+	return err;
+}
+
 int main(void)
 {
 	const char ctrl_testfile[] = "control_testfile";
@@ -129,6 +174,8 @@ int main(void)
 	}
 
 	unlink(ctrl_testfile);
+
+	error += test_oneliner();
 
 	return error;
 }
