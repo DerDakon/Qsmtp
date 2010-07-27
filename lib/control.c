@@ -153,7 +153,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		j = k;
 		if (k != oldlen + 1) {
 			*buf = realloc(inbuf, k);
-	    		if (!*buf) {
+			if (!*buf) {
 				free(inbuf);
 				j = (size_t)-1;
 			}
