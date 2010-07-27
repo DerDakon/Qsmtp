@@ -15,9 +15,11 @@
 <li><a href="#aoldiff">Why can't I send mails to AOL?</a></li>
 <li><a href="#localpartlendiff">Why can't I use ezmlm mailing lists?</a></li>
 <li><a href="#outlookbug">Why can't Outlook 2002 send mails?</a></li>
+<li><a href="#relayclients">RELAYCLIENT does not work</a></li>
 </ul>
 <h2 id="qremote-kernel-ipv6">Why is Qremote always failing with &quot;can't_connect_to_any_server&quot;</h2>
 <p>This happens when your libc supports IPv6 addresses, but your kernel does not. When Qremote tries to open an IPv6 socket to send the mail the syscall fails. Recompile with -DIPV4ONLY.</p>
+<p>If this does not solve your problem completely and you still get this error on some specific domains <a href="#aoldiff">read on</a>.</p>
 <h2 id="aoldiff">Why can't I send mails to AOL?</h2>
 <p>AOL uses a multiline opening in the SMTP connection. It's not absolutely clear if this is a violation of RfC 2821, but it's at least suspicios. Apply patches/AOL-greeting.diff and rebuild, then you can send mail to them again.</p>
 <h2 id="localpartlendiff">Why can't I use ezmlm mailing lists?</h2>
@@ -25,5 +27,7 @@
 <h2 id="#outlookbug">Why can't Outlook 2002 send mails?</h2>
 <p>Whoever wrote the SMTP engine of Outlook can't read RfCs. This is a property shared with programmers of many common internet worms as the Sober family. Outlook has a bug in their SMTP engine. It sends &quot;MAIL&nbsp;FROM:&nbsp;&lt;address@example.net&gt;&quot;, which is wrong. According to RfC 822 and 2822 there must not be whitespace between the colon and the opening brace. This is a very useful filter for Sober and friends as well as b0rken mailers like Outlook. If you don't want to disappoint your customers too much set smtp_space_bug in the filterconf gile to <em>1</em>. This will allow this space if the user is already authenticated. This way you will get rid of the worms without throwing out your Outlook users.<br />
 If anyone has knowledge if this is fixed in later revisions of Outlook please drop me a note.</p>
+<h2 id="relayclients">RELAYCLIENT does not work</h2>
+<p>Qsmtpd ignores most environment settings used by qmail-smtpd, including RELAYCLIENT. Use control/relayclients (IPv4) and control/relayclients6 (IPv6) to set the hosts and networks allowed for relaying. The program <i>addipbl</i> from tools directory will help you adding entries to this file. You can build it with &quot;make tools/addipbl&quot;.</p>
 </body>
 </html>
