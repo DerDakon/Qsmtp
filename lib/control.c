@@ -250,7 +250,6 @@ size_t
 loadonelinerfd(int fd, char **buf)
 {
 	size_t j;
-	int i;
 
 	if ( (j = lloadfilefd(fd, buf, 1)) == (size_t) -1)
 		return j;
@@ -261,16 +260,9 @@ loadonelinerfd(int fd, char **buf)
 	}
 
 	if (strlen(*buf) + 1 != j) {
-		errno = EINVAL;
-		i = -1;
-	}
-
-	if (i == -1) {
-		int e = errno;
-
 		free(*buf);
 
-		errno = e;
+		errno = EINVAL;
 		return (size_t)-1;
 	}
 
