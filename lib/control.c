@@ -148,13 +148,18 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			*buf = NULL;
 			return 0;
 		}
-		/* free the now useless memory at the end */
-		*buf = realloc(inbuf, k);
-		if (!*buf) {
-			free(inbuf);
-			j = -1;
-		} else
-			j = k;
+
+		/* free the now useless memory at the end (if any) */
+		j = k;
+		if (k != oldlen + 1) {
+			*buf = realloc(inbuf, k);
+	    		if (!*buf) {
+				free(inbuf);
+				j = (size_t)-1;
+			}
+		} else {
+			*buf = inbuf;
+		}
 	} else {
 		for (j = 0; j < oldlen; j++) {
 			if (inbuf[j]) {
