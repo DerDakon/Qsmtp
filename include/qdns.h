@@ -29,7 +29,7 @@ extern int ask_dnsmx(const char *, struct ips **) __attribute__ ((nonnull (1,2))
 extern int ask_dnsaaaa(const char *, struct ips **) __attribute__ ((nonnull (1,2)));
 extern int ask_dnsa(const char *, struct ips **) __attribute__ ((nonnull (1)));
 extern int ask_dnsname(const struct in6_addr *, char **) __attribute__ ((nonnull (1,2)));
-extern void freeips(struct ips *) __attribute__ ((nonnull (1)));
+extern void freeips(struct ips *);
 extern int domainvalid(const char *) __attribute__ ((pure)) __attribute__ ((nonnull (1)));
 extern void sortmx(struct ips **p) __attribute__ ((nonnull (1)));
 
