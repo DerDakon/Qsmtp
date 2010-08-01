@@ -35,8 +35,8 @@ int vget_dir(const char *domain, string *domaindir, char **realdomain)
 
 	char *cdb_key;
 	unsigned int cdbkeylen;
-	char *cdb_buf;
-	char *cdb_mmap = NULL;
+	const char *cdb_buf;
+	const char *cdb_mmap = NULL;
 	int err;
 	struct stat st;
 

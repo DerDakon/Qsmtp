@@ -6,6 +6,6 @@
 
 #include <sys/stat.h>
 
-extern char *cdb_seekmm(int, char *, unsigned int, char **, struct stat *);
+extern const char *cdb_seekmm(int, const char *, unsigned int, const char **, const struct stat *);
 
 #endif

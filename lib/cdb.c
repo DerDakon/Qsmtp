@@ -35,8 +35,26 @@ cdb_unpack(const unsigned char *buf)
 #endif
 }
 
-char *
-cdb_seekmm(int fd, char *key, unsigned int len, char **mm, struct stat *st)
+/**
+ * perform cdb search on the given file
+ *
+ * @param fd file descriptor to search (will be closed)
+ * @param key key to search for
+ * @param len length of key
+ * @param mm base of mmapped address space
+ * @param st file information
+ * @returns cdb value belonging to that key
+ * @retval NULL no key found in database or error
+ *
+ * If the function returns NULL and errno is 0 everything worked fine
+ * but there is no entry for key in the file. On error errno is set.
+ *
+ * The file is mmaped into memory, the result pointer will point inside that
+ * memory. The caller must munmap() the value returned in mm if the function
+ * does not return NULL. fd will be closed before the function returns.
+ */
+const char *
+cdb_seekmm(int fd, const char *key, unsigned int len, const char **mm, const struct stat *st)
 {
 	uint32_t pos;
 	uint32_t h;
