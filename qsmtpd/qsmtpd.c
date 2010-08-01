@@ -785,7 +785,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		} else if (!i) {
 			return -2;
 		}
-		j = vget_dir(at + 1, &(ds->domainpath), NULL);
+		result = vget_dir(at + 1, &(ds->domainpath), NULL);
 	} else {
 		const size_t liplen = strlen(xmitstat.localip);
 
@@ -797,16 +797,15 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 			if (strncmp(at + 2, xmitstat.localip, liplen))
 				goto nouser;
 		}
-		j = vget_dir(liphost.s, &(ds->domainpath), NULL);
+		result = vget_dir(liphost.s, &(ds->domainpath), NULL);
 	}
 
 /* get the domain directory from "users/cdb" */
-	if (j < 0) {
-		if (errno == ENOENT)
+	if (result < 0) {
+		if (result == ENOENT)
 			return 0;
-		result = errno;
 		goto free_and_out;
-	} else if (!j) {
+	} else if (!result) {
 		/* the domain is not local (or at least no vpopmail domain) so we can't say it the user exists or not:
 		 * -> accept the mail */
 		return 0;

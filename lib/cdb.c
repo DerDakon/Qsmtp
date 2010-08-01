@@ -13,7 +13,7 @@
 #define CDB_HASHSTART 5381
 
 static inline uint32_t
-cdb_hash(const unsigned char *buf, unsigned int len)
+cdb_hash(const char *buf, unsigned int len)
 {
 	uint32_t h;
 
@@ -54,7 +54,7 @@ cdb_unpack(const unsigned char *buf)
  * does not return NULL. fd will be closed before the function returns.
  */
 const char *
-cdb_seekmm(int fd, const char *key, unsigned int len, const char **mm, const struct stat *st)
+cdb_seekmm(int fd, const char *key, unsigned int len, char **mm, const struct stat *st)
 {
 	uint32_t pos;
 	uint32_t h;

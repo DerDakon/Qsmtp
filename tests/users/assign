@@ -1,0 +1,5 @@
++example.org-:example.org:89:89:/var/vpopmail/domains/example.org:-::
++example.com-:example.com:89:89:/var/vpopmail/domains/example.com:-::
++foo.example.org-:foo.example.org:89:89:/var/vpopmail/domains/foo.example.org:-::
++alias.example.org-:foo.example.org:89:89:/var/vpopmail/domains/foo.example.org:-::
+.
