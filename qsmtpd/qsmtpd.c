@@ -802,7 +802,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 
 /* get the domain directory from "users/cdb" */
 	if (result < 0) {
-		if (result == ENOENT)
+		if (result == -ENOENT)
 			return 0;
 		goto free_and_out;
 	} else if (!result) {
