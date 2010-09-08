@@ -1,7 +1,7 @@
-diff -aur vpopmail-5.4.0/Makefile.in vpopmail-5.4.0-eike/Makefile.in
---- vpopmail-5.4.0/Makefile.in	2004-02-02 06:24:19.000000000 +0100
-+++ vpopmail-5.4.0-eike/Makefile.in	2004-09-26 14:21:29.000000000 +0200
-@@ -784,7 +784,7 @@
+diff -Naurp vpopmail-5.4.30-orig//Makefile.in vpopmail-5.4.30/Makefile.in
+--- vpopmail-5.4.30-orig//Makefile.in	2009-12-10 20:33:49.000000000 +0100
++++ vpopmail-5.4.30/Makefile.in	2010-09-08 21:59:41.000000000 +0200
+@@ -1058,7 +1058,7 @@ install-exec-am:
  	done
  
  install-data-local:
@@ -9,11 +9,11 @@ diff -aur vpopmail-5.4.0/Makefile.in vpopmail-5.4.0-eike/Makefile.in
 +	$(INSTALL) -d -g @vpopgroup@ -m 0755 -o @vpopuser@ \
  	  $(DESTDIR)@vpopmaildir@/@domains_dir@
  
- 	echo "-I$(DESTDIR)@vpopmaildir@/include" > \
-diff -aur vpopmail-5.4.0/vpopmail.c vpopmail-5.4.0-eike/vpopmail.c
---- vpopmail-5.4.0/vpopmail.c	2004-01-13 16:59:42.000000000 +0100
-+++ vpopmail-5.4.0-eike/vpopmail.c	2004-09-26 14:47:46.000000000 +0200
-@@ -134,7 +134,7 @@
+ 	echo "-I@vpopmaildir@/include" > \
+diff -Naurp vpopmail-5.4.30-orig//vpopmail.c vpopmail-5.4.30/vpopmail.c
+--- vpopmail-5.4.30-orig//vpopmail.c	2009-12-10 20:33:49.000000000 +0100
++++ vpopmail-5.4.30/vpopmail.c	2010-09-08 22:01:51.000000000 +0200
+@@ -163,7 +163,7 @@ int vadddomain( char *domain, char *dir,
    if ( chdir(DOMAINS_DIR) != 0 ) {
  
      /* if it's not there, no problem, just try to create it */
@@ -22,7 +22,7 @@ diff -aur vpopmail-5.4.0/vpopmail.c vpopmail-5.4.0-eike/vpopmail.c
        chdir(calling_dir);
        return(VA_CAN_NOT_MAKE_DOMAINS_DIR);
      }
-@@ -1728,7 +1728,7 @@
+@@ -2385,7 +2385,7 @@ char *make_user_dir(char *username, char
    }
  
    /* create the users dir, including all the Maildir structure */ 
@@ -31,19 +31,19 @@ diff -aur vpopmail-5.4.0/vpopmail.c vpopmail-5.4.0-eike/vpopmail.c
      /* need to add some code to remove the hashed dirs we created above... */
      verrori = VA_EXIST_U_DIR;
      chdir(calling_dir);
-@@ -1791,7 +1791,7 @@
-   for(i=0;path[i]!=0;++i){
-     if ( (i > 0) && (path[i] == '/') ) {
+@@ -2452,7 +2452,7 @@ int r_mkdir(char *path, uid_t uid, gid_t
+   for(i=0; ;++i){
+     if ( (i > 0) && ((path[i] == '/') || (path[i] == '\0')) ) {
        tmpbuf[i] = 0;
--      if (mkdir(tmpbuf,VPOPMAIL_DIR_MODE) == 0)
-+      if (mkdir(tmpbuf,VPOPMAIL_PUBLIC_DIR_MODE) == 0)
+-      err = mkdir(tmpbuf,VPOPMAIL_DIR_MODE);
++      err = mkdir(tmpbuf,VPOPMAIL_PUBLIC_DIR_MODE);
+       if (err == 0)
          chown(tmpbuf, uid, gid);
-     }
-     tmpbuf[i] = path[i];
-diff -aur vpopmail-5.4.0/vpopmail.h vpopmail-5.4.0-eike/vpopmail.h
---- vpopmail-5.4.0/vpopmail.h	2003-12-17 05:21:10.000000000 +0100
-+++ vpopmail-5.4.0-eike/vpopmail.h	2004-09-26 14:47:15.000000000 +0200
-@@ -39,6 +39,7 @@
+       else if (errno != EEXIST) {
+diff -Naurp vpopmail-5.4.30-orig//vpopmail.h vpopmail-5.4.30/vpopmail.h
+--- vpopmail-5.4.30-orig//vpopmail.h	2009-12-10 20:33:49.000000000 +0100
++++ vpopmail-5.4.30/vpopmail.h	2010-09-08 21:59:41.000000000 +0200
+@@ -54,6 +54,7 @@
  #define VPOPMAIL_UMASK          0077
  #define VPOPMAIL_TCPRULES_UMASK 0022
  #define VPOPMAIL_DIR_MODE       0750
