@@ -460,8 +460,9 @@ smtp_ehlo(void)
 	char sizebuf[ULSTRLEN];
 	int rc;
 	char *authtypes = NULL;
+	const char *localport = getenv("TCPLOCALPORT");
 
-	if (!ssl) {
+	if (!ssl && ((localport == NULL) || (strcmp("LOCALPORT", "465") != 0))) {
 		char *tmp;
 		tmp = realloc(protocol, 6);
 		if (tmp == NULL)
