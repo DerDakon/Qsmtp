@@ -462,7 +462,7 @@ smtp_ehlo(void)
 	char *authtypes = NULL;
 	const char *localport = getenv("TCPLOCALPORT");
 
-	if (!ssl && ((localport == NULL) || (strcmp("LOCALPORT", "465") != 0))) {
+	if (!ssl) {
 		char *tmp;
 		tmp = realloc(protocol, 6);
 		if (tmp == NULL)
@@ -482,7 +482,7 @@ smtp_ehlo(void)
 		}
 	}
 /* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
-	if (!ssl) {
+	if (!ssl && ((localport == NULL) || (strcmp("LOCALPORT", "465") != 0))) {
 		int fd = open("control/servercert.pem", O_RDONLY);
 
 		if (fd >= 0) {
