@@ -483,8 +483,11 @@ smtp_authstring(void)
 			i++;
 		}
 
-		for (wpos = 0; wpos < slen; wpos++)
+		/* ret[0] is a space anyway */
+		while (wpos > 0) {
 			ret[wpos] = toupper(ret[wpos]);
+			wpos--;
+		}
 
 		return ret;
 	}
