@@ -525,7 +525,13 @@ smtp_authstring(void)
 		confpos += strlen(confbuf + confpos) + 1;
 	}
 
-	tmp = realloc(ret, wpos);
+	if (wpos == NULL) {
+		free(ret);
+		errno = ENOENT;
+		return NULL;
+	}
+
+	tmp = realloc(ret, wpos + 1);
 	if (tmp == NULL)
 		return ret;
 	else
