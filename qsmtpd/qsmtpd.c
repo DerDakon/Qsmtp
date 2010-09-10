@@ -117,7 +117,7 @@ err_badbounce(void)
 }
 
 /**
- * write and log error message if opening config file leads to an error
+ * \brief write and log error message if opening config file leads to an error
  *
  * @param fn name of the file that caused the error
  * @see err_control2
@@ -132,7 +132,7 @@ err_control(const char *fn)
 }
 
 /**
- * write and log error message if opening config file leads to an error
+ * \brief write and log error message if opening config file leads to an error
  *
  * @param msg additional message to log
  * @param fn name of the file that caused the error
@@ -405,7 +405,7 @@ connsetup(void)
 }
 
 /**
- * freedata - free all ressources allocated for mail transaction
+ * \brief free all ressources allocated for mail transaction
  */
 void
 freedata(void)
@@ -1270,6 +1270,16 @@ smtp_vrfy(void)
 	return netwrite("252 send some mail, I'll do my very best\r\n") ? errno : 0;
 }
 
+/**
+ * \brief check if there is already more input from network available
+ * \returns error code if data is available
+ * \retval 0 if no input
+ *
+ * This function should only be used in situations where the client should NOT
+ * have sent any more data, i.e. where he must wait for our reply before sending
+ * more. This is a sign of a broken SMTP engine on the other side, the input should
+ * not be used anymore.
+ */
 int
 hasinput(void)
 {
