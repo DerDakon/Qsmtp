@@ -188,9 +188,10 @@ spflookup(const char *domain, const int rec)
 			result = SPF_PASS;
 		}
 	}
-	free(txt);
-	if (result < 0)
+	if (result < 0) {
+		free(txt);
 		return result;
+	}
 	if (result == SPF_PASS) {
 		if (SPF_FAIL(prefix)) {
 			char *ex;
@@ -203,8 +204,10 @@ spflookup(const char *domain, const int rec)
 				}
 			}
 		}
+		free(txt);
 		return prefix;
 	}
+	free(txt);
 	if (redirect) {
 		char *e = redirect;
 
