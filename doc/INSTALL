@@ -40,7 +40,9 @@ How to install:
     environment variable so that Qsmtpd will not send it's own banner. You can use this if you want a custom banner
     or if you want to reduce latency, tcpserver will fork Qsmtpd after all his lookups are done, if you have a slow
     connection this allows the client to send his EHLO/HELO earlier.
-13. Test it.
+13. chmod 755 /var/qmail/queue /var/qmail/queue/lock
+    This allows Qsmtpd to check the free disk space on the queue filesystem.
+14. Test it.
     echo nobounce > /home/vpopmail/domains/one.of.your.domains/user/filterconf
     telnet yourmachine 25
     EHLO mybox.com
@@ -49,7 +51,7 @@ How to install:
     QUIT
 
     The reply to the RCPT TO: should tell you that this user does not accept bounce messages.
-14. If you want qmail-smtpd to accept IPv6 connections you probably also want to send on IPv6 links.
+15. If you want qmail-smtpd to accept IPv6 connections you probably also want to send on IPv6 links.
     First move qmail-remote out of the way, then link Qremote:
 
     mv /var/qmail/bin/qmail-remote /var/qmail/bin/qmail-remote.orig
