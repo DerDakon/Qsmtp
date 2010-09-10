@@ -44,7 +44,8 @@ TARGET_LINK_LIBRARIES(testcase_cdb
 		${MEMCHECK_LIBRARIES}
 )
 
-ADD_TEST(NAME "CDB" COMMAND testcase_cdb "${CMAKE_CURRENT_SOURCE_DIR}/cdb-demo")
+ADD_TEST(NAME "CDB"
+		COMMAND testcase_cdb "${CMAKE_CURRENT_SOURCE_DIR}")
 
 ADD_EXECUTABLE(testcase_authsetup
 		authsetup_test.c
