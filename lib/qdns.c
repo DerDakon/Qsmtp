@@ -1,4 +1,4 @@
-/** \file dns.c
+/** \file qdns.c
  \brief DNS query functions
  */
 #include <errno.h>
