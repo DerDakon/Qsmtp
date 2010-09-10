@@ -479,7 +479,7 @@ smtp_ehlo(void)
 #else
 	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n",
 #endif
-				NULL, NULL, NULL, NULL, NULL, NULL};
+				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 	unsigned int next = 3;	/* next index in to be used */
 	char sizebuf[ULSTRLEN];
 	int rc;
