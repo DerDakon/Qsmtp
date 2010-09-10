@@ -80,9 +80,9 @@ static unsigned int rcptcount;		/**< number of recipients in lists including rej
 static char *gcbuf;			/**< buffer for globalconf array (see below) */
 
 int relayclient;			/**< flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
-int rcpthfd;				/**< file descriptor of control/rcpthosts */
-char *rcpthosts;			/**< memory mapping of control/rcpthosts */
-off_t rcpthsize;			/**< sizeof("control/rcpthosts") */
+static int rcpthfd;			/**< file descriptor of control/rcpthosts */
+static char *rcpthosts;			/**< memory mapping of control/rcpthosts */
+static off_t rcpthsize;			/**< sizeof("control/rcpthosts") */
 unsigned long sslauth;			/**< if SMTP AUTH is only allowed after STARTTLS */
 unsigned long databytes;		/**< maximum message size */
 unsigned int goodrcpt;			/**< number of valid recipients */
@@ -424,6 +424,30 @@ freedata(void)
 	rcptcount = 0;
 	goodrcpt = 0;
 	badbounce = 0;
+}
+
+/**
+ * \brief fork() but clean up internal structures
+ *
+ * This will work exactly like fork(). If it returns 0 (i.e. you are the
+ * child) it will also clean the memory mappings etc. of the Qsmtpd process
+ * that the child doesn't need.
+ */
+pid_t
+fork_clean()
+{
+	pid_t ret = fork();
+
+	if (ret != 0)
+		return ret;
+
+	munmap(rcpthosts, rcpthsize);
+	while (close(rcpthfd)) {
+		if (errno != EINTR)
+			_exit(120);
+	}
+
+	return 0;
 }
 
 int

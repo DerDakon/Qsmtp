@@ -5,6 +5,7 @@
 #define QSMTPD_H
 #include <netinet/in.h>
 #include <sys/queue.h>
+#include <sys/types.h>
 #include "sstring.h"
 #include "qdns.h"
 
@@ -52,9 +53,6 @@ struct xmitstat {
 
 extern struct smtpcomm commands[];	/**< all supported SMTP commands */
 
-extern int rcpthfd;			/**< file descriptor of control/rcpthosts */
-extern char *rcpthosts;
-extern off_t rcpthsize;
 extern struct xmitstat xmitstat;
 extern char *protocol;
 extern char *auth_host;			/**< hostname for auth */
@@ -73,6 +71,7 @@ extern int authhide;			/**< hide source of authenticated mail */
 extern int err_control(const char *);
 extern void freedata(void);
 extern int hasinput(void);
+extern pid_t fork_clean();
 
 #define EBOGUS 1002
 #define EDONE 1003

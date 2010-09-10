@@ -135,14 +135,9 @@ authenticate(void)
 		fun = err_pipe;
 		goto out;
 	}
-	switch(child = fork()) {
+	switch(child = fork_clean()) {
 		case -1:	return err_fork();
 		case 0:		while (close(pi[1])) {
-					if (errno != EINTR)
-						_exit(1);
-				}
-				munmap(rcpthosts, rcpthsize);
-				while (close(rcpthfd)) {
 					if (errno != EINTR)
 						_exit(1);
 				}

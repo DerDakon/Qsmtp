@@ -75,7 +75,7 @@ queue_init(void)
 
 	/* DJB uses vfork at this point (qmail.c::open_qmail) which looks broken
 	 * because he modifies data before calling execve */
-	switch (qpid = fork()) {
+	switch (qpid = fork_clean()) {
 		case -1:	if ( (i = err_fork()) )
 					return i;
 				return EDONE;
@@ -90,11 +90,6 @@ queue_init(void)
 						_exit(120);
 				}
 				while (close(fd1[1])) {
-					if (errno != EINTR)
-						_exit(120);
-				}
-				munmap(rcpthosts, rcpthsize);
-				while (close(rcpthfd)) {
 					if (errno != EINTR)
 						_exit(120);
 				}
