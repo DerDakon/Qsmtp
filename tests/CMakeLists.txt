@@ -61,6 +61,17 @@ ENDIF (MEMCHECK_LIBRARIES)
 ADD_TEST(NAME "AUTH_Setup"
 		COMMAND testcase_authsetup "${CMAKE_CURRENT_SOURCE_DIR}/authsetup")
 
+ADD_EXECUTABLE(testcase_matchnet
+		matchnet_test.c
+		${CMAKE_SOURCE_DIR}/lib/match.c)
+
+IF (MEMCHECK_LIBRARIES)
+	TARGET_LINK_LIBRARIES(testcase_matchnet ${MEMCHECK_LIBRARIES})
+ENDIF (MEMCHECK_LIBRARIES)
+
+ADD_TEST(NAME "MatchNet"
+		COMMAND testcase_matchnet "${CMAKE_CURRENT_SOURCE_DIR}/authsetup")
+
 # 
 # SET_TARGET_PROPERTIES(testcase_spf
 # 		testcase_control
