@@ -40,7 +40,6 @@ main(int argc, char *argv[])
 	int af;
 	unsigned long minmask;
 	unsigned long maxmask;
-	size_t writelen;
 
 	if (argc == 1) {
 		fputs("Usage: ", stdout);
@@ -54,7 +53,7 @@ main(int argc, char *argv[])
 
 	/* Find out if these are IPv6 or IPv4 addresses. */
 	for (j = 2; j < argc; j++) {
-		struct in_addr ip;
+		struct in6_addr ip;
 		char cpbuf[INET6_ADDRSTRLEN + 1];
 		const char *sl = strchr(argv[j], '/');
 		size_t len;
@@ -86,18 +85,15 @@ main(int argc, char *argv[])
 		af = AF_INET;
 		minmask = 8;
 		maxmask = 32;
-		writelen = 4;
 	} else {
 		af = AF_INET6;
 		minmask = 32;
 		maxmask = 128;
-		writelen = 16;
 	}
 
 	for (j = 2; j < argc; j++) {
 		char *s, *t, c;
 		unsigned long m;
-		struct in_addr ip;
 
 		s = strchr(argv[j], '/');
 		if (!s) {
@@ -118,10 +114,17 @@ main(int argc, char *argv[])
 				continue;
 			}
 		}
-		mode = inet_pton(af, argv[j], &ip);
+		if (af == AF_INET) {
+			struct in_addr ip;
+			mode = inet_pton(AF_INET, argv[j], &ip.s_addr);
+			write(fd, &ip.s_addr, sizeof(ip.s_addr));
+		} else {
+			struct in6_addr ip;
+			mode = inet_pton(AF_INET6, argv[j], &ip.s6_addr);
+			write(fd, &ip.s6_addr, sizeof(ip.s6_addr));
+		}
 		assert(mode == 1);
 
-		write(fd, &ip.s_addr, writelen);
 		c = m & 0xff;
 		write(fd, &c, 1);
 	}
