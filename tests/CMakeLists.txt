@@ -70,7 +70,18 @@ TARGET_LINK_LIBRARIES(testcase_matchnet
 )
 
 ADD_TEST(NAME "MatchNet"
-		COMMAND testcase_matchnet "${CMAKE_CURRENT_SOURCE_DIR}/authsetup")
+		COMMAND testcase_matchnet)
+
+ADD_EXECUTABLE(testcase_hostname
+		hostname_test.c)
+
+TARGET_LINK_LIBRARIES(testcase_hostname
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "Hostname"
+		COMMAND testcase_hostname)
 
 # 
 # SET_TARGET_PROPERTIES(testcase_spf

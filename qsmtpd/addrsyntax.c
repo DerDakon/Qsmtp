@@ -92,9 +92,6 @@ parseaddr(const char *addr)
 	if (parselocalpart(addr) < 0)
 		return 0;
 
-	/* domain name too long */
-	if (strlen(at + 1) > 64)
-		return 0;
 	if (*addr == '@')
 		return domainvalid(addr + 1) ? 0 : 2;
 	if (*(at + 1) == '[') {
