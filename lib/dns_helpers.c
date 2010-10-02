@@ -7,8 +7,9 @@
  * check if a string is a valid fqdn
  *
  * @param host the name to check
- * @return 0 if everything is ok 
- *         1 on syntax error
+ * @return if the string is a valid domain name
+ * @retval 0 everything is ok
+ * @retval 1 on syntax error
  *
  * if there is a standard function doing the same throw this one away
  */

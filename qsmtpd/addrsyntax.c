@@ -15,6 +15,7 @@
  *
  * @param addr address to check
  * @return -1 on syntax error, length of localpart otherwise. If no '@' in addr, length of addr
+ * @retval -1 syntax error in localpart
  */
 static int __attribute__ ((pure)) __attribute__ ((nonnull (1)))
 parselocalpart(const char *const addr)
@@ -70,11 +71,12 @@ parselocalpart(const char *const addr)
  * check type and correctness of mail address
  *
  * @param addr address to check
- * @return 0: address invalid
- *         1: address only contains a domain name
- *         2: address contains @domain
- *         3: address is a full email address
- *         4: address is a full email address with IPv4 or IPv6 address literal
+ * @return status code indicating what type of address was found
+ * @retval 0 address invalid
+ * @retval 1 address only contains a domain name
+ * @retval 2 address contains @domain
+ * @retval 3 address is a full email address
+ * @retval 4 address is a full email address with IPv4 or IPv6 address literal
  */
 static int __attribute__ ((pure)) __attribute__ ((nonnull (1)))
 parseaddr(const char *addr)
@@ -147,7 +149,9 @@ checkaddr(const char *const addr)
  *              2: checks for badmailfrom/goodmailfrom lists
  * @param addr struct string to contain the address (memory will be malloced)
  * @param more here starts the data behind the first '>' behind the first '<' (or NULL if none)
- * @return >0 on success, -1 on error (e.g. ENOMEM), 0 if address is invalid
+ * @return >0 on success
+ * @retval 0 in is invalid
+ * @retval -1 an error occured (e.g. ENOMEM)
  */
 int
 addrsyntax(char *in, const int flags, string *addr, char **more)
@@ -235,6 +239,8 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
  *
  * @param helo helo to check
  * @return 0 on successful call, -1 on error
+ * @retval 0 check was completed (xmitstat.helostatus was updated)
+ * @retval -1 an error occured (usually ENOMEM)
  *
  * the status of the helo string ist stored in xmitstat.helostatus
  */
