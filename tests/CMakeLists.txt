@@ -62,12 +62,12 @@ ADD_TEST(NAME "AUTH_Setup"
 		COMMAND testcase_authsetup "${CMAKE_CURRENT_SOURCE_DIR}/authsetup")
 
 ADD_EXECUTABLE(testcase_matchnet
-		matchnet_test.c
-		${CMAKE_SOURCE_DIR}/lib/match.c)
+		matchnet_test.c)
 
-IF (MEMCHECK_LIBRARIES)
-	TARGET_LINK_LIBRARIES(testcase_matchnet ${MEMCHECK_LIBRARIES})
-ENDIF (MEMCHECK_LIBRARIES)
+TARGET_LINK_LIBRARIES(testcase_matchnet
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
 
 ADD_TEST(NAME "MatchNet"
 		COMMAND testcase_matchnet "${CMAKE_CURRENT_SOURCE_DIR}/authsetup")
