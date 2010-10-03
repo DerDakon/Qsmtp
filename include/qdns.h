@@ -37,18 +37,7 @@ extern void sortmx(struct ips **p) __attribute__ ((nonnull (1)));
 
 extern int checkaddr(const char *const) __attribute__ ((pure)) __attribute__ ((nonnull (1)));
 extern int addrsyntax(char *in, const int flags, string *addr, char **more) __attribute__ ((pure)) __attribute__ ((nonnull (1)));
-
-/* return codes of helovalid:
-	-1: error
-	 0: valid
-	 1: helo is my name
-	 2: helo is my IP address
-	 3: helo is syntactically invalid
-	 4: currently undefined
-	 5: 2+3 (helo is my IP address, but not enclosed in '[]')
-	 6, 7: currently undefined
-*/
-extern int helovalid(const char *) __attribute__ ((nonnull (1)));
+extern int addrspec_valid(const char * const addr);
 
 #ifndef INET_ADDRSTRLEN
 #define INET_ADDRSTRLEN 16

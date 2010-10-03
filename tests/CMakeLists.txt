@@ -83,6 +83,17 @@ TARGET_LINK_LIBRARIES(testcase_hostname
 ADD_TEST(NAME "Hostname"
 		COMMAND testcase_hostname)
 
+ADD_EXECUTABLE(testcase_xtext
+		xtext_test.c)
+
+TARGET_LINK_LIBRARIES(testcase_xtext
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "Xtext"
+		COMMAND testcase_xtext)
+
 # 
 # SET_TARGET_PROPERTIES(testcase_spf
 # 		testcase_control

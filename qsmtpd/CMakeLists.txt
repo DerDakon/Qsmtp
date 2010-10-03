@@ -10,7 +10,6 @@ SET(QSMTPD_SRCS
 	spf.c
 	vpop.c
 	data.c
-	addrsyntax.c
 )
 
 SET(QSMTPD_HDRS

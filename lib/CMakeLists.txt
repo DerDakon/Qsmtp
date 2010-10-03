@@ -20,6 +20,7 @@ SET(QSMTP_LIB_SRCS
 	xtext.c
 	mmap.c
 	fmt.c
+	addrsyntax.c
 )
 
 SET(QSMTP_LIB_HDRS

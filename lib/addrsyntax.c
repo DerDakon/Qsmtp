@@ -139,6 +139,20 @@ checkaddr(const char *const addr)
 }
 
 /**
+ * check if the given string is a valid addr-spec
+ *
+ * @param addrspec string to check
+ * @return if string is valid addrspec
+ * @retval 0 string is not valid
+ * @retval 1 string is valid
+ */
+int
+addrspec_valid(const char * const addr)
+{
+	return (parseaddr(addr) >= 3);
+}
+
+/**
  * check an email address for syntax errors
  *
  * @param in address to parse
@@ -229,84 +243,4 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	}
 
 	return x;
-}
-
-/**
- * check if the argument given to HELO/EHLO is syntactically correct
- *
- * @param helo helo to check
- * @return 0 on successful call, -1 on error
- * @retval 0 check was completed (xmitstat.helostatus was updated)
- * @retval -1 an error occured (usually ENOMEM)
- *
- * the status of the helo string ist stored in xmitstat.helostatus
- */
-int
-helovalid(const char *helo)
-{
-	char *s;
-	int rc;
-
-	xmitstat.helostatus = 0;
-	if (xmitstat.helostr.s)
-		free(xmitstat.helostr.s);
-
-	/* We have the length of both strings anyway so we might be able to see
-	 * the difference without looking at every single character in them */
-	if (xmitstat.remotehost.len == strlen(helo)) {
-		/* HELO is identical to reverse lookup: valid */
-		if (!strcasecmp(helo, xmitstat.remotehost.s)) {
-			STREMPTY(xmitstat.helostr);
-			return 0;
-		}
-	}
-
-	if ( (rc = newstr(&xmitstat.helostr, strlen(helo) + 1)) )
-		return rc;
-	/* +5-4=+1: also copy the '\0' to the new string */
-	memcpy(xmitstat.helostr.s, helo, xmitstat.helostr.len--);
-
-	if (!strcasecmp(helo, heloname.s)) {
-		xmitstat.helostatus = 0;
-		return 0;
-	}
-
-	s = getenv("TCPLOCALIP");
-	if (s) {
-		unsigned int sl = strlen(s);
-
-		/* clear sign of spammers */
-		if (!strcmp(helo, s)) {
-			xmitstat.helostatus = 5;
-			return 0;
-		}
-		/* I've never seen this happen, but it's also broken. It is valid if connection comes from
-		 * localhost and process can't figure out hostname, but why not use qmail-inject or sendmail then? */
-		if ((*helo == '[') && (helo[xmitstat.helostr.len - 1] == ']') && !strncmp(helo + 1, s, sl)) {
-			xmitstat.helostatus = 2;
-			return 0;
-		}
-	}
-	/* check if the argument is a valid domain name */
-	if (!domainvalid(helo)) {
-		xmitstat.helostatus = 0;
-		return 0;
-	}
-
-	xmitstat.helostatus = 3;
-	/* it's not: it must be a IP literal enclosed in [] */
-	if ((*helo != '[') || (!(s = strchr(xmitstat.helostr.s + 1, ']'))))
-		return 0;
-
-	/* there must not be any characters after the ']' */
-	if (!*(s+1)) {
-		struct in_addr ia;
-
-		/* make the address string end where the ']' is so that inet_pton works */
-		*s = '\0';
-		if (inet_pton(AF_INET, xmitstat.helostr.s + 1, &ia))
-			xmitstat.helostatus = 0;
-		*s = ']';
-	}
-	return 0;
 }
