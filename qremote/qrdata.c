@@ -39,43 +39,23 @@ need_recode(const char *buf, off_t len)
 	int res = 0;
 	int llen = 0;
 
-	/* if buffer is too short we don't need to check for long lines */
-	while (len-- > 0) {
+	while ((len-- > 0) && (res != 3)) {
+		if (llen > 998) {
+			res |= 2;
+		}
 		if (buf[len] <= 0) {
-			res = 1;
+			res |= 1;
 			llen++;
-			break;
 		} else if ((buf[len] == '\r') || (buf[len] == '\n')) {
 			llen = 0;
+			/* if buffer is too short we don't need to check for long lines */
+			if ((len < 998) && (res != 0))
+				return res;
 		} else {
 			llen++;
 		}
-		if (llen > 998) {
-			res = 2;
-			break;
-		}
 	}
-	if (res == 1) {
-		/* only scan for long lines */
-		while ((len-- > 0) && (llen <= 998)) {
-			if ((buf[len] == '\r') || (buf[len] == '\n')) {
-				llen = 0;
-			} else {
-				llen++;
-			}
-		}
-		if (llen > 998) {
-			res = 3;
-		}
-	} else if (res == 2) {
-		/* only scan for 8bit characters now */
-		while (len-- > 0) {
-			if (buf[len] <= 0) {
-				res = 3;
-				break;
-			}
-		}
-	}
+
 	return res;
 }
 
