@@ -65,7 +65,7 @@ static struct {
 		       "\r\n"
 		       "Hi,\r\n"
 		       "\r\n"
-		       "This is a test mail with a Euro sign: \244\r\n"
+		       "This is a test mail with an Euro sign: \244\r\n"
 		       "\r\n"
 		       "--------------0008\r\n"
 		       "Content-Type: application/pdf;\r\n"
