@@ -41,7 +41,7 @@ nibbletohex(char *dest, const char n)
  */
 void
 dotip6(char *buffer)
-{		
+{
 	int k;
 
 	for (k = 15; k >= 0; k--) {

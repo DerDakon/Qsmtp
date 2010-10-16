@@ -80,7 +80,7 @@ TAILQ_HEAD(tailhead, recip) head;
 
 /** \struct recip
  \brief list of recipients given for this transaction
- 
+
  All mail addresses given as recipients for the current mail transfer are stored in
  this list, regardless if they are accepted or not. If there are more recipients given
  then permitted by MAXRCPT they will be _not_ stored here, every following one will be

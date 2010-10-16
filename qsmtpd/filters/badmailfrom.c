@@ -54,9 +54,9 @@ lookupbmf(char *at, char **a)
 			rc = 2;
 			break;
 		}
-		
+
 		i++;
-	}	
+	}
 	free(a);
 	return rc;
 }

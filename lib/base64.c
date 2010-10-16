@@ -56,7 +56,7 @@ b64decode(const unsigned char *in, size_t l, string *out)
 				}
 
 				c = strchr(b64alpha, in[i + j]);
-		
+
 				if (!c) {
 					return 1;
 				}

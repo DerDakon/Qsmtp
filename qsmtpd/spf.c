@@ -884,7 +884,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 				} else {
 					if ((ch == 'i') || (ch == 'I')) {
 						char ip[64];
-	
+
 						dotip6(ip);
 						ip[63] = '\0';
 						if (spf_appendmakro(res, l, ip, 63, num, r, delim))
@@ -1116,7 +1116,7 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 				} else {
 					unsigned int l = strlen(d) + 1;
 					char *nd = malloc(l);
-					
+
 					if (!nd)
 						return -1;
 					memcpy(nd, d, l);

@@ -154,7 +154,7 @@ getmxlist(char *remhost, struct ips **mx)
 			thisip->priority = 65537;
 	}
 #endif
-	
+
 	if (!*mx) {
 		if (ask_dnsmx(remhost, mx)) {
 			write(1, "Z4.4.3 cannot find a mail exchanger for ", 40);

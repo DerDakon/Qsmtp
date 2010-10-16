@@ -115,7 +115,7 @@ readfc(void)
 			do {
 				if (!fgets(inp, sizeof(inp), fcfd))
 					goto out;
-				
+
 			} while (inp[strlen(inp) - 1] != '\n');
 		}
 		if (inp[0] == '#')
@@ -272,7 +272,7 @@ set(void)
 		if (!strncmp(linein + 4, params[i].name, params[i].len)) {
 			char *r;
 			int tmp;
-	
+
 			if (linein[4 + params[i].len] == '\n') {
 				tmp = 0;
 			} else {
@@ -439,7 +439,7 @@ editwrite(const int type)
 			err2("can't create tempfile ", fn);
 			return;
 		}
-	
+
 		switch (type) {
 			case 0:
 			case 1:
@@ -456,7 +456,7 @@ editwrite(const int type)
 				}
 				break;
 		}
-	
+
 		if (fclose(fcfd))
 			goto err;
 		if (rename(fn, editbuffer.name)) {
@@ -525,7 +525,7 @@ editadd(const int type)
 							if (tmp) {
 /* check localpart */
 								char *l = linein + 4;
-								
+
 								while (l < tmp) {
 									if ((*l < 32) || (*l >= 127))
 										goto parse;

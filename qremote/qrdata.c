@@ -355,7 +355,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart)
 						} else if ((rest >= 25) &&
 								!strncasecmp(buf + off + 1, "ontent-Transfer-Encoding:", 25)) {
 							const char *cr = buf + off;
-			
+
 							cenc.len = getfieldlen(cr, len - off);
 							if (cenc.len) {
 								cenc.s = cr;
@@ -723,7 +723,7 @@ send_bdat(void)
 	int i;
 
 	chunkbuf = mmap(NULL, chunksize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
-	
+
 	if (chunkbuf == MAP_FAILED) {
 		log_write(LOG_WARNING, "cannot mmap() buffer for chunked transfer, fallback to normal transfer\n");
 		send_data();

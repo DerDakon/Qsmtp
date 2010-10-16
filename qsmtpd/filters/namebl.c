@@ -35,7 +35,7 @@ cb_namebl(const struct userconf *ds, char **logmsg, int *t)
 
 	if ( (rc = loadlistfd(fd, &b, &a, domainvalid)) < 0)
 		return rc;
-	
+
 	if (!b)
 		return 0;
 

@@ -54,7 +54,7 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 	/* should only happen if !userpath.len */
 	if (ds->domainpath.len > ds->userpath.len) {
 		char *t;
-		
+
 		if (! (t = realloc(filename, ds->domainpath.len + len + 1))) {
 			free(filename);
 			return -1;

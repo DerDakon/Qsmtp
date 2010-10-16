@@ -165,7 +165,7 @@ tls_init(void)
 			tls_quitmsg(servercert, X509_verify_cert_error_string(r));
 		}
 		free(servercert);
-		
+
 		peercert = SSL_get_peer_certificate(ssl);
 		if (!peercert) {
 			write(1, "ZTLS unable to verify server ", 29);

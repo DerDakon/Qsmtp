@@ -58,7 +58,7 @@ cb_ipbl(const struct userconf *ds, char **logmsg, int *t)
 		if (i) {
 			const char *logmess[] = {"bad input data in ", blocktype[*t],
 						"ipbl file for address <", THISRCPT, ">", NULL};
-	
+
 			log_writen(LOG_ERR, logmess);
 		}
 		rc = 0;

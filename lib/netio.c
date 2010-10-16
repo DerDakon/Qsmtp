@@ -27,7 +27,7 @@ void DEBUG_IN(const size_t len)
 {
 	char buffer[len + 4];
 	size_t en = 0;
-	size_t i; 
+	size_t i;
 
 	if (!do_debug_io || in_data)
 		return;
@@ -53,7 +53,7 @@ void DEBUG_OUT(const char *s, const size_t l)
 	char buffer[l + 4];
 	int en = 0;
 	const char *b, *c;
-	
+
 	if (!do_debug_io || in_data)
 		return;
 
@@ -155,7 +155,7 @@ net_read(void)
 				/* copy back rest of the buffer back to lineinn */
 				memcpy(lineinn, c + 1, linenlen);
 			}
-			
+
 			if (*(c - 1) != '\r') {
 				errno = EINVAL;
 				return -1;
@@ -217,7 +217,7 @@ readin:
 	 * handles '.' duplication in data phase wrong this allows
 	 * smtp_data to get his '\n.\n' and throw him out. If he
 	 * is broken once why not twice? */
-	
+
 	DEBUG_IN(linelen);
 
 	return 0;
@@ -500,10 +500,10 @@ data_pending(void)
 			.tv_sec = 0,
 			.tv_usec = 0,
 		};
-	
+
 		FD_ZERO(&rfds);
 		FD_SET(0, &rfds);
-	
+
 		return select(1, &rfds, NULL, NULL, &tv);
 	}
 }

@@ -231,7 +231,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 		addr->s = malloc(len + 1);
 		if (!addr->s)
 			return -1;
-	
+
 		strncpy(addr->s, f, len);
 		addr->s[len] = '\0';
 		addr->len = len;

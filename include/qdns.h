@@ -9,7 +9,7 @@
 
 /** \struct ips
  \brief list of IP addresses for a given host
- 
+
  This struct represents a member of an IP address list. It is used as return value
  by the ask_dns* functions. A complete list can be freed by calling freeips(). If
  this list represents a list of MX entries the priority field contains the priority

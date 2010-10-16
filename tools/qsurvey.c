@@ -257,7 +257,7 @@ checkreply(const char *status, const char **pre, const int mask)
 		if (!ignore) {
 			if (pre && (m & mask)) {
 				int i = 0;
-	
+
 				while (pre[i]) {
 					write(1, pre[i], strlen(pre[i]));
 					i++;

@@ -358,7 +358,7 @@ queue_result(void)
 
 			ultostr(exitcode, ec);
 			log_writen(LOG_ERR, logmess);
- 
+
 			/* stolen from qmail.c::qmail_close */
 			switch(exitcode) {
 				case 11: netmsg = "554 5.1.3 envelope address too long for qq\r\n"; break;
@@ -465,7 +465,7 @@ smtp_data(void)
 	while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes) && linelen && (hops <= MAXHOPS)) {
 
 		if (linein[0] == '.') {
-			/* write buffer beginning at [1], we do not have to check if the second character 
+			/* write buffer beginning at [1], we do not have to check if the second character
 			 * is also a '.', RfC 2821 says only we should discard the '.' beginning the line */
 			WRITE(fd, linein + 1, linelen - 1);
 			msgsize += linelen + 1;

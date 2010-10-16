@@ -57,7 +57,7 @@ ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 			default:
 				return r; /* some other error */
 		}
-		
+
 		/* n is the number of descriptors that changed status */
 	} while (n > 0);
 
@@ -112,12 +112,12 @@ int
 ssl_timeoutrehandshake(time_t t)
 {
 	int r;
-	
+
 	SSL_renegotiate(ssl);
 	r = ssl_timeoutio(SSL_do_handshake, t, NULL, 0);
 	if (r <= 0 || ssl->type == SSL_ST_CONNECT)
 		return r;
-	
+
 	/* this is for the server only */
 	ssl->state = SSL_ST_ACCEPT;
 	return ssl_timeoutio(SSL_do_handshake, t, NULL, 0);

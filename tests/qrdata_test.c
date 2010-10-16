@@ -92,7 +92,7 @@ dots_detector(const char *msg, const size_t len)
 		fputs("invalid dot recoding\n", stderr);
 		exit(EINVAL);
 	}
-	
+
 }
 
 static void
@@ -132,7 +132,7 @@ recode_detector(const char *msg, const size_t len)
 	tmp_msg = strstr(tmp_msg + 1, ct_str);
 	tmp_orig = strstr(testpatterns[usepattern].msg, ct_str);
 	tmp_orig = strstr(tmp_orig + 1, ct_str);
-	
+
 	if (tmp_msg - msg != tmp_orig - testpatterns[usepattern].msg) {
 		fputs("The length to the second Content-Type header differs in original and recoded message\n", stderr);
 		exit(EINVAL);
@@ -297,7 +297,7 @@ log_write(int priority, const char *s)
 	fputs(s, stderr);
 	fputc('\n', stderr);
 	exit(EFAULT);
-	
+
 }
 
 int main(int argc, char **argv)

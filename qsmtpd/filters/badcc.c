@@ -59,10 +59,10 @@ cb_badcc(const struct userconf *ds, char **logmsg, int *t)
 				}
 			} else if (!strchr(a[i],'@')) {
 				size_t k = strlen(a[i]);
-	
+
 				if (k < np->to.len) {
 					char *c = np->to.s + (np->to.len - k);
-	
+
 					/* compare a[i] with the last k bytes of recipient address */
 					if (!strcasecmp(c, a[i]) && ((*(c - 1) == '.') || (*(c - 1) == '@'))) {
 						rc = 2;

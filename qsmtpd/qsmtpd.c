@@ -267,7 +267,7 @@ setup(void)
 		rcpthosts = mmap(NULL, rcpthsize, PROT_READ, MAP_SHARED, rcpthfd, 0);
 		if (rcpthosts == MAP_FAILED) {
 			int e = errno;
-	
+
 			log_write(LOG_ERR, "cannot mmap() control/rcpthosts");
 			while (close(rcpthfd) && (errno == EINTR));
 			errno = e;
@@ -887,7 +887,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	if (j < 4) {
 		/* at this point either @ is set or addrsyntax has already caught this */
 		i = finddomainmm(rcpthosts, rcpthsize, at + 1);
-	
+
 		if (i < 0) {
 			if (errno == ENOMEM) {
 				result = errno;

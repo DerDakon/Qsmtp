@@ -59,7 +59,7 @@ int inout_test(void)
 
 		if (outdata.len != indata.len) {
 			if (indata.s[indata.len - 1] == '\0') {
-				
+
 			}
 			puts("Error: outdata and indata have different length");
 			return 1;

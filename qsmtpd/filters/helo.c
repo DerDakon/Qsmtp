@@ -24,7 +24,7 @@ cb_helo(const struct userconf *ds, char **logmsg, int *t)
 		if ((1 << xmitstat.helostatus) & l) {
 			const char *badtypes[] = {"HELO is my name", "HELO is [my IP]", "HELO is syntactically invalid",
 						"", "HELO is my IP", "", ""};
-	
+
 			/* just shut up compiler: logmsg will never be modified */
 			*logmsg = (char *) badtypes[xmitstat.helostatus - 1];
 			return 2;
