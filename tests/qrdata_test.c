@@ -28,6 +28,10 @@ char *outbuf;
 size_t outlen;
 size_t outpos;
 
+#ifdef DEBUG_IO
+int in_data;
+#endif /* DEBUG_IO */
+
 static struct {
 	const char *name;
 	const char *msg;
