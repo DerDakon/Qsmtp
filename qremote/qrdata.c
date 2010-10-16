@@ -119,6 +119,7 @@ send_plain(const char *buf, const off_t len)
 						idx += chunk;
 						sendbuf[idx++] = '.';
 						chunk = 0;
+						llen = 1;
 						break;
 					}
 					/* fallthrough */
