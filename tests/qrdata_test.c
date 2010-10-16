@@ -2,6 +2,7 @@
 #include "qrdata.h"
 #include "qremote.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -48,6 +49,34 @@ static struct {
 		.filters = 1
 	},
 	{
+		.name = "8bit+base64",
+		.msg = "Subject: multipart recode test message\r\n"
+		       "Content-Type: multipart/mixed;\r\n"
+		       " boundary=\"------------0008\"\r\n"
+		       "\r\n"
+		       "This is a multi-part message in MIME format.\r\n"
+		       "--------------0008\r\n"
+		       "Content-Type: text/plain; charset=ISO-8859-15; format=flowed\r\n"
+		       "Content-Transfer-Encoding: 8bit\r\n"
+		       "\r\n"
+		       "Hi,\r\n"
+		       "\r\n"
+		       "This is a test mail with a Euro sign: \244\r\n"
+		       "\r\n"
+		       "--------------0008\r\n"
+		       "Content-Type: application/pdf;\r\n"
+		       " name=\"dummy.pdf\"\r\n"
+		       "Content-Transfer-Encoding: base64\r\n"
+		       "Content-Disposition: attachment;\r\n"
+		       " filename*0=\"dummy.pdf\"\r\n"
+		       "\r\n"
+		       "JVBE\r\n"
+		       "\r\n"
+		       "--------------0008--\r\n"
+		       "\r\n",
+		.filters = 2
+	},
+	{
 		.name = NULL
 	}
 };
@@ -64,6 +93,65 @@ dots_detector(const char *msg, const size_t len)
 		exit(EINVAL);
 	}
 	
+}
+
+static void
+recode_detector(const char *msg, const size_t len)
+{
+	static const char ct_str[] = "Content-Type:";
+	unsigned int ct_cnt = 0;
+	unsigned int ct_cnt_orig = 0;
+	const char *tmp_msg = msg;
+	const char *tmp_orig = testpatterns[usepattern].msg;
+
+	if (need_recode(msg, len) != 0) {
+		fputs("The message should not need recoding after recoding\n", stderr);
+		exit(EINVAL);
+	}
+
+	do {
+		tmp_msg = strstr(tmp_msg + 1, ct_str);
+		if (tmp_msg != NULL)
+			ct_cnt++;
+	} while (tmp_msg != NULL);
+
+	do {
+		tmp_orig = strstr(tmp_orig + 1, ct_str);
+		if (tmp_orig != NULL)
+			ct_cnt_orig++;
+	} while (tmp_orig != NULL);
+
+	assert(ct_cnt_orig == 3);
+
+	if (ct_cnt_orig != ct_cnt) {
+		fputs("There are not as much Content-Type: lines in both messages\n", stderr);
+		exit(EINVAL);
+	}
+
+	tmp_msg = strstr(msg, ct_str);
+	tmp_msg = strstr(tmp_msg + 1, ct_str);
+	tmp_orig = strstr(testpatterns[usepattern].msg, ct_str);
+	tmp_orig = strstr(tmp_orig + 1, ct_str);
+	
+	if (tmp_msg - msg != tmp_orig - testpatterns[usepattern].msg) {
+		fputs("The length to the second Content-Type header differs in original and recoded message\n", stderr);
+		exit(EINVAL);
+	}
+
+	if (memcmp(msg, testpatterns[usepattern].msg, tmp_msg - msg) != 0) {
+		fputs("The messages until the second Content-Type header differ\n", stderr);
+		exit(EINVAL);
+	}
+
+	tmp_msg = strstr(tmp_msg + 1, ct_str);
+	tmp_orig = strstr(tmp_orig + 1, ct_str);
+
+	/* compare only the length of tmp_orig here as .CRLF is appended */
+	if (strncmp(tmp_msg, tmp_orig, strlen(tmp_orig)) != 0) {
+		fputs("The messages differ after the third Content-Type header\n", stderr);
+fputs(msg, stderr);
+		exit(EINVAL);
+	}
 }
 
 /**
@@ -166,6 +254,9 @@ checkreply(const char *status, const char **pre, const int mask)
 	case 1:
 		dots_detector(outbuf, outpos);
 		break;
+	case 2:
+		recode_detector(outbuf, outpos);
+		break;
 	default:
 		exit(EFAULT);
 	}
@@ -240,6 +331,7 @@ int main(int argc, char **argv)
 	msgdata = testpatterns[usepattern].msg;
 	msgsize = strlen(msgdata);
 
+	ascii = need_recode(msgdata, msgsize);
 	outpos = 0;
 	send_data();
 
