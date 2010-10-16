@@ -632,7 +632,7 @@ send_qp(const char *buf, const off_t len)
 			off_t partlen = nextoff - boundary.len - 2;
 
 			nr = need_recode(buf + off, partlen);
-			if (!(smtpext & 0x008) || (nr & 2)) {
+			if ((!(smtpext & 0x008) && (nr & 1)) || (nr & 2)) {
 				send_qp(buf + off, partlen);
 			} else {
 				send_plain(buf + off, partlen);
