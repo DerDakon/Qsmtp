@@ -1,8 +1,8 @@
-Index: qsmtpd/addrsyntax.c
+Index: lib/addrsyntax.c
 ===================================================================
---- qsmtpd/addrsyntax.c	(revision 745)
-+++ qsmtpd/addrsyntax.c	(working copy)
-@@ -83,7 +83,7 @@
+--- lib/addrsyntax.c	(Revision 974)
++++ lib/addrsyntax.c	(Arbeitskopie)
+@@ -86,7 +86,7 @@
  	if (!at)
  		return 1 - domainvalid(addr);
  	/* localpart too long */
