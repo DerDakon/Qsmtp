@@ -94,7 +94,18 @@ TARGET_LINK_LIBRARIES(testcase_xtext
 ADD_TEST(NAME "Xtext"
 		COMMAND testcase_xtext)
 
-# 
+ADD_EXECUTABLE(testcase_qrdata
+		qrdata_test.c
+		${CMAKE_SOURCE_DIR}/qremote/qrdata.c
+		${CMAKE_SOURCE_DIR}/lib/mime.c
+)
+
+FOREACH(PATTERN simple crlfmixup dots)
+	ADD_TEST(NAME "QrData-${PATTERN}"
+			COMMAND testcase_qrdata ${PATTERN})
+ENDFOREACH(PATTERN)
+
+#
 # SET_TARGET_PROPERTIES(testcase_spf
 # 		testcase_control
 # 		testcase_base64
