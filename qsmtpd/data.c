@@ -52,12 +52,11 @@ rset_queue(void)
 	while (close(fd1[1]) && (errno == EINTR));
 }
 
-static const char *qqbin;
-
 static int
 queue_init(void)
 {
 	int i;
+	const char *qqbin = NULL;
 
 	if (pipe(fd0)) {
 		if ( (i = err_pipe()) )
@@ -73,18 +72,22 @@ queue_init(void)
 		return EDONE;
 	}
 
+	if ((xmitstat.authname.len != 0) || (xmitstat.tlsclient != NULL))
+		qqbin = getenv("QMAILQUEUEAUTH");
+
+	if ((qqbin == NULL) || (strlen(qqbin) == 0))
+		qqbin = getenv("QMAILQUEUE");
+
+	if ((qqbin == NULL) || (strlen(qqbin) == 0))
+			qqbin = "bin/qmail-queue";
+
 	/* DJB uses vfork at this point (qmail.c::open_qmail) which looks broken
 	 * because he modifies data before calling execve */
 	switch (qpid = fork_clean()) {
 		case -1:	if ( (i = err_fork()) )
 					return i;
 				return EDONE;
-		case 0:		if (!qqbin) {
-					qqbin = getenv("QMAILQUEUE");
-					if (!qqbin) {
-						qqbin = "bin/qmail-queue";
-					}
-				}
+		case 0:		
 				while (close(fd0[1])) {
 					if (errno != EINTR)
 						_exit(120);
