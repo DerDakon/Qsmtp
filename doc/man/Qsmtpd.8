@@ -313,6 +313,25 @@ If the code does not match this requirements or is not found at all the code giv
 used. The rejection line may be of any length, the message will be folded if necessary. The file may contain 
 comments, but only one valid line.
 
+.SH "Debugging"
+If
+.B Qsmtpd
+has been with the
+.I DEBUG_IO
+flag the contents of the SMTP transmissions can be recorded. They will
+be sent to the syslog daemon with facility mail and log level debug. The contents of the SMTP DATA phase will
+never be logged for privacy reasons.
+
+Logging is not enabled by default. If
+.B Qsmtpd
+finds an environment variable
+.I QSMTPD_DEBUG
+with a non-empty
+value or a file
+.I control/Qsmtpd_debug
+exists on startup it will log. Therefore it will usually not harm to
+compile that facility into the program.
+
 .SH "SEE ALSO"
 tcp-env(1),
 filterconf(5),

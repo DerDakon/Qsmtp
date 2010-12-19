@@ -212,10 +212,15 @@ setup(void)
 	}
 
 #ifdef DEBUG_IO
-	j = open("control/Qsmtpd_debug", O_RDONLY);
-	do_debug_io = (j > 0);
-	if (j > 0)
-		close(j);
+	tmp = getenv("QSMTPD_DEBUG");
+	if ((tmp != NULL) && (*tmp != '\0')) {
+		do_debug_io = 1;
+	} else {
+		j = open("control/Qsmtpd_debug", O_RDONLY);
+		do_debug_io = (j > 0);
+		if (j > 0)
+			close(j);
+	}
 #endif
 
 	if ( (j = loadoneliner("control/me", &heloname.s, 0)) < 0)
