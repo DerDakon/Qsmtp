@@ -93,9 +93,10 @@ setup(void)
 	}
 	heloname.len = j;
 
-	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY), &timeout, 320)) < 0) {
+	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY), &chunk, 320)) < 0) {
 		err_conf("parse error in control/timeoutremote");
 	}
+	timeout = chunk;
 
 	if ( (j = loadintfd(open("control/chunksizeremote", O_RDONLY), &chunk, 32768)) < 0) {
 		err_conf("parse error in control/chunksizeremote");

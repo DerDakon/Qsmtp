@@ -66,6 +66,7 @@ static void
 setup(void)
 {
 	int j;
+	unsigned long tmp;
 
 #undef USESYSLOG
 
@@ -85,9 +86,10 @@ setup(void)
 			err_conf("control/helohost contains invalid name");
 		}
 	}
-	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY), &timeout, 320)) < 0) {
+	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY), &tmp, 320)) < 0) {
 		err_conf("parse error in control/timeoutremote");
 	}
+	timeout = tmp;
 
 	heloname.len = j;
 
