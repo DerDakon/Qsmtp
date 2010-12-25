@@ -98,7 +98,7 @@ test_controlfiles(void)
 			.expect = NULL
 		}
 	};
-	unsigned int idx;
+	unsigned int idx = 0;
 	int errcnt = 0;
 
 	while (patterns[idx].subdir != NULL) {
