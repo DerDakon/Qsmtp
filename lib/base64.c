@@ -8,9 +8,9 @@
 #include <string.h>
 #include "sstring.h"
 
-static const unsigned char *b64alpha = (unsigned char *)
+static const char *b64alpha =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-#define B64PAD ((unsigned char) '=')
+#define B64PAD ((char) '=')
 
 /**
  * decode base64 string to plain text
@@ -44,7 +44,7 @@ b64decode(const unsigned char *in, size_t l, string *out)
 	for (i = 0; i < l; i += 4) {
 		for (j = 0; j < 4; j++) {
 			if (((i + j) < l) && (in[i + j] != B64PAD)) {
-				unsigned char *c;
+				char *c;
 
 				if (in[i + j] == '\r') {
 					if (i + j + 1 == l)
@@ -97,7 +97,6 @@ b64decode(const unsigned char *in, size_t l, string *out)
 int
 b64encode(const string *in, string *out)
 {
-	unsigned char a, b, c;
 	size_t i;
 	char *s;
 	unsigned int oline = 0;
@@ -117,9 +116,9 @@ b64encode(const string *in, string *out)
 	s = out->s;
 
 	for (i = 0; i < in->len; i += 3) {
-		a = in->s[i];
-		b = (i + 1 < in->len) ? in->s[i + 1] : 0;
-		c = (i + 2 < in->len) ? in->s[i + 2] : 0;
+		const unsigned char a = in->s[i];
+		const unsigned char b = (i + 1 < in->len) ? in->s[i + 1] : 0;
+		const unsigned char c = (i + 2 < in->len) ? in->s[i + 2] : 0;
 
 		*s++ = b64alpha[a >> 2];
 		*s++ = b64alpha[((a & 3 ) << 4) | (b >> 4)];
