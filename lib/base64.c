@@ -21,7 +21,7 @@ static const char *b64alpha =
  * @return -1 on error (errno will be set), 0 on success, 1 on parse error
  */
 int
-b64decode(const unsigned char *in, size_t l, string *out)
+b64decode(const char *in, size_t l, string *out)
 {
 	size_t i, j;
 	unsigned char a[4];

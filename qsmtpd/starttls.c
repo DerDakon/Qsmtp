@@ -148,7 +148,7 @@ tls_verify(void)
 			const ASN1_STRING *s = X509_NAME_get_entry(subj, n)->value;
 			if (s) {
 				email.len = s->length;
-				email.s = s->data;
+				email.s = (char *)s->data;
 			}
 		}
 

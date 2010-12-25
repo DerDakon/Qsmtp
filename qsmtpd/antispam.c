@@ -260,7 +260,7 @@ int
 lookupipbl(int fd)
 {
 	int i, rc;
-	char *map;		/* map the file here */
+	unsigned char *map;		/* map the file here */
 	struct stat st;
 
 	while (flock(fd,LOCK_SH)) {
