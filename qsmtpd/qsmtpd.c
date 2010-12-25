@@ -300,11 +300,12 @@ setup(void)
 	/* RfC 2821, section 4.5.3.2: "Timeouts"
 	 * An SMTP server SHOULD have a timeout of at least 5 minutes while it
 	 * is awaiting the next command from the sender. */
-	if ( (j = loadintfd(open("control/timeoutsmtpd", O_RDONLY), &timeout, 320)) ) {
+	if ( (j = loadintfd(open("control/timeoutsmtpd", O_RDONLY), &tl, 320)) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/timeoutsmtpd");
 		return e;
 	}
+	timeout = tl;
 	if ( (j = loadintfd(open("control/databytes", O_RDONLY), &databytes, 0)) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/databytes");
