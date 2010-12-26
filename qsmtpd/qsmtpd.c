@@ -89,9 +89,9 @@ unsigned int goodrcpt;			/**< number of valid recipients */
 int badbounce;				/**< bounce message with more than one recipient */
 struct xmitstat xmitstat;		/**< This contains some flags describing the transmission and it's status. */
 char *protocol;				/**< the protocol string to use (e.g. "ESMTP") */
-char *auth_host;			/**< hostname for auth */
-char *auth_check;			/**< checkpassword or one of his friends for auth */
-char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
+const char *auth_host;			/**< hostname for auth */
+const char *auth_check;			/**< checkpassword or one of his friends for auth */
+const char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
 char **globalconf;			/**< contents of the global "filterconf" file (or NULL) */
 string heloname;			/**< the fqdn to show in helo */
 string liphost;				/**< replacement domain if TO address is <foo@[ip]> */
@@ -1631,7 +1631,8 @@ smtploop(void)
 }
 
 int
-main(int argc, char *argv[]) {
+main(int argc, char **argv)
+{
 	if (setup()) {
 		/* setup failed: make sure we wait until the "quit" of the other host but
 		 * do not process any mail. Commands RSET, QUIT and NOOP are still allowed.

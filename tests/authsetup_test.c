@@ -16,9 +16,9 @@ SSL *ssl = NULL;
 unsigned long sslauth = 0;
 char linein[1002];
 size_t linelen;
-char *auth_host = NULL;
-char *auth_check = NULL;
-char **auth_sub = NULL;
+const char *auth_host = NULL;
+const char *auth_check = NULL;
+const char **auth_sub = NULL;
 
 static const char loginonly[] = " LOGIN";
 static const char plainonly[] = " PLAIN";
