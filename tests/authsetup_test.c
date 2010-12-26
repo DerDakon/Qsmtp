@@ -187,7 +187,7 @@ int main(int argc, char **argv)
 	errcnt += test_controlfiles();
 	errcnt += test_nonexistent();
 
-	return 0;
+	return errcnt;
 }
 
 void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
