@@ -85,7 +85,7 @@ int iface_test(void)
 {
 	string indata;
 	string outdata;
-	const unsigned char junk = 'j';
+	const char junk = 'j';
 	int err = 0;
 
 	puts("== Running base64 interface tests");
@@ -124,11 +124,11 @@ int iface_test(void)
 
 int errdetect_test(void)
 {
-	unsigned char testpattern[68];
-	unsigned char testdata[sizeof(testpattern)];
+	char testpattern[68];
+	char testdata[sizeof(testpattern)];
 	unsigned int pos = 0;
 	unsigned char i;
-	static const unsigned char badchars[] = "\"'\r\n,.-;:_#!$%&()";
+	static const char badchars[] = "\"'\r\n,.-;:_#!$%&()";
 
 	for (i = 'A'; i <= 'Z'; i++)
 		testpattern[pos++] = i;
