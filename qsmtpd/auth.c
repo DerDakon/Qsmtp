@@ -136,21 +136,23 @@ authenticate(void)
 		goto out;
 	}
 	switch(child = fork_clean()) {
-		case -1:	return err_fork();
-		case 0:		while (close(pi[1])) {
-					if (errno != EINTR)
-						_exit(1);
-				}
-				if (pi[0] != 3) {
-					if (dup2(pi[0],3) < 0) {
-						_exit(1);
-					}
-				}
-				sa.sa_handler = SIG_DFL;
-				sigemptyset(&(sa.sa_mask));
-				sigaction(SIGPIPE, &sa, NULL);
-				execlp(auth_check, auth_check, *auth_sub, NULL);
+	case -1:
+		return err_fork();
+	case 0:
+		while (close(pi[1])) {
+			if (errno != EINTR)
 				_exit(1);
+		}
+		if (pi[0] != 3) {
+			if (dup2(pi[0],3) < 0) {
+				_exit(1);
+			}
+		}
+		sa.sa_handler = SIG_DFL;
+		sigemptyset(&(sa.sa_mask));
+		sigaction(SIGPIPE, &sa, NULL);
+		execlp(auth_check, auth_check, *auth_sub, NULL);
+		_exit(1);
 	}
 	while (close(pi[0])) {
 		if (errno != EINTR)
@@ -425,11 +427,14 @@ smtp_auth(void)
 	for (i = 0; authcmds[i].text; i++) {
 		if (!strncasecmp(authcmds[i].text, type, strlen(authcmds[i].text))) {
 			switch (authcmds[i].fun()) {
-				case 0:	xmitstat.authname.s = user.s;
-					xmitstat.authname.len = user.len;
-					return netwrite("235 2.0.0 ok, go ahead\r\n") ? errno : 0;
-				case 1:	return netwrite("535 5.7.0 authorization failed\r\n") ? errno : EDONE;
-				case -1: return errno;
+			case 0:
+				xmitstat.authname.s = user.s;
+				xmitstat.authname.len = user.len;
+				return netwrite("235 2.0.0 ok, go ahead\r\n") ? errno : 0;
+			case 1:
+				return netwrite("535 5.7.0 authorization failed\r\n") ? errno : EDONE;
+			case -1:
+				return errno;
 			}
 		}
 	}
