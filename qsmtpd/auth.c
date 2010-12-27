@@ -137,6 +137,10 @@ authenticate(void)
 	}
 	switch(child = fork_clean()) {
 	case -1:
+		memset(pass.s, 0, pass.len);
+		free(pass.s);
+		free(user.s);
+		free(resp.s);
 		return err_fork();
 	case 0:
 		while (close(pi[1])) {
@@ -148,6 +152,12 @@ authenticate(void)
 				_exit(1);
 			}
 		}
+
+		memset(pass.s, 0, pass.len);
+		free(pass.s);
+		free(user.s);
+		free(resp.s);
+
 		memset(&sa, 0, sizeof(sa));
 		sa.sa_handler = SIG_DFL;
 		sigemptyset(&(sa.sa_mask));
@@ -164,8 +174,12 @@ authenticate(void)
 	WRITE(pass.s, pass.len + 1);
 	/* make sure not to leak password */
 	memset(pass.s, 0, pass.len);
+	free(pass.s);
+	STREMPTY(pass);
 	WRITE(resp.s, resp.len);
 	WRITE("", 1);
+	free(resp.s);
+	STREMPTY(resp);
 	while (close(pi[1])) {
 		if (errno != EINTR)
 			goto out;
@@ -182,6 +196,7 @@ authenticate(void)
 		goto out;
 	}
 	if (WEXITSTATUS(wstat)) {
+		free(user.s);
 		sleep(5);
 		return 1;
 	} /* no */
