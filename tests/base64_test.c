@@ -83,6 +83,68 @@ inout_test(void)
 }
 
 static int
+padding_test(void)
+{
+	string indata;	/**< input pattern */
+	string outdata;	/**< output pattern after encoding and decoding */
+	string bdata;	/**< intermediate base64 pattern */
+	size_t l;
+
+	puts("== Testing if encode and decode are reverse operations for different pattern lengths");
+
+	if (newstr(&indata, 512) != 0) {
+		puts("Error: not enough memory to run test");
+		return 1;
+	}
+
+	for (l = 1; l < 255; l++) {
+		size_t k;
+		for (k = 0; k < l; k++) {
+			indata.s[k] = (unsigned char)(k & 0xff);
+		}
+		indata.s[l] = '\0';
+		indata.len = l;
+
+		if (b64encode(&indata, &bdata) != 0) {
+			puts("Error: encoding failed");
+			return 1;
+		}
+
+		if (b64decode(bdata.s, bdata.len, &outdata) != 0) {
+			puts("Error: decoding failed");
+			return 1;
+		}
+
+		/* a trayling '\0' may be lost in the encoding due to padding bytes */
+		if ((indata.s[indata.len - 1] == '\0') && (outdata.len == indata.len - 1)) {
+			indata.len --;
+		}
+
+		if (outdata.len != indata.len) {
+			if (indata.s[indata.len - 1] == '\0') {
+
+			}
+			puts("Error: outdata and indata have different length");
+			return 1;
+		}
+
+		for (k = 0; k < outdata.len; k++) {
+			if (indata.s[k] != outdata.s[k]) {
+				puts("Error: input and output do not match");
+				return 1;
+			}
+		}
+
+		free(outdata.s);
+		free(bdata.s);
+	}
+
+	free(indata.s);
+
+	return 0;
+}
+
+static int
 iface_test(void)
 {
 	string indata;
@@ -197,6 +259,9 @@ main(void)
 		errcnt++;
 
 	if (errdetect_test())
+		errcnt++;
+
+	if (padding_test())
 		errcnt++;
 
 	return (errcnt != 0) ? 1 : 0;
