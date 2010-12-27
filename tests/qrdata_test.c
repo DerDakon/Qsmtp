@@ -110,6 +110,11 @@ static struct {
 		.filters = 0
 	},
 	{
+		.name = "noLFatEnd",
+		.msg = "Subject: missing linefeed\r\n\r\nfoo bar test",
+		.filters = 0
+	},
+	{
 		.name = "dots",
 		.msg = "Subject: dot-test\r\n.\r\n..\r\n.",
 		.filters = 1

@@ -124,7 +124,8 @@ FOREACH(PATTERN
 		"8bit+base64"
 		longBodyLine
 		longHeaderLine
-		8bitLF)
+		8bitLF
+		noLFatEnd)
 	ADD_TEST(NAME "QrData-${PATTERN}"
 			COMMAND testcase_qrdata ${PATTERN})
 ENDFOREACH(PATTERN)
