@@ -61,6 +61,23 @@ ENDIF (MEMCHECK_LIBRARIES)
 ADD_TEST(NAME "AUTH_Setup"
 		COMMAND testcase_authsetup "${CMAKE_CURRENT_SOURCE_DIR}/authsetup")
 
+ADD_EXECUTABLE(testcase_auth
+		auth_test.c
+		${CMAKE_SOURCE_DIR}/lib/base64.c
+		${CMAKE_SOURCE_DIR}/lib/control.c
+		${CMAKE_SOURCE_DIR}/lib/mmap.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/auth.c)
+
+IF (MEMCHECK_LIBRARIES)
+	TARGET_LINK_LIBRARIES(testcase_auth ${MEMCHECK_LIBRARIES})
+ENDIF (MEMCHECK_LIBRARIES)
+
+ADD_EXECUTABLE(auth_dummy auth_dummy.c)
+
+ADD_TEST(NAME "AUTH"
+		COMMAND testcase_auth "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy")
+
+
 ADD_EXECUTABLE(testcase_matchnet
 		matchnet_test.c)
 
