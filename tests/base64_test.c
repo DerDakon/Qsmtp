@@ -129,6 +129,7 @@ int errdetect_test(void)
 	unsigned int pos = 0;
 	unsigned char i;
 	static const char badchars[] = "\"'\r\n,.-;:_#!$%&()";
+	string odata;
 
 	for (i = 'A'; i <= 'Z'; i++)
 		testpattern[pos++] = i;
@@ -145,26 +146,38 @@ int errdetect_test(void)
 	puts("== Running error detection test");
 
 	for (i = 0; i < strlen(testpattern); i++) {
-		string odata;
-
+		STREMPTY(odata);
 		memcpy(testdata, testpattern, sizeof(testpattern));
 		testdata[i] += 128;
 		if (b64decode(testdata, sizeof(testdata) - 1, &odata) <= 0) {
 			puts("Error: invalid input stream is not rejected");
 			return 1;
 		}
+		free(odata.s);
 	}
 
 	for (i = 0; i < strlen(badchars); i++) {
-		string odata;
-
+		STREMPTY(odata);
 		memcpy(testdata, testpattern, sizeof(testpattern));
 		testdata[42] = badchars[i];
 		if (b64decode(testdata, sizeof(testdata) - 1, &odata) <= 0) {
 			puts("Error: invalid input stream is not rejected");
 			return 1;
 		}
+		free(odata.s);
 	}
+
+	STREMPTY(odata);
+	/* testing a string that ends in \r */
+	memcpy(testdata, testpattern, 16);
+	testdata[17] = '\r';
+	testdata[18] = '\0';
+
+	if (b64decode(testdata, 18, &odata) <= 0) {
+		puts("Error: invalid input stream ending in CR is not rejected");
+		return 1;
+	}
+	free(odata.s);
 
 	return 0;
 }
