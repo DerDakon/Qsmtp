@@ -132,7 +132,7 @@ static struct {
 		       "--------------0008\r\n"
 		       "Content-Type: text/plain; charset=ISO-8859-15; format=flowed\r\n"
 		       "Content-Transfer-Encoding: 8bit\r\n"
-		       "\r\n"
+		       "\r"
 		       "Hi,\n"
 		       "\n"
 		       "This is a test mail with an Euro sign: \244\n"

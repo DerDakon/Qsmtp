@@ -429,7 +429,6 @@ recode_qp(const char *buf, off_t len)
 				if (buf[off + chunk] == '\n') {
 					chunk++;
 				} else {
-					chunk++;
 					memcpy(sendbuf + idx, buf + off, chunk);
 					off += chunk;
 					idx += chunk;
