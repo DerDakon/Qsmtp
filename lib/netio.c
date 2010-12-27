@@ -451,7 +451,7 @@ net_readline(size_t num, char *buf)
 			memcpy(buf, lineinn, num);
 			memmove(lineinn, lineinn + num, linenlen - num);
 			linenlen -= num;
-			return 0;
+			return num;
 		} else {
 			memcpy(buf, lineinn, linenlen);
 			num -= linenlen;
