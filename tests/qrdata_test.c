@@ -115,6 +115,33 @@ static struct {
 		.filters = 1
 	},
 	{
+		.name = "8bitLF",
+		.msg = "Subject: 8bit recode test\r\n"
+		       "Content-Type: multipart/mixed;\r\n"
+		       " boundary=\"------------0008\"\r\n"
+		       "\r\n"
+		       "This is a multi-part message in MIME format.\r\n"
+		       "--------------0008\r\n"
+		       "Content-Type: text/plain; charset=ISO-8859-15; format=flowed\r\n"
+		       "Content-Transfer-Encoding: 8bit\r\n"
+		       "\n"
+		       "Hi,\n"
+		       "\n"
+		       "This is a test mail with an Euro sign: \244\n"
+		       "\r\n"
+		       "--------------0008\r\n"
+		       "Content-Type: text/plain; charset=ISO-8859-15; format=flowed\r\n"
+		       "Content-Transfer-Encoding: 8bit\r\n"
+		       "\r\n"
+		       "Hi,\n"
+		       "\n"
+		       "This is a test mail with an Euro sign: \244\n"
+		       "\r\n"
+		       "--------------0008--\r\n"
+		       "\r\n",
+		.filters = 0
+	},
+	{
 		.name = "8bit+base64",
 		.msg = "Subject: multipart recode test message\r\n"
 		       "Content-Type: multipart/mixed;\r\n"
