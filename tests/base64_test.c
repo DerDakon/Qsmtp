@@ -59,9 +59,6 @@ inout_test(void)
 		}
 
 		if (outdata.len != indata.len) {
-			if (indata.s[indata.len - 1] == '\0') {
-
-			}
 			puts("Error: outdata and indata have different length");
 			return 1;
 		}
@@ -97,11 +94,13 @@ padding_test(void)
 		return 1;
 	}
 
-	for (l = 1; l < 255; l++) {
+	for (l = 0; l < indata.len; l++) {
+		indata.s[l] = (unsigned char)(l & 0xff);
+	}
+
+	for (l = 511; l >= 1; l--) {
 		size_t k;
-		for (k = 0; k < l; k++) {
-			indata.s[k] = (unsigned char)(k & 0xff);
-		}
+
 		indata.s[l] = '\0';
 		indata.len = l;
 
@@ -121,9 +120,6 @@ padding_test(void)
 		}
 
 		if (outdata.len != indata.len) {
-			if (indata.s[indata.len - 1] == '\0') {
-
-			}
 			puts("Error: outdata and indata have different length");
 			return 1;
 		}
