@@ -234,6 +234,7 @@ checkcrlf(const char *msg, const size_t len)
 {
 	const char *tmp;
 	size_t pos;
+	size_t linestart = 0;
 
 	/* first check: message must end with CRLF.CRLF and that
 	 * may never occur within the message. */
@@ -251,6 +252,11 @@ checkcrlf(const char *msg, const size_t len)
 				fputs("detected stray CR in message\n", stderr);
 				exit(EINVAL);
 			}
+			if (pos - linestart > 1002) {
+				fputs("detected unrecoded long line\n", stderr);
+				exit(EINVAL);
+			}
+			linestart = pos;
 			break;
 		case '\n':
 			/* CRLF sequences would have been caught by '\r' case */
