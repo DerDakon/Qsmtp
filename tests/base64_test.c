@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 
-int inout_test(void)
+static int
+inout_test(void)
 {
 	string indata;	/**< input pattern */
 	string outdata;	/**< output pattern after encoding and decoding */
@@ -81,7 +82,8 @@ int inout_test(void)
 	return 0;
 }
 
-int iface_test(void)
+static int
+iface_test(void)
 {
 	string indata;
 	string outdata;
@@ -122,7 +124,8 @@ int iface_test(void)
 	return err;
 }
 
-int errdetect_test(void)
+static int
+errdetect_test(void)
 {
 	char testpattern[68];
 	char testdata[sizeof(testpattern)];
@@ -182,7 +185,8 @@ int errdetect_test(void)
 	return 0;
 }
 
-int main(void)
+int
+main(void)
 {
 	int errcnt = 0;
 
