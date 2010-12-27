@@ -120,6 +120,11 @@ static struct {
 		.filters = 1
 	},
 	{
+		.name = "8bitHeader",
+		.msg = "Subject: garbage \244\r\n\r\n",
+		.filters = 0
+	},
+	{
 		.name = "8bitLF",
 		.msg = "Subject: 8bit recode test\r"
 		       "Content-Type: multipart/mixed;\r"

@@ -125,10 +125,14 @@ FOREACH(PATTERN
 		longBodyLine
 		longHeaderLine
 		8bitLF
-		noLFatEnd)
+		noLFatEnd
+		8bitHeader)
 	ADD_TEST(NAME "QrData-${PATTERN}"
 			COMMAND testcase_qrdata ${PATTERN})
 ENDFOREACH(PATTERN)
+
+SET_TESTS_PROPERTIES(QrData-8bitHeader PROPERTIES
+		PASS_REGULAR_EXPRESSION "^D5\\.6\\.3 message contains unencoded 8bit data in message header")
 
 #
 # SET_TARGET_PROPERTIES(testcase_spf
