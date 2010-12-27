@@ -75,7 +75,6 @@ static string resp;
 static int
 authgetl(void) {
 	int i;
-	int nfirst = 0;	/* if this is the first loop: start at offset 0 */
 
 	STREMPTY(authin);
 	do {
@@ -91,13 +90,12 @@ authgetl(void) {
 		}
 		authin.s = s;
 
-		/* read the next 64 (or 65) bytes */
-		i = net_readline(64 + nfirst, authin.s + authin.len - nfirst);
+		/* read the next 64 bytes */
+		i = net_readline(64, authin.s + authin.len);
 		if (i < 0) {
 			free(authin.s);
 			return -1;
 		}
-		nfirst = 1;
 		authin.len += i;
 	} while (authin.s[authin.len - 1] != '\n');
 
