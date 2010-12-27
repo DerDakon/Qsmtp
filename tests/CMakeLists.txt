@@ -117,7 +117,7 @@ ADD_EXECUTABLE(testcase_qrdata
 		${CMAKE_SOURCE_DIR}/lib/mime.c
 )
 
-FOREACH(PATTERN simple crlfmixup dots "8bit+base64")
+FOREACH(PATTERN simple crlfmixup dots "8bit+base64" longBodyLine longHeaderLine)
 	ADD_TEST(NAME "QrData-${PATTERN}"
 			COMMAND testcase_qrdata ${PATTERN})
 ENDFOREACH(PATTERN)
