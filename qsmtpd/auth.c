@@ -148,6 +148,7 @@ authenticate(void)
 				_exit(1);
 			}
 		}
+		memset(&sa, 0, sizeof(sa));
 		sa.sa_handler = SIG_DFL;
 		sigemptyset(&(sa.sa_mask));
 		sigaction(SIGPIPE, &sa, NULL);
