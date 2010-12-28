@@ -229,7 +229,8 @@ wrap_line(const char *buf, off_t len)
 static void
 wrap_header(const char *buf, const off_t len)
 {
-	off_t pos = 0, off = 0;
+	off_t pos = 0;	/* position of what is already sent */
+	off_t off = 0;	/* start of current line relative to pos */
 	off_t ll = 0;	/* length of current line */
 
 	if (!(need_recode(buf, len) & 2)) {
@@ -240,10 +241,10 @@ wrap_header(const char *buf, const off_t len)
 	while (pos + off + ll < len) {
 		int l = 0;	/* length of CR, LF or CRLF sequence at end of line */
 
-		if (buf[pos + off] == '\r') {
-			l = 1;
+		if (buf[pos + off + ll] == '\r') {
+			l++;
 		}
-		if (buf[pos + off] == '\n') {
+		if ((pos + off + ll + l < len) && (buf[pos + off + ll + l] == '\n')) {
 			l++;
 		}
 		if (!l) {
@@ -256,6 +257,7 @@ wrap_header(const char *buf, const off_t len)
 
 			send_plain(buf + pos, off);
 			pos += off;
+			off = 0;
 			po = wrap_line(buf + pos, ll);
 			pos += po;
 			/* if wrap_line() has not send the entire line we can skip over
@@ -267,6 +269,7 @@ wrap_header(const char *buf, const off_t len)
 				pos += l;
 			}
 		} else {
+			off += ll + l;
 			ll = 0;
 		}
 	}

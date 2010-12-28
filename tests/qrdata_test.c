@@ -76,7 +76,7 @@ static struct {
 	},
 	{
 		.name = "longHeaderLine",
-		.msg = "Subject: long header line"
+		.msg = "From: <foo@bar.example.com>\r\nSubject: long header line"
 				"   50 12345678901234567890123456789012345678901234"
 				"  100 12345678901234567890123456789012345678901234"
 				"  150 12345678901234567890123456789012345678901234"
