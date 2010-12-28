@@ -495,6 +495,8 @@ log_write(int priority, const char *s)
 
 int main(int argc, char **argv)
 {
+	unsigned int ascii;
+
 	if (argc == 1) {
 		fputs("Usage: ", stderr);
 		fputs(argv[0], stderr);
@@ -532,7 +534,7 @@ int main(int argc, char **argv)
 	}
 
 	outpos = 0;
-	send_data();
+	send_data(ascii);
 
 	fputs("end of program reached when it should not\n", stderr);
 	return EFAULT;

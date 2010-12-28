@@ -21,7 +21,6 @@
 #include "fmt.h"
 
 const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "", "./Remote host said: ", NULL};
-int ascii;			/* if message is plain ASCII or not */
 const char *msgdata;		/* message will be mmaped here */
 off_t msgsize;		/* size of the mmaped area */
 static int lastlf = 1;		/* set if last byte sent was a LF */
@@ -692,7 +691,7 @@ send_qp(const char *buf, const off_t len)
 }
 
 void
-send_data(void)
+send_data(unsigned int recodeflag)
 {
 	int num;
 
@@ -708,7 +707,7 @@ send_data(void)
 	in_data = 1;
 #endif
 
-	if ((!(smtpext & 0x008) && (ascii & 1)) || (ascii & 6)) {
+	if ((!(smtpext & 0x008) && (recodeflag & 1)) || (recodeflag & 6)) {
 		successmsg[2] = "(qp recoded) ";
 		send_qp(msgdata, msgsize);
 	} else {
@@ -728,7 +727,7 @@ send_data(void)
 
 #ifdef CHUNKING
 void
-send_bdat(void)
+send_bdat(unsigned int recodeflag)
 {
 	off_t off = 0;		/* offset in incoming message data */
 	char *chunkbuf;
@@ -739,7 +738,7 @@ send_bdat(void)
 
 	if (chunkbuf == MAP_FAILED) {
 		log_write(LOG_WARNING, "cannot mmap() buffer for chunked transfer, fallback to normal transfer\n");
-		send_data();
+		send_data(recodeflag);
 	}
 
 	successmsg[2] = "chunked ";

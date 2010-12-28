@@ -438,6 +438,7 @@ main(int argc, char *argv[])
 	struct stat st;
 	char sizebuf[ULSTRLEN];
 	unsigned int lastmsg;	/* last message in array */
+	unsigned int recodeflag;
 
 	setup();
 
@@ -512,7 +513,7 @@ main(int argc, char *argv[])
 	}
 
 /* check if message is plain ASCII or not */
-	ascii = need_recode(msgdata, msgsize);
+	recodeflag = need_recode(msgdata, msgsize);
 
 	netmsg[0] = "MAIL FROM:<";
 	netmsg[1] = argv[2];
@@ -527,7 +528,7 @@ main(int argc, char *argv[])
 	}
 /* ESMTP 8BITMIME extension */
 	if (smtpext & SMTPEXT_8BITMIME) {
-		netmsg[lastmsg++] = (ascii & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
+		netmsg[lastmsg++] = (recodeflag & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
 	}
 	netmsg[lastmsg] = NULL;
 	net_writen(netmsg);
@@ -575,12 +576,12 @@ main(int argc, char *argv[])
 	successmsg[0] = rhost;
 #ifdef CHUNKING
 	if (smtpext & SMTPEXT_CHUNKING) {
-		send_bdat();
+		send_bdat(recodeflag);
 	} else {
 #else
 	{
 #endif
-		send_data();
+		send_data(recodeflag);
 	}
 	quit();
 }

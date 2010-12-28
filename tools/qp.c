@@ -96,8 +96,9 @@ int main(int argc, char *argv[])
 	if (msgdata == MAP_FAILED)
 		return errno;
 
-	ascii = need_recode(msgdata, msgsize);
-	send_data();
+	send_data(need_recode(msgdata, msgsize));
+
+	munmap((void *)msgdata, msgsize);
 
 	return 0;
 }
