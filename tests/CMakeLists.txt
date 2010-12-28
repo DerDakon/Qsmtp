@@ -74,9 +74,12 @@ ENDIF (MEMCHECK_LIBRARIES)
 
 ADD_EXECUTABLE(auth_dummy auth_dummy.c)
 
-ADD_TEST(NAME "AUTH"
-		COMMAND testcase_auth "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy")
-
+FOREACH (AUTHTEST short email long)
+	FOREACH (AUTHFLAG correct wrong)
+		ADD_TEST(NAME "AUTH-LOGIN-${AUTHTEST}-${AUTHFLAG}"
+				COMMAND testcase_auth "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy" ${AUTHTEST} ${AUTHFLAG})
+	ENDFOREACH (AUTHFLAG)
+ENDFOREACH (AUTHTEST)
 
 ADD_EXECUTABLE(testcase_matchnet
 		matchnet_test.c)

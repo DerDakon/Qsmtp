@@ -34,16 +34,17 @@ enum smtp_state {
 static enum smtp_state smtpstate;
 static unsigned int authstate;
 static unsigned int authtry;
+static int correct;
 
 int
 main(int argc, char **argv)
 {
-	int errcnt = 0;
-	int i;
-
-	if (argc != 2) {
-		const char *errmsg = "required argument missing: name of auth dummy program\n";
-		write(2, errmsg, strlen(errmsg));
+	if (argc < 2) {
+		fputs("required argument missing: name of auth dummy program\n", stderr);
+		return EINVAL;
+	}
+	if (argc != 4) {
+		fprintf(stderr, "usage: %s auth_dummy testname [correct|wrong]\n", argv[0]);
 		return EINVAL;
 	}
 
@@ -52,7 +53,24 @@ main(int argc, char **argv)
 	auth_sub[0] = autharg;
 	auth_sub[1] = NULL;
 
-	while (users[authtry / 2].username != NULL) {
+	while (users[authtry].testname != NULL) {
+		int errcnt = 0;
+		int i;
+
+		if (strcmp(users[authtry].testname, argv[2]) != 0) {
+			authtry++;
+			continue;
+		}
+
+		if (strcmp(argv[3], "correct") == 0) {
+			correct = 1;
+		} else if (strcmp(argv[3], "wrong") == 0) {
+			correct = 0;
+		} else {
+			fprintf(stderr, "unrecognized last argument, must be 'wrong' or 'correct'\n");
+			return EINVAL;
+		}
+
 		memset(&xmitstat, 0, sizeof(xmitstat));
 		memset(linein, 0, sizeof(linein));
 
@@ -62,12 +80,11 @@ main(int argc, char **argv)
 		smtpstate = SMTP_AUTH;
 		authstate = 0;
 
-		printf("testing user \"%s\" with %s password\n", users[authtry / 2].username,
-				(authtry & 1) ? "wrong" : "correct");
+		printf("testing user \"%s\" with %s password\n", users[authtry].username, argv[3]);
 
 		i = smtp_auth();
 		/* every even try will test a failed authentication */
-		if ((authtry & 1) == 0) {
+		if (correct) {
 			if (i != 0)
 				fprintf(stderr, "SMTP problem, error code %i\n", i);
 			if (smtpstate != SMTP_ACCEPT) {
@@ -76,9 +93,9 @@ main(int argc, char **argv)
 			} else if ((xmitstat.authname.len == 0) || (xmitstat.authname.s == NULL)) {
 				fprintf(stderr, "name of authenticated user was not set\n");
 				errcnt++;
-			} else if (strcmp(xmitstat.authname.s, users[authtry / 2].username) != 0) {
+			} else if (strcmp(xmitstat.authname.s, users[authtry].username) != 0) {
 				fprintf(stderr, "authenticated user name %s does not match expected %s\n",
-						xmitstat.authname.s, users[authtry / 2].username);
+						xmitstat.authname.s, users[authtry].username);
 				errcnt++;
 			}
 		} else {
@@ -91,13 +108,13 @@ main(int argc, char **argv)
 		}
 
 		free(xmitstat.authname.s);
+		free(auth_sub);
 
-		authtry++;
+		return errcnt;
 	}
 
-	free(auth_sub);
-
-	return errcnt;
+	fprintf(stderr, "unrecognized test name\n");
+	return EINVAL;
 }
 
 void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
@@ -183,10 +200,10 @@ size_t net_readline(size_t num, char *buf)
 		if ((authstate & 1) == 0)
 			lineoffs = 0;
 
-		if ((authtry & 1) || (authstate <= 1))
-			data = users[authtry / 2].username;
+		if (!correct || (authstate <= 1))
+			data = users[authtry].username;
 		else
-			data = users[authtry / 2].password;
+			data = users[authtry].password;
 
 		ret = authline(num, buf, data);
 
