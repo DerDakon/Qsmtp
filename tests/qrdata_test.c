@@ -1,10 +1,13 @@
+#define _ISOC99_SOURCE
 #include "netio.h"
 #include "qrdata.h"
 #include "qremote.h"
 
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -36,16 +39,19 @@ static struct {
 	const char *name;
 	const char *msg;
 	unsigned int filters;
+	unsigned int recodeflag;
 } testpatterns[] = {
 	{
 		.name = "simple",
 		.msg = "Subject: simple test\r\n\r\n\r\n",
-		.filters = 0
+		.filters = 3,
+		.recodeflag = 0
 	},
 	{
 		.name = "crlfmixup",
 		.msg = "Subject: CRLF test\r\r\n\n\r\n\n\r\r ",
-		.filters = 0
+		.filters = 3,
+		.recodeflag = 0
 	},
 	{
 		.name = "longBodyLine",
@@ -72,7 +78,8 @@ static struct {
 				" 1000 12345678901234567890123456789012345678901234"
 				" 1050 12345678901234567890123456789012345678901234 \r\n"
 				"another line\t\r\n",
-		.filters = 0
+		.filters = 0,
+		.recodeflag = 2
 	},
 	{
 		.name = "longHeaderLine",
@@ -98,32 +105,38 @@ static struct {
 				"  950 12345678901234567890123456789012345678901234"
 				" 1000 12345678901234567890123456789012345678901234"
 				" 1050 12345678901234567890123456789012345678901234\r\n\r\n",
-		.filters = 0
+		.filters = 3,
+		.recodeflag = 4
 	},
 	{
 		.name = "emptyLFheader",
 		.msg = "\ndata\r\n",
-		.filters = 0
+		.filters = 0,
+		.recodeflag = 0
 	},
 	{
 		.name = "emptyCRheader",
 		.msg = "\rdata\r\n",
-		.filters = 0
+		.filters = 0,
+		.recodeflag = 0
 	},
 	{
 		.name = "noLFatEnd",
 		.msg = "Subject: missing linefeed\r\n\r\nfoo bar test",
-		.filters = 0
+		.filters = 3,
+		.recodeflag = 0
 	},
 	{
 		.name = "dots",
 		.msg = "Subject: dot-test\r\n.\r\n..\r\n.",
-		.filters = 1
+		.filters = 1,
+		.recodeflag = 0
 	},
 	{
 		.name = "8bitHeader",
 		.msg = "Subject: garbage \244\r\n\r\n",
-		.filters = 0
+		.filters = 0,
+		.recodeflag = 1
 	},
 	{
 		.name = "8bitLF",
@@ -150,7 +163,8 @@ static struct {
 		       "\r"
 		       "--------------0008--\r"
 		       "\r",
-		.filters = 0
+		.filters = 0,
+		.recodeflag = 1
 	},
 	{
 		.name = "8bit+base64",
@@ -178,7 +192,8 @@ static struct {
 		       "\r\n"
 		       "--------------0008--\r\n"
 		       "\r\n",
-		.filters = 2
+		.filters = 2,
+		.recodeflag = 1
 	},
 	{
 		.name = NULL
@@ -256,6 +271,71 @@ recode_detector(const char *msg, const size_t len)
 fputs(msg, stderr);
 		exit(EINVAL);
 	}
+}
+
+/**
+ * \brief check if the wrapped header is still the same
+ * \param msg recoded message
+ * \param len length of recoded message
+ * 
+ * This compares the original and the recoded messages. It
+ * takes into account that the amount of whitespace may not
+ * be preserved after recoding.
+ */
+static void
+hdrwrap_detector(const char *msg, const size_t len)
+{
+	const char *tmp_orig = testpatterns[usepattern].msg;
+	size_t orig_off = 0;
+	size_t new_off = 0;
+
+	do {
+		if (isblank(msg[new_off]) && isblank(tmp_orig[orig_off])) {
+			do {
+				new_off++;
+			} while (isblank(msg[new_off]));
+			do {
+				orig_off++;
+			} while (isblank(tmp_orig[orig_off]));
+		}
+
+		if ((msg[new_off] == '\r') && ((tmp_orig[orig_off] == '\r') || (tmp_orig[orig_off] == '\n'))) {
+			new_off++;
+			assert(msg[new_off] == '\n');
+			new_off++;
+
+			if (tmp_orig[orig_off] == '\r')
+				orig_off++;
+			if (tmp_orig[orig_off] == '\n')
+				orig_off++;
+		} else if (msg[new_off] == '\r') {
+			new_off++;
+			assert(msg[new_off] == '\n');
+			new_off++;
+			assert(isblank(msg[new_off]));
+
+			do {
+				new_off++;
+			} while (isblank(msg[new_off]));
+		}
+
+		if ((msg[new_off] == '\r') && ((tmp_orig[orig_off] == '\r') || (tmp_orig[orig_off] == '\n'))) {
+			new_off++;
+			assert(msg[new_off] == '\n');
+			return;
+		}
+
+		if (msg[new_off] != tmp_orig[orig_off]) {
+			fprintf(stderr, "characters 0x%x (%c, offs %lu) and 0x%x (%c, offs %lu) do not match\n",
+					msg[new_off], msg[new_off], (unsigned long)new_off,
+					tmp_orig[orig_off], tmp_orig[orig_off], (unsigned long)orig_off);
+			fprintf(stderr, "orig message: %s\n", tmp_orig);
+			fprintf(stderr, "recoded message: %s\n", msg);
+			exit(EINVAL);
+		}
+		new_off++;
+		orig_off++;
+	} while (new_off < len);
 }
 
 /**
@@ -367,6 +447,9 @@ checkreply(const char *status, const char **pre, const int mask)
 	case 2:
 		recode_detector(outbuf, outpos);
 		break;
+	case 3:
+		hdrwrap_detector(outbuf, outpos);
+		break;
 	default:
 		exit(EFAULT);
 	}
@@ -442,6 +525,12 @@ int main(int argc, char **argv)
 	msgsize = strlen(msgdata);
 
 	ascii = need_recode(msgdata, msgsize);
+
+	if (ascii != testpatterns[usepattern].recodeflag) {
+		fprintf(stderr, "need_recode() returned 0x%x, expected was 0x%x\n", ascii, testpatterns[usepattern].recodeflag);
+		return EFAULT;
+	}
+
 	outpos = 0;
 	send_data();
 

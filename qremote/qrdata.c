@@ -31,29 +31,40 @@ static int lastlf = 1;		/* set if last byte sent was a LF */
  *
  * @param buf buffer to scan
  * @param len length of buffer
- * @return logical or of: 1 if buffer has 8bit characters, 2 if buffer contains line longer 998 chars
+ * @return logical or of:
+ *   - 1: buffer has 8bit characters
+ *   - 2: buffer contains line longer 998 chars
+ *   - 4: header contains line linger 998 chars
  */
-int
+unsigned int
 need_recode(const char *buf, off_t len)
 {
 	int res = 0;
 	int llen = 0;
+	int in_header = 1;
+	off_t pos = 0;
 
-	while ((len-- > 0) && (res != 3)) {
+	while ((pos < len) && (res != 3)) {
 		if (llen > 998) {
-			res |= 2;
+			if (in_header)
+				res |= 4;
+			else
+				res |= 2;
 		}
-		if (buf[len] <= 0) {
+		if (buf[pos] <= 0) {
 			res |= 1;
 			llen++;
-		} else if ((buf[len] == '\r') || (buf[len] == '\n')) {
+		} else if ((buf[pos] == '\r') || (buf[pos] == '\n')) {
+			if (llen == 0)
+				in_header = 0;
 			llen = 0;
 			/* if buffer is too short we don't need to check for long lines */
-			if ((len < 998) && (res != 0))
+			if ((len - pos < 998) && (res & 1))
 				return res;
 		} else {
 			llen++;
 		}
+		pos++;
 	}
 
 	return res;
@@ -697,7 +708,7 @@ send_data(void)
 	in_data = 1;
 #endif
 
-	if ((!(smtpext & 0x008) && (ascii & 1)) || (ascii & 2)) {
+	if ((!(smtpext & 0x008) && (ascii & 1)) || (ascii & 6)) {
 		successmsg[2] = "(qp recoded) ";
 		send_qp(msgdata, msgsize);
 	} else {

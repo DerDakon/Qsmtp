@@ -8,7 +8,7 @@
 
 extern const char *successmsg[];
 
-extern int need_recode(const char *, off_t);
+extern unsigned int need_recode(const char *, off_t);
 extern void send_data(void);
 extern void send_bdat(void);
 
