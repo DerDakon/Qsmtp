@@ -243,7 +243,7 @@ wrap_header(const char *buf, const off_t len)
 	off_t off = 0;	/* start of current line relative to pos */
 	off_t ll = 0;	/* length of current line */
 
-	if (!(need_recode(buf, len) & 2)) {
+	if (!(need_recode(buf, len) & 4)) {
 		send_plain(buf, len);
 		return;
 	}
@@ -644,7 +644,7 @@ send_qp(const char *buf, const off_t len)
 			off_t partlen = nextoff - boundary.len - 2;
 
 			nr = need_recode(buf + off, partlen);
-			if ((!(smtpext & 0x008) && (nr & 1)) || (nr & 2)) {
+			if ((!(smtpext & 0x008) && (nr & 1)) || (nr & 6)) {
 				send_qp(buf + off, partlen);
 			} else {
 				send_plain(buf + off, partlen);
