@@ -54,6 +54,8 @@ need_recode(const char *buf, off_t len)
 			res |= 1;
 			llen++;
 		} else if ((buf[pos] == '\r') || (buf[pos] == '\n')) {
+			if ((buf[pos] == '\r') && (pos < len - 1) && (buf[pos + 1] == '\n'))
+				pos++;
 			if (llen == 0)
 				in_header = 0;
 			llen = 0;
@@ -311,12 +313,13 @@ wrap_header(const char *buf, const off_t len)
  * @param len length of buffer
  * @param boundary if this is a multipart message a pointer to the boundary-string is stored here
  * @param multipart will be set to 1 if this is a multipart message
+ * @param body_recode if the body needs recoding (i.e. the CTE-header needs to be set)
  * @return offset of end of header
  *
  * \warning boundary will not be 0-terminated! Use boundary->len!
  */
 static off_t
-qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart)
+qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, const unsigned int body_recode)
 {
 	off_t off, header = 0;
 	cstring cenc, ctype;
@@ -403,7 +406,9 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart)
 		write(1, "D5.6.3 syntax error in Content-Type message header\n", 52);
 		exit(0);
 	} else {
-		if (cenc.len) {
+		if (!body_recode) {
+			wrap_header(buf, header);
+		} else if (cenc.len) {
 			wrap_header(buf, cenc.s - buf);
 			recodeheader();
 			wrap_header(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);
@@ -586,8 +591,11 @@ send_qp(const char *buf, const off_t len)
 	off_t off = 0;
 	cstring boundary;
 	int multipart;		/* set to one if this is a multipart message */
+	unsigned int recodeflag;
 
-	off = qp_header(buf, len, &boundary, &multipart);
+	recodeflag = need_recode(buf, len);
+
+	off = qp_header(buf, len, &boundary, &multipart, (recodeflag & 0x3));
 
 	if (!multipart) {
 		recode_qp(buf + off, len - off);
