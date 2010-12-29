@@ -495,7 +495,7 @@ netget(void)
 }
 
 int
-checkreply(const char *status, const char **pre, const int mask)
+checkreply(const char *status, const char **pre __attribute__ ((unused)), const int mask)
 {
 	if (strcmp("KZD", status) != 0)
 		exit(EINVAL);
