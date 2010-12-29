@@ -139,10 +139,12 @@ ENDFOREACH(PATTERN)
 SET_TESTS_PROPERTIES(QrData-8bitHeader PROPERTIES
 		PASS_REGULAR_EXPRESSION "^D5\\.6\\.3 message contains unencoded 8bit data in message header")
 
-#
-# SET_TARGET_PROPERTIES(testcase_spf
-# 		testcase_control
-# 		testcase_base64
-# 		PROPERTIES
-# 		LINK_FLAGS_DEBUG "-fprofile-arcs -ftest-coverage"
-# )
+ADD_EXECUTABLE(testcase_fmt
+		fmt_test.c)
+TARGET_LINK_LIBRARIES(testcase_fmt
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "Fmt"
+		COMMAND testcase_fmt)
