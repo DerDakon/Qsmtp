@@ -156,3 +156,13 @@ TARGET_LINK_LIBRARIES(testcase_addrsyntax
 
 ADD_TEST(NAME "AddrSyntax"
 		COMMAND testcase_addrsyntax)
+
+ADD_EXECUTABLE(testcase_mmap
+		mmap_test.c)
+TARGET_LINK_LIBRARIES(testcase_mmap
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "Mmap"
+		COMMAND testcase_mmap)
