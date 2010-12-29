@@ -100,7 +100,7 @@ parseaddr(const char *addr)
 
 		if (!cl || *(cl + 1))
 			return 0;
-		if (!strncmp(cl + 1, "IPv6:", 5)) {
+		if (!strncmp(at + 2, "IPv6:", 5)) {
 			struct in6_addr ip6;
 			char ipbuf[INET6_ADDRSTRLEN];
 
