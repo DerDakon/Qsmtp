@@ -251,7 +251,7 @@ wrap_header(const char *buf, const off_t len)
 	}
 
 	while (pos + off + ll < len) {
-		int l = 0;	/* length of CR, LF or CRLF sequence at end of line */
+		unsigned int l = 0;	/* length of CR, LF or CRLF sequence at end of line */
 
 		if (buf[pos + off + ll] == '\r') {
 			l++;
