@@ -1,5 +1,3 @@
-SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -fprofile-arcs -ftest-coverage")
-
 ADD_EXECUTABLE(testcase_spf
 		spf_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/spf.c
