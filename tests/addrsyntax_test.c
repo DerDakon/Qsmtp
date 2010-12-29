@@ -22,6 +22,7 @@ const char *invalid[] = {
 	"fo.\nbar@example.com",		/* unquoted control character */
 	"foo@bar..example.com",		/* double dot in domainpart */
 	"\"f\\oo\"@bar.example.com",	/* invalid quoting */
+	"\"\noo\"@example.com",		/* invalid quoted control character */
 	"\"foo@example.com",		/* unterminated quote */
 	"toolonglocalpart12345678901234567890123456789012345678901234567890@example.com",	/* localpart too long */
 	"me@[127.0.0.256]",		/* invalid IPv4 address */
@@ -30,6 +31,8 @@ const char *invalid[] = {
 	"me@[::1]",			/* valid IPv6 address without IPv6: prefix */
 	"me@[IPv6:::1",			/* missing closing bracket */
 	"me@[IPv6:::1].com",		/* text after closing bracket */
+	"me@[IPv6:abcd:abcd:abcd:abcd:abcd:abcd:abcd]",	/* too long IPv6 string */
+	"me@[127.128.129.140.2]",	/* too long IPv4 string */
 	NULL
 };
 
