@@ -126,7 +126,8 @@ FOREACH(PATTERN
 		dots
 		"8bit+base64"
 		longBodyLine
-		longHeaderLine
+		longHeaderLineCR
+		longHeaderLineLF
 		8bitLF
 		noLFatEnd
 		8bitHeader)
