@@ -232,6 +232,33 @@ wrap_line(const char *buf, off_t len)
 	return len;
 }
 
+static off_t
+send_wrapped(const char *buf, off_t pos, off_t *off, off_t *ll, const unsigned int l)
+{
+	if (*ll < 999) {
+		*off += *ll + l;
+		*ll = 0;
+	} else {
+		off_t po;
+
+		send_plain(buf + pos, *off);
+		pos += *off;
+		*off = 0;
+		po = wrap_line(buf + pos, *ll);
+		pos += po;
+		/* if wrap_line() has not send the entire line we can skip over
+			* the last part, we now know it's short enough */
+		if (po != *ll) {
+			*ll -= po;
+		} else {
+			*ll = 0;
+			pos += l;
+		}
+	}
+
+	return pos;
+}
+
 /**
  * fold long lines in header
  *
@@ -264,47 +291,11 @@ wrap_header(const char *buf, const off_t len)
 			continue;
 		}
 		/* found a line. Check if it's too long */
-		if (ll >= 999) {
-			off_t po;
-
-			send_plain(buf + pos, off);
-			pos += off;
-			off = 0;
-			po = wrap_line(buf + pos, ll);
-			pos += po;
-			/* if wrap_line() has not send the entire line we can skip over
-                         * the last part, we now know it's short enough */
-			if (po != ll) {
-				ll = ll - po;
-			} else {
-				ll = 0;
-				pos += l;
-			}
-		} else {
-			off += ll + l;
-			ll = 0;
-		}
+		pos = send_wrapped(buf, pos, &off, &ll, l);
 	}
-	if (ll < 999) {
-		off += ll;
-		send_plain(buf + pos, off);
-	} else {
-		off_t po;
 
-		send_plain(buf + pos, off);
-		pos += off;
-		off = 0;
-		po = wrap_line(buf + pos, ll);
-		pos += po;
-		/* if wrap_line() has not send the entire line we can skip over
-			* the last part, we now know it's short enough */
-		if (po != ll) {
-			ll = ll - po;
-		} else {
-			ll = 0;
-		}
-		send_plain(buf + pos, off + ll);
-	}
+	pos = send_wrapped(buf, pos, &off, &ll, 0);
+	send_plain(buf + pos, off + ll);
 }
 
 /**
