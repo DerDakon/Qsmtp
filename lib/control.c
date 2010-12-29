@@ -34,6 +34,9 @@
  *          writing by another process) the file is treated as non existent
  *
  * The input file will be closed before this function returns.
+ * 
+ * striptab == 2 means: the only whitespace in a non-comment line may be immediately
+ * before the line break, in any amount.
  */
 size_t
 lloadfilefd(int fd, char **buf, const int striptab)
@@ -119,7 +122,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			do {
 				inbuf[j++] = '\0';
 			} while ((inbuf[j] == ' ') || (inbuf[j] == '\t'));
-			if ((inbuf[j] != '\0') || (inbuf[j] != '\n')) {
+			if ((inbuf[j] != '\0') && (inbuf[j] != '\n')) {
 				errno = EINVAL;
 				return -1;
 			}
