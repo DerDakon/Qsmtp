@@ -553,9 +553,7 @@ quit(void)
 void
 log_write(int priority, const char *s)
 {
-	fputs("log_write() called unexpected, message: ", stderr);
-	fputs(s, stderr);
-	fputc('\n', stderr);
+	fprintf(stderr, "log_writen(%i, %s) called unexpected\n", priority, s);
 	exit(EFAULT);
 
 }
