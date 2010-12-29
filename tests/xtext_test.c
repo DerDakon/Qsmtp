@@ -17,6 +17,9 @@ static const char *invalid_strings[] = {
 	"+A",                   /* hexdigit with second char missing */
 	"+aF",                  /* hexdigit is defined as all uppercase */
 	"a=b@example.com",      /* = is not permitted */
+	"\rfoobar@example.com",	/* control characters are not permitted */
+	"f\244@example.com",	/* only ASCII is permitted */
+	"foobar@@example.com",	/* invalid addrspec */
 	NULL
 };
 
