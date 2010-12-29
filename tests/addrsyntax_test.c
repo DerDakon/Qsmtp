@@ -31,7 +31,7 @@ const char *invalid[] = {
 	"me@[::1]",			/* valid IPv6 address without IPv6: prefix */
 	"me@[IPv6:::1",			/* missing closing bracket */
 	"me@[IPv6:::1].com",		/* text after closing bracket */
-	"me@[IPv6:abcd:abcd:abcd:abcd:abcd:abcd:abcd]",	/* too long IPv6 string */
+	"me@[IPv6:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd]",	/* too long IPv6 string */
 	"me@[127.128.129.140.2]",	/* too long IPv4 string */
 	NULL
 };
