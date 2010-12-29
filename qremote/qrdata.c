@@ -293,6 +293,7 @@ wrap_header(const char *buf, const off_t len)
 
 		send_plain(buf + pos, off);
 		pos += off;
+		off = 0;
 		po = wrap_line(buf + pos, ll);
 		pos += po;
 		/* if wrap_line() has not send the entire line we can skip over
@@ -387,6 +388,10 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 					}
 		}
 	}
+
+	if (!header && (off == len))
+		header = len;
+
 	if (!header || (need_recode(buf, header) & 1)) {
 		/* no empty line found: treat whole message as header. But this means we have
 		 * 8bit characters in header which is a bug in the client that we can't handle */

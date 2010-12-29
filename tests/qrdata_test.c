@@ -137,6 +137,33 @@ static struct {
 		.recodeflag = 4
 	},
 	{
+		.name = "longHeaderLine",
+		.msg = "From: <foo@bar.example.com>\nSubject: long header line"
+				"   50 12345678901234567890123456789012345678901234"
+				"  100 12345678901234567890123456789012345678901234"
+				"  150 12345678901234567890123456789012345678901234"
+				"  200 12345678901234567890123456789012345678901234"
+				"  250 12345678901234567890123456789012345678901234"
+				"  300 12345678901234567890123456789012345678901234"
+				"  350 12345678901234567890123456789012345678901234"
+				"  400 12345678901234567890123456789012345678901234"
+				"  450 12345678901234567890123456789012345678901234"
+				"  500 12345678901234567890123456789012345678901234"
+				"  550 12345678901234567890123456789012345678901234"
+				"  600 12345678901234567890123456789012345678901234"
+				"  650 12345678901234567890123456789012345678901234"
+				"  700 12345678901234567890123456789012345678901234"
+				"  750 12345678901234567890123456789012345678901234"
+				"  800 12345678901234567890123456789012345678901234"
+				"  850 12345678901234567890123456789012345678901234"
+				"  900 12345678901234567890123456789012345678901234"
+				"  950 12345678901234567890123456789012345678901234"
+				" 1000 12345678901234567890123456789012345678901234"
+				" 1050 12345678901234567890123456789012345678901234",
+		.filters = 3,
+		.recodeflag = 4
+	},
+	{
 		.name = "emptyLFheader",
 		.msg = "\ndata\r\n",
 		.filters = 0,
@@ -314,6 +341,7 @@ static void
 hdrwrap_detector(const char *msg, const size_t len)
 {
 	const char *tmp_orig = testpatterns[usepattern].msg;
+	const size_t orig_len = strlen(tmp_orig);
 	size_t orig_off = 0;
 	size_t new_off = 0;
 
@@ -340,13 +368,16 @@ hdrwrap_detector(const char *msg, const size_t len)
 			new_off++;
 			assert(msg[new_off] == '\n');
 			new_off++;
-			assert(isblank(msg[new_off]));
 
-			do {
+			while (isblank(msg[new_off])) {
 				new_off++;
-			} while (isblank(msg[new_off]));
+			}
 		}
 
+		if (orig_off == orig_len)
+			break;
+
+		/* end of header reached */
 		if ((msg[new_off] == '\r') && ((tmp_orig[orig_off] == '\r') || (tmp_orig[orig_off] == '\n'))) {
 			new_off++;
 			assert(msg[new_off] == '\n');
@@ -363,7 +394,16 @@ hdrwrap_detector(const char *msg, const size_t len)
 		}
 		new_off++;
 		orig_off++;
-	} while (new_off < len);
+	} while ((new_off < len) && (orig_off < orig_len));
+
+	if ((orig_off == orig_len) && (new_off < len)) {
+		while ((msg[new_off] == '\r') || (msg[new_off] == '\n'))
+			new_off++;
+
+		assert(strncmp(msg + new_off, ".\r\n", 3) == 0);
+		assert(new_off == len - 3);
+	}
+	assert(orig_off == orig_len);
 }
 
 /**

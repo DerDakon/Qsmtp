@@ -128,6 +128,7 @@ FOREACH(PATTERN
 		longBodyLine
 		longHeaderLineCR
 		longHeaderLineLF
+		longHeaderLine
 		8bitLF
 		noLFatEnd
 		8bitHeader)
