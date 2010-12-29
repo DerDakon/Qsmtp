@@ -146,3 +146,13 @@ TARGET_LINK_LIBRARIES(testcase_fmt
 
 ADD_TEST(NAME "Fmt"
 		COMMAND testcase_fmt)
+
+ADD_EXECUTABLE(testcase_addrsyntax
+		addrsyntax_test.c)
+TARGET_LINK_LIBRARIES(testcase_addrsyntax
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "AddrSyntax"
+		COMMAND testcase_addrsyntax)
