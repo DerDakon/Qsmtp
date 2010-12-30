@@ -253,7 +253,7 @@ setup(void)
 		rcpthsize = 0;
 		rcpthosts = NULL;
 	} else {
-		while (flock(rcpthfd, LOCK_SH)) {
+		while (flock(rcpthfd, LOCK_SH | LOCK_NB)) {
 			if (errno != EINTR) {
 				log_write(LOG_WARNING, "cannot lock control/rcpthosts");
 				return ENOLCK; /* not the right error code, but good enough */

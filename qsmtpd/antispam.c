@@ -263,7 +263,7 @@ lookupipbl(int fd)
 	unsigned char *map;		/* map the file here */
 	struct stat st;
 
-	while (flock(fd,LOCK_SH)) {
+	while (flock(fd, LOCK_SH | LOCK_NB)) {
 		if (errno != EINTR) {
 			log_write(LOG_WARNING, "cannot lock input file");
 			errno = ENOLCK;	/* not the right error code, but good enough */

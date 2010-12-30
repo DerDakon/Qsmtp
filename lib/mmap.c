@@ -56,7 +56,7 @@ mmap_name(const char *fname, off_t *len, int *fd)
 	if (*fd < 0)
 		return NULL;
 
-	while (flock(*fd, LOCK_SH)) {
+	while (flock(*fd, LOCK_SH | LOCK_NB)) {
 		if (errno != EINTR) {
 			int i;
 
