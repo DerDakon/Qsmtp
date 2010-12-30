@@ -44,7 +44,7 @@ static const char *absent[] = {
 	NULL
 };
 
-/* the even ones should be fines, the odd ones are off */
+/* the even ones should be fine, the odd ones are off */
 static const char *onelines[] = {
 	"oneline",
 	"one\ntwo",
@@ -55,6 +55,8 @@ static const char *onelines[] = {
 	"#ignore\nline\n",
 	NULL
 };
+
+static unsigned int logcnt;
 
 static void
 createTestFile(const char * const name, const char * const value)
@@ -377,6 +379,123 @@ test_intload()
 	return err;
 }
 
+static int
+checkfunc_accept(const char *s  __attribute__ ((unused)))
+{
+	return 0;
+}
+
+static int
+checkfunc_reject(const char *s  __attribute__ ((unused)))
+{
+	return 1;
+}
+
+static int
+test_listload()
+{
+	char ch;	/* dummy */
+	char *buf;
+	char **bufa;
+	int fd;
+	int res;
+	int err = 0;
+	const char fname[] = "control_list";
+	checkfunc callbacks[3];
+	int i;
+
+	puts("== Running tests for loadlistfd()");
+
+	buf = &ch;
+	bufa = &buf;
+
+	errno = ENOENT;
+	res = loadlistfd(-1, &buf, &bufa, NULL);
+	if (res != 0) {
+		fputs("loadlistfd() with a not existing file should succeed\n", stderr);
+		err++;
+	}
+	if ((buf != NULL) || (bufa != NULL)) {
+		fputs("loadlistfd() with a not existing file should set the pointers to NULL\n", stderr);
+		if (buf != NULL)
+			err++;
+		if (bufa != NULL)
+			err++;
+	}
+
+	errno = EACCES;
+	res = loadlistfd(-1, &buf, &bufa, NULL);
+	if (res != -1) {
+		fputs("loadlistfd() with a read protected file should fail\n", stderr);
+		err++;
+	}
+
+	createTestFile(fname, "a\nb\n#comment\n\nc\n");
+	callbacks[0] = checkfunc_reject;
+	callbacks[1] = checkfunc_accept;
+	callbacks[2] = NULL;
+
+	for (i = 0; i <= 2; i++) {
+		fd = open(fname, O_RDONLY);
+		if (fd == -1) {
+			fputs("cannot open control test file for reading\n", stderr);
+			unlink(fname);
+			return err + 1;
+		}
+
+		buf = &ch;
+		bufa = &buf;
+		logcnt = 0;
+		res = loadlistfd(fd, &buf, &bufa, callbacks[i]);
+		if (res != 0) {
+			fprintf(stderr, "loadlistfd() returned %i\n", res);
+			err++;
+		}
+
+		if (i == 0) {
+			if (logcnt != 3) {
+				fprintf(stderr, "loadlistfd() should have complained about 3 invalid entries, but logcnt is %i\n", logcnt);
+				err++;
+			}
+			if ((buf != NULL) || (bufa != NULL)) {
+				fputs("loadlistfd() should have set the pointers to NULL\n", stderr);
+				if (buf != NULL)
+					err++;
+				if (bufa != NULL)
+					err++;
+			}
+		} else if ((buf != NULL) && (bufa != NULL)) {
+			if (strcmp(bufa[0], "a") != 0) {
+				fputs("loadlistfd() did not return \"a\" as first array entry\n", stderr);
+				err++;
+			}
+			if (strcmp(bufa[1], "b") != 0) {
+				fputs("loadlistfd() did not return \"b\" as second array entry\n", stderr);
+				err++;
+			}
+			if (strcmp(bufa[2], "c") != 0) {
+				fputs("loadlistfd() did not return \"c\" as third array entry\n", stderr);
+				err++;
+			}
+			if (bufa[3] != NULL) {
+				fputs("loadlistfd() did not return a NULL-terminated array\n", stderr);
+				err++;
+			}
+		} else {
+			fputs("loadlistfd() did not return data\n", stderr);
+			if (buf == NULL)
+				err++;
+			if (bufa == NULL)
+				err++;
+		}
+
+		free(buf);
+		free(bufa);
+	}
+
+	return err;
+}
+
 int
 main(void)
 {
@@ -480,14 +599,17 @@ main(void)
 	error += test_oneliner();
 	error += test_lload();
 	error += test_intload();
+	error += test_listload();
 
 	return error;
 }
 
 void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
 {
+	logcnt++;
 }
 
 inline void log_write(int priority __attribute__ ((unused)), const char *msg __attribute__ ((unused)))
 {
+	logcnt++;
 }
