@@ -24,6 +24,8 @@ static const char *invalid_names[] = {
 	"spaces are not permitted.foo.bar",
 	".must.not.start.with.dot",
 	"no,comma.com",
+	"foo",
+	"foo.com2",
 	NULL
 };
 
