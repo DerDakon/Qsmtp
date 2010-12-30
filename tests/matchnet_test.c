@@ -114,6 +114,44 @@ ip4_test(void)
 	return err;
 }
 
+static int
+matchdomain_test()
+{
+	int err = 0;
+	const char testhost[] = "test.example.net";
+	const char *goodpatterns[] = {
+		testhost,
+		".example.net",
+		".net",
+		NULL
+	};
+	const char *badpatterns[] = {
+		"example.net",
+		".example.org",
+		".xample.net",
+		NULL
+	};
+	unsigned int i = 0;
+
+	while (goodpatterns[i] != NULL) {
+		if (!matchdomain(testhost, strlen(testhost), goodpatterns[i])) {
+			fprintf(stderr, "%s did not match %s\n", goodpatterns[i], testhost);
+			err++;
+		}
+		i++;
+	}
+
+	i = 0;
+	while (badpatterns[i] != NULL) {
+		if (matchdomain(testhost, strlen(testhost), badpatterns[i])) {
+			fprintf(stderr, "%s matched %s\n", badpatterns[i], testhost);
+			err++;
+		}
+		i++;
+	}
+
+	return err;
+}
 
 int main(void)
 {
@@ -123,6 +161,9 @@ int main(void)
 		errcnt++;
 
 	if (ip6_test())
+		errcnt++;
+
+	if (matchdomain_test())
 		errcnt++;
 
 	return (errcnt != 0) ? 1 : 0;
