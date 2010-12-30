@@ -162,6 +162,7 @@ test_lload()
 	char *buf = NULL;
 	char ch; /* dummy */
 	int fd;
+	int i;
 	size_t sz;
 	const char comment[] = "# comment\n";
 
@@ -189,14 +190,20 @@ test_lload()
 		fputs("Opening an empty file did not return size 0\n", stderr);
 		err++;
 	}
-	fd = close(fd);
-	if ((fd != -1) || (errno != EBADF)) {
+	i = close(fd);
+	if ((i != -1) || (errno != EBADF)) {
 		fputs("lloadfilefd() did not close the passed file descriptor\n", stderr);
 		err++;
 	}
 	unlink("emptyfile");
 	if (buf != NULL) {
 		fputs("lloadfilefd() with an empty file did not set the buf pointer to NULL\n", stderr);
+		err++;
+	}
+
+	/* fd is already closed so locking must fail */
+	if ((lloadfilefd(fd, &buf, 0) != -1) || (errno != ENOLCK)) {
+		fputs("Trying to lock an already closed fd must fail\n", stderr);
 		err++;
 	}
 
