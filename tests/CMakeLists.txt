@@ -169,3 +169,13 @@ TARGET_LINK_LIBRARIES(testcase_mmap
 
 ADD_TEST(NAME "Mmap"
 		COMMAND testcase_mmap)
+
+ADD_EXECUTABLE(testcase_dns
+		dns_test.c)
+TARGET_LINK_LIBRARIES(testcase_dns
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "DNS"
+		COMMAND testcase_dns)
