@@ -47,26 +47,6 @@ skipwhitespace(const char *line, const size_t len)
 			ws = 1;
 		}
 
-		/* RfC 822 Section 2.8 */
-		if (ws && (*c == ';')) {
-			c++;
-			if (!--l)
-				return c;
-
-			while ((*c != '\r') || (*c != '\n')) {
-				c++;
-				if (!--l)
-					return c;
-			}
-			if (*c == '\r') {
-				c++;
-				if (--l && (*c == '\n')) {
-					l--;
-					c++;
-				}
-			}
-		}
-
 		ws = 0;
 
 		if (*c == '\r') {
