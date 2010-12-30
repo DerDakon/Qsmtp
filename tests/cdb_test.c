@@ -217,11 +217,23 @@ int
 main(int argc, char **argv)
 {
 	int err;
+	string tmp;
+	char *dummy;
 
 	if (argc != 2) {
 		puts("ERROR: parameter needs to be the name of the fake control directory");
 		return EINVAL;
 	}
+
+	err = vget_dir("example.net", &tmp, &dummy);
+	if (err == 0) {
+		fputs("searching for example.net in users/cdb in your build directory did not fail. Make sure your build directory is clean\n", stderr);
+		return 1;
+	} else if (err != -ENOENT) {
+		fprintf(stderr, "searching for example.net in users/cdb in your build directory failed with error code %i. Make sure your build directory is clean\n", err);
+		return err;
+	}
+	err = 0;
 
 	if (chdir(argv[1]) != 0) {
 		puts("ERROR: can not chdir to given directory");
