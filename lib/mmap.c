@@ -60,7 +60,6 @@ mmap_name(const char *fname, off_t *len, int *fd)
 		if (errno != EINTR) {
 			int i;
 
-			log_write(LOG_WARNING, "cannot lock input file");
 			do {
 				i = close(*fd);
 			} while ((i < 0) && (errno == EINTR));
