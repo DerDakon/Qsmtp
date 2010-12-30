@@ -26,7 +26,7 @@ int main(int argc, const char **argv)
 	char user[1024];
 	char pass[1024];
 	char resp[1024];
-	unsigned int i = 0;
+	unsigned int i = 1;
 
 	if (argc != 2)
 		return EINVAL;
@@ -37,6 +37,9 @@ int main(int argc, const char **argv)
 	readData(user, sizeof(user));
 	readData(pass, sizeof(pass));
 	readData(resp, sizeof(resp));
+
+	if (strcmp(users[0].username, user) == 0)
+		abort();
 
 	while (users[i].username != NULL) {
 		if ((strcmp(users[i].username, user) == 0) &&

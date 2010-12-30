@@ -79,6 +79,9 @@ FOREACH (AUTHTEST short email long)
 	ENDFOREACH (AUTHFLAG)
 ENDFOREACH (AUTHTEST)
 
+ADD_TEST(NAME "AUTH-LOGIN-errors"
+		COMMAND testcase_auth "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy" errors wrong)
+
 ADD_EXECUTABLE(testcase_matchnet
 		matchnet_test.c)
 

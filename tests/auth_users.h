@@ -6,6 +6,11 @@ static struct {
 	const char *password;
 } const users[] = {
 	{
+		.testname = "errors",
+		.username = "error",
+		.password = "error",
+	},
+	{
 		.testname = "short",
 		.username = "foo",
 		.password = "bar"

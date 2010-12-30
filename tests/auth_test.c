@@ -147,6 +147,8 @@ int netwrite(const char *s)
 			smtpstate = SMTP_ACCEPT;
 		} else if (strncmp(s, "535 ", 4) == 0) {
 			smtpstate = SMTP_REJECT;
+		} else if ((authtry == 0) && (strncmp(s, "454 ", 4) == 0)) {
+			smtpstate = SMTP_REJECT;
 		} else {
 			fprintf(stderr, "wrong SMTP message: %s", s);
 			exit(1);
