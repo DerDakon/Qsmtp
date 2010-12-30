@@ -399,6 +399,12 @@ checkfunc_reject(const char *s  __attribute__ ((unused)))
 }
 
 static int
+checkfunc_accept_b(const char *s)
+{
+	return !!strcmp(s, "b");
+}
+
+static int
 test_listload()
 {
 	char ch;	/* dummy */
@@ -408,7 +414,7 @@ test_listload()
 	int res;
 	int err = 0;
 	const char fname[] = "control_list";
-	checkfunc callbacks[3];
+	checkfunc callbacks[4];
 	int i;
 
 	puts("== Running tests for loadlistfd()");
@@ -440,9 +446,10 @@ test_listload()
 	createTestFile(fname, "a\nb\n#comment\n\nc\n");
 	callbacks[0] = checkfunc_reject;
 	callbacks[1] = checkfunc_accept;
-	callbacks[2] = NULL;
+	callbacks[2] = checkfunc_accept_b;
+	callbacks[3] = NULL;
 
-	for (i = 0; i <= 2; i++) {
+	for (i = 0; i <= 3; i++) {
 		fd = open(fname, O_RDONLY);
 		if (fd == -1) {
 			fputs("cannot open control test file for reading\n", stderr);
@@ -472,19 +479,29 @@ test_listload()
 					err++;
 			}
 		} else if ((buf != NULL) && (bufa != NULL)) {
-			if (strcmp(bufa[0], "a") != 0) {
-				fputs("loadlistfd() did not return \"a\" as first array entry\n", stderr);
-				err++;
+			unsigned int end;
+			if (i == 2) {
+				if (strcmp(bufa[0], "b") != 0) {
+					fputs("loadlistfd() did not return \"b\" as first array entry\n", stderr);
+					err++;
+				}
+				end = 1;
+			} else {
+				if (strcmp(bufa[0], "a") != 0) {
+					fputs("loadlistfd() did not return \"a\" as first array entry\n", stderr);
+					err++;
+				}
+				if (strcmp(bufa[1], "b") != 0) {
+					fputs("loadlistfd() did not return \"b\" as second array entry\n", stderr);
+					err++;
+				}
+				if (strcmp(bufa[2], "c") != 0) {
+					fputs("loadlistfd() did not return \"c\" as third array entry\n", stderr);
+					err++;
+				}
+				end = 3;
 			}
-			if (strcmp(bufa[1], "b") != 0) {
-				fputs("loadlistfd() did not return \"b\" as second array entry\n", stderr);
-				err++;
-			}
-			if (strcmp(bufa[2], "c") != 0) {
-				fputs("loadlistfd() did not return \"c\" as third array entry\n", stderr);
-				err++;
-			}
-			if (bufa[3] != NULL) {
+			if (bufa[end] != NULL) {
 				fputs("loadlistfd() did not return a NULL-terminated array\n", stderr);
 				err++;
 			}
