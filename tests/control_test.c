@@ -160,6 +160,8 @@ test_lload()
 	char *buf = NULL;
 	char ch; /* dummy */
 	int fd;
+	size_t sz;
+	const char comment[] = "# comment\n";
 
 	puts("== Running tests for lloadfilefd()");
 
@@ -208,13 +210,60 @@ test_lload()
 		fputs("reading a file with only newlines and striptab set to 1 did not return size 0\n", stderr);
 		err++;
 	}
-	unlink("emptyfile");
 	if (buf != NULL) {
 		fputs("lloadfilefd() on a file with only newlines did not set the buf pointer to NULL\n", stderr);
 		err++;
 	}
 
+	fd = open("emptyfile", O_RDONLY);
+	if (fd == -1) {
+		fputs("Can not open temporary file for reading\n", stderr);
+		return err + 1;
+	}
+	buf = &ch;
+	if (lloadfilefd(fd, &buf, 2) != 0) {
+		fputs("reading a file with only newlines and striptab set to 2 did not return size 0\n", stderr);
+		err++;
+	}
+	if (buf != NULL) {
+		fputs("lloadfilefd() on a file with only newlines did not set the buf pointer to NULL\n", stderr);
+		err++;
+	}
 
+	unlink("emptyfile");
+
+	createTestFile("lloadfile_test", "a b");
+	fd = open("lloadfile_test", O_RDONLY);
+	if (fd == -1) {
+		fputs("Can not open temporary file for reading\n", stderr);
+		return err + 1;
+	}
+
+	buf = NULL;
+	if ((lloadfilefd(fd, &buf, 2) != (size_t)-1) || (errno != EINVAL)) {
+		free(buf);
+		fputs("lloadfilefd() on a file with spaces in the middle of a line should fail with striptabs 2\n", stderr);
+		err++;
+	}
+	unlink("lloadfile_test");
+
+	createTestFile("lloadfile_test", comment);
+	fd = open("lloadfile_test", O_RDONLY);
+	if (fd == -1) {
+		fputs("Can not open temporary file for reading\n", stderr);
+		return err + 1;
+	}
+
+	buf = NULL;
+	sz = lloadfilefd(fd, &buf, 0);
+	if (sz != strlen(comment)) {
+		fputs("lloadfilefd() with striptabs 0 did not return correct size\n", stderr);
+		err++;
+	} else if (memcmp(buf, comment, strlen(comment)) != 0) {
+		fputs("lloadfilefd() with striptabs 0 did not return correct contents\n", stderr);
+		err++;
+	}
+	free(buf);
 
 	return err;
 }
