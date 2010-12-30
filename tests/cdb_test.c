@@ -234,7 +234,7 @@ main(int argc, char **argv)
 		return EFAULT;
 	}
 
-	test_vpop();
+	err += test_vpop();
 
-	return 0;
+	return err;
 }
