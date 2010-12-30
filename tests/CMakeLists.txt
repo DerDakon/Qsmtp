@@ -179,3 +179,13 @@ TARGET_LINK_LIBRARIES(testcase_dns
 
 ADD_TEST(NAME "DNS"
 		COMMAND testcase_dns)
+
+ADD_EXECUTABLE(testcase_mime
+		mime_test.c)
+TARGET_LINK_LIBRARIES(testcase_mime
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "MIME"
+		COMMAND testcase_mime)
