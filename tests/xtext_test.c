@@ -20,6 +20,11 @@ static const char *invalid_strings[] = {
 	"\rfoobar@example.com",	/* control characters are not permitted */
 	"f\244@example.com",	/* only ASCII is permitted */
 	"foobar@@example.com",	/* invalid addrspec */
+	"valid567890123456789012345678901234567889012345678901234567890@"
+		"tooooo.long.a123456789.b123456789.c123456789.d12345789.e123456789.f12345678"
+		"tooooo.long.a123456789.b123456789.c123456789.d12345789.e123456789.f12345678"
+		"tooooo.long.a123456789.b123456789.c123456789.d12345789.e123456789.f12345678"
+		"tooooo.long.a123456789.b123456789.c123456789.d12345789.e123456789.com",
 	NULL
 };
 
