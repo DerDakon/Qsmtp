@@ -19,12 +19,14 @@ static const char contents[] =
 	"whitespace.example.com \n"
 	"tab.example.org\t\n"
 	"ts.example.com\t \t\n\n"
+	".foo.example.net\n"
 	"eof.example.org";
 
 static const char *present[] = {
 	"domain.example.com",
 	"domain2.example.com",
 	"whitespace.example.com",
+	"bar.foo.example.net",
 	"tab.example.org",
 	"ts.example.com",
 	"eof.example.org",
