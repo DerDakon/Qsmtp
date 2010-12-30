@@ -54,24 +54,83 @@ static const char *onelines[] = {
 	NULL
 };
 
+static void
+createTestFile(const char * const name, const char * const value)
+{
+	int fd;
+
+	fd = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (fd == -1) {
+		fputs("ERROR: can not create temporary file for testcase\n", stderr);
+		exit(1);
+	}
+	if (write(fd, value, strlen(value)) != strlen(value)) {
+		fputs("ERROR: writing value to test file did not work\n", stderr);
+		close(fd);
+		unlink(name);
+	}
+	close(fd);
+}
+
 static int
 test_oneliner()
 {
 	unsigned int i;
 	int err = 0;
-	char *buf = NULL;
+	char ch;	/* dummy */
+	char *buf = &ch;
+	int fd;
+	const char nocontent[] = "# comment\n\n";
+	size_t len;
+
+	puts("== Running tests for loadonelinerfd()");
+
+	/* only test error cases here, the good case will be tested by
+	 * loadoneliner() tests below. */
+	errno = ENOENT;
+	if (loadonelinerfd(-1, &buf) != (size_t)-1) {
+		fputs("loadonelinerfd() for not existing file should return -1\n", stderr);
+		err++;
+	}
+	if (buf != NULL) {
+		fputs("loadonelinerfd() for not existing file should set the buffer to NULL\n", stderr);
+		err++;
+	}
+
+	errno = EACCES;
+	if (loadonelinerfd(-1, &buf) != (size_t)-1) {
+		fputs("loadonelinerfd() for read protected file should return -1\n", stderr);
+		err++;
+	}
+
+	createTestFile("oneliner_test", nocontent);
+
+	fd = open("oneliner_test", O_RDONLY);
+	len = loadonelinerfd(fd, &buf);
+	if (len != (size_t)-1) {
+		fputs("loadonelinerfd() for file without useful content should return -1\n", stderr);
+		err++;
+	}
+	if (buf != NULL) {
+		fputs("loadonelinerfd() for file without useful content should set the buffer to NULL\n", stderr);
+		err++;
+	}
 
 	puts("== Running tests for loadoneliner()");
 
+	len = loadoneliner("oneliner_test", &buf, 0);
+	if (len != (size_t)-1) {
+		fputs("loadoneliner() for file without useful content should return -1\n", stderr);
+		err++;
+	}
+	if (buf != NULL) {
+		fputs("loadoneliner() for file without useful content should set the buffer to NULL\n", stderr);
+		err++;
+	}
+	unlink("oneliner_test");
+
 	for (i = 0; onelines[i] != NULL; i++) {
-		size_t len;
-		int fd = open("oneliner_test", O_WRONLY | O_CREAT, 0600);
-		if (fd == -1) {
-			puts("ERROR: can not create temporary file for testcase");
-			return 1;
-		}
-		write(fd, onelines[i], strlen(onelines[i]));
-		close(fd);
+		createTestFile("oneliner_test", onelines[i]);
 
 		len = loadoneliner("oneliner_test", &buf, 0);
 		if ((len == (size_t)-1) != (i & 1)) {
@@ -112,12 +171,8 @@ test_lload()
 	/* must work, buf should not be changed */
 	free(buf);
 
-	fd = open("emptyfile", O_CREAT | O_TRUNC | O_WRONLY, 0644);
-	if (fd == -1) {
-		fputs("Can not create temporary file\n", stderr);
-		return err + 1;
-	}
-	close(fd);
+	createTestFile("emptyfile", "");
+
 	fd = open("emptyfile", O_RDONLY);
 	if (fd == -1) {
 		fputs("Can not open temporary file for reading\n", stderr);
@@ -138,6 +193,26 @@ test_lload()
 		fputs("lloadfilefd() with an empty file did not set the buf pointer to NULL\n", stderr);
 		err++;
 	}
+
+	createTestFile("emptyfile", "\n\n\n\n");
+
+	fd = open("emptyfile", O_RDONLY);
+	if (fd == -1) {
+		fputs("Can not open temporary file for reading\n", stderr);
+		return err + 1;
+	}
+	buf = &ch;
+	if (lloadfilefd(fd, &buf, 1) != 0) {
+		fputs("reading a file with only newlines and striptab set to 1 did not return size 0\n", stderr);
+		err++;
+	}
+	unlink("emptyfile");
+	if (buf != NULL) {
+		fputs("lloadfilefd() on a file with only newlines did not set the buf pointer to NULL\n", stderr);
+		err++;
+	}
+
+
 
 	return err;
 }
@@ -185,18 +260,8 @@ test_intload()
 	};
 
 	while (patterns[i].str != NULL) {
-		fd = open("control_int", O_WRONLY | O_CREAT | O_EXCL, 0644);
-		if (fd == -1) {
-			fputs("cannot create control test file\n", stderr);
-			return err + 1;
-		}
-		if (write(fd, patterns[i].str, strlen(patterns[i].str)) != strlen(patterns[i].str)) {
-			fputs("error writing to test file\n", stderr);
-			close(fd);
-			unlink("control_int");
-			return err + 1;
-		}
-		close(fd);
+		createTestFile("control_int", patterns[i].str);
+
 		fd = open("control_int", O_RDONLY);
 		if (fd == -1) {
 			fputs("cannot open control test file\n", stderr);
@@ -244,6 +309,20 @@ test_intload()
 		err++;
 	}
 
+	createTestFile("control_int", "xy\n");
+
+	fd = open("control_int", O_RDONLY);
+	if (fd == -1) {
+		fputs("cannot open control test file\n", stderr);
+		return err + 1;
+	}
+	tmp = 42;
+	if ((loadintfd(fd, &tmp, 17) != -1) || (errno != EINVAL)) {
+		fputs("loadintfd() should reject string values with -1\n", stderr);
+		err++;
+	}
+	unlink("control_int");
+
 	return err;
 }
 
@@ -256,6 +335,12 @@ main(void)
 	int fd;
 
 	puts("== Running tests for finddomainmm()");
+
+	/* empty memory area should not match anything */
+	if (finddomainmm(NULL, 1024, present[0]) != 0) {
+		fputs("\t ERROR: match found in NULL buffer\n", stderr);
+		error++;
+	}
 
 	for (i = 0; present[i] != NULL; i++) {
 		int search = finddomainmm(contents, strlen(contents), present[i]);
@@ -278,14 +363,19 @@ main(void)
 
 	puts("== Running tests for finddomainfd()");
 
-	fd = open(ctrl_testfile, O_WRONLY | O_CREAT | O_EXCL, 0644);
-	if (fd == -1) {
-		puts("cannot create control test file");
-		return -1;
+	errno = ENOENT;
+	if (finddomainfd(-1, present[0], 0) != 0) {
+		fputs("finddomainfd() for not existing file should return 0\n", stderr);
+		error++;
 	}
 
-	write(fd, contents, strlen(contents));
-	close(fd);
+	errno = EACCES;
+	if (finddomainfd(-1, present[0], 0) != -1) {
+		fputs("finddomainfd() for read protected file should return -1\n", stderr);
+		error++;
+	}
+
+	createTestFile(ctrl_testfile, contents);
 
 	fd = open(ctrl_testfile, O_RDONLY);
 	if (fd == -1) {
