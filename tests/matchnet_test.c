@@ -126,6 +126,7 @@ matchdomain_test()
 		NULL
 	};
 	const char *badpatterns[] = {
+		"another.test.example.net",
 		"example.net",
 		".example.org",
 		".xample.net",
