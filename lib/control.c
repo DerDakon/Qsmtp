@@ -123,6 +123,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 				inbuf[j++] = '\0';
 			} while ((inbuf[j] == ' ') || (inbuf[j] == '\t'));
 			if ((inbuf[j] != '\0') && (inbuf[j] != '\n')) {
+				free(inbuf);
 				errno = EINVAL;
 				return -1;
 			}
@@ -159,6 +160,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			if (!*buf) {
 				free(inbuf);
 				j = (size_t)-1;
+				errno = ENOMEM;
 			}
 		} else {
 			*buf = inbuf;
