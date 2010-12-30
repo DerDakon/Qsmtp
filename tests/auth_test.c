@@ -74,13 +74,31 @@ main(int argc, char **argv)
 		memset(&xmitstat, 0, sizeof(xmitstat));
 		memset(linein, 0, sizeof(linein));
 
-		strcpy(linein, "AUTH LOGIN");
-		linelen = strlen(linein);
+		printf("testing user \"%s\" with %s password\n", users[authtry].username, argv[3]);
 
 		smtpstate = SMTP_AUTH;
 		authstate = 0;
 
-		printf("testing user \"%s\" with %s password\n", users[authtry].username, argv[3]);
+		strcpy(linein, "AUTH LOGIN");
+
+		if (authtry == 2) {
+			const string stin = {
+				.s = (char *) users[authtry].username,
+				.len = strlen(users[authtry].username)
+			};
+			string stout;
+
+			if (b64encode(&stin, &stout) != 0)
+				exit(3);
+
+			strcat(linein, " ");
+			strncat(linein, stout.s, stout.len);
+
+			smtpstate = SMTP_USERNAME;
+			authstate = 2;
+		}
+
+		linelen = strlen(linein);
 
 		i = smtp_auth();
 		/* every even try will test a failed authentication */
