@@ -16,7 +16,7 @@ static const char testfname[] = "mmap_testfile";
 int
 main(void)
 {
-	int fd;
+	int fd, fd2;
 	off_t len;
 	void *buf;
 	const size_t cmplen = strlen(pattern1) + 1 + strlen(pattern2);
@@ -61,6 +61,19 @@ main(void)
 		fprintf(stderr, "can not open %s for reading\n", testfname);
 		return 5;
 	}
+
+	if (flock(fd, LOCK_EX) != 0) {
+		fprintf(stderr, "can not get exclusive lock on %s\n", testfname);
+		close(fd);
+		return 16;
+	}
+
+	buf = mmap_name(testfname, &len, &fd2);
+	if ((buf != NULL) || (errno != ENOLCK)) {
+		fputs("mmap_name() on exlusively locked file did not fail with ENOLCK\n", stderr);
+		return 17;
+	}
+	flock(fd, LOCK_UN);
 
 	buf = mmap_fd(fd, &len);
 	if (buf == NULL) {
