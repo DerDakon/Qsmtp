@@ -32,6 +32,10 @@
 ## # if you only want to run the test, but not submit the results
 ## SET(NO_SUBMIT TRUE)
 ##
+## # if you are not on a openSUSE system the script currently doesn't
+## # set a proper build name
+## SET(CTEST_BUILD_NAME "Fedora Core 14 x86_64")
+##
 ## # This _*MUST*_ be the last command in this file!
 ## INCLUDE(/path/to/Qsmtp/ctest_qsmtp.cmake)
 ## ######### end file
