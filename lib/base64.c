@@ -72,11 +72,11 @@ b64decode(const char *in, size_t l, string *out)
 
 		*s++ = b[0];
 
-		if (in[i + 2] == B64PAD)
+		if ((i + 2 >= l) || (in[i + 2] == B64PAD))
 			break;
 		*s++ = b[1];
 
-		if (in[i + 3] == B64PAD)
+		if ((i + 3 >= l) || (in[i + 3] == B64PAD))
 			break;
 		*s++ = b[2];
 	}
