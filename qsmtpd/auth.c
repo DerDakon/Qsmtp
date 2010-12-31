@@ -544,6 +544,8 @@ smtp_authstring(void)
 		confpos += strlen(confbuf + confpos) + 1;
 	}
 
+	free(confbuf);
+
 	if (wpos == 0) {
 		free(ret);
 		errno = ENOENT;
