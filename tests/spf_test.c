@@ -261,6 +261,11 @@ int runtest(struct spftestcase *tc)
 		return -2;
 	}
 
+	free(xmitstat.mailfrom.s);
+	STREMPTY(xmitstat.mailfrom);
+	free(heloname.s);
+	STREMPTY(heloname);
+
 	return 0;
 }
 

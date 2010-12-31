@@ -94,6 +94,8 @@ main(int argc, char **argv)
 			strcat(linein, " ");
 			strncat(linein, stout.s, stout.len);
 
+			free(stout.s);
+
 			smtpstate = SMTP_USERNAME;
 			authstate = 2;
 		}
