@@ -316,23 +316,29 @@ spfmx(const char *domain, char *token)
 /* Don't use the implicit MX for this. There are either all MX records
  * implicit or none so we only have to look at the first one */
 	if (mx->priority >= 65536) {
+		freeips(mx);
 		return SPF_NONE;
 	}
 	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
 		while (mx) {
 			if (IN6_IS_ADDR_V4MAPPED(&(mx->addr)) &&
 					ip4_matchnet(&xmitstat.sremoteip,
-							(struct in_addr *) &(mx->addr.s6_addr32[3]), ip4l))
+							(struct in_addr *) &(mx->addr.s6_addr32[3]), ip4l)) {
+				freeips(mx);
 				return SPF_PASS;
+			}
 			mx = mx->next;
 		}
 	} else {
 		while (mx) {
-			if (ip6_matchnet(&xmitstat.sremoteip, &mx->addr, ip6l))
+			if (ip6_matchnet(&xmitstat.sremoteip, &mx->addr, ip6l)) {
+				freeips(mx);
 				return SPF_PASS;
+			}
 			mx = mx->next;
 		}
 	}
+	freeips(mx);
 	return SPF_NONE;
 }
 
