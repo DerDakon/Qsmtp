@@ -11,8 +11,9 @@ IF (MEMCHECK_LIBRARIES)
 	TARGET_LINK_LIBRARIES(testcase_spf ${MEMCHECK_LIBRARIES})
 ENDIF (MEMCHECK_LIBRARIES)
 
-ADD_TEST(NAME "SPF_redhat" COMMAND testcase_spf "redhat")
-ADD_TEST(NAME "SPF_sf-mail" COMMAND testcase_spf "sf-mail")
+ADD_TEST(NAME "SPF_parser" COMMAND testcase_spf "_parse_")
+ADD_TEST(NAME "SPF_domain_redhat" COMMAND testcase_spf "redhat")
+ADD_TEST(NAME "SPF_domain_sf-mail" COMMAND testcase_spf "sf-mail")
 
 ADD_EXECUTABLE(testcase_control
 		control_test.c

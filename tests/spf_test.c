@@ -208,7 +208,7 @@ static struct spftestcase spftest_sfmail = {
 	.badip = "::ffff:62.27.20.62",
 	.dns = {
 		{
-			.type = DNSTYPE_MX,
+ 			.type = DNSTYPE_MX,
 			.key = "sf-mail.de",
 			.value = "::ffff:62.27.20.61"
 		},
@@ -270,6 +270,73 @@ runtest(struct spftestcase *tc)
 	return 0;
 }
 
+static int
+test_parse()
+{
+	const struct dnsentry parseentries[] = {
+		{
+			.type = DNSTYPE_TXT,
+			.key = "recurse.example.net",
+			.value = "v=spf1 include:recurse.example.net"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "recursebad.example.net",
+			.value = "v=spf1 include:bad.example.net"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "othertext.example.net",
+			.value = "random text entry"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "doublespf.example.net",
+			.value = "v=spf1 ~all v=spf1 -all"
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		}
+	};
+	int err = 0;
+	int r;
+
+	dnsdata = parseentries;
+	r = check_host(parseentries[0].key);
+	if (r != SPF_HARD_ERROR) {
+		fprintf(stderr, "check_host() on endless recursive entry did not fail with SPF_HARD_ERROR, but %i\n", r);
+		err++;
+	}
+
+	r = check_host(parseentries[1].key);
+	if (r != SPF_FAIL_NONEX) {
+		fprintf(stderr, "check_host() with broken include did not fail with SPF_FAIL_NONEX, but %i\n", r);
+		err++;
+	}
+
+	r = check_host("nonexistent.example.org");
+	if (r != SPF_NONE) {
+		fprintf(stderr, "check_host() without SPF entry SPF_NONE, but %i\n", r);
+		err++;
+	}
+
+	r = check_host(parseentries[2].key);
+	if (r != SPF_NONE) {
+		fprintf(stderr, "check_host() with non-SPF TXT entry did not return SPF_NONE, but %i\n", r);
+		err++;
+	}
+
+	r = check_host(parseentries[3].key);
+	if (r != SPF_HARD_ERROR) {
+		fprintf(stderr, "check_host() with invalid SPF entry (2 v=spf1 specifications) did not fail with SPF_HARD_ERROR, but %i\n", r);
+		err++;
+	}
+
+	return err;
+}
+
 int main(int argc, char **argv)
 {
 	if (argc == 1)
@@ -279,6 +346,8 @@ int main(int argc, char **argv)
 		return runtest(&spftest_redhat);
 	else if (strcmp(argv[1], "sf-mail") == 0)
 		return runtest(&spftest_sfmail);
+	else if (strcmp(argv[1], "_parse_") == 0)
+		return test_parse();
 	else
 		return EINVAL;
 }
