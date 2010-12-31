@@ -282,31 +282,18 @@ int main(int argc, char **argv)
 		return EINVAL;
 }
 
-/**
- * take a nibble and output it as hex to a buffer, followed by '.'
- *
- * @param dest pointer where the output should go to
- * @param n the input value. Must really be a nibble, anything else makes strange output
- */
-static inline void
-nibbletohex(char *dest, const char n)
+void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
 {
-	*dest++ = ((n > 9) ? 'a' - 10 : '0') + n;
-	*dest = '.';
 }
 
-/**
- * print IPv6 address of remote host in dotted form in buffer
- *
- * @param buffer buffer to store result
- */
-void
-dotip6(char *buffer)
+inline void log_write(int priority __attribute__ ((unused)), const char *msg __attribute__ ((unused)))
 {
-	int k;
-
-	for (k = 15; k >= 0; k--) {
-		nibbletohex(buffer + k * 4,     (xmitstat.sremoteip.s6_addr[k] & 0xf0) >> 4);
-		nibbletohex(buffer + k * 4 + 2, (xmitstat.sremoteip.s6_addr[k] & 0x0f));
-	}
 }
+
+int data_pending(void)
+{
+	return 1;
+}
+
+#include "tls.h"
+SSL *ssl;
