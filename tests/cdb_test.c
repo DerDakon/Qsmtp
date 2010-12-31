@@ -219,21 +219,57 @@ main(int argc, char **argv)
 	int err;
 	string tmp;
 	char *dummy;
+	char cdbtestdir[18];
+	int fd;
 
 	if (argc != 2) {
 		puts("ERROR: parameter needs to be the name of the fake control directory");
 		return EINVAL;
 	}
 
-	err = vget_dir("example.net", &tmp, &dummy);
-	if (err == 0) {
-		fputs("searching for example.net in users/cdb in your build directory did not fail. Make sure your build directory is clean\n", stderr);
-		return 1;
-	} else if (err != -ENOENT) {
-		fprintf(stderr, "searching for example.net in users/cdb in your build directory failed with error code %i. Make sure your build directory is clean\n", err);
+	strncpy(cdbtestdir, "./cdbtest_XXXXXX", sizeof(cdbtestdir));
+	if (mkdtemp(cdbtestdir) == NULL) {
+		fputs("ERROR: can not create temporary directory for CDB test\n", stderr);
+		return EINVAL;
+	}
+	if (chdir(cdbtestdir) != 0) {
+		err = errno;
+		fputs("ERROR: can not chdir to temporary directory\n", stderr);
+		rmdir(cdbtestdir);
+		return err;
+	}
+	if (mkdir("users", 0700) != 0) {
+		err = errno;
+		fputs("ERROR: can not create temporary directory for CDB test\n", stderr);
+		chdir("..");
+		rmdir(cdbtestdir);
 		return err;
 	}
 	err = 0;
+	fd = vget_dir("example.net", &tmp, &dummy);
+	if (fd != -ENOENT) {
+		fputs("searching for example.net in not existing users/cdb did not fail with the expected error code\n", stderr);
+		err++;
+	}
+	fd = open("users/cdb", O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	if (fd == -1) {
+		err = errno;
+		fputs("ERROR: can not create temporary file for CDB test\n", stderr);
+		rmdir("users");
+		chdir("..");
+		rmdir(cdbtestdir);
+		return err;
+	}
+	close(fd);
+
+	if (vget_dir("example.net", &tmp, &dummy) != 0) {
+		fputs("searching for example.net in an empty users/cdb did work as expected\n", stderr);
+		err++;
+	}
+	unlink("users/cdb");
+	rmdir("users");
+	chdir("..");
+	rmdir(cdbtestdir);
 
 	if (chdir(argv[1]) != 0) {
 		puts("ERROR: can not chdir to given directory");
