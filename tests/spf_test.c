@@ -48,7 +48,7 @@ dnsentry_search(const enum dnstype stype, const char *skey)
 	return NULL;
 }
 
-struct ips *
+static struct ips *
 parseips(const char *list)
 {
 	const char *next = list;
@@ -167,7 +167,7 @@ struct spftestcase {
 	struct dnsentry dns[];
 };
 
-struct spftestcase spftest_redhat = {
+static struct spftestcase spftest_redhat = {
 	.helo = "mx1.redhat.com",
 	.from = "foobar@redhat.com",
 	.goodip = "::ffff:209.132.183.28",
@@ -201,7 +201,7 @@ struct spftestcase spftest_redhat = {
 	}
 };
 
-struct spftestcase spftest_sfmail = {
+static struct spftestcase spftest_sfmail = {
 	.helo = "mail.sf-mail.de",
 	.from = "eike@sf-mail.de",
 	.goodip = "::ffff:62.27.20.61",
@@ -228,7 +228,8 @@ struct spftestcase spftest_sfmail = {
 struct xmitstat xmitstat;
 string heloname;
 
-int runtest(struct spftestcase *tc)
+static int
+runtest(struct spftestcase *tc)
 {
 	memset(&xmitstat, 0, sizeof(xmitstat));
 
