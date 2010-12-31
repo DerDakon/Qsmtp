@@ -202,6 +202,7 @@ loadintfd(int fd, unsigned long *result, const unsigned long def)
 	}
 
 	*result = strtoul(tmpbuf, &l, 10);
+	free(tmpbuf);
 	if (*l) {
 		errno = EINVAL;
 		return -1;
