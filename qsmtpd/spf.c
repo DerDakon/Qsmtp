@@ -286,7 +286,7 @@ static int
 spfmx(const char *domain, char *token)
 {
 	int ip6l, ip4l, i;
-	struct ips *mx;
+	struct ips *mx, *allmx;
 	char *domainspec;
 
 	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
@@ -319,12 +319,13 @@ spfmx(const char *domain, char *token)
 		freeips(mx);
 		return SPF_NONE;
 	}
+	allmx = mx;
 	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
 		while (mx) {
 			if (IN6_IS_ADDR_V4MAPPED(&(mx->addr)) &&
 					ip4_matchnet(&xmitstat.sremoteip,
 							(struct in_addr *) &(mx->addr.s6_addr32[3]), ip4l)) {
-				freeips(mx);
+				freeips(allmx);
 				return SPF_PASS;
 			}
 			mx = mx->next;
@@ -332,13 +333,13 @@ spfmx(const char *domain, char *token)
 	} else {
 		while (mx) {
 			if (ip6_matchnet(&xmitstat.sremoteip, &mx->addr, ip6l)) {
-				freeips(mx);
+				freeips(allmx);
 				return SPF_PASS;
 			}
 			mx = mx->next;
 		}
 	}
-	freeips(mx);
+	freeips(allmx);
 	return SPF_NONE;
 }
 
