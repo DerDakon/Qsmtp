@@ -207,7 +207,7 @@ spflookup(const char *domain, const int rec)
 		free(txt);
 		return prefix;
 	}
-	free(txt);
+
 	if (redirect) {
 		char *e = redirect;
 
@@ -215,9 +215,12 @@ spflookup(const char *domain, const int rec)
 			e++;
 		}
 		*e = '\0';
-		return spflookup(redirect, rec + 1);
+		result = spflookup(redirect, rec + 1);
+	} else {
+		result = SPF_NEUTRAL;
 	}
-	return SPF_NEUTRAL;
+	free(txt);
+	return result;
 }
 
 #define WRITE(fd, s, l) if ( (rc = write((fd), (s), (l))) < 0 ) return rc
