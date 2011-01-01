@@ -431,6 +431,9 @@ recode_qp(const char *buf, off_t len)
 	off_t off = 0;
 	int llen = 0;		/* length of this line, needed for qp line break */
 
+	if (len == 0)
+		return;
+
 	while (off < len) {
 		while (idx + (off_t) chunk < sizeof(sendbuf) - 11) {
 			if (off + (off_t) chunk == len) {
