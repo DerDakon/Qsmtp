@@ -20,209 +20,6 @@
 
 static const char spf_delimiters[] = ".-+,/_=";
 
-static int spfmx(const char *domain, char *token);
-static int spfa(const char *domain, char *token);
-static int spfip4(char *domain);
-static int spfip6(char *domain);
-static int spflookup(const char *domain, const int rec);
-static int spfptr(const char *domain, char *token);
-static int spfexists(const char *domain, char *token);
-static int spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr, int *ip6cidr);
-
-/**
- * look up SPF records for domain
- *
- * This works a like the check_host in the SPF draft but takes two arguments less. The remote ip and the full
- * sender address can be taken directly from xmitstat.
- *
- * @param domain no idea what this might be for ;)
- * @return one of the SPF_* constants defined in include/antispam.h
- */
-int
-check_host(const char *domain)
-{
-	return spflookup(domain, 0);
-}
-
-/**
- * look up SPF records for domain
- *
- * @param domain no idea what this might be for
- * @param rec recursion level
- * @return one of the SPF_* constants defined in include/antispam.h or -1 on ENOMEM
- */
-static int
-spflookup(const char *domain, const int rec)
-{
-	char *txt, *token, *valid = NULL, *redirect = NULL;
-	int i, result = SPF_NONE, prefix;
-
-	if (rec >= 20)
-		return SPF_HARD_ERROR;
-
-	/* don't enforce valid domains on redirects */
-	if (!rec && domainvalid(domain))
-		return SPF_FAIL_MALF;
-
- 	i = dnstxt(&txt, domain);
-	if (i) {
-		switch (errno) {
-			case ENOENT:	return SPF_NONE;
-			case ETIMEDOUT:
-			case EIO:
-			case ECONNREFUSED:
-			case EAGAIN:	return SPF_TEMP_ERROR;
-			case EINVAL:	return SPF_HARD_ERROR;
-			case ENOMEM:
-			default:	return -1;
-		}
-	}
-	if (!txt)
-		return SPF_NONE;
-	token = txt;
-	while ((token = strstr(token, "v=spf1"))) {
-		if (valid) {
-			free(txt);
-			return SPF_HARD_ERROR;
-		} else {
-			token += 6;
-			valid = token;
-		}
-	}
-	if (!valid) {
-		free(txt);
-		return SPF_NONE;
-	}
-	token = valid;
-	while (*token && (result != SPF_PASS)) {
-		while (WSPACE(*token)) {
-			token++;
-		}
-		if (!*token)
-			break;
-		switch(*token) {
-			case '-':	token++; prefix = SPF_FAIL_PERM; break;
-			case '~':	token++; prefix = SPF_SOFTFAIL; break;
-			case '+':	token++; prefix = SPF_PASS; break;
-			case '?':	token++; prefix = SPF_NEUTRAL; break;
-			default:	if (((*token >= 'a') && (*token <= 'z')) ||
-								((*token >= 'A') && (*token <= 'Z'))) {
-						prefix = SPF_PASS;
-					} else {
-						free(txt);
-						return SPF_HARD_ERROR;
-					}
-		}
-		if (!strncasecmp(token, "mx", 2) &&
-					(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':') ||
-						(*(token + 2) == '/'))) {
-			token += 2;
-			if (*token == ':')
-				token++;
-			result = spfmx(domain, token);
-		} else if (!strncasecmp(token, "ptr", 3) &&
-				(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':'))) {
-			token += 3;
-			if (*token == ':')
-				token++;
-			result = spfptr(domain, token);
-		} else if (!strncasecmp(token, "exists:", 7)) {
-			token += 7;
-			result = spfexists(domain, token);
-		} else if (!strncasecmp(token, "all", 3) && (WSPACE(*(token + 3)) || !*(token + 3))) {
-			result = SPF_PASS;
-		} else if (((*token == 'a') || (*token == 'A')) &&
-					(WSPACE(*(token + 1)) || !*(token + 1) || (*(token + 1) == ':'))) {
-			if (*(++token) == ':')
-				token++;
-			result = spfa(domain, token);
-		} else if (!strncasecmp(token, "ip4:", 4)) {
-			token += 4;
-			result = spfip4(token);
-		} else if (!strncasecmp(token, "ip6:", 4)) {
-			token += 4;
-			result = spfip6(token);
-		} else if (!strncasecmp(token, "include:", 8)) {
-			char *n;
-			int flagnext = 0;
-
-			token += 8;
-			n = token;
-			while (!WSPACE(*n) && *n) {
-				n++;
-			}
-			if (*n) {
-				*n = '\0';
-				flagnext = 1;
-			}
-			result = spflookup(token, rec + 1);
-			switch (result) {
-				case SPF_NONE:	result = SPF_PASS;
-						prefix = SPF_FAIL_NONEX;
-						break;
-				case SPF_TEMP_ERROR:
-				case SPF_HARD_ERROR:
-				case SPF_PASS:	prefix = result;
-						result = SPF_PASS;
-						break;
-				case -1:	break;
-				default:	result = SPF_NONE;
-			}
-			token = n;
-			if (flagnext)
-				*n = ' ';
-		} else if (!strncasecmp(token, "redirect=", 9)) {
-			token += 9;
-			if (!redirect) {
-				redirect = token;
-			}
-		} else {
-			result = 0;
-		}
-/* skip to the end of this token */
-		while (*token && !WSPACE(*token)) {
-			token++;
-		}
-		if ((result == SPF_TEMP_ERROR) || (result == SPF_HARD_ERROR)) {
-			prefix = result;
-			result = SPF_PASS;
-		}
-	}
-	if (result < 0) {
-		free(txt);
-		return result;
-	}
-	if (result == SPF_PASS) {
-		if (SPF_FAIL(prefix)) {
-			char *ex = strcasestr(txt, "exp=");
-
-			if (ex != NULL) {
-				int ip4, ip6;
-
-				if ((i = spf_domainspec(domain, ex, &xmitstat.spfexp, &ip4, &ip6))) {
-					xmitstat.spfexp = NULL;
-				}
-			}
-		}
-		free(txt);
-		return prefix;
-	}
-
-	if (redirect) {
-		char *e = redirect;
-
-		while (*e && !WSPACE(*e)) {
-			e++;
-		}
-		*e = '\0';
-		result = spflookup(redirect, rec + 1);
-	} else {
-		result = SPF_NEUTRAL;
-	}
-	free(txt);
-	return result;
-}
-
 #define WRITE(fd, s, l) if ( (rc = write((fd), (s), (l))) < 0 ) return rc
 
 /**
@@ -275,270 +72,6 @@ spfreceived(int fd, const int spf) {
 	}
 	WRITE(fd, "\n", 1);
 	return 0;
-}
-
-/* the SPF routines
- *
- * return values:
- *  SPF_NONE: no match
- *  SPF_PASS: match
- *  SPF_HARD_ERROR: parse error
- * -1: error (ENOMEM)
- */
-static int
-spfmx(const char *domain, char *token)
-{
-	int ip6l, ip4l, i;
-	struct ips *mx, *allmx;
-	char *domainspec;
-
-	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
-		return i;
-	}
-	if (ip4l < 0) {
-		ip4l = 32;
-	}
-	if (ip6l < 0) {
-		ip6l = 128;
-	}
-	if (domainspec) {
-		i = ask_dnsmx(domainspec, &mx);
-		free(domainspec);
-	} else {
-		i = ask_dnsmx(domain, &mx);
-	}
-	switch (i) {
-		case 1: return SPF_NONE;
-		case 2: return SPF_TEMP_ERROR;
-		case 3:	return SPF_HARD_ERROR;
-		case -1:return -1;
-	}
-	if (!mx) {
-		return SPF_NONE;
-	}
-/* Don't use the implicit MX for this. There are either all MX records
- * implicit or none so we only have to look at the first one */
-	if (mx->priority >= 65536) {
-		freeips(mx);
-		return SPF_NONE;
-	}
-	allmx = mx;
-	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
-		while (mx) {
-			if (IN6_IS_ADDR_V4MAPPED(&(mx->addr)) &&
-					ip4_matchnet(&xmitstat.sremoteip,
-							(struct in_addr *) &(mx->addr.s6_addr32[3]), ip4l)) {
-				freeips(allmx);
-				return SPF_PASS;
-			}
-			mx = mx->next;
-		}
-	} else {
-		while (mx) {
-			if (ip6_matchnet(&xmitstat.sremoteip, &mx->addr, ip6l)) {
-				freeips(allmx);
-				return SPF_PASS;
-			}
-			mx = mx->next;
-		}
-	}
-	freeips(allmx);
-	return SPF_NONE;
-}
-
-static int
-spfa(const char *domain, char *token)
-{
-	int ip6l, ip4l, i, r = 0;
-	struct ips *ip, *thisip;
-	char *domainspec;
-
-	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
-		return i;
-	}
-	if (ip4l < 0) {
-		ip4l = 32;
-	}
-	if (ip6l < 0) {
-		ip6l = 128;
-	}
-	if (domainspec) {
-		i = ask_dnsaaaa(domainspec, &ip);
-		free(domainspec);
-	} else {
-		i = ask_dnsaaaa(domain, &ip);
-	}
-
-	switch (i) {
-		case 0:	thisip = ip;
-			r = SPF_NONE;
-			while (thisip) {
-				if (IN6_ARE_ADDR_EQUAL(&(thisip->addr), &(xmitstat.sremoteip))) {
-					r = SPF_PASS;
-					break;
-				}
-				thisip = thisip->next;
-			}
-			freeips(ip);
-			break;
-		case 1:	r = SPF_NONE;
-			break;
-		case 2:	r = SPF_TEMP_ERROR;
-			break;
-		case -1:	r = -1;
-			break;
-		default:r = SPF_HARD_ERROR;
-	}
-	return r;
-}
-
-static int
-spfexists(const char *domain, char *token)
-{
-	int ip6l, ip4l, i, r = 0;
-	char *domainspec;
-
-	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
-		return i;
-	}
-	if ((ip4l > 0) || (ip6l > 0) || !domainspec) {
-		return SPF_HARD_ERROR;
-	}
-	i = ask_dnsa(domainspec, NULL);
-	free(domainspec);
-
-	switch (i) {
-		case 0:	r = SPF_PASS;
-			break;
-		case 1:	r = SPF_NONE;
-			break;
-		case 2:	r = SPF_TEMP_ERROR;
-			break;
-		case -1:	r = -1;
-			break;
-		default:r = SPF_HARD_ERROR;
-	}
-	return r;
-}
-
-static int
-spfptr(const char *domain, char *token)
-{
-	int ip6l, ip4l, i, r = 0;
-	struct ips *ip, *thisip;
-	char *domainspec;
-
-	if (!xmitstat.remotehost.len) {
-		return SPF_NONE;
-	}
-	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
-		return i;
-	}
-	if ((ip4l > 0) || (ip6l > 0)) {
-		free(domainspec);
-		return SPF_HARD_ERROR;
-	}
-	if (domainspec) {
-		i = ask_dnsaaaa(domainspec, &ip);
-		free(domainspec);
-	} else {
-		i = ask_dnsaaaa(domain, &ip);
-	}
-
-	switch (i) {
-		case 0:	thisip = ip;
-			r = SPF_NONE;
-			while (thisip) {
-				if (IN6_ARE_ADDR_EQUAL(&(thisip->addr), &(xmitstat.sremoteip))) {
-					r = SPF_PASS;
-					break;
-				}
-				thisip = thisip->next;
-			}
-			freeips(ip);
-			break;
-		case 1:	r = SPF_NONE;
-			break;
-		case 2:	r = SPF_TEMP_ERROR;
-			break;
-		case -1:	r = -1;
-			break;
-		default:r = SPF_HARD_ERROR;
-	}
-	return r;
-}
-
-static int
-spfip4(char *domain)
-{
-	char *sl = domain;
-	char osl;	/* char at *sl before we overwrite it */
-	struct in_addr net;
-	unsigned long u;
-
-	if (!IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
-		return SPF_NONE;
-	while (((*sl >= '0') && (*sl <= '9')) || (*sl == '.')) {
-		sl++;
-	}
-	if (*sl == '/') {
-		char *q = sl;
-
-		osl = *sl;
-		*sl = '\0';
-		u = strtoul(sl + 1, &sl, 10);
-		if ((u < 8) || (u > 32) || !WSPACE(*sl))
-			return SPF_HARD_ERROR;
-		sl = q;
-	} else if (WSPACE(*sl) || !*sl) {
-		osl = *sl;
-		*sl = '\0';
-		u = 32;
-	} else {
-		return SPF_HARD_ERROR;
-	}
-	if (!inet_pton(AF_INET, domain, &net))
-		return SPF_HARD_ERROR;
-	*sl = osl;
-	return ip4_matchnet(&xmitstat.sremoteip, &net, u) ? SPF_PASS : SPF_NONE;
-}
-
-static int
-spfip6(char *domain)
-{
-	char *sl = domain;
-	char osl;	/* char at *sl before we overwrite it */
-	struct in6_addr net;
-	unsigned long u;
-
-	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
-		return SPF_NONE;
-	while (((*sl >= '0') && (*sl <= '9')) || ((*sl >= 'a') && (*sl <= 'f')) ||
-					((*sl >= 'A') && (*sl <= 'F')) || (*sl == ':') || (*sl == '.')) {
-		sl++;
-	}
-	if (*sl == '/') {
-		char *q = sl;
-
-		osl = *sl;
-		*sl = '\0';
-		u = strtoul(sl + 1, &sl, 10);
-		if ((u < 8) || (u > 128) || !WSPACE(*sl))
-			return SPF_HARD_ERROR;
-		sl = q;
-	} else if (WSPACE(*sl) || !*sl) {
-		osl = *sl;
-		*sl = '\0';
-		u = 128;
-	} else {
-		return SPF_HARD_ERROR;
-	}
-	osl = *sl;
-	*sl = '\0';
-	if (!inet_pton(AF_INET6, domain, &net))
-		return SPF_HARD_ERROR;
-	*sl = osl;
-	return ip6_matchnet(&xmitstat.sremoteip, &net, (unsigned char) (u & 0xff)) ? SPF_PASS : SPF_NONE;
 }
 
 /**
@@ -1159,4 +692,462 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 		return SPF_HARD_ERROR;
 	}
 	return 0;
+}
+
+/* the SPF routines
+ *
+ * return values:
+ *  SPF_NONE: no match
+ *  SPF_PASS: match
+ *  SPF_HARD_ERROR: parse error
+ * -1: error (ENOMEM)
+ */
+static int
+spfmx(const char *domain, char *token)
+{
+	int ip6l, ip4l, i;
+	struct ips *mx, *allmx;
+	char *domainspec;
+
+	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
+		return i;
+	}
+	if (ip4l < 0) {
+		ip4l = 32;
+	}
+	if (ip6l < 0) {
+		ip6l = 128;
+	}
+	if (domainspec) {
+		i = ask_dnsmx(domainspec, &mx);
+		free(domainspec);
+	} else {
+		i = ask_dnsmx(domain, &mx);
+	}
+	switch (i) {
+		case 1: return SPF_NONE;
+		case 2: return SPF_TEMP_ERROR;
+		case 3:	return SPF_HARD_ERROR;
+		case -1:return -1;
+	}
+	if (!mx) {
+		return SPF_NONE;
+	}
+/* Don't use the implicit MX for this. There are either all MX records
+ * implicit or none so we only have to look at the first one */
+	if (mx->priority >= 65536) {
+		freeips(mx);
+		return SPF_NONE;
+	}
+	allmx = mx;
+	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
+		while (mx) {
+			if (IN6_IS_ADDR_V4MAPPED(&(mx->addr)) &&
+					ip4_matchnet(&xmitstat.sremoteip,
+							(struct in_addr *) &(mx->addr.s6_addr32[3]), ip4l)) {
+				freeips(allmx);
+				return SPF_PASS;
+			}
+			mx = mx->next;
+		}
+	} else {
+		while (mx) {
+			if (ip6_matchnet(&xmitstat.sremoteip, &mx->addr, ip6l)) {
+				freeips(allmx);
+				return SPF_PASS;
+			}
+			mx = mx->next;
+		}
+	}
+	freeips(allmx);
+	return SPF_NONE;
+}
+
+static int
+spfa(const char *domain, char *token)
+{
+	int ip6l, ip4l, i, r = 0;
+	struct ips *ip, *thisip;
+	char *domainspec;
+
+	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
+		return i;
+	}
+	if (ip4l < 0) {
+		ip4l = 32;
+	}
+	if (ip6l < 0) {
+		ip6l = 128;
+	}
+	if (domainspec) {
+		i = ask_dnsaaaa(domainspec, &ip);
+		free(domainspec);
+	} else {
+		i = ask_dnsaaaa(domain, &ip);
+	}
+
+	switch (i) {
+		case 0:	thisip = ip;
+			r = SPF_NONE;
+			while (thisip) {
+				if (IN6_ARE_ADDR_EQUAL(&(thisip->addr), &(xmitstat.sremoteip))) {
+					r = SPF_PASS;
+					break;
+				}
+				thisip = thisip->next;
+			}
+			freeips(ip);
+			break;
+		case 1:	r = SPF_NONE;
+			break;
+		case 2:	r = SPF_TEMP_ERROR;
+			break;
+		case -1:	r = -1;
+			break;
+		default:r = SPF_HARD_ERROR;
+	}
+	return r;
+}
+
+static int
+spfexists(const char *domain, char *token)
+{
+	int ip6l, ip4l, i, r = 0;
+	char *domainspec;
+
+	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
+		return i;
+	}
+	if ((ip4l > 0) || (ip6l > 0) || !domainspec) {
+		return SPF_HARD_ERROR;
+	}
+	i = ask_dnsa(domainspec, NULL);
+	free(domainspec);
+
+	switch (i) {
+		case 0:	r = SPF_PASS;
+			break;
+		case 1:	r = SPF_NONE;
+			break;
+		case 2:	r = SPF_TEMP_ERROR;
+			break;
+		case -1:	r = -1;
+			break;
+		default:r = SPF_HARD_ERROR;
+	}
+	return r;
+}
+
+static int
+spfptr(const char *domain, char *token)
+{
+	int ip6l, ip4l, i, r = 0;
+	struct ips *ip, *thisip;
+	char *domainspec;
+
+	if (!xmitstat.remotehost.len) {
+		return SPF_NONE;
+	}
+	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
+		return i;
+	}
+	if ((ip4l > 0) || (ip6l > 0)) {
+		free(domainspec);
+		return SPF_HARD_ERROR;
+	}
+	if (domainspec) {
+		i = ask_dnsaaaa(domainspec, &ip);
+		free(domainspec);
+	} else {
+		i = ask_dnsaaaa(domain, &ip);
+	}
+
+	switch (i) {
+		case 0:	thisip = ip;
+			r = SPF_NONE;
+			while (thisip) {
+				if (IN6_ARE_ADDR_EQUAL(&(thisip->addr), &(xmitstat.sremoteip))) {
+					r = SPF_PASS;
+					break;
+				}
+				thisip = thisip->next;
+			}
+			freeips(ip);
+			break;
+		case 1:	r = SPF_NONE;
+			break;
+		case 2:	r = SPF_TEMP_ERROR;
+			break;
+		case -1:	r = -1;
+			break;
+		default:r = SPF_HARD_ERROR;
+	}
+	return r;
+}
+
+static int
+spfip4(char *domain)
+{
+	char *sl = domain;
+	char osl;	/* char at *sl before we overwrite it */
+	struct in_addr net;
+	unsigned long u;
+
+	if (!IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
+		return SPF_NONE;
+	while (((*sl >= '0') && (*sl <= '9')) || (*sl == '.')) {
+		sl++;
+	}
+	if (*sl == '/') {
+		char *q = sl;
+
+		osl = *sl;
+		*sl = '\0';
+		u = strtoul(sl + 1, &sl, 10);
+		if ((u < 8) || (u > 32) || !WSPACE(*sl))
+			return SPF_HARD_ERROR;
+		sl = q;
+	} else if (WSPACE(*sl) || !*sl) {
+		osl = *sl;
+		*sl = '\0';
+		u = 32;
+	} else {
+		return SPF_HARD_ERROR;
+	}
+	if (!inet_pton(AF_INET, domain, &net))
+		return SPF_HARD_ERROR;
+	*sl = osl;
+	return ip4_matchnet(&xmitstat.sremoteip, &net, u) ? SPF_PASS : SPF_NONE;
+}
+
+static int
+spfip6(char *domain)
+{
+	char *sl = domain;
+	char osl;	/* char at *sl before we overwrite it */
+	struct in6_addr net;
+	unsigned long u;
+
+	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
+		return SPF_NONE;
+	while (((*sl >= '0') && (*sl <= '9')) || ((*sl >= 'a') && (*sl <= 'f')) ||
+					((*sl >= 'A') && (*sl <= 'F')) || (*sl == ':') || (*sl == '.')) {
+		sl++;
+	}
+	if (*sl == '/') {
+		char *q = sl;
+
+		osl = *sl;
+		*sl = '\0';
+		u = strtoul(sl + 1, &sl, 10);
+		if ((u < 8) || (u > 128) || !WSPACE(*sl))
+			return SPF_HARD_ERROR;
+		sl = q;
+	} else if (WSPACE(*sl) || !*sl) {
+		osl = *sl;
+		*sl = '\0';
+		u = 128;
+	} else {
+		return SPF_HARD_ERROR;
+	}
+	osl = *sl;
+	*sl = '\0';
+	if (!inet_pton(AF_INET6, domain, &net))
+		return SPF_HARD_ERROR;
+	*sl = osl;
+	return ip6_matchnet(&xmitstat.sremoteip, &net, (unsigned char) (u & 0xff)) ? SPF_PASS : SPF_NONE;
+}
+
+/**
+ * look up SPF records for domain
+ *
+ * @param domain no idea what this might be for
+ * @param rec recursion level
+ * @return one of the SPF_* constants defined in include/antispam.h or -1 on ENOMEM
+ */
+static int
+spflookup(const char *domain, const int rec)
+{
+	char *txt, *token, *valid = NULL, *redirect = NULL;
+	int i, result = SPF_NONE, prefix;
+
+	if (rec >= 20)
+		return SPF_HARD_ERROR;
+
+	/* don't enforce valid domains on redirects */
+	if (!rec && domainvalid(domain))
+		return SPF_FAIL_MALF;
+
+ 	i = dnstxt(&txt, domain);
+	if (i) {
+		switch (errno) {
+			case ENOENT:	return SPF_NONE;
+			case ETIMEDOUT:
+			case EIO:
+			case ECONNREFUSED:
+			case EAGAIN:	return SPF_TEMP_ERROR;
+			case EINVAL:	return SPF_HARD_ERROR;
+			case ENOMEM:
+			default:	return -1;
+		}
+	}
+	if (!txt)
+		return SPF_NONE;
+	token = txt;
+	while ((token = strstr(token, "v=spf1"))) {
+		if (valid) {
+			free(txt);
+			return SPF_HARD_ERROR;
+		} else {
+			token += 6;
+			valid = token;
+		}
+	}
+	if (!valid) {
+		free(txt);
+		return SPF_NONE;
+	}
+	token = valid;
+	while (*token && (result != SPF_PASS)) {
+		while (WSPACE(*token)) {
+			token++;
+		}
+		if (!*token)
+			break;
+		switch(*token) {
+			case '-':	token++; prefix = SPF_FAIL_PERM; break;
+			case '~':	token++; prefix = SPF_SOFTFAIL; break;
+			case '+':	token++; prefix = SPF_PASS; break;
+			case '?':	token++; prefix = SPF_NEUTRAL; break;
+			default:	if (((*token >= 'a') && (*token <= 'z')) ||
+								((*token >= 'A') && (*token <= 'Z'))) {
+						prefix = SPF_PASS;
+					} else {
+						free(txt);
+						return SPF_HARD_ERROR;
+					}
+		}
+		if (!strncasecmp(token, "mx", 2) &&
+					(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':') ||
+						(*(token + 2) == '/'))) {
+			token += 2;
+			if (*token == ':')
+				token++;
+			result = spfmx(domain, token);
+		} else if (!strncasecmp(token, "ptr", 3) &&
+				(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':'))) {
+			token += 3;
+			if (*token == ':')
+				token++;
+			result = spfptr(domain, token);
+		} else if (!strncasecmp(token, "exists:", 7)) {
+			token += 7;
+			result = spfexists(domain, token);
+		} else if (!strncasecmp(token, "all", 3) && (WSPACE(*(token + 3)) || !*(token + 3))) {
+			result = SPF_PASS;
+		} else if (((*token == 'a') || (*token == 'A')) &&
+					(WSPACE(*(token + 1)) || !*(token + 1) || (*(token + 1) == ':'))) {
+			if (*(++token) == ':')
+				token++;
+			result = spfa(domain, token);
+		} else if (!strncasecmp(token, "ip4:", 4)) {
+			token += 4;
+			result = spfip4(token);
+		} else if (!strncasecmp(token, "ip6:", 4)) {
+			token += 4;
+			result = spfip6(token);
+		} else if (!strncasecmp(token, "include:", 8)) {
+			char *n;
+			int flagnext = 0;
+
+			token += 8;
+			n = token;
+			while (!WSPACE(*n) && *n) {
+				n++;
+			}
+			if (*n) {
+				*n = '\0';
+				flagnext = 1;
+			}
+			result = spflookup(token, rec + 1);
+			switch (result) {
+				case SPF_NONE:	result = SPF_PASS;
+						prefix = SPF_FAIL_NONEX;
+						break;
+				case SPF_TEMP_ERROR:
+				case SPF_HARD_ERROR:
+				case SPF_PASS:	prefix = result;
+						result = SPF_PASS;
+						break;
+				case -1:	break;
+				default:	result = SPF_NONE;
+			}
+			token = n;
+			if (flagnext)
+				*n = ' ';
+		} else if (!strncasecmp(token, "redirect=", 9)) {
+			token += 9;
+			if (!redirect) {
+				redirect = token;
+			}
+		} else {
+			result = 0;
+		}
+/* skip to the end of this token */
+		while (*token && !WSPACE(*token)) {
+			token++;
+		}
+		if ((result == SPF_TEMP_ERROR) || (result == SPF_HARD_ERROR)) {
+			prefix = result;
+			result = SPF_PASS;
+		}
+	}
+	if (result < 0) {
+		free(txt);
+		return result;
+	}
+	if (result == SPF_PASS) {
+		if (SPF_FAIL(prefix)) {
+			char *ex = strcasestr(txt, "exp=");
+
+			if (ex != NULL) {
+				int ip4, ip6;
+
+				if ((i = spf_domainspec(domain, ex, &xmitstat.spfexp, &ip4, &ip6))) {
+					xmitstat.spfexp = NULL;
+				}
+			}
+		}
+		free(txt);
+		return prefix;
+	}
+
+	if (redirect) {
+		char *e = redirect;
+
+		while (*e && !WSPACE(*e)) {
+			e++;
+		}
+		*e = '\0';
+		result = spflookup(redirect, rec + 1);
+	} else {
+		result = SPF_NEUTRAL;
+	}
+	free(txt);
+	return result;
+}
+
+/**
+ * look up SPF records for domain
+ *
+ * This works a like the check_host in the SPF draft but takes two arguments less. The remote ip and the full
+ * sender address can be taken directly from xmitstat.
+ *
+ * @param domain no idea what this might be for ;)
+ * @return one of the SPF_* constants defined in include/antispam.h
+ */
+int
+check_host(const char *domain)
+{
+	return spflookup(domain, 0);
 }
