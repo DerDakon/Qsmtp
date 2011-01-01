@@ -194,9 +194,9 @@ spflookup(const char *domain, const int rec)
 	}
 	if (result == SPF_PASS) {
 		if (SPF_FAIL(prefix)) {
-			char *ex;
+			char *ex = strcasestr(txt, "exp=");
 
-			if ( (ex = strcasestr(txt, "exp=")) ) {
+			if (ex != NULL) {
 				int ip4, ip6;
 
 				if ((i = spf_domainspec(domain, ex, &xmitstat.spfexp, &ip4, &ip6))) {
