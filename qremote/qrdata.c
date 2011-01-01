@@ -597,7 +597,10 @@ send_qp(const char *buf, const off_t len)
 	off = qp_header(buf, len, &boundary, &multipart, (recodeflag & 0x3));
 
 	if (!multipart) {
-		recode_qp(buf + off, len - off);
+		if (recodeflag & 0x3)
+			recode_qp(buf + off, len - off);
+		else
+			send_plain(buf + off, len - off);
 	} else {
 		off_t nextoff = find_boundary(buf + off, len - off, &boundary);
 		int nr;
