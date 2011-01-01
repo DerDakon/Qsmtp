@@ -521,6 +521,8 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 		exit(EFAULT);
 	}
 
+	free(outbuf);
+	outbuf = NULL;
 	exit(0);
 }
 
