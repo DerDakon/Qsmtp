@@ -295,6 +295,11 @@ test_parse()
 			.value = "v=spf1 ~all v=spf1 -all"
 		},
 		{
+			.type = DNSTYPE_TXT,
+			.key = "emptyspec.example.net",
+			.value = "v=spf1  "
+		},
+		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
@@ -331,6 +336,18 @@ test_parse()
 	r = check_host(parseentries[3].key);
 	if (r != SPF_HARD_ERROR) {
 		fprintf(stderr, "check_host() with invalid SPF entry (2 v=spf1 specifications) did not fail with SPF_HARD_ERROR, but %i\n", r);
+		err++;
+	}
+
+	r = check_host("garbage..domain");
+	if (r != SPF_FAIL_MALF) {
+		fprintf(stderr, "check_host() with invalid domain did not fail with SPF_FAIL_MALF, but %i\n", r);
+		err++;
+	}
+
+	r = check_host(parseentries[4].key);
+	if (r != SPF_NEUTRAL) {
+		fprintf(stderr, "check_host() with empty spec should return SPF_NEUTRAL, but did %i\n", r);
 		err++;
 	}
 
