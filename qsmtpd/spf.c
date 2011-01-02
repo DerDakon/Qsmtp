@@ -948,7 +948,7 @@ spfip6(char *domain)
 		osl = *sl;
 		*sl = '\0';
 		u = strtoul(sl + 1, &sl, 10);
-		if ((u < 8) || (u > 128) || !WSPACE(*sl))
+		if ((u < 8) || (u > 128) || (!WSPACE(*sl) && (*sl != '\0')))
 			return SPF_HARD_ERROR;
 		sl = q;
 	} else if (WSPACE(*sl) || !*sl) {
