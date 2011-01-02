@@ -686,20 +686,24 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 
 		*ip4cidr = strtol(token + 1, &c, 10);
 		if ((*ip4cidr < 8) || (*ip4cidr > 32) || (!WSPACE(*c) && (*c != '/'))) {
+			free(*domainspec);
 			return SPF_HARD_ERROR;
 		}
 		if (*c++ != '/') {
 			*ip6cidr = -1;
 		} else {
 			if (*c++ != '/') {
+				free(*domainspec);
 				return SPF_HARD_ERROR;
 			}
 			*ip6cidr = strtol(c, &c, 10);
 			if ((*ip6cidr < 8) || (*ip6cidr > 128) || !WSPACE(*c)) {
+				free(*domainspec);
 				return SPF_HARD_ERROR;
 			}
 		}
 	} else if (!WSPACE(*token) && *token) {
+		free(*domainspec);
 		return SPF_HARD_ERROR;
 	}
 	return 0;
