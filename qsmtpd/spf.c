@@ -668,8 +668,11 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 					unsigned int l = strlen(d) + 1;
 					char *nd = malloc(l);
 
-					if (!nd)
+					if (!nd) {
+						free(*domainspec);
+						errno = ENOMEM;
 						return -1;
+					}
 					memcpy(nd, d, l);
 					free(*domainspec);
 					*domainspec = nd;
