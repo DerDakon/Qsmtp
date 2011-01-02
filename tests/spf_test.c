@@ -333,6 +333,202 @@ runtest(struct spftestcase *tc)
 }
 
 static int
+test_parse_ip4()
+{
+	struct dnsentry ip4entries[] = {
+		{
+			.type = DNSTYPE_TXT,
+			.key = "ipv4test.example.net",
+			.value = NULL
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		}
+	};
+	const char *ip4invalid[] = {
+		"v=spf1 ip4:10.a.0.4",
+		"v=spf1 ip4:::1",
+		"v=spf1 ip4:.1",
+		"v=spf1 ip4:.1/130",
+		"v=spf1 ip4:1/0",
+		"v=spf1 ip4:10.42.52.52/0",
+		"v=spf1 ip4:10.52.52.42/",
+		"v=spf1 ip4:255.255.255.255.255",
+		NULL
+	};
+	const char *ip4valid[] = {
+		"v=spf1 ip4:10.42.42.42 -all",
+		"v=spf1 ip4:10.42.42.0/24 -all",
+		"v=spf1 ip4:10.0.0.0/8 -all",
+		NULL
+	};
+	const char *ip4valid_reject[] = {
+		"v=spf1 ip4:10.42.42.43 -all",
+		"v=spf1 ip4:10.42.42.0/30 -all",
+		"v=spf1 ip4:10.0.0.0/16 -all",
+		NULL
+	};
+	int err = 0;
+	unsigned int i = 0;
+	int r;
+
+	dnsdata = ip4entries;
+	i = 0;
+
+	inet_pton(AF_INET6, "::ffff:10.42.42.42", &xmitstat.sremoteip);
+
+	while (ip4invalid[i] != NULL) {
+		ip4entries[0].value = ip4invalid[i];
+
+		if (check_host(ip4entries[0].key) != SPF_HARD_ERROR) {
+			fprintf(stderr, "check_host() did not reject invalid IPv4 entry '%s'\n", ip4invalid[i]);
+			err++;
+		}
+
+		i++;
+	}
+
+	i = 0;
+
+	while (ip4valid[i] != NULL) {
+		ip4entries[0].value = ip4valid[i];
+
+		r = check_host(ip4entries[0].key);
+		if (r != SPF_PASS) {
+			fprintf(stderr, "check_host() did not accept '%s', but returned %i\n", ip4valid[i], r);
+			err++;
+		}
+
+		i++;
+	}
+
+	i = 0;
+
+	while (ip4valid_reject[i] != NULL) {
+		ip4entries[0].value = ip4valid_reject[i];
+
+		r = check_host(ip4entries[0].key);
+		if (r != SPF_FAIL_PERM) {
+			fprintf(stderr, "check_host() did not properly reject '%s', but returned %i\n", ip4valid_reject[i], r);
+			err++;
+		}
+
+		i++;
+	}
+
+	inet_pton(AF_INET6, "fef0::abc:001", &xmitstat.sremoteip);
+	ip4entries[0].value = ip4valid[0];
+
+	r = check_host(ip4entries[0].key);
+	if (r != SPF_FAIL_PERM) {
+		fprintf(stderr, "check_host() should reject '%s' with IPv6 address, but returned %i\n", ip4valid[0], r);
+		err++;
+	}
+
+	return err;
+}
+
+static int
+test_parse_ip6()
+{
+	struct dnsentry ip6entries[] = {
+		{
+			.type = DNSTYPE_TXT,
+			.key = "ipv6test.example.net",
+			.value = NULL
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		}
+	};
+	const char *ip6invalid[] = {
+		"v=spf1 ip6:abg::1",
+		"v=spf1 ip6::::1",
+		"v=spf1 ip6:",
+		"v=spf1 ip6:::1/130",
+		"v=spf1 ip6::1/0",
+		"v=spf1 ip6:::1/0",
+		"v=spf1 ip6:::1/",
+		"v=spf1 ip6::1/3b",
+		"v=spf1 ip6:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd",
+		"v=spf1 ip6:10.42.42.42",
+		NULL
+	};
+	const char *ip6valid[] = {
+		"v=spf1 ip6:fef0::abc:001 -all",
+		"v=spf1 ip6:fef0::abc:0/120 -all",
+		"v=spf1 ip6:fef0::0/48 -all",
+		NULL
+	};
+	const char *ip6valid_reject[] = {
+		"v=spf1 ip6:fef0::abc:002 -all",
+		"v=spf1 ip6:fef0::abc:0100/120 -all",
+		"v=spf1 ip6:feff::0/48 -all",
+		NULL
+	};
+	int err = 0;
+	unsigned int i = 0;
+	int r;
+
+	dnsdata = ip6entries;
+	i = 0;
+
+	while (ip6invalid[i] != NULL) {
+		ip6entries[0].value = ip6invalid[i];
+
+		if (check_host(ip6entries[0].key) != SPF_HARD_ERROR) {
+			fprintf(stderr, "check_host() did not reject invalid IPv6 entry '%s'\n", ip6invalid[i]);
+			err++;
+		}
+
+		i++;
+	}
+
+	i = 0;
+
+	while (ip6valid[i] != NULL) {
+		ip6entries[0].value = ip6valid[i];
+
+		r = check_host(ip6entries[0].key);
+		if (r != SPF_PASS) {
+			fprintf(stderr, "check_host() did not accept '%s', but returned %i\n", ip6valid[i], r);
+			err++;
+		}
+
+		i++;
+	}
+
+	i = 0;
+
+	while (ip6valid_reject[i] != NULL) {
+		ip6entries[0].value = ip6valid_reject[i];
+
+		r = check_host(ip6entries[0].key);
+		if (r != SPF_FAIL_PERM) {
+			fprintf(stderr, "check_host() did not properly reject '%s', but returned %i\n", ip6valid_reject[i], r);
+			err++;
+		}
+
+		i++;
+	}
+
+	inet_pton(AF_INET6, "::ffff:10.42.42.42", &xmitstat.sremoteip);
+	ip6entries[0].value = ip6valid[0];
+
+	r = check_host(ip6entries[0].key);
+	if (r != SPF_FAIL_PERM) {
+		fprintf(stderr, "check_host() should reject '%s' with IPv4 address, but returned %i\n", ip6valid[0], r);
+		err++;
+	}
+
+	return err;
+}
+
+static int
 test_parse()
 {
 	const struct dnsentry parseentries[] = {
@@ -402,18 +598,6 @@ test_parse()
 			.value = NULL
 		}
 	};
-	struct dnsentry ip6entries[] = {
-		{
-			.type = DNSTYPE_TXT,
-			.key = "ipv6test.example.net",
-			.value = NULL
-		},
-		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
-		}
-	};
 	static int spfresults[] = {
 		SPF_HARD_ERROR,
 		SPF_FAIL_NONEX,
@@ -427,22 +611,6 @@ test_parse()
 		SPF_PASS,
 		SPF_HARD_ERROR,
 		SPF_SOFTFAIL
-	};
-	const char *ip6invalid[] = {
-		"v=spf1 ip6:abg::1",
-		"v=spf1 ip6::::1",
-		"v=spf1 ip6:",
-		"v=spf1 ip6:::1/130",
-		"v=spf1 ip6::1/0",
-		"v=spf1 ip6:::1/0",
-		"v=spf1 ip6::1/3b",
-		NULL
-	};
-	const char *ip6valid[] = {
-		"v=spf1 ip6:fef0::abc:001",
-		"v=spf1 ip6:fef0::abc:0/120",
-		"v=spf1 ip6:fef0::0/48",
-		NULL
 	};
 	int err = 0;
 	unsigned int i = 0;
@@ -488,32 +656,8 @@ test_parse()
 	err += check_received(SPF_TEMP_ERROR);
 	err += check_received(SPF_UNKNOWN);
 
-	dnsdata = ip6entries;
-	i = 0;
-
-	while (ip6invalid[i] != NULL) {
-		ip6entries[0].value = ip6invalid[i];
-
-		if (check_host(ip6entries[0].key) != SPF_HARD_ERROR) {
-			fprintf(stderr, "check_host() did not reject invalid IPv6 entry '%s'\n", ip6invalid[i]);
-			err++;
-		}
-
-		i++;
-	}
-
-	i = 0;
-
-	while (ip6valid[i] != NULL) {
-		ip6entries[0].value = ip6valid[i];
-
-		if (check_host(ip6entries[0].key) != SPF_PASS) {
-			fprintf(stderr, "check_host() did accept '%s'\n", ip6valid[i]);
-			err++;
-		}
-
-		i++;
-	}
+	err += test_parse_ip4();
+	err += test_parse_ip6();
 
 	free(xmitstat.helostr.s);
 	STREMPTY(xmitstat.helostr);
