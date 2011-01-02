@@ -8,6 +8,7 @@
 #include "qsmtpd.h"
 #include "antispam.h"
 #include "sstring.h"
+#include <unistd.h>
 
 enum dnstype {
 	DNSTYPE_A,
@@ -229,8 +230,64 @@ struct xmitstat xmitstat;
 string heloname;
 
 static int
+check_received(int spfstatus)
+{
+	int fd[2];
+	char buf[1024];
+	int r;
+	ssize_t off = 0;
+
+	if (pipe(fd) != 0) {
+		fputs("Can not create pipes\n", stderr);
+		return 1;
+	}
+
+	r = spfreceived(fd[1], spfstatus);
+	close(fd[1]);
+
+	if (r != 0) {
+		fprintf(stderr, "spfreceived returned %i\n", r);
+		close(fd[0]);
+		return 1;
+	}
+
+	do {
+		ssize_t cnt = read(fd[0], buf + off, sizeof(buf) - 1 - off);
+		if (cnt < 0) {
+			fprintf(stderr, "error %i when reading from pipe\n", errno);
+			close(fd[0]);
+			return 1;
+		}
+		if (cnt == 0)
+			break;
+		off += cnt;
+	} while (off < sizeof(buf) - 1);
+
+	close(fd[0]);
+	buf[sizeof(buf) - 1] = '\0';
+
+	if (spfstatus == SPF_IGNORE) {
+		if (off != 0) {
+			fprintf(stderr, "spfreceived(fd, SPF_IGNORE) should not write to pipe, but has written %zi byte\n", off);
+			return 1;
+		} else {
+			return 0;
+		}
+	}
+
+	if (strchr(buf, '\n') == NULL) {
+		fputs("spfreceived() did not terminate the line with LF\n", stderr);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int
 runtest(struct spftestcase *tc)
 {
+	int err = 0;
+
 	memset(&xmitstat, 0, sizeof(xmitstat));
 
 	if (newstr(&xmitstat.mailfrom, strlen(tc->from)))
@@ -239,6 +296,9 @@ runtest(struct spftestcase *tc)
 	if (newstr(&heloname, strlen(tc->helo)))
 		return ENOMEM;
 
+	memcpy(xmitstat.mailfrom.s, tc->from, strlen(tc->from));
+	memcpy(heloname.s, tc->helo, strlen(tc->helo));
+
 	dnsdata = tc->dns;
 
 	strncpy(xmitstat.remoteip, tc->goodip, sizeof(xmitstat.remoteip));
@@ -246,9 +306,10 @@ runtest(struct spftestcase *tc)
 
 	int r = check_host(strchr(tc->from, '@') + 1);
 	if (SPF_FAIL(r)) {
-		puts("good IP did not pass");
-		return -1;
+		fprintf(stderr, "good IP did not pass for %s\n", tc->helo);
+		err++;
 	}
+	err += check_received(r);
 
 	if (tc->badip == NULL)
 		return 0;
@@ -258,16 +319,17 @@ runtest(struct spftestcase *tc)
 
 	r = check_host(strchr(tc->from, '@') + 1);
 	if (!SPF_FAIL(r)) {
-		puts("bad IP passed");
-		return -2;
+		fprintf(stderr, "bad IP passed for %s\n", tc->helo);
+		err++;
 	}
+	err += check_received(r);
 
 	free(xmitstat.mailfrom.s);
 	STREMPTY(xmitstat.mailfrom);
 	free(heloname.s);
 	STREMPTY(heloname);
 
-	return 0;
+	return err;
 }
 
 static int
