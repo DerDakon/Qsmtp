@@ -21,7 +21,8 @@
 
 static const char spf_delimiters[] = ".-+,/_=";
 
-#define WRITE(fd, s, l) if ( (rc = write((fd), (s), (l))) < 0 ) return rc
+#define WRITEl(fd, s, l) if ( (rc = write((fd), (s), (l))) < 0 ) return rc
+#define WRITE(fd, s) WRITEl((fd), (s), strlen(s))
 
 /**
  * print "Received-SPF:" to message header
@@ -49,35 +50,35 @@ spfreceived(int fd, const int spf) {
 		fromdomain = HELOSTR;
 		fromlen = HELOLEN;
 	}
-	WRITE(fd, "Received-SPF: ", 14);
-	WRITE(fd, heloname.s, heloname.len);
+	WRITE(fd, "Received-SPF: ");
+	WRITEl(fd, heloname.s, heloname.len);
 	if (spf == SPF_HARD_ERROR) {
-		WRITE(fd, ": syntax error while parsing SPF entry for ", 43);
-		WRITE(fd, fromdomain, fromlen);
+		WRITE(fd, ": syntax error while parsing SPF entry for ");
+		WRITEl(fd, fromdomain, fromlen);
 	} else if (spf == SPF_TEMP_ERROR) {
-		WRITE(fd, ": can't get SPF entry for ", 26);
-		WRITE(fd, fromdomain, fromlen);
-		WRITE(fd, " (DNS problem)", 14);
+		WRITE(fd, ": can't get SPF entry for ");
+		WRITEl(fd, fromdomain, fromlen);
+		WRITE(fd, " (DNS problem)");
 	} else if (spf == SPF_NONE) {
-		WRITE(fd, ": no SPF entry for ", 19);
-		WRITE(fd, fromdomain, fromlen);
+		WRITE(fd, ": no SPF entry for ");
+		WRITEl(fd, fromdomain, fromlen);
 	} else if (spf == SPF_UNKNOWN) {
-		WRITE(fd, ": can not figure out SPF status for ", 36);
-		WRITE(fd, fromdomain, fromlen);
+		WRITE(fd, ": can not figure out SPF status for ");
+		WRITEl(fd, fromdomain, fromlen);
 	} else {
-		WRITE(fd, ": SPF status for ", 17);
-		WRITE(fd, fromdomain, fromlen);
-		WRITE(fd, " is ", 4);
+		WRITE(fd, ": SPF status for ");
+		WRITEl(fd, fromdomain, fromlen);
+		WRITE(fd, " is ");
 		switch(spf) {
-			case SPF_PASS:		WRITE(fd, "PASS", 4); break;
-			case SPF_SOFTFAIL:	WRITE(fd, "SOFTFAIL", 8); break;
-			case SPF_NEUTRAL:	WRITE(fd, "NEUTRAL", 7); break;
+			case SPF_PASS:		WRITE(fd, "PASS"); break;
+			case SPF_SOFTFAIL:	WRITE(fd, "SOFTFAIL"); break;
+			case SPF_NEUTRAL:	WRITE(fd, "NEUTRAL"); break;
 			case SPF_FAIL_NONEX:
 			case SPF_FAIL_MALF:
-			case SPF_FAIL_PERM:	WRITE(fd, "FAIL", 4); break;
+			case SPF_FAIL_PERM:	WRITE(fd, "FAIL"); break;
 		}
 	}
-	WRITE(fd, "\n", 1);
+	WRITE(fd, "\n");
 	return 0;
 }
 
