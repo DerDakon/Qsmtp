@@ -945,7 +945,7 @@ spfip6(const char *domain)
 	}
 
 	ip6len = sl - domain;
-	if (ip6len >= sizeof(ip6buf))
+	if ((ip6len >= sizeof(ip6buf)) || (ip6len == 0))
 		return SPF_HARD_ERROR;
 
 	if (*sl == '/') {
