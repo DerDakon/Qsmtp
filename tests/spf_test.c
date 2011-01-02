@@ -394,7 +394,19 @@ test_parse()
 		{
 			.type = DNSTYPE_TXT,
 			.key = "redirect-softfail.example.net",
-			.value =" v=spf1 redirect=allsoftfail.example.net"
+			.value = " v=spf1 redirect=allsoftfail.example.net"
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		}
+	};
+	struct dnsentry ip6entries[] = {
+		{
+			.type = DNSTYPE_TXT,
+			.key = "ipv6test.example.net",
+			.value = NULL
 		},
 		{
 			.type = DNSTYPE_NONE,
@@ -416,6 +428,22 @@ test_parse()
 		SPF_HARD_ERROR,
 		SPF_SOFTFAIL
 	};
+	const char *ip6invalid[] = {
+		"v=spf1 ip6:abg::1",
+		"v=spf1 ip6::::1",
+		"v=spf1 ip6:",
+		"v=spf1 ip6:::1/130",
+		"v=spf1 ip6::1/0",
+		"v=spf1 ip6:::1/0",
+		"v=spf1 ip6::1/3b",
+		NULL
+	};
+	const char *ip6valid[] = {
+		"v=spf1 ip6:fef0::abc:001",
+		"v=spf1 ip6:fef0::abc:0/120",
+		"v=spf1 ip6:fef0::0/48",
+		NULL
+	};
 	int err = 0;
 	unsigned int i = 0;
 	int r;
@@ -424,6 +452,7 @@ test_parse()
 	if (newstr(&xmitstat.helostr, strlen(parseentries[0].key)))
 		return ENOMEM;
 	memcpy(xmitstat.helostr.s, parseentries[0].key, strlen(parseentries[0].key));
+	inet_pton(AF_INET6, "fef0::abc:001", &xmitstat.sremoteip);
 
 	r = check_host("nonexistent.example.org");
 	if (r != SPF_NONE) {
@@ -458,6 +487,33 @@ test_parse()
 	err += check_received(SPF_IGNORE);
 	err += check_received(SPF_TEMP_ERROR);
 	err += check_received(SPF_UNKNOWN);
+
+	dnsdata = ip6entries;
+	i = 0;
+
+	while (ip6invalid[i] != NULL) {
+		ip6entries[0].value = ip6invalid[i];
+
+		if (check_host(ip6entries[0].key) != SPF_HARD_ERROR) {
+			fprintf(stderr, "check_host() did not reject invalid IPv6 entry '%s'\n", ip6invalid[i]);
+			err++;
+		}
+
+		i++;
+	}
+
+	i = 0;
+
+	while (ip6valid[i] != NULL) {
+		ip6entries[0].value = ip6valid[i];
+
+		if (check_host(ip6entries[0].key) != SPF_PASS) {
+			fprintf(stderr, "check_host() did accept '%s'\n", ip6valid[i]);
+			err++;
+		}
+
+		i++;
+	}
 
 	free(xmitstat.helostr.s);
 	STREMPTY(xmitstat.helostr);
