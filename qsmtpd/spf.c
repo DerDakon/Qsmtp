@@ -910,7 +910,7 @@ spfip4(const char *domain)
 	}
 
 	ip4len = sl - domain;
-	if ((ip4len >= sizeof(ip4buf)) || (ip4len == 0))
+	if ((ip4len >= sizeof(ip4buf)) || (ip4len < 7))
 		return SPF_HARD_ERROR;
 
 	if (*sl == '/') {
@@ -952,7 +952,7 @@ spfip6(const char *domain)
 	}
 
 	ip6len = sl - domain;
-	if ((ip6len >= sizeof(ip6buf)) || (ip6len == 0))
+	if ((ip6len >= sizeof(ip6buf)) || (ip6len < 3))
 		return SPF_HARD_ERROR;
 
 	if (*sl == '/') {
