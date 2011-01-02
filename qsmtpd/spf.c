@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <assert.h>
 #include "qsmtpd.h"
 #include "antispam.h"
 #include "sstring.h"
@@ -32,34 +33,40 @@ static const char spf_delimiters[] = ".-+,/_=";
 int
 spfreceived(int fd, const int spf) {
 	int rc;
-	char *fromdomain;
+	const char *fromdomain;
+	size_t fromlen;
 
 	if (spf == SPF_IGNORE)
 		return 0;
 
 	if (xmitstat.mailfrom.len) {
-		fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+		fromdomain = memchr(xmitstat.mailfrom.s, '@', xmitstat.mailfrom.len);
+		/* if mailfrom is set it is guaranteed to have an @ since it must be valid */
+		assert(fromdomain != NULL);
+		fromdomain++;
+		fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
 	} else {
 		fromdomain = HELOSTR;
+		fromlen = HELOLEN;
 	}
 	WRITE(fd, "Received-SPF: ", 14);
 	WRITE(fd, heloname.s, heloname.len);
 	if (spf == SPF_HARD_ERROR) {
 		WRITE(fd, ": syntax error while parsing SPF entry for ", 43);
-		WRITE(fd, fromdomain, strlen(fromdomain));
+		WRITE(fd, fromdomain, fromlen);
 	} else if (spf == SPF_TEMP_ERROR) {
 		WRITE(fd, ": can't get SPF entry for ", 26);
-		WRITE(fd, fromdomain, strlen(fromdomain));
+		WRITE(fd, fromdomain, fromlen);
 		WRITE(fd, " (DNS problem)", 14);
 	} else if (spf == SPF_NONE) {
 		WRITE(fd, ": no SPF entry for ", 19);
-		WRITE(fd, fromdomain, strlen(fromdomain));
+		WRITE(fd, fromdomain, fromlen);
 	} else if (spf == SPF_UNKNOWN) {
 		WRITE(fd, ": can not figure out SPF status for ", 36);
-		WRITE(fd, fromdomain, strlen(fromdomain));
+		WRITE(fd, fromdomain, fromlen);
 	} else {
 		WRITE(fd, ": SPF status for ", 17);
-		WRITE(fd, fromdomain, strlen(fromdomain));
+		WRITE(fd, fromdomain, fromlen);
 		WRITE(fd, " is ", 4);
 		switch(spf) {
 			case SPF_PASS:		WRITE(fd, "PASS", 4); break;
