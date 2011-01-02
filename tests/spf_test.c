@@ -447,14 +447,15 @@ test_parse_ip6()
 		}
 	};
 	const char *ip6invalid[] = {
-		"v=spf1 ip6:abg::1",
+		"v=spf1 ip6:fef0:abg::1",
 		"v=spf1 ip6::::1",
 		"v=spf1 ip6:",
 		"v=spf1 ip6:::1/130",
 		"v=spf1 ip6::1/0",
 		"v=spf1 ip6:::1/0",
-		"v=spf1 ip6:::1/",
-		"v=spf1 ip6::1/3b",
+		"v=spf1 ip6:::1/ ip6:::1",
+		"v=spf1 ip6:::1/ 20",
+		"v=spf1 ip6:::1/3b",
 		"v=spf1 ip6:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd",
 		"v=spf1 ip6:10.42.42.42",
 		NULL
