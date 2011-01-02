@@ -421,6 +421,10 @@ test_parse()
 	int r;
 
 	dnsdata = parseentries;
+	if (newstr(&xmitstat.helostr, strlen(parseentries[0].key)))
+		return ENOMEM;
+	memcpy(xmitstat.helostr.s, parseentries[0].key, strlen(parseentries[0].key));
+
 	r = check_host("nonexistent.example.org");
 	if (r != SPF_NONE) {
 		fprintf(stderr, "check_host() without SPF entry SPF_NONE, but %i\n", r);
@@ -432,15 +436,31 @@ test_parse()
 		fprintf(stderr, "check_host() with invalid domain did not fail with SPF_FAIL_MALF, but %i\n", r);
 		err++;
 	}
+	err += check_received(SPF_FAIL_MALF);
 
 	while (parseentries[i].key != NULL) {
+		int c;
+
 		r = check_host(parseentries[i].key);
 		if (r != spfresults[i]) {
 			fprintf(stderr, "check_host() for test %s should return %i, but did %i\n", parseentries[i].key, spfresults[i], r);
 			err++;
 		}
+		c = check_received(r);
+		if (c != 0) {
+			fprintf(stderr, "spfreceived() for test %s (status %i) returned %i\n", parseentries[i].key, r, c);
+			err++;
+		}
 		i++;
 	}
+
+	/* these have not been tested before so do some explicit tests */
+	err += check_received(SPF_IGNORE);
+	err += check_received(SPF_TEMP_ERROR);
+	err += check_received(SPF_UNKNOWN);
+
+	free(xmitstat.helostr.s);
+	STREMPTY(xmitstat.helostr);
 
 	return err;
 }
