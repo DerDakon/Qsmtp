@@ -894,37 +894,44 @@ spfptr(const char *domain, char *token)
 }
 
 static int
-spfip4(char *domain)
+spfip4(const char *domain)
 {
-	char *sl = domain;
-	char osl;	/* char at *sl before we overwrite it */
+	const char *sl = domain;
 	struct in_addr net;
 	unsigned long u;
+	char ip4buf[INET_ADDRSTRLEN];
+	size_t ip4len;
 
 	if (!IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
 		return SPF_NONE;
+
 	while (((*sl >= '0') && (*sl <= '9')) || (*sl == '.')) {
 		sl++;
 	}
-	if (*sl == '/') {
-		char *q = sl;
 
-		osl = *sl;
-		*sl = '\0';
-		u = strtoul(sl + 1, &sl, 10);
-		if ((u < 8) || (u > 32) || !WSPACE(*sl))
+	ip4len = sl - domain;
+	if ((ip4len >= sizeof(ip4buf)) || (ip4len == 0))
+		return SPF_HARD_ERROR;
+
+	if (*sl == '/') {
+		char *q;
+
+		u = strtoul(sl + 1, &q, 10);
+		if ((u < 8) || (u > 32) || (!WSPACE(*q) && (*q != '\0')))
 			return SPF_HARD_ERROR;
 		sl = q;
 	} else if (WSPACE(*sl) || !*sl) {
-		osl = *sl;
-		*sl = '\0';
 		u = 32;
 	} else {
 		return SPF_HARD_ERROR;
 	}
-	if (!inet_pton(AF_INET, domain, &net))
+
+	memset(ip4buf, 0, sizeof(ip4buf));
+	memcpy(ip4buf, domain, ip4len);
+
+	if (!inet_pton(AF_INET, ip4buf, &net))
 		return SPF_HARD_ERROR;
-	*sl = osl;
+
 	return ip4_matchnet(&xmitstat.sremoteip, &net, u) ? SPF_PASS : SPF_NONE;
 }
 
