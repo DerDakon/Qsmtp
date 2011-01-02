@@ -3,12 +3,12 @@
  */
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <assert.h>
 #include <errno.h>
 #define __USE_GNU
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-#include <assert.h>
 #include "qsmtpd.h"
 #include "antispam.h"
 #include "sstring.h"
@@ -929,12 +929,13 @@ spfip4(char *domain)
 }
 
 static int
-spfip6(char *domain)
+spfip6(const char *domain)
 {
-	char *sl = domain;
-	char osl;	/* char at *sl before we overwrite it */
+	const char *sl = domain;
 	struct in6_addr net;
 	unsigned long u;
+	char ip6buf[INET6_ADDRSTRLEN];
+	size_t ip6len;
 
 	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
 		return SPF_NONE;
@@ -942,27 +943,29 @@ spfip6(char *domain)
 					((*sl >= 'A') && (*sl <= 'F')) || (*sl == ':') || (*sl == '.')) {
 		sl++;
 	}
-	if (*sl == '/') {
-		char *q = sl;
 
-		osl = *sl;
-		*sl = '\0';
-		u = strtoul(sl + 1, &sl, 10);
-		if ((u < 8) || (u > 128) || (!WSPACE(*sl) && (*sl != '\0')))
+	ip6len = sl - domain;
+	if (ip6len >= sizeof(ip6buf))
+		return SPF_HARD_ERROR;
+
+	if (*sl == '/') {
+		char *endp;
+		u = strtoul(sl + 1, &endp, 10);
+		if ((u < 8) || (u > 128) || (!WSPACE(*endp) && (*endp != '\0')))
 			return SPF_HARD_ERROR;
-		sl = q;
+		sl = endp;
 	} else if (WSPACE(*sl) || !*sl) {
-		osl = *sl;
-		*sl = '\0';
 		u = 128;
 	} else {
 		return SPF_HARD_ERROR;
 	}
-	osl = *sl;
-	*sl = '\0';
-	if (!inet_pton(AF_INET6, domain, &net))
+
+	memset(ip6buf, 0, sizeof(ip6buf));
+	memcpy(ip6buf, domain, ip6len);
+
+	if (!inet_pton(AF_INET6, ip6buf, &net))
 		return SPF_HARD_ERROR;
-	*sl = osl;
+
 	return ip6_matchnet(&xmitstat.sremoteip, &net, (unsigned char) (u & 0xff)) ? SPF_PASS : SPF_NONE;
 }
 
