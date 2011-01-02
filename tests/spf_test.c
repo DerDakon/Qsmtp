@@ -348,14 +348,15 @@ test_parse_ip4()
 		}
 	};
 	const char *ip4invalid[] = {
-		"v=spf1 ip4:10.a.0.4",
-		"v=spf1 ip4:::1",
+		"v=spf1 ip4:10.255.255.a4",
+		"v=spf1 ip4:fef0::abcd:1",
 		"v=spf1 ip4:.1",
-		"v=spf1 ip4:.1/130",
+		"v=spf1 ip4:10.52.42.1/130",
 		"v=spf1 ip4:1/0",
 		"v=spf1 ip4:10.42.52.52/0",
 		"v=spf1 ip4:10.52.52.42/",
 		"v=spf1 ip4:255.255.255.255.255",
+		"v=spf1 ip4:300.200.100.0",
 		NULL
 	};
 	const char *ip4valid[] = {
