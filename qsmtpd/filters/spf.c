@@ -100,7 +100,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 	if (p == 2)
 		goto strict;
 	if (spfs == SPF_HARD_ERROR) {
-		*logmsg = "SPF";
+		*logmsg = "bad SPF";
 		rc = netwrite("550 5.5.2 syntax error in SPF record\r\n");
 		return rc ? rc : 1;
 	}
@@ -148,6 +148,14 @@ block:
 		if ((rc = netwrite("550 5.7.1 mail denied by SPF policy\r\n")))
 			return rc;
 	}
+
+	if ((r == 4) && !getsetting(ds, "fail_hard_on_temp", t)) {
+		*logmsg = "temp SPF";
+		if ((rc = netwrite("451 4.4.3 temporary error when checking the SPF policy\r\n")))
+			return rc;
+		return 1;
+	}
+
 	if (!*logmsg)
 		*logmsg = "SPF";
 	return r ? r : 1;
