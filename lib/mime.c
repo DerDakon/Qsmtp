@@ -32,7 +32,7 @@ skipwhitespace(const char *line, const size_t len)
 	size_t l = len;
 	const char *c = line;
 
-	for (;;) {
+	while (l != 0) {
 		int brace = 0;
 
 		ws = 0;
@@ -58,8 +58,6 @@ skipwhitespace(const char *line, const size_t len)
 			l--;
 			ws = 1;
 		}
-		if (l == 0)
-			return NULL;
 		if (ws)
 			continue;
 
@@ -84,6 +82,8 @@ skipwhitespace(const char *line, const size_t len)
 			c++;
 		} while (brace);
 	}
+
+	return c;
 }
 
 /**

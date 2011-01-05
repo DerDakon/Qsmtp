@@ -318,12 +318,19 @@ check_received(int spfstatus, int log)
 	tmp = skipwhitespace(buf + strlen(hdrline) + strlen(spfstates[r]),
 			strlen(buf) - strlen(hdrline) - strlen(spfstates[r]));
 	/* there should be nothing behind the comment for anything but SPF_PASS */
-	if ((tmp == NULL) && (spfstatus == SPF_PASS)) {
+
+	if (tmp == NULL) {
+		fputs("syntax error skipping whitespace in received line: ", stderr);
+		fputs(buf + strlen(hdrline) + strlen(spfstates[r]), stderr);
+		return 1;
+	}
+
+	if ((tmp == buf + strlen(buf)) && (spfstatus == SPF_PASS)) {
 		fputs("spfreceived() did not wrote keywords behind the comment for SPF_PASS\n", stderr);
 		return 1;
 	}
 
-	while (tmp != NULL) {
+	while (tmp != buf + strlen(buf)) {
 		const char *spfkey[] = { "client-ip", "envelope-from", "helo",
 				"problem", "receiver", "identity", "mechanism", NULL };
 
@@ -341,6 +348,13 @@ check_received(int spfstatus, int log)
 				}
 				i++;
 			}
+
+			if (spfkey[i] == NULL) {
+				fputs("spfreceived() wrote unknown status code: ", stderr);
+				fputs(tmp, stderr);
+				return 1;
+			}
+
 		}
 
 		if (*tmp != '=') {
