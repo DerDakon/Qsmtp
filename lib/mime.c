@@ -15,9 +15,8 @@
  * @param len length of data, must be > 0
  * @return pointer to first character after whitespace, NULL on syntax error (e.g. unfinished comment)
  *
- * This function skips whitespace from the current position. If a RfC 822 section 2.8 style comment is
- * found this is also skipped. If a newline is encountered before a non-whitespace and non-comment
- * character it is also skipped, including all following whitespace.
+ * This function skips whitespace and comments from the current position. If a newline is encountered
+ * before a non-whitespace and non-comment character it is also skipped, including all following whitespace.
  *
  * If it returns (line + len) everything from line until end of data block is a comment
  *
