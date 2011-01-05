@@ -5,12 +5,14 @@ ADD_EXECUTABLE(testcase_spf
 		${CMAKE_SOURCE_DIR}/lib/dns_helpers.c
 		${CMAKE_SOURCE_DIR}/lib/fmt.c
 		${CMAKE_SOURCE_DIR}/lib/match.c
+		${CMAKE_SOURCE_DIR}/lib/mime.c
 )
 
 IF (MEMCHECK_LIBRARIES)
 	TARGET_LINK_LIBRARIES(testcase_spf ${MEMCHECK_LIBRARIES})
 ENDIF (MEMCHECK_LIBRARIES)
 
+ADD_TEST(NAME "SPF_received" COMMAND testcase_spf "_received_")
 ADD_TEST(NAME "SPF_parser" COMMAND testcase_spf "_parse_")
 ADD_TEST(NAME "SPF_domain_redhat" COMMAND testcase_spf "redhat")
 ADD_TEST(NAME "SPF_domain_sf-mail" COMMAND testcase_spf "sf-mail")

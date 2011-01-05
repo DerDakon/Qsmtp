@@ -25,9 +25,8 @@ extern int spfreceived(int, const int);
 #define SPF_FAIL_PERM	4	/**< host is denied by SPF policy */
 #define SPF_FAIL_MALF	5	/**< SPF entry is malformed */
 #define SPF_FAIL_NONEX	6	/**< SPF entry has nonexistent include */
-#define SPF_UNKNOWN	7	/**< SPF policy is not tested */
-#define SPF_TEMP_ERROR	8	/**< temporary DNS error while SPF testing */
-#define SPF_HARD_ERROR	9	/**< permanent DNS error while SPF testing */
+#define SPF_TEMP_ERROR	7	/**< temporary DNS error while SPF testing */
+#define SPF_HARD_ERROR	8	/**< permanent DNS error while SPF testing */
 #define SPF_IGNORE	15	/**< SPF policy for this host will not be tested */
 
 /** \def SPF_FAIL

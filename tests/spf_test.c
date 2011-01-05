@@ -9,6 +9,7 @@
 #include "antispam.h"
 #include "sstring.h"
 #include <unistd.h>
+#include <mime.h>
 
 enum dnstype {
 	DNSTYPE_A,
@@ -209,7 +210,7 @@ static struct spftestcase spftest_sfmail = {
 	.badip = "::ffff:62.27.20.62",
 	.dns = {
 		{
- 			.type = DNSTYPE_MX,
+			.type = DNSTYPE_MX,
 			.key = "sf-mail.de",
 			.value = "::ffff:62.27.20.61"
 		},
@@ -230,18 +231,22 @@ struct xmitstat xmitstat;
 string heloname;
 
 static int
-check_received(int spfstatus)
+check_received(int spfstatus, int log)
 {
 	int fd[2];
 	char buf[1024];
 	int r;
 	ssize_t off = 0;
+	const char hdrline[] = "Received-SPF: ";
+	const char *spfstates[] = { "pass", "fail", "softfail", "none", "neutral", "temperror", "permerror", NULL };
+	const char *tmp;
 
 	if (pipe(fd) != 0) {
 		fputs("Can not create pipes\n", stderr);
 		return 1;
 	}
 
+	memset(buf, 0, sizeof(buf));
 	r = spfreceived(fd[1], spfstatus);
 	close(fd[1]);
 
@@ -275,10 +280,108 @@ check_received(int spfstatus)
 		}
 	}
 
-	if (strchr(buf, '\n') == NULL) {
+	if (strlen(buf) != off) {
+		fprintf(stderr, "spfreceived() has written a 0 byte into the input stream at position %zi\n", strlen(buf));
+		return 1;
+	}
+
+	if (off == 0) {
+		fputs("spfreceived() has not written any data\n", stderr);
+		return 1;
+	}
+
+	if (buf[strlen(buf) - 1] != '\n') {
 		fputs("spfreceived() did not terminate the line with LF\n", stderr);
 		return 1;
 	}
+
+	if (strncasecmp(buf, hdrline, strlen(hdrline)) != 0) {
+		fputs("output of spfreceived() did not start with Received-SPF:\n", stderr);
+		return 1;
+	}
+
+	r = 0;
+	while ((spfstates[r] != NULL) && (strncasecmp(buf + strlen(hdrline), spfstates[r], strlen(spfstates[r])) != 0))
+		r++;
+
+	if (spfstates[r] == NULL) {
+		fputs("spfreceived() wrote an unknown SPF status: ", stderr);
+		fputs(buf + strlen(hdrline), stderr);
+		return 1;
+	}
+
+	if (strstr(buf, "  ") != NULL) {
+		fputs("spfreceived() has written duplicate whitespace\n", stderr);
+		return 1;
+	}
+
+	tmp = skipwhitespace(buf + strlen(hdrline) + strlen(spfstates[r]),
+			strlen(buf) - strlen(hdrline) - strlen(spfstates[r]));
+	/* there should be nothing behind the comment for anything but SPF_PASS */
+	if ((tmp == NULL) && (spfstatus == SPF_PASS)) {
+		fputs("spfreceived() did not wrote keywords behind the comment for SPF_PASS\n", stderr);
+		return 1;
+	}
+
+	while (tmp != NULL) {
+		const char *spfkey[] = { "client-ip", "envelope-from", "helo",
+				"problem", "receiver", "identity", "mechanism", NULL };
+
+		if (strncmp(tmp, "x-", 2) == 0) {
+			tmp += 2;
+			while ((*tmp != '\n') && (*tmp != '='))
+				tmp++;
+		} else {
+			unsigned int i = 0;
+
+			while (spfkey[i] != NULL) {
+				if (strncmp(tmp, spfkey[i], strlen(spfkey[i])) == 0) {
+					tmp += strlen(spfkey[i]);
+					break;
+				}
+				i++;
+			}
+		}
+
+		if (*tmp != '=') {
+			fputs("unexpected character in key: ", stderr);
+			fputs(tmp, stderr);
+			return 1;
+		}
+
+		tmp++;
+		if (*tmp == '"') {
+			tmp++;
+			while (*tmp != '"') {
+				if (*tmp == '\n') {
+					fputs("unmatched quote in value\n", stderr);
+					fputs(buf, stderr);
+					return 1;
+				}
+				tmp++;
+			}
+			tmp++;
+		} else {
+			while (*tmp != ';') {
+				if (*tmp == '\n') {
+					if (*(tmp + 1) == '\0') {
+						tmp = NULL;
+						break;
+					}
+					fputs("value did not end before end of line\n", stderr);
+					fputs(buf, stderr);
+					return 1;
+				}
+				tmp++;
+			}
+			tmp++;
+		}
+
+		tmp = skipwhitespace(tmp, strlen(tmp));
+	}
+
+	if (log)
+		fputs(buf, stdout);
 
 	return 0;
 }
@@ -309,7 +412,7 @@ runtest(struct spftestcase *tc)
 		fprintf(stderr, "good IP did not pass for %s\n", tc->helo);
 		err++;
 	}
-	err += check_received(r);
+	err += check_received(r, 0);
 
 	if (tc->badip == NULL)
 		return 0;
@@ -322,7 +425,7 @@ runtest(struct spftestcase *tc)
 		fprintf(stderr, "bad IP passed for %s\n", tc->helo);
 		err++;
 	}
-	err += check_received(r);
+	err += check_received(r, 0);
 
 	free(xmitstat.mailfrom.s);
 	STREMPTY(xmitstat.mailfrom);
@@ -617,12 +720,24 @@ test_parse()
 	int err = 0;
 	unsigned int i = 0;
 	int r;
+	struct in6_addr sender_ip4;
+	struct in6_addr sender_ip6;
+	const char myhelo[] = "spftesthost.example.org";
+	const char mailfrom[] = "localpart@spfsender.example.net";
+
+	inet_pton(AF_INET6, "::ffff:10.42.42.42", &sender_ip4);
+	inet_pton(AF_INET6, "fef0::abc:001", &sender_ip6);
 
 	dnsdata = parseentries;
+	memset(&xmitstat, 0, sizeof(xmitstat));
 	if (newstr(&xmitstat.helostr, strlen(parseentries[0].key)))
 		return ENOMEM;
 	memcpy(xmitstat.helostr.s, parseentries[0].key, strlen(parseentries[0].key));
-	inet_pton(AF_INET6, "fef0::abc:001", &xmitstat.sremoteip);
+	memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
+	newstr(&heloname, strlen(myhelo));
+	memcpy(heloname.s, myhelo, strlen(myhelo));
+	newstr(&xmitstat.mailfrom, strlen(mailfrom));
+	memcpy(xmitstat.mailfrom.s, mailfrom, strlen(mailfrom));
 
 	r = check_host("nonexistent.example.org");
 	if (r != SPF_NONE) {
@@ -635,7 +750,7 @@ test_parse()
 		fprintf(stderr, "check_host() with invalid domain did not fail with SPF_FAIL_MALF, but %i\n", r);
 		err++;
 	}
-	err += check_received(SPF_FAIL_MALF);
+	err += check_received(SPF_FAIL_MALF, 0);
 
 	while (parseentries[i].key != NULL) {
 		int c;
@@ -645,7 +760,7 @@ test_parse()
 			fprintf(stderr, "check_host() for test %s should return %i, but did %i\n", parseentries[i].key, spfresults[i], r);
 			err++;
 		}
-		c = check_received(r);
+		c = check_received(r, 0);
 		if (c != 0) {
 			fprintf(stderr, "spfreceived() for test %s (status %i) returned %i\n", parseentries[i].key, r, c);
 			err++;
@@ -653,23 +768,61 @@ test_parse()
 		i++;
 	}
 
-	/* these have not been tested before so do some explicit tests */
-	err += check_received(SPF_IGNORE);
-	err += check_received(SPF_TEMP_ERROR);
-	err += check_received(SPF_UNKNOWN);
-
 	err += test_parse_ip4();
 	err += test_parse_ip6();
 
 	free(xmitstat.helostr.s);
 	STREMPTY(xmitstat.helostr);
+	free(xmitstat.mailfrom.s);
+	STREMPTY(xmitstat.mailfrom);
+
+	return err;
+}
+
+static int
+test_received()
+{
+	int err = 0;
+	unsigned int i = 0;
+	struct in6_addr sender_ip4;
+	struct in6_addr sender_ip6;
+	const char myhelo[] = "spftesthost.example.org";
+	const char mailfrom[] = "localpart@spfsender.example.net";
+
+	inet_pton(AF_INET6, "::ffff:10.42.42.42", &sender_ip4);
+	inet_pton(AF_INET6, "fef0::abc:001", &sender_ip6);
+
+	memset(&xmitstat, 0, sizeof(xmitstat));
+	if (newstr(&xmitstat.helostr, strlen(strchr(mailfrom, '@') + 1)))
+		return ENOMEM;
+	memcpy(xmitstat.helostr.s, strchr(mailfrom, '@') + 1, strlen(strchr(mailfrom, '@') + 1));
+	memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
+	newstr(&heloname, strlen(myhelo));
+	memcpy(heloname.s, myhelo, strlen(myhelo));
+	newstr(&xmitstat.mailfrom, strlen(mailfrom));
+	memcpy(xmitstat.mailfrom.s, mailfrom, strlen(mailfrom));
+
+	for (i = SPF_NONE; i <= SPF_HARD_ERROR; i++) {
+		memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
+		err += check_received(i, 1);
+		memcpy(&xmitstat.sremoteip, &sender_ip4, sizeof(sender_ip4));
+		err += check_received(i, 1);
+	}
+
+	/* these have not been tested before so do some explicit tests */
+	err += check_received(SPF_IGNORE, 1);
+
+	free(xmitstat.helostr.s);
+	STREMPTY(xmitstat.helostr);
+	free(xmitstat.mailfrom.s);
+	STREMPTY(xmitstat.mailfrom);
 
 	return err;
 }
 
 int main(int argc, char **argv)
 {
-	if (argc == 1)
+	if (argc != 2)
 		return EINVAL;
 
 	if (strcmp(argv[1], "redhat") == 0)
@@ -678,6 +831,8 @@ int main(int argc, char **argv)
 		return runtest(&spftest_sfmail);
 	else if (strcmp(argv[1], "_parse_") == 0)
 		return test_parse();
+	else if (strcmp(argv[1], "_received_") == 0)
+		return test_received();
 	else
 		return EINVAL;
 }

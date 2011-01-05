@@ -32,10 +32,24 @@ static const char spf_delimiters[] = ".-+,/_=";
  * @return 0 if everything goes right, -1 on write error
  */
 int
-spfreceived(int fd, const int spf) {
+spfreceived(int fd, const int spf)
+{
+	const char *result[] = {
+		"None",
+		"Pass",
+		"Neutral",
+		"SoftFail",
+		"Fail",
+		"PermError",
+		"PermError",
+		"TempError",
+		"PermError"
+	};
+
 	int rc;
 	const char *fromdomain;
 	size_t fromlen;
+	char clientip[INET6_ADDRSTRLEN];
 
 	if (spf == SPF_IGNORE)
 		return 0;
@@ -51,34 +65,77 @@ spfreceived(int fd, const int spf) {
 		fromlen = HELOLEN;
 	}
 	WRITE(fd, "Received-SPF: ");
-	WRITEl(fd, heloname.s, heloname.len);
-	if (spf == SPF_HARD_ERROR) {
-		WRITE(fd, ": syntax error while parsing SPF entry for ");
-		WRITEl(fd, fromdomain, fromlen);
-	} else if (spf == SPF_TEMP_ERROR) {
-		WRITE(fd, ": can't get SPF entry for ");
-		WRITEl(fd, fromdomain, fromlen);
-		WRITE(fd, " (DNS problem)");
-	} else if (spf == SPF_NONE) {
-		WRITE(fd, ": no SPF entry for ");
-		WRITEl(fd, fromdomain, fromlen);
-	} else if (spf == SPF_UNKNOWN) {
-		WRITE(fd, ": can not figure out SPF status for ");
-		WRITEl(fd, fromdomain, fromlen);
-	} else {
-		WRITE(fd, ": SPF status for ");
-		WRITEl(fd, fromdomain, fromlen);
-		WRITE(fd, " is ");
-		switch(spf) {
-			case SPF_PASS:		WRITE(fd, "PASS"); break;
-			case SPF_SOFTFAIL:	WRITE(fd, "SOFTFAIL"); break;
-			case SPF_NEUTRAL:	WRITE(fd, "NEUTRAL"); break;
-			case SPF_FAIL_NONEX:
-			case SPF_FAIL_MALF:
-			case SPF_FAIL_PERM:	WRITE(fd, "FAIL"); break;
-		}
+	WRITE(fd, result[spf]);
+
+	if ((spf == SPF_HARD_ERROR) && (xmitstat.spfexp != NULL)) {
+		WRITE(fd, " ");
+		WRITE(fd, xmitstat.spfexp);
 	}
-	WRITE(fd, "\n");
+
+	WRITE(fd, " (");
+	WRITEl(fd, heloname.s, heloname.len);
+	WRITE(fd, ": ");
+
+	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
+		inet_ntop(AF_INET, &(xmitstat.sremoteip.s6_addr32[3]), clientip, sizeof(clientip));
+	} else {
+		inet_ntop(AF_INET6, &xmitstat.sremoteip, clientip, sizeof(clientip));
+	}
+
+	switch (spf) {
+	case SPF_FAIL_MALF:
+	case SPF_FAIL_NONEX:
+	case SPF_HARD_ERROR:
+		WRITE(fd, "domain of\n\t");
+		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITE(fd, " uses mechanism not recognized by this client)\n");
+		break;
+	case SPF_TEMP_ERROR:
+		WRITE(fd, "error in processing during lookup of ");
+		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITE(fd, ": DNS problem)\n");
+		break;
+	case SPF_NONE:
+		WRITE(fd, "domain of ");
+		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITE(fd, " does not designate permitted sender hosts)\n");
+		return 0;
+	case SPF_SOFTFAIL:
+	case SPF_FAIL_PERM:
+		WRITE(fd, "domain of ");
+		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITE(fd, " does not designate ");
+		WRITE(fd, clientip);
+		WRITE(fd, " as permitted sender)\n");
+		break;
+	case SPF_NEUTRAL:
+		WRITE(fd, clientip);
+		WRITE(fd, " is neither permitted nor denied by domain of ");
+		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITE(fd, ")\n");
+		break;
+	case SPF_PASS:
+		WRITE(fd, "domain of ");
+		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITE(fd, " designates ");
+		WRITE(fd, clientip);
+		WRITE(fd, " as permitted sender)\n");
+		break;
+	default:
+		assert(0);
+		errno = EFAULT;
+		return -1;
+	}
+
+	WRITE(fd, "\treceiver=");
+	WRITEl(fd, heloname.s, heloname.len);
+	WRITE(fd, "; client-ip=");
+	WRITE(fd, clientip);
+	WRITE(fd, ";\n\thelo=");
+	WRITEl(fd, xmitstat.helostr.s, xmitstat.helostr.len);
+	WRITE(fd, "; envelope-from=\"");
+	WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+	WRITE(fd, "\"\n");
 	return 0;
 }
 
