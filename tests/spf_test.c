@@ -775,6 +775,8 @@ test_parse()
 	STREMPTY(xmitstat.helostr);
 	free(xmitstat.mailfrom.s);
 	STREMPTY(xmitstat.mailfrom);
+	free(heloname.s);
+	STREMPTY(heloname);
 
 	return err;
 }
@@ -816,6 +818,8 @@ test_received()
 	STREMPTY(xmitstat.helostr);
 	free(xmitstat.mailfrom.s);
 	STREMPTY(xmitstat.mailfrom);
+	free(heloname.s);
+	STREMPTY(heloname);
 
 	return err;
 }
