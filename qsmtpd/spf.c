@@ -47,23 +47,11 @@ spfreceived(int fd, const int spf)
 	};
 
 	int rc;
-	const char *fromdomain;
-	size_t fromlen;
 	char clientip[INET6_ADDRSTRLEN];
 
 	if (spf == SPF_IGNORE)
 		return 0;
 
-	if (xmitstat.mailfrom.len) {
-		fromdomain = memchr(xmitstat.mailfrom.s, '@', xmitstat.mailfrom.len);
-		/* if mailfrom is set it is guaranteed to have an @ since it must be valid */
-		assert(fromdomain != NULL);
-		fromdomain++;
-		fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
-	} else {
-		fromdomain = HELOSTR;
-		fromlen = HELOLEN;
-	}
 	WRITE(fd, "Received-SPF: ");
 	WRITE(fd, result[spf]);
 
