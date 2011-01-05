@@ -58,6 +58,8 @@ skipwhitespace(const char *line, const size_t len)
 			l--;
 			ws = 1;
 		}
+		if (l == 0)
+			return NULL;
 		if (ws)
 			continue;
 
