@@ -192,6 +192,11 @@ queue_header(void)
 	const char afterprotauth[] = "A\n\tfor <";	/* the string to be written after the protocol for authenticated mails*/
 	const char authstr[] = ") (auth=";
 
+/* write "Received-SPF: " line */
+	if (!(xmitstat.authname.len || xmitstat.tlsclient) && (relayclient != 1)) {
+		if ( (rc = spfreceived(fd, xmitstat.spf)) )
+			return rc;
+	}
 /* write the "Received: " line to mail header */
 	WRITEL(fd, "Received: from ");
 	if (!i) {
@@ -231,11 +236,6 @@ queue_header(void)
 	date822(datebuf + 3);
 	datebuf[34] = '\n';
 	WRITE(fd, datebuf, 35);
-/* write "Received-SPF: " line */
-	if (!(xmitstat.authname.len || xmitstat.tlsclient) && (relayclient != 1)) {
-		if ( (rc = spfreceived(fd, xmitstat.spf)) )
-			return rc;
-	}
 	return 0;
 }
 
