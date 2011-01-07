@@ -1173,7 +1173,7 @@ spflookup(const char *domain, const int rec)
 			token = n;
 			if (flagnext)
 				*n = ' ';
-			// FIXME: add mechanism propagation
+			mechanism = "include";
 		} else if (!strncasecmp(token, "redirect=", 9)) {
 			token += 9;
 			if (!redirect) {
