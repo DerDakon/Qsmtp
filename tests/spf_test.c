@@ -898,6 +898,7 @@ test_received()
 	struct in6_addr sender_ip6;
 	const char myhelo[] = "spftesthost.example.org";
 	const char mailfrom[] = "localpart@spfsender.example.net";
+	const char *mechanism[] = { "MX", "A", "IP4", "default", NULL };
 
 	inet_pton(AF_INET6, "::ffff:10.42.42.42", &sender_ip4);
 	inet_pton(AF_INET6, "fef0::abc:001", &sender_ip6);
@@ -914,8 +915,10 @@ test_received()
 
 	for (i = SPF_NONE; i <= SPF_HARD_ERROR; i++) {
 		memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
+		xmitstat.spfmechanism = mechanism[(i * 2) % 5];
 		err += check_received(i, 1);
 		memcpy(&xmitstat.sremoteip, &sender_ip4, sizeof(sender_ip4));
+		xmitstat.spfmechanism = mechanism[(i * 2 + 1) % 5];
 		err += check_received(i, 1);
 	}
 

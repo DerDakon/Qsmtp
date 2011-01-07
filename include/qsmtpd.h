@@ -49,6 +49,7 @@ struct xmitstat {
 	struct in6_addr slocalip;	/**< parsed local ip */
 	struct ips *frommx;		/**< MX IPs of from domain */
 	char *spfexp;			/**< the SPF explanation if provided by the domain or NULL if none */
+	const char *spfmechanism;	/**< the SPF mechanism that matched */
 };
 
 extern struct smtpcomm commands[];	/**< all supported SMTP commands */

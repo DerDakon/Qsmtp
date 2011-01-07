@@ -119,6 +119,10 @@ spfreceived(int fd, const int spf)
 	WRITEl(fd, heloname.s, heloname.len);
 	WRITE(fd, "; client-ip=");
 	WRITE(fd, clientip);
+	if (xmitstat.spfmechanism != NULL) {
+		WRITE(fd, "; mechanism=");
+		WRITE(fd, xmitstat.spfmechanism);
+	}
 	WRITE(fd, ";\n\thelo=");
 	WRITEl(fd, xmitstat.helostr.s, xmitstat.helostr.len);
 	WRITE(fd, "; envelope-from=\"");
@@ -1044,6 +1048,7 @@ spflookup(const char *domain, const int rec)
 {
 	char *txt, *token, *valid = NULL, *redirect = NULL;
 	int i, result = SPF_NONE, prefix;
+	const char *mechanism = NULL;
 
 	if (rec >= 20)
 		return SPF_HARD_ERROR;
@@ -1086,8 +1091,10 @@ spflookup(const char *domain, const int rec)
 		while (WSPACE(*token)) {
 			token++;
 		}
-		if (!*token)
+		if (!*token) {
+			mechanism = "default";
 			break;
+		}
 		switch(*token) {
 			case '-':	token++; prefix = SPF_FAIL_PERM; break;
 			case '~':	token++; prefix = SPF_SOFTFAIL; break;
@@ -1108,28 +1115,35 @@ spflookup(const char *domain, const int rec)
 			if (*token == ':')
 				token++;
 			result = spfmx(domain, token);
+			mechanism = "MX";
 		} else if (!strncasecmp(token, "ptr", 3) &&
 				(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':'))) {
 			token += 3;
 			if (*token == ':')
 				token++;
 			result = spfptr(domain, token);
+			mechanism = "PTR";
 		} else if (!strncasecmp(token, "exists:", 7)) {
 			token += 7;
 			result = spfexists(domain, token);
+			mechanism = "exists";
 		} else if (!strncasecmp(token, "all", 3) && (WSPACE(*(token + 3)) || !*(token + 3))) {
 			result = SPF_PASS;
+			mechanism = "all";
 		} else if (((*token == 'a') || (*token == 'A')) &&
 					(WSPACE(*(token + 1)) || !*(token + 1) || (*(token + 1) == ':'))) {
 			if (*(++token) == ':')
 				token++;
 			result = spfa(domain, token);
+			mechanism = "A";
 		} else if (!strncasecmp(token, "ip4:", 4)) {
 			token += 4;
 			result = spfip4(token);
+			mechanism = "IP4";
 		} else if (!strncasecmp(token, "ip6:", 4)) {
 			token += 4;
 			result = spfip6(token);
+			mechanism = "IP6";
 		} else if (!strncasecmp(token, "include:", 8)) {
 			char *n;
 			int flagnext = 0;
@@ -1159,6 +1173,7 @@ spflookup(const char *domain, const int rec)
 			token = n;
 			if (flagnext)
 				*n = ' ';
+			// FIXME: add mechanism propagation
 		} else if (!strncasecmp(token, "redirect=", 9)) {
 			token += 9;
 			if (!redirect) {
@@ -1193,6 +1208,7 @@ spflookup(const char *domain, const int rec)
 			}
 		}
 		free(txt);
+		xmitstat.spfmechanism = mechanism;
 		return prefix;
 	}
 
