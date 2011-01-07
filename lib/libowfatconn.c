@@ -91,8 +91,10 @@ dnstxt(char **out, const char *host)
 		return -1;
 
 	r = dns_txt(&sa, &fqdn);
-	if (r)
+	if (r) {
+		free(fqdn.s);
 		return r;
+	}
 	r = stralloc_0(&sa);
 	free(fqdn.s);
 	if (!r) {
