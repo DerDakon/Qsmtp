@@ -24,7 +24,7 @@ ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigne
 	 * to host order. It's ugly, isn't it? */
 	m.s_addr = htonl(-1 - ((1 << (32 - mask)) - 1));
 
-	return ((ip->s6_addr32[3] & m.s_addr) == net->s_addr);
+	return ((ip->s6_addr32[3] & m.s_addr) == (net->s_addr & m.s_addr));
 }
 
 /**
@@ -51,7 +51,7 @@ ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsign
 		maskv6.s6_addr32[mask / 32] = htonl(-1 - ((1 << (32 - (mask % 32))) - 1));
 
 	for (i = 3; i >= 0; i--) {
-		if ((ip->s6_addr32[i] & maskv6.s6_addr32[i]) == net->s6_addr32[i]) {
+		if ((ip->s6_addr32[i] & maskv6.s6_addr32[i]) == (net->s6_addr32[i] & maskv6.s6_addr32[i])) {
 			flag--;
 		}
 	}
