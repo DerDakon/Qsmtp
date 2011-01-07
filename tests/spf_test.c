@@ -105,9 +105,8 @@ ask_dnsmx(const char *domain, struct ips **ips)
 			cur = cur->next;
 		}
 
-		if (r == 0) {
-			*ips = ip6addr;
-			return q;
+		if (q != 0) {
+			return r;
 		} else if (q == 0) {
 			cur = ip6addr;
 			while (cur->next != NULL)
@@ -116,7 +115,8 @@ ask_dnsmx(const char *domain, struct ips **ips)
 			*ips = cur;
 			return 0;
 		} else {
-			return r;
+			*ips = ip6addr;
+			return q;
 		}
 	}
 
