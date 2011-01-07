@@ -87,8 +87,38 @@ ask_dnsmx(const char *domain, struct ips **ips)
 {
 	const char *value = dnsentry_search(DNSTYPE_MX, domain);
 
-	if (value == NULL)
-		return 1;
+	*ips = NULL;
+	if (value == NULL) {
+		int r = ask_dnsa(domain, ips);
+		struct ips *ip6addr = NULL;
+		int q = ask_dnsaaaa(domain, &ip6addr);
+		struct ips *cur;
+
+		cur = *ips;
+		while (cur != NULL) {
+			cur->priority = 65536;
+			cur = cur->next;
+		}
+		cur = ip6addr;
+		while (cur != NULL) {
+			cur->priority = 65536;
+			cur = cur->next;
+		}
+
+		if (r == 0) {
+			*ips = ip6addr;
+			return q;
+		} else if (q == 0) {
+			cur = ip6addr;
+			while (cur->next != NULL)
+				cur = cur->next;
+			cur->next = *ips;
+			*ips = cur;
+			return 0;
+		} else {
+			return r;
+		}
+	}
 
 	*ips = parseips(value);
 
@@ -662,6 +692,16 @@ test_parse_mx()
 			.value = "::ffff:10.42.42.42"
 		},
 		{
+			.type = DNSTYPE_MX,
+			.key = "mxtestother.example.net",
+			.value = "::ffff:10.42.42.40"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "mxtest2.example.net",
+			.value = "::ffff:10.42.42.43"
+		},
+		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
@@ -683,10 +723,12 @@ test_parse_mx()
 		"v=spf1 mx//12 -all",
 		"v=spf1 mx/12//64 -all",
 		"v=spf1 mx -all",
+		"v=spf1 mx:mxtestother.example.net/24 -all",
 		NULL
 	};
 	const char *mxvalid_reject[] = {
 		"v=spf1 -ip4:10.42.42.42 mx -all",
+		"v=spf1 mx:mxtest2.example.net/24 -all",
 		NULL
 	};
 	int err = 0;
