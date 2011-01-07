@@ -671,6 +671,7 @@ test_parse_mx()
 		"v=spf1 mx//",
 		"v=spf1 mx/a/12",
 		"v=spf1 mx/12/12",
+		"v=spf1 mx/12//12a",
 		"v=spf1 mx/34",
 		"v=spf1 mx//140",
 		"v=spf1 mx///64",
@@ -678,12 +679,14 @@ test_parse_mx()
 		NULL
 	};
 	const char *mxvalid[] = {
+		"v=spf1 mx/31 -all",
 		"v=spf1 mx//12 -all",
 		"v=spf1 mx/12//64 -all",
 		"v=spf1 mx -all",
 		NULL
 	};
 	const char *mxvalid_reject[] = {
+		"v=spf1 -ip4:10.42.42.42 mx -all",
 		NULL
 	};
 	int err = 0;
