@@ -648,6 +648,96 @@ test_parse_ip6()
 }
 
 static int
+test_parse_mx()
+{
+	struct dnsentry mxentries[] = {
+		{
+			.type = DNSTYPE_TXT,
+			.key = "mxtest.example.net",
+			.value = NULL
+		},
+		{
+			.type = DNSTYPE_MX,
+			.key = "mxtest.example.net",
+			.value = "::ffff:10.42.42.42"
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		}
+	};
+	const char *mxinvalid[] = {
+		"v=spf1 mx//",
+		"v=spf1 mx/a/12",
+		"v=spf1 mx/12/12",
+		"v=spf1 mx/34",
+		"v=spf1 mx//140",
+		"v=spf1 mx///64",
+		"v=spf1 mx/0",
+		NULL
+	};
+	const char *mxvalid[] = {
+		"v=spf1 mx//12 -all",
+		"v=spf1 mx/12//64 -all",
+		"v=spf1 mx -all",
+		NULL
+	};
+	const char *mxvalid_reject[] = {
+		NULL
+	};
+	int err = 0;
+	unsigned int i = 0;
+	int r;
+
+	dnsdata = mxentries;
+	i = 0;
+
+	inet_pton(AF_INET6, "::ffff:10.42.42.42", &xmitstat.sremoteip);
+
+	while (mxinvalid[i] != NULL) {
+		mxentries[0].value = mxinvalid[i];
+
+		if (check_host(mxentries[0].key) != SPF_HARD_ERROR) {
+			fprintf(stderr, "check_host() did not reject invalid MX entry '%s'\n", mxinvalid[i]);
+			err++;
+		}
+
+		i++;
+	}
+
+	i = 0;
+
+	while (mxvalid[i] != NULL) {
+		mxentries[0].value = mxvalid[i];
+
+		r = check_host(mxentries[0].key);
+		if (r != SPF_PASS) {
+			fprintf(stderr, "check_host() did not accept '%s', but returned %i\n", mxvalid[i], r);
+			err++;
+		}
+
+		i++;
+	}
+
+	i = 0;
+
+	while (mxvalid_reject[i] != NULL) {
+		mxentries[0].value = mxvalid_reject[i];
+
+		r = check_host(mxentries[0].key);
+		if (r != SPF_FAIL_PERM) {
+			fprintf(stderr, "check_host() did not properly reject '%s', but returned %i\n", mxvalid_reject[i], r);
+			err++;
+		}
+
+		i++;
+	}
+
+	return err;
+}
+
+static int
 test_parse()
 {
 	const struct dnsentry parseentries[] = {
@@ -784,6 +874,7 @@ test_parse()
 
 	err += test_parse_ip4();
 	err += test_parse_ip6();
+	err += test_parse_mx();
 
 	free(xmitstat.helostr.s);
 	STREMPTY(xmitstat.helostr);
@@ -870,3 +961,4 @@ int data_pending(void)
 
 #include "tls.h"
 SSL *ssl;
+
