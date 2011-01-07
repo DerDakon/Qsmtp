@@ -727,12 +727,16 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 	}
 /* check if there is a cidr length given */
 	if (*token == '/') {
-		char *c = NULL;
+		char *c = token + 1;
 
-		*ip4cidr = strtol(token + 1, &c, 10);
-		if ((*ip4cidr < 8) || (*ip4cidr > 32) || (!WSPACE(*c) && (*c != '/'))) {
-			free(*domainspec);
-			return SPF_HARD_ERROR;
+		if (*c != '/') {
+			*ip4cidr = strtol(c, &c, 10);
+			if ((*ip4cidr < 8) || (*ip4cidr > 32) || (!WSPACE(*c) && (*c != '/') && (*c != '\0'))) {
+				free(*domainspec);
+				return SPF_HARD_ERROR;
+			}
+		} else {
+			c--;
 		}
 		if (*c++ != '/') {
 			*ip6cidr = -1;
@@ -742,7 +746,7 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 				return SPF_HARD_ERROR;
 			}
 			*ip6cidr = strtol(c, &c, 10);
-			if ((*ip6cidr < 8) || (*ip6cidr > 128) || !WSPACE(*c)) {
+			if ((*ip6cidr < 8) || (*ip6cidr > 128) || !(WSPACE(*c) || (*c == '\0'))) {
 				free(*domainspec);
 				return SPF_HARD_ERROR;
 			}
