@@ -340,13 +340,24 @@ check_received(int spfstatus, int log)
 		return 1;
 	}
 
+	tmp = buf + strlen(hdrline) + strlen(spfstates[r]);
+	if (!WSPACE(*tmp)) {
+		fputs("no whitespace after SPF status\n", stderr);
+		return 1;
+	}
+	tmp++;
+	if (spfstatus == SPF_HARD_ERROR) {
+		/* skip the invalid token that is logged here */
+		while ((*tmp != '\n') && (*tmp != ' ') && (*tmp != '('))
+			tmp++;
+	}
+
 	if (strstr(buf, "  ") != NULL) {
 		fputs("spfreceived() has written duplicate whitespace\n", stderr);
 		return 1;
 	}
 
-	tmp = skipwhitespace(buf + strlen(hdrline) + strlen(spfstates[r]),
-			strlen(buf) - strlen(hdrline) - strlen(spfstates[r]));
+	tmp = skipwhitespace(tmp, strlen(tmp));
 	/* there should be nothing behind the comment for anything but SPF_PASS */
 
 	if (tmp == NULL) {
@@ -847,6 +858,21 @@ test_parse()
 			.value = " v=spf1 redirect=allsoftfail.example.net"
 		},
 		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-mechanism.example.net",
+			.value = "v=spf1 mxa +all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-characters.example.net",
+			.value = "v=spf1 mx(ö) +all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "double-prefix.example.net",
+			.value = "v=spf1 --mx +all"
+		},
+		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
@@ -864,7 +890,10 @@ test_parse()
 		SPF_PASS,
 		SPF_PASS,
 		SPF_HARD_ERROR,
-		SPF_SOFTFAIL
+		SPF_SOFTFAIL,
+		SPF_HARD_ERROR,
+		SPF_HARD_ERROR,
+		SPF_HARD_ERROR
 	};
 	int err = 0;
 	unsigned int i = 0;
@@ -915,6 +944,8 @@ test_parse()
 			err++;
 		}
 		i++;
+		free(xmitstat.spfexp);
+		xmitstat.spfexp = NULL;
 	}
 
 	err += test_parse_ip4();

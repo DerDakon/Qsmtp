@@ -16,8 +16,7 @@
 #include "match.h"
 #include "netio.h"
 #include "fmt.h"
-
-#define WSPACE(x) (((x) == ' ') || ((x) == '\t') || ((x) == '\r') || ((x) == '\n'))
+#include "mime.h"
 
 static const char spf_delimiters[] = ".-+,/_=";
 
@@ -76,7 +75,11 @@ spfreceived(int fd, const int spf)
 	case SPF_HARD_ERROR:
 		WRITE(fd, "domain of\n\t");
 		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
-		WRITE(fd, " uses mechanism not recognized by this client)\n");
+		WRITE(fd, " uses mechanism not recognized by this client");
+		if ((xmitstat.spfexp != NULL) && (strchr(xmitstat.spfexp, '%') != NULL)) {
+			WRITE(fd, ", unsafe characters may have been replaced by '%'");
+		}
+		WRITE(fd, ")\n");
 		break;
 	case SPF_TEMP_ERROR:
 		WRITE(fd, "error in processing during lookup of ");
@@ -1180,7 +1183,42 @@ spflookup(const char *domain, const int rec)
 				redirect = token;
 			}
 		} else {
-			result = 0;
+			/* This is an invalid token. Go back to the last whitespace
+			 * and copy that to spfexp so it can be recorded in the
+			 * Received-SPF line if the user still accepts the mail. We
+			 * know there is at least one whitespace after the v=spf1
+			 * token. Then go back until the next whitespace or to the
+			 * end, replace any unsafe char by '?' */
+
+			char *tokenend;
+
+			prefix = SPF_HARD_ERROR;
+			result = SPF_PASS;
+
+			tokenend = token;
+			while (!WSPACE(*(token - 1)))
+				token--;
+
+			while (!WSPACE(*tokenend))
+				tokenend++;
+
+			xmitstat.spfexp = malloc(tokenend - token + 1);
+			if(xmitstat.spfexp != NULL) {
+				const size_t toklen = tokenend - token;
+				size_t tpos;
+
+				xmitstat.spfexp[toklen] = '\0';
+
+				for (tpos = 0; tpos < toklen; tpos++) {
+					/* filter out everything that is not a valid entry in a MIME header */
+					if (TSPECIAL(token[tpos]) || (token[tpos] <= ' ') || (token[tpos] >= 127))
+						xmitstat.spfexp[tpos] = '%';
+					else
+						xmitstat.spfexp[tpos] = token[tpos];
+				}
+			}
+
+			break;
 		}
 /* skip to the end of this token */
 		while (*token && !WSPACE(*token)) {
