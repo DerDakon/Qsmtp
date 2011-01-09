@@ -717,14 +717,14 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 				return i;
 			}
 			token = t;
-/* Maximum length of the domainspec is 255.
- * If it is longer remove subdomains from the left side until it is <255 bytes long. */
-			if (strlen(*domainspec) > 255) {
+/* Maximum length of the domainspec is 253.
+ * If it is longer remove subdomains from the left side until it is <253 bytes long. */
+			if (strlen(*domainspec) > 253) {
 				char *d = *domainspec;
 
 				do {
 					d = strchr(d, '.');
-				} while (d && (strlen(d) > 255));
+				} while (d && (strlen(d) > 253));
 				if (!d) {
 					free(*domainspec);
 					return SPF_HARD_ERROR;
