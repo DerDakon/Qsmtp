@@ -1184,6 +1184,9 @@ spflookup(const char *domain, const int rec)
 			if (!redirect) {
 				redirect = token;
 			}
+		} else if (!strncasecmp(token, "exp=", 4)) {
+			token += 4;
+			/* ignore them for now, will be checked later on failure */
 		} else {
 			/* This is an invalid token. Go back to the last whitespace
 			 * and copy that to spfexp so it can be recorded in the
