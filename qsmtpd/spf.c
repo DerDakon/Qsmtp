@@ -1264,9 +1264,17 @@ spflookup(const char *domain, const int rec)
 
 			if (ex != NULL) {
 				int ip4, ip6;
+				char *target;
 
-				if ((i = spf_domainspec(domain, ex, &xmitstat.spfexp, &ip4, &ip6))) {
-					xmitstat.spfexp = NULL;
+				i = spf_domainspec(domain, ex + 4, &target, &ip4, &ip6);
+				if (i == 0) {
+					size_t dlen = strlen(target);
+					while ((dlen > 0) && (target[dlen - 1] == '.')) {
+						target[--dlen] = '\0';
+					}
+					if (dlen > 0)
+						i = dnstxt(&xmitstat.spfexp, target);
+					free(target);
 				}
 			}
 		}
@@ -1276,13 +1284,18 @@ spflookup(const char *domain, const int rec)
 	}
 
 	if (redirect) {
-		char *e = redirect;
+		char *domspec;
+		int i4, i6;
+		result = spf_domainspec(domain, redirect, &domspec, &i4, &i6);
 
-		while (*e && !WSPACE(*e)) {
-			e++;
+		if (result == 0) {
+			if ((i4 != -1) || (i6 != -1))
+				result = SPF_HARD_ERROR;
+			else
+				result = spflookup(domspec, rec + 1);
 		}
-		*e = '\0';
-		result = spflookup(redirect, rec + 1);
+
+		free(domspec);
 	} else {
 		result = SPF_NEUTRAL;
 	}
