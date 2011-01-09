@@ -138,7 +138,7 @@ block:
 			return rc;
 		}
 	}
-	if (xmitstat.spfexp) {
+	if ((xmitstat.spfexp != NULL) && (spfs != SPF_HARD_ERROR)) {
 		const char *netmsg[] = {"550 5.7.1 mail denied by SPF policy, SPF record says: ",
 								xmitstat.spfexp, NULL};
 
