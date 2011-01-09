@@ -1062,7 +1062,27 @@ spflookup(const char *domain, const int rec)
 	if (!rec && domainvalid(domain))
 		return SPF_FAIL_MALF;
 
- 	i = dnstxt(&txt, domain);
+	if ((rec > 0) && (domain[strlen(domain) - 1] == '.')) {
+		/* trailing dots should be ignored */
+		size_t dlen = strlen(domain);
+		char *nodots = malloc(dlen);
+		if (nodots == NULL)
+			return -1;
+
+		strncpy(nodots, domain, dlen);
+		nodots[--dlen] = '\0';
+		while ((dlen > 0) && (nodots[dlen - 1] == '.'))
+			nodots[--dlen] = '\0';
+		if (dlen == 0) {
+			free(nodots);
+			return SPF_FAIL_NONEX;
+		}
+		i = dnstxt(&txt, nodots);
+		free(nodots);
+	} else {
+		i = dnstxt(&txt, domain);
+	}
+
 	if (i) {
 		switch (errno) {
 			case ENOENT:	return SPF_NONE;
