@@ -758,9 +758,6 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 				return SPF_HARD_ERROR;
 			}
 		}
-	} else if (!WSPACE(*token) && *token) {
-		free(*domainspec);
-		return SPF_HARD_ERROR;
 	}
 	return 0;
 }
