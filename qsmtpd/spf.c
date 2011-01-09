@@ -673,7 +673,6 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 		int i = 0;
 		char *t = token;
 
-		t++;
 		while (*t && !WSPACE(*t) &&
 				(((*t >='a') && (*t <='z')) || ((*t >='A') && (*t <='Z')) ||
 				((*t >='0') && (*t <='9')) || (*t == '-') || (*t == '_') ||
@@ -682,14 +681,20 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 				(*t == '/') || (*t == '='))))) {
 			t++;
 			switch (*t) {
-				case '%':	i = 1;
-						break;
-				case '{':	if (*(t - 1) != '%') {
-							return SPF_HARD_ERROR;
-						}
-						i = 2;
-						break;
-				case '}':	i = 0;
+			case '%':
+				i = 1;
+				t++;
+				break;
+			case '{':
+				if (*(t - 1) != '%') {
+					return SPF_HARD_ERROR;
+				}
+				i = 2;
+				t++;
+				break;
+			case '}':
+				i = 0;
+				t++;
 			}
 		}
 		if (*t && (*t != '/') && !WSPACE(*t)) {
