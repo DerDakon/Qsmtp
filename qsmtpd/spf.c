@@ -392,7 +392,7 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		memcpy(*res + oldl, addstr, addlen);\
 	}
 
-#define PARSEERR	{free(*res); return -1;}
+#define PARSEERR	do { free(*res); return SPF_HARD_ERROR; } while (0)
 
 /**
  * expand a SPF makro letter
@@ -473,6 +473,13 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 		case 'C':
 		case 'c':	if (!ex)
 					PARSEERR;
+				if (!IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
+					char a[INET6_ADDRSTRLEN];
+
+					inet_ntop(AF_INET6, &xmitstat.sremoteip, a, sizeof(a));
+					APPEND(strlen(a), a);
+					break;
+				}
 				/* fallthrough */
 		case 'I':
 		case 'i':	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
@@ -485,19 +492,12 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 					if (spf_appendmakro(res, l, ip, strlen(ip), num, r, delim))
 						return -1;
 				} else {
-					if ((ch == 'i') || (ch == 'I')) {
-						char ip[64];
+					char ip[64];
 
-						dotip6(ip);
-						ip[63] = '\0';
-						if (spf_appendmakro(res, l, ip, 63, num, r, delim))
-							return -1;
-					} else {
-						char a[INET6_ADDRSTRLEN];
-
-						inet_ntop(AF_INET6, &xmitstat.sremoteip, a, sizeof(a));
-						APPEND(strlen(a), a);
-					}
+					dotip6(ip);
+					ip[63] = '\0';
+					if (spf_appendmakro(res, l, ip, 63, num, r, delim))
+						return -1;
 				}
 				break;
 		case 'T':
@@ -591,15 +591,28 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 	char *res;
 	char *p;
 	unsigned int l;
+	size_t toklen = 0;
 
-	if (!(p = strchr(token, '%'))) {
-		l = strlen(token) + 1;
+	p = token;
+	while ((*p != '\0') && ((ex == 1) || !WSPACE(*p)) && (*p != '/')) {
+		p++;
+		toklen++;
+	}
+
+	if ((*p == '/') && (ex != 0))
+		return SPF_HARD_ERROR;
+
+	p = memchr(token, '%', toklen);
+
+	if (p == NULL) {
+		l = toklen + 1;
 
 		res = malloc(l);
 		if (!res) {
 			return -1;
 		}
-		memcpy(res, token, l);
+		memcpy(res, token, toklen);
+		res[toklen] = '\0';
 	} else {
 		l = p - token;
 
@@ -609,7 +622,6 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 		}
 		memcpy(res, token, l);
 		do {
-			char *oldp;
 			int z;
 
 			switch (*++p) {
@@ -623,7 +635,7 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 						p++;
 						break;
 				case '{':	z = spf_makroletter(++p, domain, ex, &res, &l);
-						if (z < 0) {
+						if ((z < 0) || (z == SPF_HARD_ERROR)) {
 							return z;
 						} else if (!z || (*(p + z) != '}')) {
 							PARSEERR;
@@ -634,7 +646,7 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 						/* no p++ here! */
 			}
 			if (*p != '%') {
-				oldp = p;
+				const char *oldp = p;
 				p = strchr(p, '%');
 				if (p) {
 					APPEND(p - oldp, oldp);
@@ -642,7 +654,7 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 					APPEND(strlen(oldp) + 1, oldp);
 				}
 			}
-		} while (p);
+		} while (p && (p < token + toklen));
 	}
 	*result = res;
 	return 0;
@@ -701,14 +713,9 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 			return SPF_HARD_ERROR;
 		}
 		if (t != token) {
-			char o;
-
-			o = *t;
-			*t = '\0';
 			if ((i = spf_makro(token, domain, 0, domainspec))) {
 				return i;
 			}
-			*t = o;
 			token = t;
 /* Maximum length of the domainspec is 255.
  * If it is longer remove subdomains from the left side until it is <255 bytes long. */
@@ -1263,17 +1270,22 @@ spflookup(const char *domain, const int rec)
 			char *ex = strcasestr(txt, "exp=");
 
 			if (ex != NULL) {
-				int ip4, ip6;
 				char *target;
 
-				i = spf_domainspec(domain, ex + 4, &target, &ip4, &ip6);
+				i = spf_makro(ex + 4, domain, 0, &target);
 				if (i == 0) {
 					size_t dlen = strlen(target);
 					while ((dlen > 0) && (target[dlen - 1] == '.')) {
 						target[--dlen] = '\0';
 					}
-					if (dlen > 0)
-						i = dnstxt(&xmitstat.spfexp, target);
+					if (dlen > 0) {
+						char *exp;
+						i = dnstxt(&exp, target);
+						if (i == 0) {
+							i = spf_makro(exp, domain, 1, &xmitstat.spfexp);
+							free(exp);
+						}
+					}
 					free(target);
 				}
 			}
