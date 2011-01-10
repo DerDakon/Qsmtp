@@ -17,6 +17,7 @@ enum dnstype {
 	DNSTYPE_MX,
 	DNSTYPE_NAME,
 	DNSTYPE_TXT,
+	DNSTYPE_SPF,
 	DNSTYPE_NONE /* end marker */
 };
 
@@ -173,9 +174,9 @@ ask_dnsname(const struct in6_addr *addr, char **name)
 }
 
 int
-dnstxt(char **out, const char *host)
+dns_resolve_txt(char **out, const char *host, const enum dnstype stype)
 {
-	const char *value = dnsentry_search(DNSTYPE_TXT, host);
+	const char *value = dnsentry_search(stype, host);
 
 	if (value == NULL) {
 		errno = ENOENT;
@@ -189,6 +190,25 @@ dnstxt(char **out, const char *host)
 	strcpy(*out, value);
 
 	return 0;
+}
+
+
+int
+dnstxt(char **out, const char *host)
+{
+	int r = dns_resolve_txt(out, host, DNSTYPE_TXT);
+
+	// only for the moment until the SPF library does this calls itself
+	if (r == -1 && errno == ENOENT)
+		r = dns_resolve_txt(out, host, DNSTYPE_SPF);
+
+	return r;
+}
+
+int
+dnsspf(char **out, const char *host)
+{
+	return dns_resolve_txt(out, host, DNSTYPE_SPF);
 }
 
 struct spftestcase {
@@ -208,7 +228,7 @@ static struct spftestcase spftest_redhat = {
 		{
 			.type = DNSTYPE_A,
 			.key = "mailer.market2lead.com",
-			.value = "64.13.137.15"
+			.value = "::ffff:64.13.137.15"
 		},
 		{
 			.type = DNSTYPE_TXT,
@@ -441,26 +461,32 @@ check_received(int spfstatus, int log)
 	return 0;
 }
 
+static void
+setup_transfer(const char *helo, const char *from, const char *remoteip)
+{
+	memset(&xmitstat, 0, sizeof(xmitstat));
+
+	if (newstr(&xmitstat.mailfrom, strlen(from)))
+		exit(ENOMEM);
+
+	if (newstr(&heloname, strlen(helo)))
+		exit(ENOMEM);
+
+	memcpy(xmitstat.mailfrom.s, from, strlen(from));
+	memcpy(heloname.s, helo, strlen(helo));
+
+	strncpy(xmitstat.remoteip, remoteip, sizeof(xmitstat.remoteip));
+	inet_pton(AF_INET6, remoteip, &xmitstat.sremoteip);
+}
+
 static int
 runtest(struct spftestcase *tc)
 {
 	int err = 0;
 
-	memset(&xmitstat, 0, sizeof(xmitstat));
-
-	if (newstr(&xmitstat.mailfrom, strlen(tc->from)))
-		return ENOMEM;
-
-	if (newstr(&heloname, strlen(tc->helo)))
-		return ENOMEM;
-
-	memcpy(xmitstat.mailfrom.s, tc->from, strlen(tc->from));
-	memcpy(heloname.s, tc->helo, strlen(tc->helo));
+	setup_transfer(tc->helo, tc->from, tc->goodip);
 
 	dnsdata = tc->dns;
-
-	strncpy(xmitstat.remoteip, tc->goodip, sizeof(xmitstat.remoteip));
-	inet_pton(AF_INET6, tc->goodip, &xmitstat.sremoteip);
 
 	int r = check_host(strchr(tc->from, '@') + 1);
 	if (SPF_FAIL(r)) {
@@ -794,6 +820,342 @@ test_parse_mx()
 }
 
 static int
+test_parse_makro()
+{
+	/* makro expansion tests taken from SPF test suite 2009.10
+	 * http://www.openspf.org/svn/project/test-suite/rfc4408-tests-2009.10.yml */
+	const struct dnsentry makroentries[] = {
+		{
+			.type = DNSTYPE_SPF,
+			.key = "example.com.d.spf.example.com",
+			.value = "v=spf1 redirect=a.spf.example.com"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "a.spf.example.com",
+			.value = "v=spf1 include:o.spf.example.com. ~all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "o.spf.example.com",
+			.value = "v=spf1 ip4:192.168.218.40"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "msgbas2x.cos.example.com",
+			.value = "::ffff:192.168.218.40"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "example.com",
+			.value = "v=spf1 redirect=%{d}.d.spf.example.com."
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "example.com",
+			.value = "::ffff:192.168.90.76"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "exp.example.com",
+			.value = "v=spf1 exp=msg.example.com. -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "msg.example.com",
+			.value = "This is a test."
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e1.example.com",
+			.value = "v=spf1 -exists:%(ir).sbl.example.com ?all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e1a.example.com",
+			.value = "v=spf1 a:macro%%percent%_%_space%-url-space.example.com -all"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "macro%percent  space%20url-space.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e2.example.com",
+			.value = "v=spf1 -all exp=%{r}.example.com"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e3.example.com",
+			.value = "v=spf1 -all exp=%{ir}.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "40.218.168.192.example.com",
+			.value = "Connections from %{c} not authorized."
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "somewhat.long.exp.example.com",
+			.value = "v=spf1 -all exp=foobar.%{o}.%{o}.%{o}.%{o}.%{o}.%{o}.%{o}.%{o}.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "somewhat.long.exp.example.com.somewhat.long.exp.example.com.somewhat.long.exp.example.com.somewhat.long.exp.example.com.somewhat.long.exp.example.com.somewhat.long.exp.example.com.somewhat.long.exp.example.com.somewhat.long.exp.example.com.example.com",
+			.value = "Congratulations!  That was tricky."
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e4.example.com",
+			.value = "v=spf1 -all exp=e4msg.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e4msg.example.com",
+			.value = "%{c} is queried as %{ir}.%{v}.arpa"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e5.example.com",
+			.value = "v=spf1 a:%{a}.example.com -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e6.example.com",
+			.value = "v=spf1 -all exp=e6msg.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e6msg.example.com",
+			.value = "connect from %{p}"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "mx.example.com",
+			.value = "::ffff:192.168.218.41,::ffff:192.168.218.42"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "mx.example.com",
+			.value = "CAFE:BABE::2,CAFE:BABE::3"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "40.218.168.192.in-addr.arpa",
+			.value = "mx.example.com"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "41.218.168.192.in-addr.arpa",
+			.value = "mx.example.com"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "42.218.168.192.in-addr.arpa",
+			.value = "mx.example.com,mx.e7.example.com"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.E.B.A.B.E.F.A.C.ip6.arpa",
+			.value = "mx.example.com"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "3.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.E.B.A.B.E.F.A.C.ip6.arpa",
+			.value = "mx.example.com"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "mx.e7.example.com",
+			.value = "192.168.218.42"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "mx.e7.example.com.should.example.com",
+			.value = "127.0.0.2"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "mx.example.com.ok.example.com",
+			.value = "127.0.0.2"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e7.example.com",
+			.value = "v=spf1 exists:%{p}.should.example.com ~exists:%{p}.ok.example.com"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e8.example.com",
+			.value = "v=spf1 -all exp=msg8.%{D2}"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "msg8.example.com",
+			.value = "http://example.com/why.html?l=%{L}"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e9.example.com",
+			.value = "v=spf1 a:%{H} -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e10.example.com",
+			.value = "v=spf1 -include:_spfh.%{d2} ip4:1.2.3.0/24 -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "_spfh.example.com",
+			.value = "v=spf1 -a:%{h} +all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e11.example.com",
+			.value = "v=spf1 exists:%{i}.%{l2r-}.user.%{d2}"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "1.2.3.4.gladstone.philip.user.example.com",
+			.value = "127.0.0.2"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e12.example.com",
+			.value = "v=spf1 exists:%{l2r+-}.user.%{d2}"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "bar.foo.user.example.com",
+			.value = "127.0.0.2"
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		}
+	};
+	struct {
+		const char *name;
+		const char *helo;
+		const char *remoteip;
+		const char *mailfrom;
+		const char *exp;
+		int result;
+	} const testcases[] = {
+		{
+			.name = "trailing-dot-domain",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.name = "trailing-dot-exp",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@exp.example.com",
+			.exp = "This is a test.",
+			.result = SPF_FAIL_PERM
+		},
+#if 0
+		{
+			.name = "exp-only-macro-char",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@e2.example.com",
+			.exp = NULL,
+			.result = SPF_HARD_ERROR
+		},
+#endif
+		{
+			.name = "invalid-macro-char",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@e1.example.com",
+			.exp = NULL,
+			.result = SPF_HARD_ERROR
+		},
+#if 0
+		{
+			.name = "macro-mania-in-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "test@e1a.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+#endif
+		{
+			.name = "exp-txt-macro-char",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@e3.example.com",
+			.exp = "Connections from 192.168.218.40 not authorized.",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "domain-name-truncation",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@somewhat.long.exp.example.com",
+			.exp = "Congratulations!  That was tricky.",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.helo = NULL,
+			.remoteip = NULL,
+			.mailfrom = NULL,
+			.exp = NULL,
+			.result = -1
+		}
+	};
+	unsigned int i = 0;
+	int err = 0;
+
+	dnsdata = makroentries;
+
+	while (testcases[i].helo != NULL) {
+		int r;
+
+		setup_transfer(testcases[i].helo, testcases[i].mailfrom, testcases[i].remoteip);
+
+		r = check_host(strchr(testcases[i].mailfrom, '@') + 1);
+
+		if (r != testcases[i].result) {
+			fprintf(stderr, "makro test %s returned %i but %i was expected\n", testcases[i].name, r, testcases[i].result);
+			err++;
+		}
+
+		if (testcases[i].exp != NULL) {
+			if (xmitstat.spfexp == NULL) {
+				fprintf(stderr, "Test %s should return SPF exp, but it did not\n", testcases[i].name);
+				err++;
+			} else if (strcmp(xmitstat.spfexp, testcases[i].exp) != 0) {
+				fprintf(stderr, "Test %s did not return the expected SPF exp, but %s\n", testcases[i].name, xmitstat.spfexp);
+				err++;
+			}
+		} else if (xmitstat.spfexp) {
+			fprintf(stderr, "no SPF exp was expected for test %s, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
+			err++;
+		}
+
+		free(xmitstat.mailfrom.s);
+		free(heloname.s);
+		free(xmitstat.spfexp);
+
+		i++;
+	}
+
+	memset(&xmitstat, 0, sizeof(xmitstat));
+	STREMPTY(heloname);
+
+	return err;
+}
+
+static int
 test_parse()
 {
 	const struct dnsentry parseentries[] = {
@@ -1008,6 +1370,16 @@ test_received()
 	return err;
 }
 
+static int
+test_suite(void)
+{
+	int err = 0;
+
+	err += test_parse_makro();
+
+	return err;
+}
+
 int main(int argc, char **argv)
 {
 	if (argc != 2)
@@ -1021,6 +1393,8 @@ int main(int argc, char **argv)
 		return test_parse();
 	else if (strcmp(argv[1], "_received_") == 0)
 		return test_received();
+	else if (strcmp(argv[1], "_suite_") == 0)
+		return test_suite();
 	else
 		return EINVAL;
 }

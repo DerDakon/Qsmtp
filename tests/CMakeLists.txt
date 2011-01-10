@@ -14,6 +14,7 @@ ENDIF (MEMCHECK_LIBRARIES)
 
 ADD_TEST(NAME "SPF_received" COMMAND testcase_spf "_received_")
 ADD_TEST(NAME "SPF_parser" COMMAND testcase_spf "_parse_")
+ADD_TEST(NAME "SPF_testsuite" COMMAND testcase_spf "_suite_")
 ADD_TEST(NAME "SPF_domain_redhat" COMMAND testcase_spf "redhat")
 ADD_TEST(NAME "SPF_domain_sf-mail" COMMAND testcase_spf "sf-mail")
 
