@@ -1182,7 +1182,6 @@ spflookup(const char *domain, const int rec)
 			mechanism = "IP6";
 		} else if (!strncasecmp(token, "include:", 8)) {
 			char *n = NULL;
-			int flagnext = 0;
 
 			token += 8;
 
@@ -1205,9 +1204,7 @@ spflookup(const char *domain, const int rec)
 				case -1:	break;
 				default:	result = SPF_NONE;
 			}
-			token = n;
-			if (flagnext)
-				*n = ' ';
+
 			mechanism = "include";
 		} else if (!strncasecmp(token, "redirect=", 9)) {
 			token += 9;
