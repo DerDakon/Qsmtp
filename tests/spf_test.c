@@ -147,7 +147,8 @@ ask_dnsa(const char *domain, struct ips **ips)
 	if (value == NULL)
 		return 1;
 
-	*ips = parseips(value);
+	if (ips != NULL)
+		*ips = parseips(value);
 
 	return 0;
 }
@@ -1157,6 +1158,22 @@ test_parse_makro()
 			.result = SPF_FAIL_PERM
 		},
 #endif
+		{
+			.name = "macro-reverse-split-on-dash",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "philip-gladstone-test@e11.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.name = "macro-multiple-delimiters",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo-bar+zip+quux@e12.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
 		{
 			.helo = NULL,
 			.remoteip = NULL,
