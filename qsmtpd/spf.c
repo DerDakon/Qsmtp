@@ -550,7 +550,8 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 				}
 				break;
 		case 'H':
-		case 'h':	APPEND(HELOLEN, HELOSTR);
+		case 'h':	if (spf_appendmakro(res, l, HELOSTR, HELOLEN, num, r, delim))
+					return -1;
 				break;
 		default:	APPEND(7, "unknown");
 	}
