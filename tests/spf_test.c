@@ -469,11 +469,11 @@ setup_transfer(const char *helo, const char *from, const char *remoteip)
 	if (newstr(&xmitstat.mailfrom, strlen(from)))
 		exit(ENOMEM);
 
-	if (newstr(&heloname, strlen(helo)))
+	if (newstr(&xmitstat.helostr, strlen(helo)))
 		exit(ENOMEM);
 
 	memcpy(xmitstat.mailfrom.s, from, strlen(from));
-	memcpy(heloname.s, helo, strlen(helo));
+	memcpy(xmitstat.helostr.s, helo, strlen(helo));
 
 	strncpy(xmitstat.remoteip, remoteip, sizeof(xmitstat.remoteip));
 	inet_pton(AF_INET6, remoteip, &xmitstat.sremoteip);
@@ -1131,6 +1131,30 @@ test_parse_makro()
 			.mailfrom = "test@e5.example.com",
 			.exp = NULL,
 			.result = SPF_HARD_ERROR
+		},
+		{
+			.name = "upper-macro",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.42",
+			.mailfrom = "jack&jill=up@e8.example.com",
+			.exp = "http://example.com/why.html?l=jack%26jill%3Dup",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "hello-macro",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "jack&jill=up@e9.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.name = "require-valid-helo",
+			.helo = "OEMCOMPUTER",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "test@e10.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
 		},
 #endif
 		{
