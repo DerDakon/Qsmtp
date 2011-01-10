@@ -1186,6 +1186,8 @@ test_parse_makro()
 	int err = 0;
 
 	dnsdata = makroentries;
+	newstr(&heloname, strlen("myhelo.example.net"));
+	memcpy(heloname.s, "myhelo.example.net", strlen("myhelo.example.net"));
 
 	while (testcases[i].helo != NULL) {
 		int r;
@@ -1213,13 +1215,14 @@ test_parse_makro()
 		}
 
 		free(xmitstat.mailfrom.s);
-		free(heloname.s);
+		free(xmitstat.helostr.s);
 		free(xmitstat.spfexp);
 
 		i++;
 	}
 
 	memset(&xmitstat, 0, sizeof(xmitstat));
+	free(heloname.s);
 	STREMPTY(heloname);
 
 	return err;
