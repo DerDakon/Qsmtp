@@ -1061,8 +1061,8 @@ txtlookup(char **txt, const char *domain)
 		offs = (dot - domain) + 1;
 	}
 
-	memcpy(lookup, domain + offs, len);
-	lookup[len] = '\0';
+	memcpy(lookup, domain + offs, len - offs);
+	lookup[len - offs] = '\0';
 
 	return dnstxt(txt, lookup);
 }
