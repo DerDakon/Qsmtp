@@ -511,8 +511,8 @@ runtest(struct spftestcase *tc)
 
 	free(xmitstat.mailfrom.s);
 	STREMPTY(xmitstat.mailfrom);
-	free(heloname.s);
-	STREMPTY(heloname);
+	free(xmitstat.helostr.s);
+	STREMPTY(xmitstat.helostr);
 
 	return err;
 }
