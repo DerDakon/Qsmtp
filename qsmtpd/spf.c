@@ -305,7 +305,7 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		actdelim[k] = '\0';
 
 		while ( (d = strpbrk(d, actdelim)) ) {
-			*d = '.';
+			*d++ = '.';
 			dc++;
 		}
 	}
