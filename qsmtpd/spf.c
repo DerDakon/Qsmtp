@@ -550,7 +550,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 				}
 				break;
 		case 'H':
-		case 'h':	APPEND(10, "deprecated");
+		case 'h':	APPEND(HELOLEN, HELOSTR);
 				break;
 		default:	APPEND(7, "unknown");
 	}
