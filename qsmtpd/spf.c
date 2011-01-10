@@ -717,31 +717,6 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 				return i;
 			}
 			token = t;
-/* Maximum length of the domainspec is 253.
- * If it is longer remove subdomains from the left side until it is <253 bytes long. */
-			if (strlen(*domainspec) > 253) {
-				char *d = *domainspec;
-
-				do {
-					d = strchr(d, '.');
-				} while (d && (strlen(d) > 253));
-				if (!d) {
-					free(*domainspec);
-					return SPF_HARD_ERROR;
-				} else {
-					unsigned int l = strlen(d) + 1;
-					char *nd = malloc(l);
-
-					if (!nd) {
-						free(*domainspec);
-						errno = ENOMEM;
-						return -1;
-					}
-					memcpy(nd, d, l);
-					free(*domainspec);
-					*domainspec = nd;
-				}
-			}
 		}
 	}
 /* check if there is a cidr length given */
@@ -1049,6 +1024,48 @@ spfip6(const char *domain)
 }
 
 /**
+ * @brief lookup TXT record taking SPF specialities into account
+ * @param txt result pointer
+ * @param domain domain token to look up
+ * @returns the same error codes as dnstxt()
+ * 
+ * This will take two SPF specific contraints into account:
+ * - trailing dots are ignored
+ * - if domain is longer than 253 characters parts are removed until it is shorter
+ */
+static int
+txtlookup(char **txt, const char *domain)
+{
+	char lookup[256];
+	unsigned int offs = 0;
+	size_t len = strlen(domain);
+
+	while ((len > 0) && (domain[len - 1] == '.')) {
+		len--;
+	}
+
+	if (len == 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	while (len - offs > 253) {
+		const char *dot = strchr(domain + offs, '.');
+		if (dot == NULL) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		offs = (dot - domain) + 1;
+	}
+
+	memcpy(lookup, domain + offs, len);
+	lookup[len] = '\0';
+
+	return dnstxt(txt, lookup);
+}
+
+/**
  * look up SPF records for domain
  *
  * @param domain no idea what this might be for
@@ -1069,23 +1086,8 @@ spflookup(const char *domain, const int rec)
 	if (!rec && domainvalid(domain))
 		return SPF_FAIL_MALF;
 
-	if ((rec > 0) && (domain[strlen(domain) - 1] == '.')) {
-		/* trailing dots should be ignored */
-		size_t dlen = strlen(domain);
-		char *nodots = malloc(dlen);
-		if (nodots == NULL)
-			return -1;
-
-		strncpy(nodots, domain, dlen);
-		nodots[--dlen] = '\0';
-		while ((dlen > 0) && (nodots[dlen - 1] == '.'))
-			nodots[--dlen] = '\0';
-		if (dlen == 0) {
-			free(nodots);
-			return SPF_FAIL_NONEX;
-		}
-		i = dnstxt(&txt, nodots);
-		free(nodots);
+	if (rec > 0) {
+		i = txtlookup(&txt, domain);
 	} else {
 		i = dnstxt(&txt, domain);
 	}
@@ -1280,7 +1282,7 @@ spflookup(const char *domain, const int rec)
 					}
 					if (dlen > 0) {
 						char *exp;
-						i = dnstxt(&exp, target);
+						i = txtlookup(&exp, target);
 						if (i == 0) {
 							i = spf_makro(exp, domain, 1, &xmitstat.spfexp);
 							free(exp);
