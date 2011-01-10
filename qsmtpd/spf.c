@@ -648,13 +648,14 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 			if (*p != '%') {
 				const char *oldp = p;
 				p = strchr(p, '%');
-				if (p) {
+				if (((p != NULL) && (p > token + toklen)) || (p == NULL))
+					p = token + toklen;
+
+				if (p != oldp)
 					APPEND(p - oldp, oldp);
-				} else {
-					APPEND(strlen(oldp) + 1, oldp);
-				}
 			}
-		} while (p && (p < token + toklen));
+		} while (p && (p < token + toklen) && !WSPACE(*p));
+		APPEND(1, "");
 	}
 	*result = res;
 	return 0;
@@ -1179,19 +1180,18 @@ spflookup(const char *domain, const int rec)
 			result = spfip6(token);
 			mechanism = "IP6";
 		} else if (!strncasecmp(token, "include:", 8)) {
-			char *n;
+			char *n = NULL;
 			int flagnext = 0;
 
 			token += 8;
-			n = token;
-			while (!WSPACE(*n) && *n) {
-				n++;
+
+			result = spf_makro(token, domain, 0, &n);
+
+			if (result == 0) {
+				result = spflookup(n, rec + 1);
+				free(n);
 			}
-			if (*n) {
-				*n = '\0';
-				flagnext = 1;
-			}
-			result = spflookup(token, rec + 1);
+
 			switch (result) {
 				case SPF_NONE:	result = SPF_PASS;
 						prefix = SPF_FAIL_NONEX;
