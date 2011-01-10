@@ -1105,6 +1105,35 @@ test_parse_makro()
 			.result = SPF_FAIL_PERM
 		},
 		{
+			.name = "v-macro-ip4",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@e4.example.com",
+			.exp = "192.168.218.40 is queried as 40.218.168.192.in-addr.arpa",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			/* Note: the dotted IP address is converted to lowercase in the exp string
+			 * as my implementation uses lowercase and I can't see any reason why that
+			 * shouldn't be as valid as uppercase. */
+			.name = "v-macro-ip6",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "CAFE:BABE::1",
+			.mailfrom = "test@e4.example.com",
+			.exp = "cafe:babe::1 is queried as 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.e.b.a.b.e.f.a.c.ip6.arpa",
+			.result = SPF_FAIL_PERM
+		},
+#if 0
+		{
+			.name = "undef-macro",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "CAFE:BABE::192.168.218.40",
+			.mailfrom = "test@e5.example.com",
+			.exp = NULL,
+			.result = SPF_HARD_ERROR
+		},
+#endif
+		{
 			.helo = NULL,
 			.remoteip = NULL,
 			.mailfrom = NULL,
