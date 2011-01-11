@@ -1307,13 +1307,11 @@ test_parse()
 			.key = "double-prefix.example.net",
 			.value = "v=spf1 --mx +all"
 		},
-#if 0
 		{
 			.type = DNSTYPE_TXT,
 			.key = "invalid-makro1.example.net",
 			.value = "v=spf1 mx:%a +all"
 		},
-#endif
 		{
 			.type = DNSTYPE_TXT,
 			.key = "invalid-makro2.example.net",
@@ -1323,6 +1321,21 @@ test_parse()
 			.type = DNSTYPE_TXT,
 			.key = "invalid-makro3.example.net",
 			.value = "v=spf1 mx:%{ab} +all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-makro4.example.net",
+			.value = "v=spf1 mx:%{h0} +all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-makro4.example.net",
+			.value = "v=spf1 mx:%{h2 +all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-makro4.example.net",
+			.value = "v=spf1 mx:%{h2rr} +all"
 		},
 		{
 			.type = DNSTYPE_NONE,
@@ -1346,9 +1359,10 @@ test_parse()
 		SPF_HARD_ERROR,
 		SPF_HARD_ERROR,
 		SPF_HARD_ERROR,
-#if 0
 		SPF_HARD_ERROR,
-#endif
+		SPF_HARD_ERROR,
+		SPF_HARD_ERROR,
+		SPF_HARD_ERROR,
 		SPF_HARD_ERROR,
 		SPF_HARD_ERROR
 	};

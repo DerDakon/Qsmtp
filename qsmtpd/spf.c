@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #define __USE_GNU
 #include <string.h>
@@ -662,6 +663,15 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 	return 0;
 }
 
+enum spf_makro_expansion {
+	SPF_MAKRO_NONE,
+	SPF_MAKRO_PERCENT,
+	SPF_MAKRO_BRACE,
+	SPF_MAKRO_LETTER,
+	SPF_MAKRO_TRANSFORMER,
+	SPF_MAKRO_DELIMITER
+};
+
 /**
  * parse the domainspec
  *
@@ -684,36 +694,111 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 		return 0;
 /* search for a domain in token */
 	} else if (*token != '/') {
-		int i = 0;
+		enum spf_makro_expansion i = SPF_MAKRO_NONE;
 		char *t = token;
+		int found_r_transformer = 0;
 
-		while (*t && !WSPACE(*t) &&
-				(((*t >='a') && (*t <='z')) || ((*t >='A') && (*t <='Z')) ||
-				((*t >='0') && (*t <='9')) || (*t == '-') || (*t == '_') ||
-				((*t == '%') && !i) || ((*t == '{') && (i == 1)) || (*t == '.') ||
-				((i == 2) && ((*t == '}') || (*t == ',') || (*t == '+') ||
-				(*t == '/') || (*t == '='))))) {
-			t++;
-			switch (*t) {
-			case '%':
-				i = 1;
-				t++;
-				break;
-			case '{':
-				if (*(t - 1) != '%') {
+		while (*t && !WSPACE(*t) && (*t != '/')) {
+
+			switch (i) {
+			case SPF_MAKRO_NONE:
+				if (*t == '%') {
+					i = SPF_MAKRO_PERCENT;
+					t++;
+					/* fallthrough */
+				} else {
+					if ((*t < 0x21) || (*t > 0x7e))
+						return SPF_HARD_ERROR;
+					t++;
+					continue;
+				}
+			case SPF_MAKRO_PERCENT:
+				switch (*t) {
+				case '%':
+				case '_':
+				case '-':
+					i = SPF_MAKRO_NONE;
+					t++;
+					continue;
+				case '{':
+					i = SPF_MAKRO_BRACE;
+					found_r_transformer = 0;
+					break;
+				default:
 					return SPF_HARD_ERROR;
 				}
-				i = 2;
 				t++;
-				break;
-			case '}':
-				i = 0;
-				t++;
+				/* fallthrough */
+			case SPF_MAKRO_BRACE:
+				/* expecting spf-makro-letter now */
+				switch (toupper(*t)) {
+				case 'S':
+				case 'L':
+				case 'O':
+				case 'D':
+				case 'I':
+				case 'P':
+				case 'H':
+				case 'C':
+				case 'R':
+				case 'T':
+				case 'V':
+					i = SPF_MAKRO_LETTER;
+					t++;
+					break;
+				default:
+					return SPF_HARD_ERROR;
+				}
+				/* fallthrough */
+			case SPF_MAKRO_LETTER:
+			case SPF_MAKRO_TRANSFORMER:
+				/* expecting transformer, delimiter, or '}' */
+				switch (*t) {
+				case 'r':
+					if (found_r_transformer)
+						return SPF_HARD_ERROR;
+					found_r_transformer = 1;
+					/* fallthrough */
+				case '0':
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+				case '5':
+				case '6':
+				case '7':
+				case '8':
+				case '9':
+					i = SPF_MAKRO_TRANSFORMER;
+					t++;
+					continue;
+				};
+				/* fallthrough */
+			case SPF_MAKRO_DELIMITER:
+				switch (*t) {
+				case '.':
+				case '-':
+				case '+':
+				case ',':
+				case '/':
+				case '_':
+				case '=':
+					i = SPF_MAKRO_DELIMITER;
+					t++;
+					continue;
+				case '}':
+					i = SPF_MAKRO_NONE;
+					t++;
+					continue;
+				default:
+					return SPF_HARD_ERROR;
+				}
 			}
 		}
-		if (*t && (*t != '/') && !WSPACE(*t)) {
+
+		if (i != SPF_MAKRO_NONE)
 			return SPF_HARD_ERROR;
-		}
+
 		if (t != token) {
 			if ((i = spf_makro(token, domain, 0, domainspec))) {
 				return i;
