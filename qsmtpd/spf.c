@@ -696,7 +696,6 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 	} else if (*token != '/') {
 		enum spf_makro_expansion i = SPF_MAKRO_NONE;
 		char *t = token;
-		int found_r_transformer = 0;
 
 		while (*t && !WSPACE(*t) && (*t != '/')) {
 
@@ -722,7 +721,6 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 					continue;
 				case '{':
 					i = SPF_MAKRO_BRACE;
-					found_r_transformer = 0;
 					break;
 				default:
 					return SPF_HARD_ERROR;
@@ -754,11 +752,6 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 			case SPF_MAKRO_TRANSFORMER:
 				/* expecting transformer, delimiter, or '}' */
 				switch (*t) {
-				case 'r':
-					if (found_r_transformer)
-						return SPF_HARD_ERROR;
-					found_r_transformer = 1;
-					/* fallthrough */
 				case '0':
 				case '1':
 				case '2':
@@ -773,6 +766,8 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 					t++;
 					continue;
 				};
+				if (*t == 'r')
+					t++;
 				/* fallthrough */
 			case SPF_MAKRO_DELIMITER:
 				switch (*t) {
