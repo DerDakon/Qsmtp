@@ -1329,13 +1329,28 @@ test_parse()
 		},
 		{
 			.type = DNSTYPE_TXT,
-			.key = "invalid-makro4.example.net",
+			.key = "invalid-makro5.example.net",
 			.value = "v=spf1 mx:%{h2 +all"
 		},
 		{
 			.type = DNSTYPE_TXT,
-			.key = "invalid-makro4.example.net",
+			.key = "invalid-makro6.example.net",
 			.value = "v=spf1 mx:%{h2rr} +all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-makro7.example.net",
+			.value = "v=spf1 mx:%{h2rr} +all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-makro8.example.net",
+			.value = "v=spf10 +all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-makro9.example.net",
+			.value = "v=spf1 mx:\020b +all"
 		},
 		{
 			.type = DNSTYPE_NONE,
@@ -1356,6 +1371,9 @@ test_parse()
 		SPF_PASS,
 		SPF_HARD_ERROR,
 		SPF_SOFTFAIL,
+		SPF_HARD_ERROR,
+		SPF_HARD_ERROR,
+		SPF_HARD_ERROR,
 		SPF_HARD_ERROR,
 		SPF_HARD_ERROR,
 		SPF_HARD_ERROR,
