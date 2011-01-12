@@ -744,12 +744,17 @@ test_parse_mx()
 		{
 			.type = DNSTYPE_MX,
 			.key = "mxtest6b.example.net",
-			.value = "::ffff:10.42.42.40;cafe:babe::42"
+			.value = "::ffff:10.42.42.48;cafe:babe::42;::ffff:10.42.42.40"
 		},
 		{
 			.type = DNSTYPE_A,
 			.key = "mxtest2.example.net",
 			.value = "::ffff:10.42.42.43"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "expmakro.example.net",
+			.value = "This should be percent-space-percent20: %%%_%-"
 		},
 		{
 			.type = DNSTYPE_NONE,
@@ -778,7 +783,7 @@ test_parse_mx()
 	};
 	const char *mxvalid_reject[] = {
 		"v=spf1 -ip4:10.42.42.42 mx -all",
-		"v=spf1 mx:mxtest2.example.net/24 -all",
+		"v=spf1 mx:mxtest2.example.net/24 -all exp=expmakro.example.net",
 		NULL
 	};
 	const char *mxvalid6[] = {
@@ -830,6 +835,8 @@ test_parse_mx()
 			fprintf(stderr, "check_host() did not properly reject '%s', but returned %i\n", mxvalid_reject[i], r);
 			err++;
 		}
+
+		free(xmitstat.spfexp);
 
 		i++;
 	}
