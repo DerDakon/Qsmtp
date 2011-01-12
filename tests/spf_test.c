@@ -837,6 +837,7 @@ test_parse_mx()
 		}
 
 		free(xmitstat.spfexp);
+		xmitstat.spfexp = NULL;
 
 		i++;
 	}
