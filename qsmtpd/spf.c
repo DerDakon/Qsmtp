@@ -1379,6 +1379,7 @@ spflookup(const char *domain, const int rec)
 	if (redirect) {
 		char *domspec;
 		int i4, i6;
+
 		result = spf_domainspec(domain, redirect, &domspec, &i4, &i6);
 
 		if (result == 0) {
@@ -1386,9 +1387,8 @@ spflookup(const char *domain, const int rec)
 				result = SPF_HARD_ERROR;
 			else
 				result = spflookup(domspec, rec + 1);
+			free(domspec);
 		}
-
-		free(domspec);
 	} else {
 		result = SPF_NEUTRAL;
 	}
