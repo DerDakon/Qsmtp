@@ -1165,7 +1165,6 @@ test_parse_makro()
 			.exp = "cafe:babe::1 is queried as 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.e.b.a.b.e.f.a.c.ip6.arpa",
 			.result = SPF_FAIL_PERM
 		},
-#if 0
 		{
 			.name = "undef-macro",
 			.helo = "msgbas2x.cos.example.com",
@@ -1174,6 +1173,7 @@ test_parse_makro()
 			.exp = NULL,
 			.result = SPF_HARD_ERROR
 		},
+#if 0
 		{
 			.name = "upper-macro",
 			.helo = "msgbas2x.cos.example.com",
