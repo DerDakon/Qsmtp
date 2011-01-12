@@ -645,8 +645,9 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 						}
 						p += z + 1;
 						break;
-				default:	APPEND(1, "%");
-						/* no p++ here! */
+				default:
+					free(res);
+					return SPF_HARD_ERROR;
 			}
 			if (*p != '%') {
 				const char *oldp = p;
