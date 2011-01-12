@@ -69,6 +69,8 @@ parseips(const char *list)
 			strcpy(this, next);
 		} else {
 			strncpy(this, next, end - next);
+			this[end - next] = '\0';
+			end++;
 		}
 
 		memset(n, 0, sizeof(*n));
@@ -735,6 +737,16 @@ test_parse_mx()
 			.value = "::ffff:10.42.42.40"
 		},
 		{
+			.type = DNSTYPE_MX,
+			.key = "mxtest6.example.net",
+			.value = "::ffff:10.42.42.40;cafe:babe::1"
+		},
+		{
+			.type = DNSTYPE_MX,
+			.key = "mxtest6b.example.net",
+			.value = "::ffff:10.42.42.40;cafe:babe::42"
+		},
+		{
 			.type = DNSTYPE_A,
 			.key = "mxtest2.example.net",
 			.value = "::ffff:10.42.42.43"
@@ -767,6 +779,11 @@ test_parse_mx()
 	const char *mxvalid_reject[] = {
 		"v=spf1 -ip4:10.42.42.42 mx -all",
 		"v=spf1 mx:mxtest2.example.net/24 -all",
+		NULL
+	};
+	const char *mxvalid6[] = {
+		"v=spf1 mx:mxtest6.example.net//64 -all",
+		"v=spf1 mx:mxtest6b.example.net -all",
 		NULL
 	};
 	int err = 0;
@@ -811,6 +828,22 @@ test_parse_mx()
 		r = check_host(mxentries[0].key);
 		if (r != SPF_FAIL_PERM) {
 			fprintf(stderr, "check_host() did not properly reject '%s', but returned %i\n", mxvalid_reject[i], r);
+			err++;
+		}
+
+		i++;
+	}
+
+	i = 0;
+
+	inet_pton(AF_INET6, "cafe:babe::42", &xmitstat.sremoteip);
+
+	while (mxvalid6[i] != NULL) {
+		mxentries[0].value = mxvalid6[i];
+
+		r = check_host(mxentries[0].key);
+		if (r != SPF_PASS) {
+			fprintf(stderr, "check_host() did not accept '%s', but returned %i\n", mxvalid6[i], r);
 			err++;
 		}
 
@@ -1353,6 +1386,16 @@ test_parse()
 			.value = "v=spf1 mx:\020b +all"
 		},
 		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-redirect-makro1.example.net",
+			.value = "v=spf1 redirect=foo.example.com/"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-redirect-makro2.example.net",
+			.value = "v=spf1 redirect=foo.example.com/16"
+		},
+		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
@@ -1371,6 +1414,8 @@ test_parse()
 		SPF_PASS,
 		SPF_HARD_ERROR,
 		SPF_SOFTFAIL,
+		SPF_HARD_ERROR,
+		SPF_HARD_ERROR,
 		SPF_HARD_ERROR,
 		SPF_HARD_ERROR,
 		SPF_HARD_ERROR,
