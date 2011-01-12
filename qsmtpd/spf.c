@@ -595,14 +595,15 @@ spf_makro(char *token, const char *domain, int ex, char **result)
 	unsigned int l;
 	size_t toklen = 0;
 
-	p = token;
-	while ((*p != '\0') && ((ex == 1) || !WSPACE(*p)) && (*p != '/')) {
-		p++;
-		toklen++;
+	if (ex == 1) {
+		toklen = strlen(token);
+	} else {
+		p = token;
+		while ((*p != '\0') && ((ex == 1) || !WSPACE(*p)) && (*p != '/')) {
+			p++;
+			toklen++;
+		}
 	}
-
-	if ((*p == '/') && (ex != 0))
-		return SPF_HARD_ERROR;
 
 	p = memchr(token, '%', toklen);
 
