@@ -415,10 +415,10 @@ void
 dieerror(int error)
 {
 	switch (error) {
-		case ETIMEDOUT:	write(1, "Zconnection to remote server died\n", 35);
+		case ETIMEDOUT:	write(1, "Zconnection to remote timed out\n", 33);
 				log_write(LOG_WARNING, "connection timed out");
 				break;
-		case ECONNRESET:write(1, "Zconnection to remote timed out\n", 33);
+		case ECONNRESET:write(1, "Zconnection to remote server died\n", 35);
 				log_write(LOG_WARNING, "connection died");
 				break;
 	}
