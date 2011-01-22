@@ -1653,7 +1653,7 @@ main(int argc, char **argv)
 	auth_host = NULL;
 	if (argc >= 4) {
 		auth_check = argv[2];
-		auth_sub = argv + 3;
+		auth_sub = ((const char **)argv) + 3;
 		if (domainvalid(argv[1])) {
 			const char *msg[] = {"domainname for auth invalid", auth_host, NULL};
 
