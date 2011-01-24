@@ -1313,7 +1313,7 @@ spflookup(const char *domain, const int rec)
 			while (!WSPACE(*(token - 1)))
 				token--;
 
-			while (!WSPACE(*tokenend))
+			while (!WSPACE(*tokenend) && (*tokenend != '\0'))
 				tokenend++;
 
 			xmitstat.spfexp = malloc(tokenend - token + 1);
