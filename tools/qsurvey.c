@@ -136,8 +136,8 @@ getrhost(const struct ips *mx)
 		m = m->next;
 
 	r = ask_dnsname(&m->addr, &partner_fqdn);
-	if (r != 0) {
-		if (errno != ENOMEM) {
+	if (r <= 0) {
+		if ((r == 0) || (errno != ENOMEM)) {
 			rhost = malloc(INET6_ADDRSTRLEN + 2);
 		}
 		if (errno == ENOMEM) {

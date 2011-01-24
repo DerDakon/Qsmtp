@@ -397,10 +397,10 @@ connsetup(void)
 	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr) ? 1 : 0;
 
 	j = ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s);
-	if (j < 0) {
+	if (j == -1) {
 		log_write(LOG_ERR, "can't look up remote host name");
 		return -1;
-	} else if (j) {
+	} else if (j <= 0) {
 		STREMPTY(xmitstat.remotehost);
 	} else {
 		xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);

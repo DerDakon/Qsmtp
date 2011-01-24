@@ -159,21 +159,32 @@ int
 ask_dnsname(const struct in6_addr *addr, char **name)
 {
 	char iptmp[INET6_ADDRSTRLEN];
+	size_t l;
+	int cnt = 0;
 
 	inet_ntop(AF_INET6, addr, iptmp, sizeof(iptmp));
 
 	const char *value = dnsentry_search(DNSTYPE_NAME, iptmp);
 
 	if (value == NULL)
-		return 1;
+		return 0;
 
-	*name = malloc(strlen(value)) + 1;
+	*name = malloc(strlen(value)) + 2;
 	if (*name == NULL)
 		return -1;
 
 	strcpy(*name, value);
+	l = strlen(value);
+	(*name)[l + 1] = '\0';
+	while (l > 0) {
+		if ((*name)[l] == ';') {
+			(*name)[l] = '\0';
+			cnt++;
+		}
+		l--;
+	}
 
-	return 0;
+	return cnt;
 }
 
 int

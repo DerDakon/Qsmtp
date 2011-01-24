@@ -225,11 +225,11 @@ ask_dnsa(const char *name, struct ips **result)
  *
  * @param ip the IP to look up
  * @param result name will be stored here
- * @return  0 on success
- *          1 if host is not existent
- *          2 if temporary DNS error
- *          3 if permanent DNS error
- *         -1 on error
+ * @return  how many names were found, negative on error
+ * @retval 0 host not found
+ * @retval -1 local error (e.g. ENOMEM)
+ * @retval -2 temporary DNS error
+ * @retval -3 permanent DNS error
  */
 int
 ask_dnsname(const struct in6_addr *ip, char **result)
@@ -238,15 +238,21 @@ ask_dnsname(const struct in6_addr *ip, char **result)
 
 	r = dnsname(result, (const char *)ip->s6_addr);
 	if (!r)
-		return *result ? 0 : 1;
+		return *result ? 1 : 0;
 	switch (errno) {
 		case ETIMEDOUT:
-		case EAGAIN:	return 2;
+		case EAGAIN:
+			return -2;
 		case ENFILE:
 		case EMFILE:
-		case ENOBUFS:	errno = ENOMEM;
-		case ENOMEM:	return -1;
-		case ENOENT:	return 1;
-		default:	return 3;
+		case ENOBUFS:
+			errno = ENOMEM;
+			/* fallthrough */
+		case ENOMEM:
+			return -1;
+		case ENOENT:
+			return 0;
+		default:
+			return -3;
 	}
 }
