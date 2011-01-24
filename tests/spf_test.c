@@ -872,6 +872,15 @@ test_parse_mx()
 	return err;
 }
 
+struct suite_testcase {
+	const char *name;
+	const char *helo;
+	const char *remoteip;
+	const char *mailfrom;
+	const char *exp;
+	int result;
+};
+
 static int
 test_parse_makro()
 {
@@ -1089,14 +1098,7 @@ test_parse_makro()
 			.value = NULL
 		}
 	};
-	struct {
-		const char *name;
-		const char *helo;
-		const char *remoteip;
-		const char *mailfrom;
-		const char *exp;
-		int result;
-	} const testcases[] = {
+	const struct suite_testcase makrotestcases[] = {
 		{
 			.name = "trailing-dot-domain",
 			.helo = "msgbas2x.cos.example.com",
@@ -1234,46 +1236,151 @@ test_parse_makro()
 			.result = -1
 		}
 	};
-	unsigned int i = 0;
+	const struct dnsentry allentries[] = {
+		{
+			.type = DNSTYPE_A,
+			.key = "mail.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e1.example.com",
+			.value = "v=spf1 -all."
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e2.example.com",
+			.value = "v=spf1 -all:foobar"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e3.example.com",
+			.value = "v=spf1 -all/8"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e4.example.com",
+			.value = "v=spf1 ?all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e5.example.com",
+			.value = "v=spf1 all -all"
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		},
+	};
+	const struct suite_testcase alltestcases[] = {
+		{
+			.name = "all-dot",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e1.example.com",
+			.exp = NULL,
+			.result = SPF_HARD_ERROR
+		},
+		{
+			.name = "all-arg",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e2.example.com",
+			.exp = NULL,
+			.result = SPF_HARD_ERROR
+		},
+		{
+			.name = "all-cidr",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e3.example.com",
+			.exp = NULL,
+			.result = SPF_HARD_ERROR
+		},
+		{
+			.name = "all-neutral",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e4.example.com",
+			.exp = NULL,
+			.result = SPF_NEUTRAL
+		},
+		{
+			.name = "all-double",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e5.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.helo = NULL,
+			.remoteip = NULL,
+			.mailfrom = NULL,
+			.exp = NULL,
+			.result = -1
+		}
+	};
+	unsigned int i;
 	int err = 0;
+	unsigned int j = 0;
 
-	dnsdata = makroentries;
 	newstr(&heloname, strlen("myhelo.example.net"));
 	memcpy(heloname.s, "myhelo.example.net", strlen("myhelo.example.net"));
 
-	while (testcases[i].helo != NULL) {
-		int r;
+	for (j = 0; j < 2; j++) {
+		const struct suite_testcase *testcases;
 
-		setup_transfer(testcases[i].helo, testcases[i].mailfrom, testcases[i].remoteip);
-
-		r = check_host(strchr(testcases[i].mailfrom, '@') + 1);
-
-		if (r != testcases[i].result) {
-			fprintf(stderr, "makro test %s returned %i but %i was expected\n", testcases[i].name, r, testcases[i].result);
-			err++;
+		switch (j) {
+		case 0:
+			dnsdata = makroentries;
+			testcases = makrotestcases;
+			break;
+		case 1:
+			dnsdata = allentries;
+			testcases = alltestcases;
+			break;
 		}
+		i = 0;
 
-		if (testcases[i].exp != NULL) {
-			if (xmitstat.spfexp == NULL) {
-				fprintf(stderr, "Test %s should return SPF exp, but it did not\n", testcases[i].name);
-				err++;
-			} else if (strcmp(xmitstat.spfexp, testcases[i].exp) != 0) {
-				fprintf(stderr, "Test %s did not return the expected SPF exp, but %s\n", testcases[i].name, xmitstat.spfexp);
+		while (testcases[i].helo != NULL) {
+			int r;
+
+			setup_transfer(testcases[i].helo, testcases[i].mailfrom, testcases[i].remoteip);
+
+			r = check_host(strchr(testcases[i].mailfrom, '@') + 1);
+
+			if (r != testcases[i].result) {
+				fprintf(stderr, "makro test %s returned %i but %i was expected\n", testcases[i].name, r, testcases[i].result);
 				err++;
 			}
-		} else if (xmitstat.spfexp) {
-			fprintf(stderr, "no SPF exp was expected for test %s, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
-			err++;
+
+			if (testcases[i].exp != NULL) {
+				if (xmitstat.spfexp == NULL) {
+					fprintf(stderr, "Test %s should return SPF exp, but it did not\n", testcases[i].name);
+					err++;
+				} else if (strcmp(xmitstat.spfexp, testcases[i].exp) != 0) {
+					fprintf(stderr, "Test %s did not return the expected SPF exp, but %s\n", testcases[i].name, xmitstat.spfexp);
+					err++;
+				}
+			} else if ((xmitstat.spfexp != NULL) && (r != SPF_HARD_ERROR)) {
+				/* hard error writes what it didn't understand into spfexp */
+
+				fprintf(stderr, "no SPF exp was expected for test %s, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
+				err++;
+			}
+
+			free(xmitstat.mailfrom.s);
+			free(xmitstat.helostr.s);
+			free(xmitstat.spfexp);
+			xmitstat.spfexp = NULL;
+
+			i++;
 		}
-
-		free(xmitstat.mailfrom.s);
-		free(xmitstat.helostr.s);
-		free(xmitstat.spfexp);
-
-		i++;
+		memset(&xmitstat, 0, sizeof(xmitstat));
 	}
 
-	memset(&xmitstat, 0, sizeof(xmitstat));
 	free(heloname.s);
 	STREMPTY(heloname);
 
