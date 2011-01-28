@@ -1241,7 +1241,7 @@ spflookup(const char *domain, const int rec)
 			result = spfmx(domain, token);
 			mechanism = "MX";
 		} else if (!strncasecmp(token, "ptr", 3) &&
-				(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':'))) {
+				(WSPACE(*(token + 3)) || !*(token + 3) || (*(token + 3) == ':'))) {
 			token += 3;
 			if (*token == ':')
 				token++;
