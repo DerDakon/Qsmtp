@@ -380,7 +380,7 @@ check_received(int spfstatus, int log)
 		return 1;
 	}
 	tmp++;
-	if (spfstatus == SPF_HARD_ERROR) {
+	if (spfstatus == SPF_FAIL_MALF) {
 		/* skip the invalid token that is logged here */
 		while ((*tmp != '\n') && (*tmp != ' ') && (*tmp != '('))
 			tmp++;
@@ -581,8 +581,9 @@ test_parse_ip4()
 	while (ip4invalid[i] != NULL) {
 		ip4entries[0].value = ip4invalid[i];
 
-		if (check_host(ip4entries[0].key) != SPF_HARD_ERROR) {
-			fprintf(stderr, "check_host() did not reject invalid IPv4 entry '%s'\n", ip4invalid[i]);
+		r = check_host(ip4entries[0].key);
+		if (r != SPF_FAIL_MALF) {
+			fprintf(stderr, "check_host() did not reject invalid IPv4 entry '%s' as malformed, but returned %i\n", ip4invalid[i], r);
 			err++;
 		}
 
@@ -680,8 +681,9 @@ test_parse_ip6()
 	while (ip6invalid[i] != NULL) {
 		ip6entries[0].value = ip6invalid[i];
 
-		if (check_host(ip6entries[0].key) != SPF_HARD_ERROR) {
-			fprintf(stderr, "check_host() did not reject invalid IPv6 entry '%s'\n", ip6invalid[i]);
+		r = check_host(ip6entries[0].key);
+		if (r != SPF_FAIL_MALF) {
+			fprintf(stderr, "check_host() did not reject invalid IPv6 entry '%s' as malformed, but returned %i\n", ip6invalid[i], r);
 			err++;
 		}
 
@@ -814,8 +816,9 @@ test_parse_mx()
 	while (mxinvalid[i] != NULL) {
 		mxentries[0].value = mxinvalid[i];
 
-		if (check_host(mxentries[0].key) != SPF_HARD_ERROR) {
-			fprintf(stderr, "check_host() did not reject invalid MX entry '%s'\n", mxinvalid[i]);
+		r = check_host(mxentries[0].key);
+		if (r != SPF_FAIL_MALF) {
+			fprintf(stderr, "check_host() did not reject invalid MX entry '%s' as malformed, but returned %i\n", mxinvalid[i], r);
 			err++;
 		}
 
@@ -1122,7 +1125,7 @@ test_parse_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e2.example.com",
 			.exp = NULL,
-			.result = SPF_HARD_ERROR
+			.result = SPF_FAIL_MALF
 		},
 #endif
 		{
@@ -1131,7 +1134,7 @@ test_parse_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e1.example.com",
 			.exp = NULL,
-			.result = SPF_HARD_ERROR
+			.result = SPF_FAIL_MALF
 		},
 #if 0
 		{
@@ -1184,7 +1187,7 @@ test_parse_makro()
 			.remoteip = "CAFE:BABE::192.168.218.40",
 			.mailfrom = "test@e5.example.com",
 			.exp = NULL,
-			.result = SPF_HARD_ERROR
+			.result = SPF_FAIL_MALF
 		},
 #if 0
 		{
@@ -1280,7 +1283,7 @@ test_parse_makro()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e1.example.com",
 			.exp = NULL,
-			.result = SPF_HARD_ERROR
+			.result = SPF_FAIL_MALF
 		},
 		{
 			.name = "all-arg",
@@ -1288,7 +1291,7 @@ test_parse_makro()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e2.example.com",
 			.exp = NULL,
-			.result = SPF_HARD_ERROR
+			.result = SPF_FAIL_MALF
 		},
 		{
 			.name = "all-cidr",
@@ -1296,7 +1299,7 @@ test_parse_makro()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e3.example.com",
 			.exp = NULL,
-			.result = SPF_HARD_ERROR
+			.result = SPF_FAIL_MALF
 		},
 		{
 			.name = "all-neutral",
@@ -1364,7 +1367,7 @@ test_parse_makro()
 					fprintf(stderr, "Test %s did not return the expected SPF exp, but %s\n", testcases[i].name, xmitstat.spfexp);
 					err++;
 				}
-			} else if ((xmitstat.spfexp != NULL) && (r != SPF_HARD_ERROR)) {
+			} else if ((xmitstat.spfexp != NULL) && (r != SPF_FAIL_MALF)) {
 				/* hard error writes what it didn't understand into spfexp */
 
 				fprintf(stderr, "no SPF exp was expected for test %s, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
@@ -1528,32 +1531,32 @@ test_parse()
 		}
 	};
 	static int spfresults[] = {
-		SPF_HARD_ERROR,
+		SPF_FAIL_MALF,
 		SPF_FAIL_NONEX,
 		SPF_NONE,
-		SPF_HARD_ERROR,
+		SPF_FAIL_MALF,
 		SPF_NEUTRAL,
 		SPF_NEUTRAL,
 		SPF_FAIL_PERM,
 		SPF_SOFTFAIL,
 		SPF_PASS,
 		SPF_PASS,
-		SPF_HARD_ERROR,
+		SPF_FAIL_MALF,
 		SPF_SOFTFAIL,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR,
-		SPF_HARD_ERROR
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF
 	};
 	int err = 0;
 	unsigned int i = 0;
