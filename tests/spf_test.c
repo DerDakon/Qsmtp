@@ -169,12 +169,12 @@ ask_dnsname(const struct in6_addr *addr, char **name)
 	if (value == NULL)
 		return 0;
 
-	*name = malloc(strlen(value)) + 2;
+	l = strlen(value);
+	*name = malloc(l + 2);
 	if (*name == NULL)
 		return -1;
 
 	strcpy(*name, value);
-	l = strlen(value);
 	(*name)[l + 1] = '\0';
 	while (l > 0) {
 		if ((*name)[l] == ';') {
@@ -184,7 +184,7 @@ ask_dnsname(const struct in6_addr *addr, char **name)
 		l--;
 	}
 
-	return cnt;
+	return ++cnt;
 }
 
 int
@@ -1007,27 +1007,27 @@ test_parse_makro()
 		},
 		{
 			.type = DNSTYPE_NAME,
-			.key = "40.218.168.192.in-addr.arpa",
+			.key = "::ffff:192.168.218.40",
 			.value = "mx.example.com"
 		},
 		{
 			.type = DNSTYPE_NAME,
-			.key = "41.218.168.192.in-addr.arpa",
+			.key = "::ffff:192.168.218.41",
 			.value = "mx.example.com"
 		},
 		{
 			.type = DNSTYPE_NAME,
-			.key = "42.218.168.192.in-addr.arpa",
+			.key = "::ffff:192.168.218.42",
 			.value = "mx.example.com,mx.e7.example.com"
 		},
 		{
 			.type = DNSTYPE_NAME,
-			.key = "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.E.B.A.B.E.F.A.C.ip6.arpa",
+			.key = "cafe:babe::1",
 			.value = "mx.example.com"
 		},
 		{
 			.type = DNSTYPE_NAME,
-			.key = "3.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.E.B.A.B.E.F.A.C.ip6.arpa",
+			.key = "cafe:babe::3",
 			.value = "mx.example.com"
 		},
 		{
