@@ -791,7 +791,6 @@ test_parse_mx()
 		"v=spf1 mx/34",
 		"v=spf1 mx//140",
 		"v=spf1 mx///64",
-		"v=spf1 mx/0",
 		"v=spf1 mx:",
 		"v=spf1 mx: all",
 		NULL
@@ -800,6 +799,7 @@ test_parse_mx()
 		"v=spf1 mx/31 -all",
 		"v=spf1 mx//12 -all",
 		"v=spf1 mx/12//64 -all",
+		"v=spf1 mx/0",
 		"v=spf1 mx -all",
 		"v=spf1 mx:mxtestother.example.net/24 -all",
 		NULL
