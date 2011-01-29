@@ -1062,6 +1062,8 @@ spfa(const char *domain, char *token)
 	int r = 0;
 	struct ips *ip, *thisip;
 	char *domainspec = NULL;
+	const int v4 = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip);
+	const char *lookup;
 
 	switch (may_have_domainspec(token)) {
 	case 0:
@@ -1083,33 +1085,48 @@ spfa(const char *domain, char *token)
 	if (ip6l < 0) {
 		ip6l = 128;
 	}
-	if (domainspec) {
-		i = ask_dnsaaaa(domainspec, &ip);
-		free(domainspec);
-	} else {
-		i = ask_dnsaaaa(domain, &ip);
-	}
+	if (domainspec)
+		lookup = domainspec;
+	else
+		lookup = domain;
+
+	if (v4)
+		i = ask_dnsa(lookup, &ip);
+	else
+		i = ask_dnsaaaa(lookup, &ip);
+
+	free(domainspec);
 
 	switch (i) {
-		case 0:	thisip = ip;
-			r = SPF_NONE;
-			while (thisip) {
-				if (IN6_ARE_ADDR_EQUAL(&(thisip->addr), &(xmitstat.sremoteip))) {
-					r = SPF_PASS;
-					break;
-				}
-				thisip = thisip->next;
-			}
-			freeips(ip);
-			break;
-		case 1:	r = SPF_NONE;
-			break;
-		case 2:	r = SPF_TEMP_ERROR;
-			break;
-		case -1:	r = -1;
-			break;
-		default:r = SPF_HARD_ERROR;
+	case 0:
+		break;
+	case 1:
+		return SPF_NONE;
+	case 2:	
+		return SPF_TEMP_ERROR;
+	case -1:
+		return -1;
+	default:
+		return SPF_HARD_ERROR;
 	}
+
+	thisip = ip;
+	r = SPF_NONE;
+	while (thisip) {
+		int match;
+		if (v4)
+			match = ip4_matchnet(&xmitstat.sremoteip, (struct in_addr *)&(thisip->addr.s6_addr32[3]), ip4l);
+		else
+			match = ip6_matchnet(&xmitstat.sremoteip, &thisip->addr, ip6l);
+
+		if (match) {
+			r = SPF_PASS;
+			break;
+		}
+		thisip = thisip->next;
+	}
+	freeips(ip);
+
 	return r;
 }
 
