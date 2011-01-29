@@ -34,6 +34,9 @@ dnsentry_search(const enum dnstype stype, const char *skey)
 {
 	unsigned int i = 0;
 
+	if (dnsdata == NULL)
+		return NULL;
+
 	while (dnsdata[i].type != DNSTYPE_NONE) {
 		if (dnsdata[i].type != stype) {
 			i++;
@@ -491,6 +494,9 @@ setup_transfer(const char *helo, const char *from, const char *remoteip)
 
 	strncpy(xmitstat.remoteip, remoteip, sizeof(xmitstat.remoteip));
 	inet_pton(AF_INET6, remoteip, &xmitstat.sremoteip);
+
+	if (ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s) > 0)
+		xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
 }
 
 static int
@@ -526,6 +532,8 @@ runtest(struct spftestcase *tc)
 	STREMPTY(xmitstat.mailfrom);
 	free(xmitstat.helostr.s);
 	STREMPTY(xmitstat.helostr);
+	free(xmitstat.remotehost.s);
+	STREMPTY(xmitstat.remotehost);
 
 	return err;
 }
@@ -1376,6 +1384,7 @@ test_parse_makro()
 				err++;
 			}
 
+			free(xmitstat.remotehost.s);
 			free(xmitstat.mailfrom.s);
 			free(xmitstat.helostr.s);
 			free(xmitstat.spfexp);
