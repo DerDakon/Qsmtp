@@ -913,7 +913,7 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 
 		if (*c != '/') {
 			*ip4cidr = strtol(c, &c, 10);
-			if ((*ip4cidr < 8) || (*ip4cidr > 32) || (!WSPACE(*c) && (*c != '/') && (*c != '\0'))) {
+			if ((*ip4cidr > 32) || (!WSPACE(*c) && (*c != '/') && (*c != '\0'))) {
 				free(*domainspec);
 				return SPF_FAIL_MALF;
 			}
@@ -928,7 +928,7 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 				return SPF_FAIL_MALF;
 			}
 			*ip6cidr = strtol(c, &c, 10);
-			if ((*ip6cidr < 8) || (*ip6cidr > 128) || !(WSPACE(*c) || (*c == '\0'))) {
+			if ((*ip6cidr > 128) || !(WSPACE(*c) || (*c == '\0'))) {
 				free(*domainspec);
 				return SPF_FAIL_MALF;
 			}
@@ -1179,7 +1179,7 @@ spfptr(const char *domain, char *token)
 		i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l);
 		if (i != 0)
 			return i;
-		if ((ip4l > 0) || (ip6l > 0)) {
+		if ((ip4l >= 0) || (ip6l >= 0)) {
 			free(domainspec);
 			return SPF_FAIL_MALF;
 		}
