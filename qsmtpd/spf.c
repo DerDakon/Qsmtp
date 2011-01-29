@@ -839,6 +839,40 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 	return 0;
 }
 
+/**
+ * @brief check if a domainspec is present
+ * @param token the token to check
+ * @returns if domainspec is present
+ * @retval 0 no domainspec present
+ * @retval 1 domainspec is present
+ * @retval -SPF_FAIL_MALF invalid characters detected
+ * 
+ * This does not check the domainspec itself, it only checks if one is given.
+ */
+static int
+may_have_domainspec(const char *token)
+{
+	if (*token == '\0')
+		return 0;
+
+	if (WSPACE(*token))
+		return 0;
+
+	if (*token == ':') {
+		token++;
+		if ((*token == '\0') || WSPACE(*token))
+			return SPF_FAIL_MALF;
+		return 1;
+	}
+
+	/* Strictly speaking this is no domainspec, but the spf_domainspec()
+	 * function will care for this, too. */
+	if (*token == '/')
+		return 1;
+
+	return SPF_FAIL_MALF;
+}
+
 /* the SPF routines
  *
  * return values:
@@ -850,13 +884,26 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 static int
 spfmx(const char *domain, char *token)
 {
-	int ip6l, ip4l, i;
+	int ip6l = -1;
+	int ip4l = -1;
+	int i;
 	struct ips *mx, *allmx;
-	char *domainspec;
+	char *domainspec = NULL;
 
-	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
-		return i;
+	switch (may_have_domainspec(token)) {
+	case 0:
+		break;
+	case 1:
+		if (*token == ':')
+			token++;
+		i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l);
+		if (i != 0)
+			return i;
+		break;
+	default:
+		return SPF_FAIL_MALF;
 	}
+
 	if (ip4l < 0) {
 		ip4l = 32;
 	}
@@ -911,13 +958,27 @@ spfmx(const char *domain, char *token)
 static int
 spfa(const char *domain, char *token)
 {
-	int ip6l, ip4l, i, r = 0;
+	int ip6l = -1;
+	int ip4l = -1;
+	int i;
+	int r = 0;
 	struct ips *ip, *thisip;
-	char *domainspec;
+	char *domainspec = NULL;
 
-	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
-		return i;
+	switch (may_have_domainspec(token)) {
+	case 0:
+		break;
+	case 1:
+		if (*token == ':')
+			token++;
+		i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l);
+		if (i != 0)
+			return i;
+		break;
+	default:
+		return SPF_FAIL_MALF;
 	}
+
 	if (ip4l < 0) {
 		ip4l = 32;
 	}
@@ -986,20 +1047,39 @@ spfexists(const char *domain, char *token)
 static int
 spfptr(const char *domain, char *token)
 {
-	int ip6l, ip4l, i, r = 0;
+	int i, r = 0;
 	struct ips *ip, *thisip;
-	char *domainspec;
+	char *domainspec = NULL;
 
-	if (!xmitstat.remotehost.len) {
-		return SPF_NONE;
-	}
-	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
-		return i;
-	}
-	if ((ip4l > 0) || (ip6l > 0)) {
-		free(domainspec);
+	switch (may_have_domainspec(token)) {
+	case 0:
+		break;
+	case 1: {
+		int ip4l, ip6l;
+
+		if (*token == ':')
+			token++;
+
+		i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l);
+
+		if (i != 0)
+			return i;
+
+		if ((ip4l > 0) || (ip6l > 0)) {
+			free(domainspec);
+			return SPF_FAIL_MALF;
+		}
+		break;
+		}
+	default:
 		return SPF_FAIL_MALF;
 	}
+
+	if (!xmitstat.remotehost.len) {
+		free(domainspec);
+		return SPF_NONE;
+	}
+
 	if (domainspec) {
 		i = ask_dnsaaaa(domainspec, &ip);
 		free(domainspec);
@@ -1156,6 +1236,39 @@ txtlookup(char **txt, const char *domain)
 }
 
 /**
+ * @brief check if the token matches the given mechanism
+ * @param token current token to match
+ * @param mechanism the mechanism string to match
+ * @param delimiters the delimiters that may be present after the token
+ * @returns length of the matched mechanism on success
+ * @retval 0 mechanism did not match
+ */
+static size_t
+match_mechanism(const char *token, const char *mechanism, const char *delimiters)
+{
+	const size_t mechlen = strlen(mechanism);
+	const char * const nextchar = token + mechlen;
+	unsigned int i = 0;
+
+	if (strncasecmp(token, mechanism, mechlen) != 0)
+		return 0;
+
+	if (WSPACE(*nextchar))
+		return mechlen;
+
+	if (*nextchar == '\0')
+		return mechlen;
+
+	while (delimiters[i] != '\0') {
+		if (*nextchar == delimiters[i])
+			return mechlen;
+		i++;
+	}
+
+	return 0;
+}
+
+/**
  * look up SPF records for domain
  *
  * @param domain no idea what this might be for
@@ -1168,6 +1281,7 @@ spflookup(const char *domain, const int rec)
 	char *txt, *token, *valid = NULL, *redirect = NULL;
 	int i, result = SPF_NONE, prefix;
 	const char *mechanism = NULL;
+	size_t mechlen;
 
 	if (rec >= 20)
 		return SPF_FAIL_MALF;
@@ -1232,52 +1346,65 @@ spflookup(const char *domain, const int rec)
 						return SPF_FAIL_MALF;
 					}
 		}
-		if (!strncasecmp(token, "mx", 2) &&
-					(WSPACE(*(token + 2)) || !*(token + 2) || (*(token + 2) == ':') ||
-						(*(token + 2) == '/'))) {
-			token += 2;
-			if (*token == ':')
-				token++;
+		if ( (mechlen = match_mechanism(token, "mx", ":/")) != 0) {
+			token += mechlen;
+
 			result = spfmx(domain, token);
 			mechanism = "MX";
-		} else if (!strncasecmp(token, "ptr", 3) &&
-				(WSPACE(*(token + 3)) || !*(token + 3) || (*(token + 3) == ':'))) {
-			token += 3;
-			if (*token == ':')
-				token++;
+		} else if ( (mechlen = match_mechanism(token, "ptr", ":/")) != 0) {
+			token += mechlen;
+
 			result = spfptr(domain, token);
 			mechanism = "PTR";
-		} else if (!strncasecmp(token, "exists:", 7)) {
-			token += 7;
-			result = spfexists(domain, token);
-			mechanism = "exists";
-		} else if (!strncasecmp(token, "all", 3) && (WSPACE(*(token + 3)) || !*(token + 3))) {
+		} else if ( (mechlen = match_mechanism(token, "exists", ":")) != 0) {
+			token += mechlen;
+
+			if (*token++ == ':') {
+				result = spfexists(domain, token);
+				mechanism = "exists";
+			} else {
+				result = SPF_FAIL_MALF;
+			}
+		} else if ( (mechlen = match_mechanism(token, "all", "")) != 0) {
+			token += mechlen;
 			result = SPF_PASS;
 			mechanism = "all";
-		} else if (((*token == 'a') || (*token == 'A')) &&
-					(WSPACE(*(token + 1)) || !*(token + 1) || (*(token + 1) == ':'))) {
-			if (*(++token) == ':')
-				token++;
+		} else if ( (mechlen = match_mechanism(token, "a", ":/")) != 0) {
+			token += mechlen;
+
 			result = spfa(domain, token);
 			mechanism = "A";
-		} else if (!strncasecmp(token, "ip4:", 4)) {
-			token += 4;
-			result = spfip4(token);
-			mechanism = "IP4";
-		} else if (!strncasecmp(token, "ip6:", 4)) {
-			token += 4;
-			result = spfip6(token);
-			mechanism = "IP6";
-		} else if (!strncasecmp(token, "include:", 8)) {
-			char *n = NULL;
+		} else if ( (mechlen = match_mechanism(token, "ip4", ":/")) != 0) {
+			token += mechlen;
 
-			token += 8;
+			if (*token++ == ':') {
+				result = spfip4(token);
+				mechanism = "IP4";
+			} else {
+				result = SPF_FAIL_MALF;
+			}
+		} else if ( (mechlen = match_mechanism(token, "ip6", ":/")) != 0) {
+			token += mechlen;
 
-			result = spf_makro(token, domain, 0, &n);
+			if (*token++ == ':') {
+				result = spfip6(token);
+				mechanism = "IP6";
+			} else {
+				result = SPF_FAIL_MALF;
+			}
+		} else if ( (mechlen = match_mechanism(token, "include", ":")) != 0) {
+			token += mechlen;
 
-			if (result == 0) {
-				result = spflookup(n, rec + 1);
-				free(n);
+			if (*token++ == ':') {
+				char *n = NULL;
+				result = spf_makro(token, domain, 0, &n);
+
+				if (result == 0) {
+					result = spflookup(n, rec + 1);
+					free(n);
+				}
+			} else {
+				result = SPF_FAIL_MALF;
 			}
 
 			switch (result) {
@@ -1294,13 +1421,21 @@ spflookup(const char *domain, const int rec)
 			}
 
 			mechanism = "include";
-		} else if (!strncasecmp(token, "redirect=", 9)) {
-			token += 9;
-			if (!redirect) {
-				redirect = token;
+		} else if ( (mechlen = match_mechanism(token, "redirect", "=")) != 0) {
+			token += mechlen;
+
+			if (*token++ == '=') {
+				if (!redirect) {
+					redirect = token;
+				}
+			} else {
+				result = SPF_FAIL_MALF;
 			}
-		} else if (!strncasecmp(token, "exp=", 4)) {
-			token += 4;
+		} else if ( (mechlen = match_mechanism(token, "exp", "=")) != 0) {
+			token += mechlen;
+			if (*token++ != '=') {
+				result = SPF_FAIL_MALF;
+			}
 			/* ignore them for now, will be checked later on failure */
 		} else {
 			/* This is an invalid token. Go back to the last whitespace
