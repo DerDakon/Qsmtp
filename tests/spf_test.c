@@ -784,6 +784,8 @@ test_parse_mx()
 		"v=spf1 mx//140",
 		"v=spf1 mx///64",
 		"v=spf1 mx/0",
+		"v=spf1 mx:",
+		"v=spf1 mx: all",
 		NULL
 	};
 	const char *mxvalid[] = {
