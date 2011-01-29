@@ -135,11 +135,18 @@ int
 ask_dnsaaaa(const char *domain, struct ips **ips)
 {
 	const char *value = dnsentry_search(DNSTYPE_AAAA, domain);
+	struct ips *cur;
 
 	if (value == NULL)
-		return 1;
+		return ask_dnsa(domain, ips);
 
 	*ips = parseips(value);
+	cur = *ips;
+
+	while (cur->next != NULL)
+		cur = cur->next;
+
+	ask_dnsa(domain, &cur->next);
 
 	return 0;
 }
