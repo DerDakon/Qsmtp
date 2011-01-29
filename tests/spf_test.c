@@ -1537,6 +1537,199 @@ test_suite_ptr()
 }
 
 static int
+test_suite_a()
+{
+	/* A mechanism syntax tests taken from SPF test suite 2009.10
+	 * http://www.openspf.org/svn/project/test-suite/rfc4408-tests-2009.10.yml */
+	const struct dnsentry aentries[] = {
+		{
+			.type = DNSTYPE_A,
+			.key = "mail.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e1.example.com",
+			.value = "v=spf1 a/0 -all"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e2.example.com",
+			.value = "1234::2"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "e2.example.com",
+			.value = "::ffff:1.1.1.1"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e2.example.com",
+			.value = "v=spf1 a/0 -all"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e2a.example.com",
+			.value = "1234::1"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e2a.example.com",
+			.value = "v=spf1 a//0 -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e6.example.com",
+			.value = "v=spf1 a//33 -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e6a.example.com",
+			.value = "v=spf1 a/33 -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e7.example.com",
+			.value = "v=spf1 a//129 -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e9.example.com",
+			.value = "v=spf1 a:example.com:8080"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e10.example.com",
+			.value = "v=spf1 a:foo.example.com/24"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "foo.example.com",
+			.value = "::ffff:1.1.1.1;::ffff:1.2.3.5"
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		},
+	};
+	const struct suite_testcase atestcases[] = {
+		{
+			.name = "a-cidr6",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e6.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "a-bad-cidr4",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e6a.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "a-bad-cidr6",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e7.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "a-multi-ip1",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e10.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			/* I still don't see how -ip1 and -ip2 differ */
+			.name = "a-multi-ip2",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e10.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+#if 0
+		{
+			.name = "a-bad-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e9.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+#endif
+		{
+			.name = "a-nxdomain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e1.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "a-cidr4-0",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e2.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.name = "a-cidr4-0-ip6",
+			.helo = "mail.example.com",
+			.remoteip = "1234::1",
+			.mailfrom = "foo@e2.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "a-cidr6-0-ip4",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e2a.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			/* since Qsmtp handles IPv4 connections alsways as IPv4mapped
+			 * this is the same as a-cidr6-0-ip4 for us */
+			.name = "a-cidr6-0-ip4mapped",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e2a.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "a-cidr6-0-ip6",
+			.helo = "mail.example.com",
+			.remoteip = "1234::1",
+			.mailfrom = "foo@e2a.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.helo = NULL,
+			.remoteip = NULL,
+			.mailfrom = NULL,
+			.exp = NULL,
+			.result = -1
+		}
+	};
+
+	dnsdata = aentries;
+
+	return run_suite_test(atestcases);
+}
+
+static int
 test_parse()
 {
 	const struct dnsentry parseentries[] = {
@@ -1825,6 +2018,7 @@ test_suite(void)
 	err += test_suite_makro();
 	err += test_suite_all();
 	err += test_suite_ptr();
+	err += test_suite_a();
 
 	return err;
 }
