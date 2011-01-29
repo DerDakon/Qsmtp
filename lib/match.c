@@ -11,13 +11,19 @@
  *
  * @param ip the IP address to check (network byte order)
  * @param net the network to check (network byte order)
- * @param mask the network mask, must be 8 <= netmask <= 32
+ * @param mask the network mask, must be 0 <= netmask <= 32
  * @return 1 on match, 0 else
  */
 int
 ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigned char mask)
 {
 	struct in_addr m;
+
+	/* do this explicitely here so we don't rely on how the compiler handles
+	 * the shift overflow below. */
+	if (mask == 0)
+		return 1;
+
 	/* constuct a bit mask out of the net length.
 	 * remoteip and ip are network byte order, it's easier
 	 * to convert mask to network byte order than both
@@ -32,7 +38,7 @@ ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigne
  *
  * @param ip the IP address to check (network byte order)
  * @param net the network to check (network byte order)
- * @param mask the network mask, must be 8 <= netmask <= 128
+ * @param mask the network mask, must be 0 <= netmask <= 128
  * @return if address is within net/mask
  * @retval 1 address is within the net/mask
  * @retval 0 address is not within net/mask
@@ -41,7 +47,7 @@ int
 ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsigned char mask)
 {
 	struct in6_addr maskv6;
-	int flag = 4, i;
+	int i;
 
 	memset(maskv6.s6_addr, 0, sizeof(maskv6.s6_addr));
 	for (i = 0; i < mask / 32; ++i) {
@@ -51,11 +57,11 @@ ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsign
 		maskv6.s6_addr32[mask / 32] = htonl(-1 - ((1 << (32 - (mask % 32))) - 1));
 
 	for (i = 3; i >= 0; i--) {
-		if ((ip->s6_addr32[i] & maskv6.s6_addr32[i]) == (net->s6_addr32[i] & maskv6.s6_addr32[i])) {
-			flag--;
+		if ((ip->s6_addr32[i] & maskv6.s6_addr32[i]) != (net->s6_addr32[i] & maskv6.s6_addr32[i])) {
+			return 0;
 		}
 	}
-	return !flag;
+	return 1;
 }
 
 /**

@@ -24,7 +24,7 @@ ip6_test_match(const char *ipstr, const char *matchstr, const int expect)
 
 	err = 0;
 
-	for (i = 127; i >= 30; --i) {
+	for (i = 127; i >= 1; --i) {
 		if ((i % 32) != 0) {
 			s2.s6_addr32[i / 32] &= htonl(~mask);
 			mask <<= 1;
@@ -40,6 +40,14 @@ ip6_test_match(const char *ipstr, const char *matchstr, const int expect)
 			printf("Error: IPv6 address %s match with %s/%i does not return expected result\n", ipstr, maskstr, i);
 			err++;
 		}
+	}
+
+	if (ip6_matchnet(&s1, &s2, 0) != 1) {
+		char maskstr[INET6_ADDRSTRLEN];
+
+		inet_ntop(AF_INET6, &s2, maskstr, sizeof(maskstr));
+		printf("Error: IPv6 address %s match with %s/0 does not return 1\n", ipstr, maskstr);
+		err++;
 	}
 
 	return err;
@@ -85,7 +93,7 @@ ip4_match_test(const char *ipstr, const char *matchstr, const int expect)
 
 	err = 0;
 
-	for (i = 32; i >= 8; --i) {
+	for (i = 32; i >= 1; --i) {
 		if (ip4_matchnet(&s1, &s2, i) != expect) {
 			char maskstr[INET6_ADDRSTRLEN];
 
@@ -95,6 +103,14 @@ ip4_match_test(const char *ipstr, const char *matchstr, const int expect)
 		}
 		s2.s_addr &= htonl(~mask);
 		mask <<= 1;
+	}
+
+	if (ip4_matchnet(&s1, &s2, 0) != 1) {
+		char maskstr[INET6_ADDRSTRLEN];
+
+		inet_ntop(AF_INET, &s2, maskstr, sizeof(maskstr));
+		printf("Error: IPv4 address %s match with %s/0 does not return 1\n", ipstr, maskstr);
+		err++;
 	}
 
 	return err;
