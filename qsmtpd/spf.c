@@ -1148,6 +1148,7 @@ spfptr(const char *domain, char *token)
 	int i, r = 0;
 	char *domainspec = NULL;
 	char **validdomains = NULL;
+	const char *checkdom;
 
 	switch (may_have_domainspec(token)) {
 	case 0:
@@ -1190,42 +1191,45 @@ spfptr(const char *domain, char *token)
 	case -3:
 		r = SPF_HARD_ERROR;
 		break;
-	default:
-		assert(i > 0);
+	}
 
-		if (domainspec) {
-			const size_t dslen = strlen(domainspec);
-			int j;
+	assert(i > 0);
 
-			for (j = 0; j < i; j++) {
-				const size_t dlen = strlen(validdomains[j]);
+	if (domainspec) {
+		checkdom = domainspec;
+	} else {
+		checkdom = domain;
+	}
 
-				if (dlen < dslen) {
-					continue;
-				} else if (dlen == dslen) {
-					if (strcmp(validdomains[j], domainspec) == 0) {
-						r = SPF_PASS;
-						break;
-					}
-				} else if (validdomains[j][dlen - dslen - 1] == '.') {
-					/* This mechanism matches if the <target-name> is
-					 * either an ancestor of a validated domain name or
-					 * if the <target-name> and a validated domain name
-					 * are the same. */
-					if (strcmp(validdomains[j] + dlen - dslen, domainspec) == 0) {
-						r = SPF_PASS;
-						break;
-					}
-				}
+	const size_t dslen = strlen(checkdom);
+	int j;
+
+	for (j = 0; j < i; j++) {
+		const size_t dlen = strlen(validdomains[j]);
+
+		if (dlen < dslen) {
+			continue;
+		} else if (dlen == dslen) {
+			if (strcmp(validdomains[j], checkdom) == 0) {
+				r = SPF_PASS;
+				break;
 			}
-		} else {
-			r = SPF_PASS;
+		} else if (validdomains[j][dlen - dslen - 1] == '.') {
+			/* This mechanism matches if the <target-name> is
+				* either an ancestor of a validated domain name or
+				* if the <target-name> and a validated domain name
+				* are the same. */
+			if (strcmp(validdomains[j] + dlen - dslen, checkdom) == 0) {
+				r = SPF_PASS;
+				break;
+			}
 		}
 	}
 
 	while (i > 0) {
 		free(validdomains[--i]);
 	}
+	free(domainspec);
 	free(validdomains);
 
 	return r;

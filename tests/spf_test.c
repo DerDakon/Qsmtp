@@ -1491,7 +1491,6 @@ test_suite_ptr()
 			.exp = NULL,
 			.result = SPF_PASS
 		},
-#if 0
 		{
 			.name = "ptr-nomatch-invalid",
 			.helo = "mail.example.com",
@@ -1500,7 +1499,6 @@ test_suite_ptr()
 			.exp = NULL,
 			.result = SPF_FAIL_PERM
 		},
-#endif
 		{
 			.name = "ptr-match-ip6",
 			.helo = "mail.example.com",
