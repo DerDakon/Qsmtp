@@ -1117,11 +1117,14 @@ spfa(const char *domain, char *token)
 	thisip = ip;
 	r = SPF_NONE;
 	while (thisip) {
-		int match;
-		if (v4)
-			match = ip4_matchnet(&xmitstat.sremoteip, (struct in_addr *)&(thisip->addr.s6_addr32[3]), ip4l);
-		else
-			match = ip6_matchnet(&xmitstat.sremoteip, &thisip->addr, ip6l);
+		int match = 0;
+		if (v4) {
+			if (IN6_IS_ADDR_V4MAPPED(&thisip->addr))
+				match = ip4_matchnet(&xmitstat.sremoteip, (struct in_addr *)&(thisip->addr.s6_addr32[3]), ip4l);
+		} else {
+			if (!IN6_IS_ADDR_V4MAPPED(&thisip->addr))
+				match = ip6_matchnet(&xmitstat.sremoteip, &thisip->addr, ip6l);
+		}
 
 		if (match) {
 			r = SPF_PASS;

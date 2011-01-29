@@ -1578,9 +1578,9 @@ test_suite_a()
 			.value = "v=spf1 a//0 -all"
 		},
 		{
-			.type = DNSTYPE_AAAA,
+			.type = DNSTYPE_A,
 			.key = "e2b.example.com",
-			.value = "1.1.1.1"
+			.value = "::ffff:1.1.1.1"
 		},
 		{
 			.type = DNSTYPE_SPF,
@@ -1780,7 +1780,6 @@ test_suite_a()
 			.exp = NULL,
 			.result = SPF_PASS
 		},
-#if 0
 		{
 			.name = "a-cidr6-0-nxdomain",
 			.helo = "mail.example.com",
@@ -1789,6 +1788,7 @@ test_suite_a()
 			.exp = NULL,
 			.result = SPF_FAIL_PERM
 		},
+#if 0
 		{
 			.name = "a-colon-domain",
 			.helo = "mail.example.com",
