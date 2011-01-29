@@ -1405,6 +1405,133 @@ test_suite_all()
 }
 
 static int
+test_suite_ptr()
+{
+	/* PTR mechanism syntax tests taken from SPF test suite 2009.10
+	 * http://www.openspf.org/svn/project/test-suite/rfc4408-tests-2009.10.yml */
+	const struct dnsentry ptrentries[] = {
+		{
+			.type = DNSTYPE_A,
+			.key = "mail.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e1.example.com",
+			.value = "v=spf1 ptr/0 -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e2.example.com",
+			.value = "v=spf1 ptr:example.com -all"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "::ffff:1.2.3.4",
+			.value = "e3.example.com;e4.example.com;mail.example.com"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "cafe:babe::1",
+			.value = "e3.example.com"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "e3.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e3.example.com",
+			.value = "CAFE:BABE::1"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e3.example.com",
+			.value = "v=spf1 ptr -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e4.example.com",
+			.value = "v=spf1 ptr -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e5.example.com",
+			.value = "v=spf1 ptr:"
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		},
+	};
+	const struct suite_testcase ptrtestcases[] = {
+		{
+			.name = "ptr-cidr",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e1.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "ptr-match-target",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e2.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.name = "ptr-match-implicit",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e3.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+#if 0
+		{
+			.name = "ptr-nomatch-invalid",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e4.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+#endif
+		{
+			.name = "ptr-match-ip6",
+			.helo = "mail.example.com",
+			.remoteip = "CAFE:BABE::1",
+			.mailfrom = "foo@e3.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.name = "ptr-empty-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e5.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.helo = NULL,
+			.remoteip = NULL,
+			.mailfrom = NULL,
+			.exp = NULL,
+			.result = -1
+		}
+	};
+
+	dnsdata = ptrentries;
+
+	return run_suite_test(ptrtestcases);
+}
+
+static int
 test_parse()
 {
 	const struct dnsentry parseentries[] = {
@@ -1692,6 +1819,7 @@ test_suite(void)
 
 	err += test_suite_makro();
 	err += test_suite_all();
+	err += test_suite_ptr();
 
 	return err;
 }

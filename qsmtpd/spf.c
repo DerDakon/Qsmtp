@@ -381,6 +381,84 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	return 0;
 }
 
+/**
+ * build a list of validated domain names for the connected host
+ * @param domainlist where to store the array
+ * @return how many entries are in domainlist, negative on error
+ * 
+ * If this functions returns 0 all lookups were successfully, but no
+ * validated domain names were found.
+ */
+static int
+validate_domain(char ***domainlist)
+{
+	char *rnames = NULL;
+	int i, r;
+	char *d;
+	int cnt = 0;
+
+	r = ask_dnsname(&xmitstat.sremoteip, &rnames);
+	if (r <= 0)
+		return r;
+
+	if (r > 10)
+		r = 10;
+
+	assert(rnames != NULL);
+	*domainlist = malloc(sizeof(**domainlist) * r);
+	if (*domainlist == NULL) {
+		free(rnames);
+		errno = ENOMEM;
+		return -1;
+	}
+
+	d = rnames;
+	for (i = 0; i < r; i++) {
+		struct ips *ptrs = NULL, *tmp;
+		int k;
+
+		if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
+			k = ask_dnsa(d, &ptrs);
+		else
+			k = ask_dnsaaaa(d, &ptrs);
+		if (k < 0) {
+			/* If a DNS error occurs while doing an A RR lookup, then
+			 * that domain name is skipped and the search continues. */
+			d += strlen(d) + 1;
+			continue;
+		}
+
+		tmp = ptrs;
+		while (tmp != NULL) {
+			if (memcmp(tmp->addr.s6_addr32, xmitstat.sremoteip.s6_addr32,
+					sizeof(tmp->addr.s6_addr32)) == 0) {
+				(*domainlist)[cnt] = strdup(d);
+				if ((*domainlist)[cnt] == NULL) {
+					while (cnt > 0) {
+						free((*domainlist)[--cnt]);
+					}
+					free(*domainlist);
+					free(rnames);
+					freeips(ptrs);
+					errno = ENOMEM;
+					return -1;
+				}
+				cnt++;
+				break;
+			}
+			tmp = tmp->next;
+		}
+
+		freeips(ptrs);
+
+		d += strlen(d) + 1;
+	}
+
+	free(rnames);
+
+	return cnt;
+}
+
 #define APPEND(addlen, addstr) \
 	{\
 		char *r2;\
@@ -512,14 +590,34 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 				}
 				break;
 		case 'P':
-		case 'p':	if (xmitstat.remotehost.len) {
-					if (spf_appendmakro(res, l, xmitstat.remotehost.s,
-					    			xmitstat.remotehost.len, num, r, delim))
-						return -1;
-				} else {
+		case 'p':	{
+				char **validdomains;
+				int cnt;
+
+				cnt = validate_domain(&validdomains);
+				switch (cnt) {
+				case 0:
 					APPEND(7, "unknown");
+					break;
+				case -1:
+					return -1;
+				case -2:
+					return SPF_TEMP_ERROR;
+				case -3:
+					return SPF_HARD_ERROR;
+				default:
+					{
+					int k = spf_appendmakro(res, l, validdomains[0],
+					    			strlen(validdomains[0]), num, r, delim);
+					while (cnt > 0)
+						free(validdomains[--cnt]);
+					free(validdomains);
+					if (k)
+						return -1;
+					}
 				}
 				break;
+				}
 		case 'R':
 		case 'r':	if (!ex) {
 					PARSEERR;
@@ -1048,8 +1146,8 @@ static int
 spfptr(const char *domain, char *token)
 {
 	int i, r = 0;
-	struct ips *ip, *thisip;
 	char *domainspec = NULL;
+	char **validdomains = NULL;
 
 	switch (may_have_domainspec(token)) {
 	case 0:
@@ -1061,10 +1159,8 @@ spfptr(const char *domain, char *token)
 			token++;
 
 		i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l);
-
 		if (i != 0)
 			return i;
-
 		if ((ip4l > 0) || (ip6l > 0)) {
 			free(domainspec);
 			return SPF_FAIL_MALF;
@@ -1080,33 +1176,58 @@ spfptr(const char *domain, char *token)
 		return SPF_NONE;
 	}
 
-	if (domainspec) {
-		i = ask_dnsaaaa(domainspec, &ip);
-		free(domainspec);
-	} else {
-		i = ask_dnsaaaa(domain, &ip);
+	i = validate_domain(&validdomains);
+	switch (i) {
+	case 0:
+		r = SPF_NONE;
+		break;
+	case -1:
+		r = -1;
+		break;
+	case -2:
+		r = SPF_TEMP_ERROR;
+		break;
+	case -3:
+		r = SPF_HARD_ERROR;
+		break;
+	default:
+		assert(i > 0);
+
+		if (domainspec) {
+			const size_t dslen = strlen(domainspec);
+			int j;
+
+			for (j = 0; j < i; j++) {
+				const size_t dlen = strlen(validdomains[j]);
+
+				if (dlen < dslen) {
+					continue;
+				} else if (dlen == dslen) {
+					if (strcmp(validdomains[j], domainspec) == 0) {
+						r = SPF_PASS;
+						break;
+					}
+				} else if (validdomains[j][dlen - dslen - 1] == '.') {
+					/* This mechanism matches if the <target-name> is
+					 * either an ancestor of a validated domain name or
+					 * if the <target-name> and a validated domain name
+					 * are the same. */
+					if (strcmp(validdomains[j] + dlen - dslen, domainspec) == 0) {
+						r = SPF_PASS;
+						break;
+					}
+				}
+			}
+		} else {
+			r = SPF_PASS;
+		}
 	}
 
-	switch (i) {
-		case 0:	thisip = ip;
-			r = SPF_NONE;
-			while (thisip) {
-				if (IN6_ARE_ADDR_EQUAL(&(thisip->addr), &(xmitstat.sremoteip))) {
-					r = SPF_PASS;
-					break;
-				}
-				thisip = thisip->next;
-			}
-			freeips(ip);
-			break;
-		case 1:	r = SPF_NONE;
-			break;
-		case 2:	r = SPF_TEMP_ERROR;
-			break;
-		case -1:	r = -1;
-			break;
-		default:r = SPF_HARD_ERROR;
+	while (i > 0) {
+		free(validdomains[--i]);
 	}
+	free(validdomains);
+
 	return r;
 }
 
