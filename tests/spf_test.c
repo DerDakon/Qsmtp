@@ -895,7 +895,59 @@ struct suite_testcase {
 };
 
 static int
-test_parse_makro()
+run_suite_test(const struct suite_testcase *testcases)
+{
+	unsigned int i = 0;
+	int err = 0;
+
+	newstr(&heloname, strlen("myhelo.example.net"));
+	memcpy(heloname.s, "myhelo.example.net", strlen("myhelo.example.net"));
+
+	while (testcases[i].helo != NULL) {
+		int r;
+
+		setup_transfer(testcases[i].helo, testcases[i].mailfrom, testcases[i].remoteip);
+
+		r = check_host(strchr(testcases[i].mailfrom, '@') + 1);
+
+		if (r != testcases[i].result) {
+			fprintf(stderr, "makro test %s returned %i but %i was expected\n", testcases[i].name, r, testcases[i].result);
+			err++;
+		}
+
+		if (testcases[i].exp != NULL) {
+			if (xmitstat.spfexp == NULL) {
+				fprintf(stderr, "Test %s should return SPF exp, but it did not\n", testcases[i].name);
+				err++;
+			} else if (strcmp(xmitstat.spfexp, testcases[i].exp) != 0) {
+				fprintf(stderr, "Test %s did not return the expected SPF exp, but %s\n", testcases[i].name, xmitstat.spfexp);
+				err++;
+			}
+		} else if ((xmitstat.spfexp != NULL) && (r != SPF_FAIL_MALF)) {
+			/* hard error writes what it didn't understand into spfexp */
+
+			fprintf(stderr, "no SPF exp was expected for test %s, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
+			err++;
+		}
+
+		free(xmitstat.remotehost.s);
+		free(xmitstat.mailfrom.s);
+		free(xmitstat.helostr.s);
+		free(xmitstat.spfexp);
+		xmitstat.spfexp = NULL;
+
+		i++;
+	}
+	memset(&xmitstat, 0, sizeof(xmitstat));
+
+	free(heloname.s);
+	STREMPTY(heloname);
+
+	return err;
+}
+
+static int
+test_suite_makro()
 {
 	/* makro expansion tests taken from SPF test suite 2009.10
 	 * http://www.openspf.org/svn/project/test-suite/rfc4408-tests-2009.10.yml */
@@ -1249,6 +1301,17 @@ test_parse_makro()
 			.result = -1
 		}
 	};
+
+	dnsdata = makroentries;
+
+	return run_suite_test(makrotestcases);
+}
+
+static int
+test_suite_all()
+{
+	/* ALL mechanism syntax tests taken from SPF test suite 2009.10
+	 * http://www.openspf.org/svn/project/test-suite/rfc4408-tests-2009.10.yml */
 	const struct dnsentry allentries[] = {
 		{
 			.type = DNSTYPE_A,
@@ -1335,70 +1398,10 @@ test_parse_makro()
 			.result = -1
 		}
 	};
-	unsigned int i;
-	int err = 0;
-	unsigned int j = 0;
 
-	newstr(&heloname, strlen("myhelo.example.net"));
-	memcpy(heloname.s, "myhelo.example.net", strlen("myhelo.example.net"));
+	dnsdata = allentries;
 
-	for (j = 0; j < 2; j++) {
-		const struct suite_testcase *testcases;
-
-		switch (j) {
-		case 0:
-			dnsdata = makroentries;
-			testcases = makrotestcases;
-			break;
-		case 1:
-			dnsdata = allentries;
-			testcases = alltestcases;
-			break;
-		}
-		i = 0;
-
-		while (testcases[i].helo != NULL) {
-			int r;
-
-			setup_transfer(testcases[i].helo, testcases[i].mailfrom, testcases[i].remoteip);
-
-			r = check_host(strchr(testcases[i].mailfrom, '@') + 1);
-
-			if (r != testcases[i].result) {
-				fprintf(stderr, "makro test %s returned %i but %i was expected\n", testcases[i].name, r, testcases[i].result);
-				err++;
-			}
-
-			if (testcases[i].exp != NULL) {
-				if (xmitstat.spfexp == NULL) {
-					fprintf(stderr, "Test %s should return SPF exp, but it did not\n", testcases[i].name);
-					err++;
-				} else if (strcmp(xmitstat.spfexp, testcases[i].exp) != 0) {
-					fprintf(stderr, "Test %s did not return the expected SPF exp, but %s\n", testcases[i].name, xmitstat.spfexp);
-					err++;
-				}
-			} else if ((xmitstat.spfexp != NULL) && (r != SPF_FAIL_MALF)) {
-				/* hard error writes what it didn't understand into spfexp */
-
-				fprintf(stderr, "no SPF exp was expected for test %s, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
-				err++;
-			}
-
-			free(xmitstat.remotehost.s);
-			free(xmitstat.mailfrom.s);
-			free(xmitstat.helostr.s);
-			free(xmitstat.spfexp);
-			xmitstat.spfexp = NULL;
-
-			i++;
-		}
-		memset(&xmitstat, 0, sizeof(xmitstat));
-	}
-
-	free(heloname.s);
-	STREMPTY(heloname);
-
-	return err;
+	return run_suite_test(alltestcases);
 }
 
 static int
@@ -1687,7 +1690,8 @@ test_suite(void)
 {
 	int err = 0;
 
-	err += test_parse_makro();
+	err += test_suite_makro();
+	err += test_suite_all();
 
 	return err;
 }
