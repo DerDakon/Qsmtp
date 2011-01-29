@@ -1553,14 +1553,14 @@ test_suite_a()
 			.value = "v=spf1 a/0 -all"
 		},
 		{
-			.type = DNSTYPE_AAAA,
-			.key = "e2.example.com",
-			.value = "1234::2"
-		},
-		{
 			.type = DNSTYPE_A,
 			.key = "e2.example.com",
 			.value = "::ffff:1.1.1.1"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e2.example.com",
+			.value = "1234::2"
 		},
 		{
 			.type = DNSTYPE_SPF,
@@ -1576,6 +1576,41 @@ test_suite_a()
 			.type = DNSTYPE_SPF,
 			.key = "e2a.example.com",
 			.value = "v=spf1 a//0 -all"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e2b.example.com",
+			.value = "1.1.1.1"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e2b.example.com",
+			.value = "v=spf1 a//0 -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e3.example.com",
+			.value = "v=spf1 a:foo.example.com\0"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e4.example.com",
+			.value = "v=spf1 a:111.222.33.44"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e5.example.com",
+			.value = "v=spf1 a:abc.123"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e5a.example.com",
+			.value = "v=spf1 a:museum"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e5b.example.com",
+			.value = "v=spf1 a:museum."
 		},
 		{
 			.type = DNSTYPE_SPF,
@@ -1606,6 +1641,36 @@ test_suite_a()
 			.type = DNSTYPE_A,
 			.key = "foo.example.com",
 			.value = "::ffff:1.1.1.1;::ffff:1.2.3.5"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e11.example.com",
+			.value = "v=spf1 a:foo:bar/baz.example.com"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "foo:bar/baz.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e12.example.com",
+			.value = "v=spf1 a:example.-com"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e13.example.com",
+			.value = "v=spf1 a:"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e14.example.com",
+			.value = "v=spf1 a:foo.example.xn--zckzah -all"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "foo.example.xn--zckzah",
+			.value = "::ffff:1.2.3.4"
 		},
 		{
 			.type = DNSTYPE_NONE,
@@ -1714,6 +1779,32 @@ test_suite_a()
 			.mailfrom = "foo@e2a.example.com",
 			.exp = NULL,
 			.result = SPF_PASS
+		},
+#if 0
+		{
+			.name = "a-cidr6-0-nxdomain",
+			.helo = "mail.example.com",
+			.remoteip = "1234::1",
+			.mailfrom = "foo@e2b.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "a-colon-domain",
+			.helo = "mail.example.com",
+			.remoteip = "1.2.3.4",
+			.mailfrom = "foo@e11.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+#endif
+		{
+			.name = "a-empty-domain",
+			.helo = "mail.example.com",
+			.remoteip = "1.2.3.4",
+			.mailfrom = "foo@e11.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
 		},
 		{
 			.helo = NULL,
