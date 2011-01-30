@@ -1205,7 +1205,6 @@ test_suite_makro()
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
 		},
-#if 0
 		{
 			.name = "macro-mania-in-domain",
 			.helo = "mail.example.com",
@@ -1214,7 +1213,6 @@ test_suite_makro()
 			.exp = NULL,
 			.result = SPF_PASS
 		},
-#endif
 		{
 			.name = "exp-txt-macro-char",
 			.helo = "msgbas2x.cos.example.com",
