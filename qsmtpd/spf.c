@@ -635,23 +635,8 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 		break;
 	case 'v':
 		if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
-			if (delim & 2) {
-				if (r) {
-					if (num == 1) {
-						APPEND(2, "in");
-					} else {
-						APPEND(7, "addr.in");
-					}
-				} else {
-					if (num == 1) {
-						APPEND(4, "addr");
-					} else {
-						APPEND(7, "in.addr");
-					}
-				}
-			} else {
-				APPEND(7, "in-addr");
-			}
+			if (spf_appendmakro(res, l, "in-addr", 7, num, r, delim))
+				return -1;
 		} else {
 			APPEND(3, "ip6");
 		}
