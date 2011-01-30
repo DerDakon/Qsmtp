@@ -202,32 +202,35 @@ urlencode(char *token, char **result)
 		char n;
 
 		if (!(((*token >= 'a') && (*token <= 'z')) || ((*token >= 'A') && (*token <= 'Z')) ||
-						((*token >= 'A') && (*token <= 'Z')))) {
+						((*token >= '0') && (*token <= '9')))) {
 			switch (*token) {
-				case '-':
-				case '_':
-				case '.':
-				case '!':
-				case '~':
-				case '*':
-				case '\'':
-				case '(':
-				case ')':	break;
-				default:	newlen = len + 3 + (token - last);
-						tmp = realloc(res, newlen + 1);
-						if (!tmp) {
-							free(res);
-							return -1;
-						}
-						res = tmp;
-						memcpy(res + len, last, token - last);
-						len = newlen;
-						res[len - 3] = '%';
-						n = (*token & 0xf0) >> 4;
-						res[len - 2] = ((n > 9) ? 'A' - 10 : '0') + n;
-						n = (*token & 0x0f);
-						res[len - 1] = ((n > 9) ? 'A' - 10 : '0') + n;
-						last = token + 1;
+			case '-':
+			case '_':
+			case '.':
+			case '!':
+			case '~':
+			case '*':
+			case '\'':
+			case '(':
+			case ')':
+				break;
+			default:
+				/* we need to add the string in betwenn and 3 characters: %xx */
+				newlen = len + 3 + (token - last);
+				tmp = realloc(res, newlen + 1);
+				if (!tmp) {
+					free(res);
+					return -1;
+				}
+				res = tmp;
+				memcpy(res + len, last, token - last);
+				len = newlen;
+				res[len - 3] = '%';
+				n = (*token & 0xf0) >> 4;
+				res[len - 2] = ((n > 9) ? 'A' - 10 : '0') + n;
+				n = (*token & 0x0f);
+				res[len - 1] = ((n > 9) ? 'A' - 10 : '0') + n;
+				last = token + 1;
 			}
 		}
 		token++;
@@ -239,7 +242,7 @@ urlencode(char *token, char **result)
 	}
 	if (token - last) {
 		/* there is data behind the last encoded char */
-		unsigned int newlen = len + 3 + (token - last);
+		unsigned int newlen = len + (token - last);
 		char *tmp;
 
 		tmp = realloc(res, newlen + 1);

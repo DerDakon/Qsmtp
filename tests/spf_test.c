@@ -1258,7 +1258,6 @@ test_suite_makro()
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
 		},
-#if 0
 		{
 			.name = "upper-macro",
 			.helo = "msgbas2x.cos.example.com",
@@ -1267,6 +1266,7 @@ test_suite_makro()
 			.exp = "http://example.com/why.html?l=jack%26jill%3Dup",
 			.result = SPF_FAIL_PERM
 		},
+#if 0
 		{
 			.name = "hello-macro",
 			.helo = "msgbas2x.cos.example.com",
