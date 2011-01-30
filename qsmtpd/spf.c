@@ -1654,8 +1654,9 @@ spflookup(const char *domain, const int rec)
 			if (ex != NULL) {
 				char *target;
 
-				i = spf_makro(ex + 4, domain, 0, &target);
-				if (i == 0) {
+				switch (spf_makro(ex + 4, domain, 0, &target)) {
+				case 0:
+					{
 					size_t dlen = strlen(target);
 					while ((dlen > 0) && (target[dlen - 1] == '.')) {
 						target[--dlen] = '\0';
@@ -1669,6 +1670,10 @@ spflookup(const char *domain, const int rec)
 						}
 					}
 					free(target);
+					break;
+					}
+				case SPF_FAIL_MALF:
+					prefix = SPF_FAIL_MALF;
 				}
 			}
 		}

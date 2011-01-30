@@ -1187,7 +1187,6 @@ test_suite_makro()
 			.exp = "This is a test.",
 			.result = SPF_FAIL_PERM
 		},
-#if 0
 		{
 			.name = "exp-only-macro-char",
 			.helo = "msgbas2x.cos.example.com",
@@ -1196,7 +1195,6 @@ test_suite_makro()
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
 		},
-#endif
 		{
 			.name = "invalid-macro-char",
 			.helo = "msgbas2x.cos.example.com",
