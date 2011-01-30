@@ -194,6 +194,7 @@ urlencode(char *token, char **result)
 	char *res = NULL;
 	char *last = token;	/* the first unencoded character in the current chunk */
 	unsigned int len = 0;
+	char *otoken = token;
 
 	while (*token) {
 		char *tmp;
@@ -233,7 +234,7 @@ urlencode(char *token, char **result)
 	}
 	if (!len) {
 		/* nothing has changed */
-		*result = token;
+		*result = otoken;
 		return 0;
 	}
 	if (token - last) {
