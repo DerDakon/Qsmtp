@@ -70,8 +70,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 
 			/* First match wins. */
 			while (a[v] && (spfs >= 0) &&
-						((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR) ||
-						(spfs == SPF_FAIL_NONEX))) {
+						((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR))) {
 				memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
 				spfs = check_host(spfname);
 				v++;

@@ -18,6 +18,7 @@ enum dnstype {
 	DNSTYPE_NAME,
 	DNSTYPE_TXT,
 	DNSTYPE_SPF,
+	DNSTYPE_TIMEOUT,
 	DNSTYPE_NONE /* end marker */
 };
 
@@ -98,9 +99,11 @@ ask_dnsmx(const char *domain, struct ips **ips)
 		int r = ask_dnsa(domain, ips);
 		struct ips *ip6addr = NULL;
 		int q = ask_dnsaaaa(domain, &ip6addr);
-		struct ips *cur;
+		struct ips *cur = *ips;
 
-		cur = *ips;
+		if (dnsentry_search(DNSTYPE_TIMEOUT, domain) != NULL)
+			return 2;
+
 		while (cur != NULL) {
 			cur->priority = 65536;
 			cur = cur->next;
@@ -156,8 +159,12 @@ ask_dnsa(const char *domain, struct ips **ips)
 {
 	const char *value = dnsentry_search(DNSTYPE_A, domain);
 
-	if (value == NULL)
+	if (value == NULL) {
+		if (dnsentry_search(DNSTYPE_TIMEOUT, domain) != NULL)
+			return 2;
+
 		return 1;
+	}
 
 	if (ips != NULL)
 		*ips = parseips(value);
@@ -176,8 +183,12 @@ ask_dnsname(const struct in6_addr *addr, char **name)
 
 	const char *value = dnsentry_search(DNSTYPE_NAME, iptmp);
 
-	if (value == NULL)
+	if (value == NULL) {
+		if (dnsentry_search(DNSTYPE_TIMEOUT, iptmp) != NULL)
+			return -2;
+
 		return 0;
+	}
 
 	l = strlen(value);
 	*name = malloc(l + 2);
@@ -197,13 +208,16 @@ ask_dnsname(const struct in6_addr *addr, char **name)
 	return ++cnt;
 }
 
-int
+static int
 dns_resolve_txt(char **out, const char *host, const enum dnstype stype)
 {
 	const char *value = dnsentry_search(stype, host);
 
 	if (value == NULL) {
-		errno = ENOENT;
+		if (dnsentry_search(DNSTYPE_TIMEOUT, host) != NULL)
+			errno = ETIMEDOUT;
+		else
+			errno = ENOENT;
 		return -1;
 	}
 
@@ -1817,6 +1831,180 @@ test_suite_a()
 }
 
 static int
+test_suite_include()
+{
+	/* INCLUDE mechanism syntax tests taken from SPF test suite 2009.10
+	 * http://www.openspf.org/svn/project/test-suite/rfc4408-tests-2009.10.yml */
+	const struct dnsentry includeentries[] = {
+		{
+			.type = DNSTYPE_A,
+			.key = "mail.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "ip5.example.com",
+			.value = "v=spf1 ip4:1.2.3.5 -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "ip6.example.com",
+			.value = "v=spf1 ip4:1.2.3.6 ~all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "ip7.example.com",
+			.value = "v=spf1 ip4:1.2.3.7 ?all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "erehwon.example.com",
+			.value = "v=spfl am not an SPF record"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e1.example.com",
+			.value = "v=spf1 include:ip5.example.com ~all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e2.example.com",
+			.value = "v=spf1 include:ip6.example.com all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e3.example.com",
+			.value = "v=spf1 include:ip7.example.com -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e4.example.com",
+			.value = "v=spf1 include:ip8.example.com -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e5.example.com",
+			.value = "v=spf1 include:e6.example.com -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e6.example.com",
+			.value = "v=spf1 include +all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e7.example.com",
+			.value = "v=spf1 include:erehwon.example.com -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e8.example.com",
+			.value = "v=spf1 include: -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e9.example.com",
+			.value = "v=spf1 include:ip5.example.com/24 -all"
+		},
+		{
+			.type = DNSTYPE_TIMEOUT,
+			.key = "ip8.example.com",
+			.value = ""
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		},
+	};
+	const struct suite_testcase includetestcases[] = {
+		{
+			.name = "include-fail",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e1.example.com",
+			.exp = NULL,
+			.result = SPF_SOFTFAIL
+		},
+		{
+			.name = "include-softfail",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e2.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.name = "include-neutral",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e3.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "include-temperror",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e4.example.com",
+			.exp = NULL,
+			.result = SPF_TEMP_ERROR
+		},
+		{
+			.name = "include-syntax-error",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e6.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "include-permerror",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e5.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "include-cidr",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e9.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "include-none",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e7.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "include-empty-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e8.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.helo = NULL,
+			.remoteip = NULL,
+			.mailfrom = NULL,
+			.exp = NULL,
+			.result = -1
+		}
+	};
+
+	dnsdata = includeentries;
+
+	return run_suite_test(includetestcases);
+}
+
+static int
 test_parse()
 {
 	const struct dnsentry parseentries[] = {
@@ -1958,7 +2146,7 @@ test_parse()
 	};
 	static int spfresults[] = {
 		SPF_FAIL_MALF,
-		SPF_FAIL_NONEX,
+		SPF_FAIL_MALF,
 		SPF_NONE,
 		SPF_FAIL_MALF,
 		SPF_NEUTRAL,
@@ -2076,6 +2264,8 @@ test_received()
 	memcpy(xmitstat.mailfrom.s, mailfrom, strlen(mailfrom));
 
 	for (i = SPF_NONE; i <= SPF_HARD_ERROR; i++) {
+		if (i == 6)	/* this was SPF_FAIL_NONEX */
+			continue;
 		memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
 		xmitstat.spfmechanism = mechanism[(i * 2) % 5];
 		err += check_received(i, 1);
@@ -2106,6 +2296,7 @@ test_suite(void)
 	err += test_suite_all();
 	err += test_suite_ptr();
 	err += test_suite_a();
+	err += test_suite_include();
 
 	return err;
 }

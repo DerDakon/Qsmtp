@@ -72,7 +72,6 @@ spfreceived(int fd, const int spf)
 
 	switch (spf) {
 	case SPF_FAIL_MALF:
-	case SPF_FAIL_NONEX:
 		WRITE(fd, "domain of\n\t");
 		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
 		WRITE(fd, " uses mechanism not recognized by this client");
@@ -541,8 +540,7 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
 	case 'o':
 		if (xmitstat.mailfrom.len) {
 			char *at = strchr(xmitstat.mailfrom.s, '@');
-			unsigned int offset =
-					at - xmitstat.mailfrom.s + 1;
+			unsigned int offset = at - xmitstat.mailfrom.s + 1;
 
 			/* the domain name is always the same in normal and url-ified form */
 			if (spf_appendmakro(res, l, at + 1, xmitstat.mailfrom.len - offset,
@@ -1539,12 +1537,17 @@ spflookup(const char *domain, const int rec)
 		} else if ( (mechlen = match_mechanism(token, "include", ":")) != 0) {
 			token += mechlen;
 
-			if (*token++ == ':') {
+			if (may_have_domainspec(token) == 1) {
 				char *n = NULL;
-				result = spf_makro(token, domain, 0, &n);
+				int ip4l, ip6l;
 
+				result = spf_domainspec(domain, token + 1, &n, &ip4l, &ip6l);
 				if (result == 0) {
-					result = spflookup(n, rec + 1);
+					if ((ip4l >= 0) || (ip6l >= 0)) {
+						result = SPF_FAIL_MALF;
+					} else {
+						result = spflookup(n, rec + 1);
+					}
 					free(n);
 				}
 			} else {
@@ -1552,16 +1555,20 @@ spflookup(const char *domain, const int rec)
 			}
 
 			switch (result) {
-				case SPF_NONE:	result = SPF_PASS;
-						prefix = SPF_FAIL_NONEX;
-						break;
-				case SPF_TEMP_ERROR:
-				case SPF_FAIL_MALF:
-				case SPF_PASS:	prefix = result;
-						result = SPF_PASS;
-						break;
-				case -1:	break;
-				default:	result = SPF_NONE;
+			case SPF_NONE:
+				result = SPF_PASS;
+				prefix = SPF_FAIL_MALF;
+				break;
+			case SPF_TEMP_ERROR:
+			case SPF_FAIL_MALF:
+			case SPF_PASS:
+				prefix = result;
+				result = SPF_PASS;
+				break;
+			case -1:
+				break;
+			default:
+				result = SPF_NONE;
 			}
 
 			mechanism = "include";
