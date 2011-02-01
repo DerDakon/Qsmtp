@@ -144,7 +144,7 @@ spfreceived(int fd, const int spf)
  * @return number of bytes parsed, -1 on error
  */
 static int
-spf_makroparam(char *token, int *num, int *r, int *delim)
+spf_makroparam(const char *token, int *num, int *r, int *delim)
 {
 	int res = 0;
 	const char *t;
@@ -487,9 +487,10 @@ validate_domain(char ***domainlist)
  * @return number of bytes parsed, -1 on error
  */
 static int
-spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l)
+spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned int *l)
 {
-	char *q = p, ch;
+	const char *q = p;
+	char ch;
 	int offs, num, r, delim;
 
 	ch = *p++;
@@ -682,10 +683,10 @@ spf_makroletter(char *p, const char *domain, int ex, char **res, unsigned int *l
  * not static, is called from targets/testspf.c
  */
 int
-spf_makro(char *token, const char *domain, int ex, char **result)
+spf_makro(const char *token, const char *domain, int ex, char **result)
 {
 	char *res;
-	char *p;
+	const char *p;
 	unsigned int l;
 	size_t toklen = 0;
 
@@ -783,7 +784,7 @@ enum spf_makro_expansion {
  * @retval 0 everything is fine, domainspec is set
  */
 static int
-spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr, int *ip6cidr)
+spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip4cidr, int *ip6cidr)
 {
 	*ip4cidr = -1;
 	*ip6cidr = -1;
@@ -794,7 +795,7 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 /* search for a domain in token */
 	} else if (*token != '/') {
 		enum spf_makro_expansion i = SPF_MAKRO_NONE;
-		char *t = token;
+		const char *t = token;
 
 		while (*t && !WSPACE(*t) && (*t != '/')) {
 
@@ -902,30 +903,33 @@ spf_domainspec(const char *domain, char *token, char **domainspec, int *ip4cidr,
 	}
 /* check if there is a cidr length given */
 	if (*token == '/') {
-		char *c = token + 1;
+		const char *c = token + 1;
 
 		if (*c != '/') {
+			char *cend;
 			if ((*c == '\0') || WSPACE(*c))
 				return SPF_FAIL_MALF;
-			*ip4cidr = strtol(c, &c, 10);
-			if ((*ip4cidr > 32) || (!WSPACE(*c) && (*c != '/') && (*c != '\0'))) {
+			*ip4cidr = strtol(c, &cend, 10);
+			if ((*ip4cidr > 32) || (!WSPACE(*cend) && (*cend != '/') && (*cend != '\0'))) {
 				free(*domainspec);
 				return SPF_FAIL_MALF;
 			}
+			c = cend;
 		} else {
 			c--;
 		}
 		if (*c++ != '/') {
 			*ip6cidr = -1;
 		} else {
+			char *cend;
 			if (*c++ != '/') {
 				free(*domainspec);
 				return SPF_FAIL_MALF;
 			}
 			if ((*c == '\0') || WSPACE(*c))
 				return SPF_FAIL_MALF;
-			*ip6cidr = strtol(c, &c, 10);
-			if ((*ip6cidr > 128) || !(WSPACE(*c) || (*c == '\0'))) {
+			*ip6cidr = strtol(c, &cend, 10);
+			if ((*ip6cidr > 128) || !(WSPACE(*cend) || (*cend == '\0'))) {
 				free(*domainspec);
 				return SPF_FAIL_MALF;
 			}
@@ -977,7 +981,7 @@ may_have_domainspec(const char *token)
  * -1: error (ENOMEM)
  */
 static int
-spfmx(const char *domain, char *token)
+spfmx(const char *domain, const char *token)
 {
 	int ip6l = -1;
 	int ip4l = -1;
@@ -1051,7 +1055,7 @@ spfmx(const char *domain, char *token)
 }
 
 static int
-spfa(const char *domain, char *token)
+spfa(const char *domain, const char *token)
 {
 	int ip6l = -1;
 	int ip4l = -1;
@@ -1131,7 +1135,7 @@ spfa(const char *domain, char *token)
 }
 
 static int
-spfexists(const char *domain, char *token)
+spfexists(const char *domain, const char *token)
 {
 	int ip6l, ip4l, i, r = 0;
 	char *domainspec;
@@ -1160,7 +1164,7 @@ spfexists(const char *domain, char *token)
 }
 
 static int
-spfptr(const char *domain, char *token)
+spfptr(const char *domain, const char *token)
 {
 	int i, r = 0;
 	char *domainspec = NULL;
