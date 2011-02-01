@@ -796,6 +796,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 	} else if (*token != '/') {
 		enum spf_makro_expansion i = SPF_MAKRO_NONE;
 		const char *t = token;
+		const char *tokenend;
 
 		while (*t && !WSPACE(*t) && (*t != '/')) {
 
@@ -883,6 +884,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 					continue;
 				case '}':
 					i = SPF_MAKRO_NONE;
+					tokenend = t;
 					t++;
 					continue;
 				default:
@@ -894,12 +896,56 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 		if (i != SPF_MAKRO_NONE)
 			return SPF_FAIL_MALF;
 
-		if (t != token) {
-			if ((i = spf_makro(token, domain, 0, domainspec))) {
-				return i;
+		/* domainspec must end in toplabel or macro-expand */
+		if ((tokenend == NULL) || (t != tokenend + 1)) {
+			const char *dot = t - 1;
+			const char *last = t - 1;
+			const char *tmp;
+			int hasalpha = 0;
+
+			/* ignore one trailing dot */
+			if (*dot == '.') {
+				dot--;
+				last--;
 			}
-			token = t;
+
+			while ((dot >= token) && (*dot != '.'))
+				dot--;
+
+			/* domainspec may not be only toplabel */
+			if (*dot != '.')
+				return SPF_FAIL_MALF;
+
+			/* toplabel may not be empty */
+			if (dot + 1 >= last)
+				return SPF_FAIL_MALF;
+
+			/* toplabel must begin and end with alphanum,
+			 * enforce C locale here */
+			if (!isalnum(*(dot + 1)) || (*(dot + 1) <= 0))
+				return SPF_FAIL_MALF;
+			if (!isalnum(*last) || (*last <= 0))
+				return SPF_FAIL_MALF;
+
+			/* toplabel mal only be alphanum or '-' and
+			 * must have at least one ALPHA */
+			for (tmp = dot + 1; tmp <= last; tmp++) {
+				if (*tmp < 0)
+					return SPF_FAIL_MALF;
+				if (isalpha(*tmp))
+					hasalpha = 1;
+				if (!isalnum(*tmp) && (*tmp != '-'))
+					return SPF_FAIL_MALF;
+			}
+
+			if (!hasalpha)
+				return SPF_FAIL_MALF;
 		}
+
+		if ((i = spf_makro(token, domain, 0, domainspec))) {
+			return i;
+		}
+		token = t;
 	}
 /* check if there is a cidr length given */
 	if (*token == '/') {

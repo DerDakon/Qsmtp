@@ -1730,7 +1730,6 @@ test_suite_a()
 			.exp = NULL,
 			.result = SPF_PASS
 		},
-#if 0
 		{
 			.name = "a-bad-domain",
 			.helo = "mail.example.com",
@@ -1739,7 +1738,6 @@ test_suite_a()
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
 		},
-#endif
 		{
 			.name = "a-nxdomain",
 			.helo = "mail.example.com",
@@ -1797,6 +1795,46 @@ test_suite_a()
 			.mailfrom = "foo@e2b.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "a-numeric",
+			.helo = "mail.example.com",
+			.remoteip = "1.2.3.4",
+			.mailfrom = "foo@e4.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "a-numeric-toplabel",
+			.helo = "mail.example.com",
+			.remoteip = "1.2.3.4",
+			.mailfrom = "foo@e5.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "a-bad-toplabel",
+			.helo = "mail.example.com",
+			.remoteip = "1.2.3.4",
+			.mailfrom = "foo@e12.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "a-only-toplabel",
+			.helo = "mail.example.com",
+			.remoteip = "1.2.3.4",
+			.mailfrom = "foo@e5a.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "a-only-toplabel-trailing-dot",
+			.helo = "mail.example.com",
+			.remoteip = "1.2.3.4",
+			.mailfrom = "foo@e5b.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
 		},
 #if 0
 		{
