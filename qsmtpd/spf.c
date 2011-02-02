@@ -799,6 +799,8 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 		const char *tokenend;
 
 		while (*t && !WSPACE(*t) && (*t != '/')) {
+			if (*t < 0)
+				return SPF_FAIL_MALF;
 
 			switch (i) {
 			case SPF_MAKRO_NONE:
@@ -922,16 +924,14 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 
 			/* toplabel must begin and end with alphanum,
 			 * enforce C locale here */
-			if (!isalnum(*(dot + 1)) || (*(dot + 1) <= 0))
+			if (!isalnum(*(dot + 1)))
 				return SPF_FAIL_MALF;
-			if (!isalnum(*last) || (*last <= 0))
+			if (!isalnum(*last))
 				return SPF_FAIL_MALF;
 
 			/* toplabel mal only be alphanum or '-' and
 			 * must have at least one ALPHA */
 			for (tmp = dot + 1; tmp <= last; tmp++) {
-				if (*tmp < 0)
-					return SPF_FAIL_MALF;
 				if (isalpha(*tmp))
 					hasalpha = 1;
 				if (!isalnum(*tmp) && (*tmp != '-'))
