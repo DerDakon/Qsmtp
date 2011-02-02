@@ -1084,12 +1084,12 @@ test_suite_makro()
 		{
 			.type = DNSTYPE_A,
 			.key = "mx.example.com",
-			.value = "::ffff:192.168.218.41,::ffff:192.168.218.42"
+			.value = "::ffff:192.168.218.41;::ffff:192.168.218.42"
 		},
 		{
 			.type = DNSTYPE_AAAA,
 			.key = "mx.example.com",
-			.value = "CAFE:BABE::2,CAFE:BABE::3"
+			.value = "CAFE:BABE::2;CAFE:BABE::3"
 		},
 		{
 			.type = DNSTYPE_NAME,
@@ -1104,7 +1104,7 @@ test_suite_makro()
 		{
 			.type = DNSTYPE_NAME,
 			.key = "::ffff:192.168.218.42",
-			.value = "mx.example.com,mx.e7.example.com"
+			.value = "mx.example.com;mx.e7.example.com"
 		},
 		{
 			.type = DNSTYPE_NAME,
@@ -1119,17 +1119,17 @@ test_suite_makro()
 		{
 			.type = DNSTYPE_A,
 			.key = "mx.e7.example.com",
-			.value = "192.168.218.42"
+			.value = "::ffff:192.168.218.42"
 		},
 		{
 			.type = DNSTYPE_A,
 			.key = "mx.e7.example.com.should.example.com",
-			.value = "127.0.0.2"
+			.value = "::ffff:127.0.0.2"
 		},
 		{
 			.type = DNSTYPE_A,
 			.key = "mx.example.com.ok.example.com",
-			.value = "127.0.0.2"
+			.value = "::ffff:127.0.0.2"
 		},
 		{
 			.type = DNSTYPE_SPF,
@@ -1169,7 +1169,7 @@ test_suite_makro()
 		{
 			.type = DNSTYPE_A,
 			.key = "1.2.3.4.gladstone.philip.user.example.com",
-			.value = "127.0.0.2"
+			.value = "::ffff:127.0.0.2"
 		},
 		{
 			.type = DNSTYPE_SPF,
@@ -1179,7 +1179,7 @@ test_suite_makro()
 		{
 			.type = DNSTYPE_A,
 			.key = "bar.foo.user.example.com",
-			.value = "127.0.0.2"
+			.value = "::ffff:127.0.0.2"
 		},
 		{
 			.type = DNSTYPE_NONE,
@@ -1272,6 +1272,48 @@ test_suite_makro()
 			.result = SPF_FAIL_MALF
 		},
 		{
+			.name = "p-macro-ip4-novalid",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@e6.example.com",
+			.exp = "connect from unknown",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "p-macro-ip4-valid",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.41",
+			.mailfrom = "test@e6.example.com",
+			.exp = "connect from mx.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "p-macro-ip6-novalid",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "cafe:babe::1",
+			.mailfrom = "test@e6.example.com",
+			.exp = "connect from unknown",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "p-macro-ip6-valid",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "cafe:babe::3",
+			.mailfrom = "test@e6.example.com",
+			.exp = "connect from mx.example.com",
+			.result = SPF_FAIL_PERM
+		},
+#if 0
+		{
+			.name = "p-macro-multiple",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.42",
+			.mailfrom = "test@e7.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+#endif
+		{
 			.name = "upper-macro",
 			.helo = "msgbas2x.cos.example.com",
 			.remoteip = "::ffff:192.168.218.42",
@@ -1286,6 +1328,22 @@ test_suite_makro()
 			.mailfrom = "jack&jill=up@e9.example.com",
 			.exp = NULL,
 			.result = SPF_PASS
+		},
+		{
+			.name = "invalid-hello-macro",
+			.helo = "JUMPIN' JUPITER",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@e9.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "hello-domain-literal",
+			.helo = "[192.168.218.40]",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@e9.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
 		},
 		{
 			.name = "require-valid-helo",
