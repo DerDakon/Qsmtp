@@ -78,7 +78,10 @@ parseips(const char *list)
 		}
 
 		memset(n, 0, sizeof(*n));
-		inet_pton(AF_INET6, this, &n->addr);
+		if (inet_pton(AF_INET6, this, &n->addr) != 1) {
+			fprintf(stderr, "%s can not be parsed as IPv6 address\n", this);
+			exit(EINVAL);
+		}
 		n->priority = 42;
 		n->next = ret;
 		ret = n;
@@ -514,7 +517,10 @@ setup_transfer(const char *helo, const char *from, const char *remoteip)
 	memcpy(xmitstat.helostr.s, helo, strlen(helo));
 
 	strncpy(xmitstat.remoteip, remoteip, sizeof(xmitstat.remoteip));
-	inet_pton(AF_INET6, remoteip, &xmitstat.sremoteip);
+	if (inet_pton(AF_INET6, remoteip, &xmitstat.sremoteip) != 1) {
+		fprintf(stderr, "can not parse %s as IPv6 address for mailfrom %s\n", remoteip, from);
+		exit(EINVAL);
+	}
 
 	if (ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s) > 0)
 		xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
@@ -1858,7 +1864,7 @@ test_suite_a()
 		{
 			.name = "a-numeric",
 			.helo = "mail.example.com",
-			.remoteip = "1.2.3.4",
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e4.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
@@ -1866,7 +1872,7 @@ test_suite_a()
 		{
 			.name = "a-numeric-toplabel",
 			.helo = "mail.example.com",
-			.remoteip = "1.2.3.4",
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e5.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
@@ -1874,7 +1880,7 @@ test_suite_a()
 		{
 			.name = "a-bad-toplabel",
 			.helo = "mail.example.com",
-			.remoteip = "1.2.3.4",
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e12.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
@@ -1882,7 +1888,7 @@ test_suite_a()
 		{
 			.name = "a-only-toplabel",
 			.helo = "mail.example.com",
-			.remoteip = "1.2.3.4",
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e5a.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
@@ -1890,7 +1896,7 @@ test_suite_a()
 		{
 			.name = "a-only-toplabel-trailing-dot",
 			.helo = "mail.example.com",
-			.remoteip = "1.2.3.4",
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e5b.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
@@ -1899,7 +1905,7 @@ test_suite_a()
 		{
 			.name = "a-colon-domain",
 			.helo = "mail.example.com",
-			.remoteip = "1.2.3.4",
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e11.example.com",
 			.exp = NULL,
 			.result = SPF_PASS
@@ -1908,7 +1914,7 @@ test_suite_a()
 		{
 			.name = "a-empty-domain",
 			.helo = "mail.example.com",
-			.remoteip = "1.2.3.4",
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e11.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
@@ -2413,8 +2419,10 @@ int main(int argc, char **argv)
 		return test_received();
 	else if (strcmp(argv[1], "_suite_") == 0)
 		return test_suite();
-	else
+	else {
+		fprintf(stderr, "invalid argument: %s\n", argv[1]);
 		return EINVAL;
+	}
 }
 
 void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
