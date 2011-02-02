@@ -813,6 +813,9 @@ test_parse_mx()
 		"v=spf1 mx//140",
 		"v=spf1 mx///64",
 		"v=spf1 mx:",
+		"v=spf1 mx:museum..",
+		"v=spf1 mx:museum../8",
+		"v=spf1 mx:foo\223.bar",
 		"v=spf1 mx: all",
 		NULL
 	};
