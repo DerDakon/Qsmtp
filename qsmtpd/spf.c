@@ -433,8 +433,7 @@ validate_domain(char ***domainlist)
 
 		tmp = ptrs;
 		while (tmp != NULL) {
-			if (memcmp(tmp->addr.s6_addr32, xmitstat.sremoteip.s6_addr32,
-					sizeof(tmp->addr.s6_addr32)) == 0) {
+			if (IN6_ARE_ADDR_EQUAL(&tmp->addr, &xmitstat.sremoteip)) {
 				(*domainlist)[cnt] = strdup(d);
 				if ((*domainlist)[cnt] == NULL) {
 					while (cnt > 0) {
