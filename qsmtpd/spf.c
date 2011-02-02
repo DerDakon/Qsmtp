@@ -1611,10 +1611,10 @@ spflookup(const char *domain, const int rec)
 				break;
 			case SPF_TEMP_ERROR:
 			case SPF_FAIL_MALF:
-			case SPF_PASS:
 				prefix = result;
 				result = SPF_PASS;
 				break;
+			case SPF_PASS:
 			case -1:
 				break;
 			default:

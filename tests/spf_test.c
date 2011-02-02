@@ -1287,7 +1287,6 @@ test_suite_makro()
 			.exp = NULL,
 			.result = SPF_PASS
 		},
-#if 0
 		{
 			.name = "require-valid-helo",
 			.helo = "OEMCOMPUTER",
@@ -1296,7 +1295,6 @@ test_suite_makro()
 			.exp = NULL,
 			.result = SPF_FAIL_PERM
 		},
-#endif
 		{
 			.name = "macro-reverse-split-on-dash",
 			.helo = "mail.example.com",
