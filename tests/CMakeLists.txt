@@ -194,3 +194,16 @@ TARGET_LINK_LIBRARIES(testcase_mime
 
 ADD_TEST(NAME "MIME"
 		COMMAND testcase_mime)
+
+ADD_EXECUTABLE(testcase_antispam
+		antispam_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c
+		${CMAKE_SOURCE_DIR}/lib/dns_helpers.c
+		${CMAKE_SOURCE_DIR}/lib/match.c
+)
+TARGET_LINK_LIBRARIES(testcase_antispam
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "Antispam"
+		COMMAND testcase_antispam)
