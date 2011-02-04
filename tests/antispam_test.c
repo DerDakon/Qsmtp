@@ -9,28 +9,13 @@
 
 struct xmitstat xmitstat;
 
+static unsigned int logcount;
+
 static int
-test_reverseip()
+test_rbl()
 {
 	int err = 0;
-	char buf[INET_ADDRSTRLEN];
-	int r;
 
-	memset(&xmitstat, 0, sizeof(xmitstat));
-	memset(buf, 0, sizeof(buf));
-	inet_pton(AF_INET6, "::ffff:1.2.3.4", &xmitstat.sremoteip);
-	r = reverseip4(buf);
-
-	if (strcmp(buf, "4.3.2.1") != 0) {
-		fprintf(stderr, "reverseip4() returned bad string %s\n", buf);
-		err++;
-	}
-
-	/* strlen("4.3.2.1") */
-	if (r != 7) {
-		fprintf(stderr, "reverseip4() returned bad length %i\n", r);
-		err++;
-	}
 
 	return err;
 }
@@ -40,7 +25,7 @@ main(void)
 {
 	int err = 0;
 
-	err += test_reverseip();
+	err += test_rbl();
 
 	return err;
 }
@@ -48,9 +33,10 @@ main(void)
 
 void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
 {
+	logcount++;
 }
 
-inline void log_write(int priority __attribute__ ((unused)), const char *msg __attribute__ ((unused)))
+void log_write(int priority __attribute__ ((unused)), const char *msg __attribute__ ((unused)))
 {
 }
 

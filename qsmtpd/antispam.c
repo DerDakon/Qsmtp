@@ -49,13 +49,14 @@ dotip6(char *buffer)
 		nibbletohex(buffer + k * 4 + 2, (xmitstat.sremoteip.s6_addr[k] & 0x0f));
 	}
 }
+
 /**
  * print client IPv4 address in reverse order into a given buffer
  *
  * @param buf buffer to write in (must have at least INET_ADDRSTRLEN (16) bytes)
  * @return length of string in buffer
  */
-int
+static int
 reverseip4(char *buf)
 {
 	struct in_addr r;
@@ -71,8 +72,8 @@ reverseip4(char *buf)
  *
  * @param rbls a NULL terminated array of rbls
  * @param txt pointer to "char *" where the TXT record of the listing will be stored if !NULL
- * @return \arg \c index of first match
- *         \arg \c -1 if not listed or error (if not listed errno is set to 0)
+ * @return index of first match
+ * @retval -1 if not listed or error (if not listed errno is set to 0)
  */
 int
 check_rbl(char *const *rbls, char **txt)

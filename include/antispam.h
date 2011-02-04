@@ -11,7 +11,6 @@ extern int check_rbl(char *const *, char **);
 extern void tarpit(void);
 extern int domainmatch(const char *, const unsigned int, const char **);
 extern int lookupipbl(int);
-extern int reverseip4(char *);
 
 /* qsmtpd/spf.c */
 
