@@ -89,6 +89,25 @@ test_rbl()
 		} else {
 			err += check_nomatch(r, "check_rbl() without matching DNS entries");
 		}
+
+		entries[0] = "42.42.18.172.bar.example.com";
+		r = check_rbl(rbls, &txt);
+		free(txt);
+		err += check_nomatch(r, "check_rbl() without matching DNS entries");
+
+		entries[0] = "42.42.18.172.bar.bar.example.com";
+		r = check_rbl(rbls, &txt);
+		free(txt);
+		txt = NULL;
+		if (ipidx == 2) {
+			if (r != 3) {
+				fprintf(stderr, "check_rbl() should have returned 3 but returned %i for ip %s\n", r, ips[ipidx]);
+				err++;
+			}
+		} else {
+			err += check_nomatch(r, "check_rbl() without matching DNS entries");
+		}
+		
 	}
 
 	if (logcount != 0)
