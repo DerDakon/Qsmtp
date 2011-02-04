@@ -103,15 +103,11 @@ check_rbl(char *const *rbls, char **txt)
 			logmsg[1] = rbls[i];
 			log_writen(LOG_ERR, logmsg);
 		} else {
-			struct ips *ip;
-
 			strcpy(lookup + l, rbls[i]);
-			j = ask_dnsa(lookup, &ip);
+			j = ask_dnsa(lookup, NULL);
 			if (j < 0) {
 				return j;
 			} else if (!j) {
-				freeips(ip);
-
 				/* if there is any error here we just write the generic message to the client
 				 * so that's no real problem for us */
 				dnstxt(txt, lookup);
