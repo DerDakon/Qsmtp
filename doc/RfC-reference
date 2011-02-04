@@ -15,3 +15,4 @@ RfCs interesting for a mail server (and used for implementing this one):
 3207	SMTP Service Extension for Secure SMTP over Transport Layer Security
 3848	ESMTP and LMTP Transmission Types Registration
 4408	Sender Policy Framework (SPF) for Authorizing Use of Domains in E-Mail, Version 1
+5782	DNS Blacklists and Whitelists
