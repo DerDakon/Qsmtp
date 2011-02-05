@@ -45,7 +45,7 @@ test_rbl()
 		"::ffff:10.0.0.1",
 		"::ffff:10.0.0.2",
 		"::ffff:172.18.42.42",
-		"abcd:cafe::1",
+		"4242:cafe::1",
 		NULL
 	};
 	const char *entries[2];
@@ -107,7 +107,21 @@ test_rbl()
 		} else {
 			err += check_nomatch(r, "check_rbl() without matching DNS entries");
 		}
-		
+
+		entries[0] = "4.2.4.2.foo.bar.example.com";
+		entries[1] = "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.e.f.a.c.2.4.2.4.bar.foo.example.com";
+		entries[2] = NULL;
+		r = check_rbl(rbls, &txt);
+		free(txt);
+		txt = NULL;
+		if (ipidx == 3) {
+			if (r != 1) {
+				fprintf(stderr, "check_rbl() should have returned 1 but returned %i for ip %s\n", r, ips[ipidx]);
+				err++;
+			}
+		} else {
+			err += check_nomatch(r, "check_rbl() without matching DNS entries");
+		}
 	}
 
 	if (logcount != 0)

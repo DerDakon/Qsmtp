@@ -45,8 +45,8 @@ dotip6(char *buffer)
 	int k;
 
 	for (k = 15; k >= 0; k--) {
-		nibbletohex(buffer + k * 4,     (xmitstat.sremoteip.s6_addr[k] & 0xf0) >> 4);
-		nibbletohex(buffer + k * 4 + 2, (xmitstat.sremoteip.s6_addr[k] & 0x0f));
+		nibbletohex(buffer + k * 4 + 2, (xmitstat.sremoteip.s6_addr[15 - k] & 0xf0) >> 4);
+		nibbletohex(buffer + k * 4,     (xmitstat.sremoteip.s6_addr[15 - k] & 0x0f));
 	}
 }
 
