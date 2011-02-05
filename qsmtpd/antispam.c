@@ -61,8 +61,10 @@ reverseip4(char *buf)
 {
 	struct in_addr r;
 
-	r.s_addr = (xmitstat.sremoteip.s6_addr[12] << 24) + (xmitstat.sremoteip.s6_addr[13] << 16) +
-			(xmitstat.sremoteip.s6_addr[14] << 8) + xmitstat.sremoteip.s6_addr[15];
+	r.s_addr = ((xmitstat.sremoteip.s6_addr32[3] & 0xff) << 24) |
+			((xmitstat.sremoteip.s6_addr32[3] & 0xff00) << 8) |
+			((xmitstat.sremoteip.s6_addr32[3] >> 8 ) & 0xff00) | 
+			((xmitstat.sremoteip.s6_addr32[3] >> 24) & 0xff);
 	inet_ntop(AF_INET, &r, buf, INET_ADDRSTRLEN);
 	return strlen(buf);
 }
@@ -99,13 +101,13 @@ check_rbl(char *const *rbls, char **txt)
 		l = 64;
 	}
 	while (rbls[i]) {
-		const char *logmsg[] = {"name of rbl too long: \"", NULL, "\"", NULL};
-		int j;
-
 		if (strlen(rbls[i]) >= sizeof(lookup) - l) {
-			logmsg[1] = rbls[i];
+			const char *logmsg[] = {"name of rbl too long: \"", rbls[i], "\"", NULL};
+
 			log_writen(LOG_ERR, logmsg);
 		} else {
+			int j;
+
 			strcpy(lookup + l, rbls[i]);
 			j = ask_dnsa(lookup, NULL);
 			if (j < 0) {
