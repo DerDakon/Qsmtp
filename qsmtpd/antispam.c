@@ -71,9 +71,12 @@ reverseip4(char *buf)
  * do a rbl lookup for remoteip
  *
  * @param rbls a NULL terminated array of rbls
- * @param txt pointer to "char *" where the TXT record of the listing will be stored if !NULL
+ * @param txt pointer to "char *" where the TXT record of the listing will be stored if existent
  * @return index of first match
  * @retval -1 if not listed or error (if not listed errno is set to 0)
+ * 
+ * If no match was found but temporary DNS errors were encountered errno
+ * is set to EAGAIN.
  */
 int
 check_rbl(char *const *rbls, char **txt)
