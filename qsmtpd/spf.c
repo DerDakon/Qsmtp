@@ -795,7 +795,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 	} else if (*token != '/') {
 		enum spf_makro_expansion i = SPF_MAKRO_NONE;
 		const char *t = token;
-		const char *tokenend;
+		const char *tokenend = NULL;
 
 		while (*t && !WSPACE(*t) && (*t != '/')) {
 			if (*t < 0)
