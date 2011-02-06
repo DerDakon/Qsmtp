@@ -188,12 +188,12 @@ spf_makroparam(const char *token, int *num, int *r, int *delim)
 }
 
 static int
-urlencode(char *token, char **result)
+urlencode(const char *token, char **result)
 {
 	char *res = NULL;
-	char *last = token;	/* the first unencoded character in the current chunk */
+	const char *last = token;	/* the first unencoded character in the current chunk */
 	unsigned int len = 0;
-	char *otoken = token;
+	const char *otoken = token;
 
 	while (*token) {
 		char *tmp;
@@ -236,7 +236,10 @@ urlencode(char *token, char **result)
 	}
 	if (!len) {
 		/* nothing has changed */
-		*result = otoken;
+		*result = malloc(strlen(otoken) + 1);
+		if (*result == NULL)
+			return -1;
+		strcpy(*result, otoken);
 		return 0;
 	}
 	if (token - last) {
@@ -280,6 +283,7 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	char *r2;
 	unsigned int oldl = *l;
 	char *news = malloc(sl + 1);
+	char *urldata = NULL;
 
 	if (!news)
 		return -1;
@@ -362,12 +366,13 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	}
 
 	if (r & 2) {
-		if (urlencode(start, &start)) {
+		if (urlencode(start, &urldata)) {
 			free(*res);
 			free(news);
 			return -1;
 		}
-		nl = strlen(start);
+		nl = strlen(urldata);
+		start = urldata;
 	}
 
 	*l += nl;
@@ -375,11 +380,13 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	if (!r2) {
 		free(*res);
 		free(news);
+		free(urldata);
 		return -1;
 	}
 	*res = r2;
 	memcpy(*res + oldl, start, nl);
 	free(news);
+	free(urldata);
 
 	return 0;
 }
