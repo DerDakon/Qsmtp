@@ -581,7 +581,7 @@ spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned 
 
 			dotip6(ip);
 			ip[63] = '\0';
-			if (spf_appendmakro(res, l, ip, 63, num, r, delim))
+			if (spf_appendmakro(res, l, ip, 63, num, !r, delim))
 				return -1;
 		}
 		break;
