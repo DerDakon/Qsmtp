@@ -457,6 +457,10 @@ validate_domain(char ***domainlist)
 	}
 
 	free(rnames);
+	if (cnt == 0) {
+		free(*domainlist);
+		*domainlist = NULL;
+	}
 
 	return cnt;
 }
