@@ -137,7 +137,13 @@ FOREACH(PATTERN
 		longHeaderLine
 		8bitLF
 		noLFatEnd
-		8bitHeader)
+		8bitHeader
+		emptyLFheader
+		emptyCRheader
+		emptyLFheaderWith8bit
+		emptyCRheaderWith8bit
+		emptyCRLFheaderWith8bit
+		InvalidPreamble)
 	ADD_TEST(NAME "QrData-${PATTERN}"
 			COMMAND testcase_qrdata ${PATTERN})
 ENDFOREACH(PATTERN)

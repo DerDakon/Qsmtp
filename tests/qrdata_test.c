@@ -22,6 +22,8 @@ enum datastate {
 
 static enum datastate state = ST_START;
 
+unsigned int may_log_count;
+
 string heloname;
 unsigned int smtpext;
 char linein[4];
@@ -40,18 +42,21 @@ static struct {
 	const char *msg;
 	unsigned int filters;
 	unsigned int recodeflag;
+	unsigned int log_count;
 } testpatterns[] = {
 	{
 		.name = "simple",
 		.msg = "Subject: simple test\r\n\r\n\r\n",
 		.filters = 3,
-		.recodeflag = 0
+		.recodeflag = 0,
+		.log_count = 0
 	},
 	{
 		.name = "crlfmixup",
 		.msg = "Subject: CRLF test\r\r\n\n\r\n\n\r\r ",
 		.filters = 3,
-		.recodeflag = 0
+		.recodeflag = 0,
+		.log_count = 0
 	},
 	{
 		.name = "longBodyLine",
@@ -79,7 +84,8 @@ static struct {
 				" 1050 12345678901234567890123456789012345678901234 \r\n"
 				"another line\t\r\n",
 		.filters = 0,
-		.recodeflag = 2
+		.recodeflag = 2,
+		.log_count = 0
 	},
 	{
 		.name = "longHeaderLineCR",
@@ -107,7 +113,8 @@ static struct {
 				" 1050 12345678901234567890123456789012345678901234\r"
 				"From: <foo@bar.example.com>\r",
 		.filters = 3,
-		.recodeflag = 4
+		.recodeflag = 4,
+		.log_count = 0
 	},
 	{
 		.name = "longHeaderLineLF",
@@ -133,7 +140,8 @@ static struct {
 				"__950_12345678901234567890123456789012345678901234"
 				" 1000 12345678901234567890123456789012345678901234\n",
 		.filters = 3,
-		.recodeflag = 4
+		.recodeflag = 4,
+		.log_count = 0
 	},
 	{
 		.name = "longHeaderLine",
@@ -160,37 +168,64 @@ static struct {
 				" 1000 12345678901234567890123456789012345678901234"
 				" 1050 12345678901234567890123456789012345678901234",
 		.filters = 3,
-		.recodeflag = 4
+		.recodeflag = 4,
+		.log_count = 0
 	},
 	{
 		.name = "emptyLFheader",
 		.msg = "\ndata\r\n",
 		.filters = 0,
-		.recodeflag = 0
+		.recodeflag = 0,
+		.log_count = 0
 	},
 	{
 		.name = "emptyCRheader",
 		.msg = "\rdata\r\n",
 		.filters = 0,
-		.recodeflag = 0
+		.recodeflag = 0,
+		.log_count = 0
 	},
 	{
 		.name = "noLFatEnd",
 		.msg = "Subject: missing linefeed\r\n\r\nfoo bar test",
 		.filters = 3,
-		.recodeflag = 0
+		.recodeflag = 0,
+		.log_count = 0
 	},
 	{
 		.name = "dots",
 		.msg = "Subject: dot-test\r\n.\r\n..\r\n.",
 		.filters = 1,
-		.recodeflag = 0
+		.recodeflag = 0,
+		.log_count = 0
 	},
 	{
 		.name = "8bitHeader",
 		.msg = "Subject: garbage \244\r\n\r\n",
 		.filters = 0,
-		.recodeflag = 1
+		.recodeflag = 1,
+		.log_count = 0
+	},
+	{
+		.name = "emptyLFheaderWith8bit",
+		.msg = "\ndata \244 \r\n",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 1
+	},
+	{
+		.name = "emptyCRheaderWith8bit",
+		.msg = "\rdata \244 \r\n",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 1
+	},
+	{
+		.name = "emptyCRLFheaderWith8bit",
+		.msg = "\r\ndata \244 \r\n",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 1
 	},
 	{
 		.name = "8bitLF",
@@ -218,7 +253,8 @@ static struct {
 		       "--------------0008--\r"
 		       "\r",
 		.filters = 0,
-		.recodeflag = 1
+		.recodeflag = 1,
+		.log_count = 0
 	},
 	{
 		.name = "8bit+base64",
@@ -247,7 +283,25 @@ static struct {
 		       "--------------0008--\r\n"
 		       "\r\n",
 		.filters = 2,
-		.recodeflag = 1
+		.recodeflag = 1,
+		.log_count = 0
+	},
+	{
+		.name = "InvalidPreamble",
+		.msg = "Subject: Preamble must not contain 8bit data\r"
+		       "Content-Type: multipart/mixed;\r"
+		       " boundary=\"------------0008\"\r"
+		       "\r"
+		       "This is a multi-part message in MIME format.\n"
+		       "This preamble is invalid because of this 8bit char: \244\n"
+		       "--------------0008--\r"
+		       "We now have immediately a final boundary so we don't really\n"
+		       "have any MIME-parts at all. And this trailer is also invalid\r"
+		       "because of 8bit data: \244\n"
+		       "\r",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 2
 	},
 	{
 		.name = NULL
@@ -521,6 +575,7 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 		exit(EFAULT);
 	}
 
+fputs(outbuf, stdout);
 	free(outbuf);
 	outbuf = NULL;
 	exit(0);
@@ -555,7 +610,11 @@ quit(void)
 void
 log_write(int priority, const char *s)
 {
-	fprintf(stderr, "log_writen(%i, %s) called unexpected\n", priority, s);
+	if (may_log_count > 0) {
+		may_log_count--;
+		return;
+	}
+	fprintf(stderr, "log_write(%i, %s) called unexpected\n", priority, s);
 	exit(EFAULT);
 
 }
@@ -584,8 +643,11 @@ int main(int argc, char **argv)
 		return EFAULT;
 	}
 
+	may_log_count = testpatterns[usepattern].log_count;
+
 	/* worst case we need to QP-encode every byte and append CRLF.CRLF */
-	outlen = strlen(testpatterns[usepattern].msg) * 3 + 5;
+	/* also there could be some additional headers or boundaries */
+	outlen = strlen(testpatterns[usepattern].msg) * 3 + 200;
 	outbuf = malloc(outlen);
 	if (outbuf == NULL)
 		return ENOMEM;
