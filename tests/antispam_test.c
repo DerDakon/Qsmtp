@@ -35,10 +35,13 @@ test_rbl()
 	int err = 0;
 	char * const rbls[] = {
 		"foo.bar.example.com",
+		"foo.timeout.example.com",
 		"bar.foo.example.com",
 		"foo.foo.example.com",
 		"bar.bar.example.com",
-		"foo.timeout.example.com",
+		"the-name-of-this.rbl-is-sooooooooooooooooooooooooooooooooooooooooo.looooooooooooooooooooooooooooooooooooong"
+			".loooooooooooooooooooooong.looooooooooooooooooooooooooooooooooooooong."
+			"that-it-will-overflow-when-used-with-ipv6-addresses.example.com",
 		NULL
 	};
 	const char *ips[] = {
@@ -48,7 +51,7 @@ test_rbl()
 		"4242:cafe::1",
 		NULL
 	};
-	const char *entries[2];
+	const char *entries[4];
 	unsigned int ipidx = 0;
 
 	for (ipidx = 0; ips[ipidx] != NULL; ipidx++) {
@@ -100,23 +103,25 @@ test_rbl()
 		free(txt);
 		txt = NULL;
 		if (ipidx == 2) {
-			if (r != 3) {
-				fprintf(stderr, "check_rbl() should have returned 3 but returned %i for ip %s\n", r, ips[ipidx]);
+			if (r != 4) {
+				fprintf(stderr, "check_rbl() should have returned 4 but returned %i for ip %s\n", r, ips[ipidx]);
 				err++;
 			}
 		} else {
 			err += check_nomatch(r, "check_rbl() without matching DNS entries");
 		}
 
+		/* One DNSBL returns timeout, but a later one matches. Should still return match. */
 		entries[0] = "4.2.4.2.foo.bar.example.com";
-		entries[1] = "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.e.f.a.c.2.4.2.4.bar.foo.example.com";
-		entries[2] = NULL;
+		entries[1] = "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.e.f.a.c.2.4.2.4.foo.timeout.example.com";
+		entries[2] = "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.e.f.a.c.2.4.2.4.bar.foo.example.com";
+		entries[3] = NULL;
 		r = check_rbl(rbls, &txt);
 		free(txt);
 		txt = NULL;
 		if (ipidx == 3) {
-			if (r != 1) {
-				fprintf(stderr, "check_rbl() should have returned 1 but returned %i for ip %s\n", r, ips[ipidx]);
+			if (r != 2) {
+				fprintf(stderr, "check_rbl() should have returned 2 but returned %i for ip %s\n", r, ips[ipidx]);
 				err++;
 			}
 		} else {
@@ -124,8 +129,11 @@ test_rbl()
 		}
 	}
 
-	if (logcount != 0)
+	/* 4 tests per loop, one IPv6 address: 4 messages */
+	if (logcount != 4) {
+		fprintf(stderr, "log functions were called %i times but only 4 were expected\n", logcount);
 		err++;
+	}
 
 	return err;
 }
@@ -143,6 +151,17 @@ main(void)
 
 void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
 {
+	unsigned int i = 0;
+	static int firstseen;
+
+	if (!firstseen) {
+		firstseen = 1;
+		printf("the messages about too long DNSBLs are expected and part of the test\n");
+	}
+
+	while (msg[i] != NULL)
+		printf(msg[i++]);
+	printf("\n");
 	logcount++;
 }
 
