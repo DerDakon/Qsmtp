@@ -575,7 +575,6 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 		exit(EFAULT);
 	}
 
-fputs(outbuf, stdout);
 	free(outbuf);
 	outbuf = NULL;
 	exit(0);
