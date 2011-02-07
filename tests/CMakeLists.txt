@@ -44,6 +44,7 @@ ADD_EXECUTABLE(testcase_cdb
 		${CMAKE_SOURCE_DIR}/qsmtpd/vpop.c)
 TARGET_LINK_LIBRARIES(testcase_cdb
 		qsmtp_lib
+		qsmtp_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -92,6 +93,7 @@ ADD_EXECUTABLE(testcase_matchnet
 
 TARGET_LINK_LIBRARIES(testcase_matchnet
 		qsmtp_lib
+		qsmtp_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -103,6 +105,7 @@ ADD_EXECUTABLE(testcase_hostname
 
 TARGET_LINK_LIBRARIES(testcase_hostname
 		qsmtp_lib
+		qsmtp_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -114,6 +117,7 @@ ADD_EXECUTABLE(testcase_xtext
 
 TARGET_LINK_LIBRARIES(testcase_xtext
 		qsmtp_lib
+		qsmtp_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -155,6 +159,7 @@ ADD_EXECUTABLE(testcase_fmt
 		fmt_test.c)
 TARGET_LINK_LIBRARIES(testcase_fmt
 		qsmtp_lib
+		qsmtp_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -165,6 +170,7 @@ ADD_EXECUTABLE(testcase_addrsyntax
 		addrsyntax_test.c)
 TARGET_LINK_LIBRARIES(testcase_addrsyntax
 		qsmtp_lib
+		qsmtp_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -175,6 +181,7 @@ ADD_EXECUTABLE(testcase_mmap
 		mmap_test.c)
 TARGET_LINK_LIBRARIES(testcase_mmap
 		qsmtp_lib
+		qsmtp_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -185,6 +192,7 @@ ADD_EXECUTABLE(testcase_dns
 		dns_test.c)
 TARGET_LINK_LIBRARIES(testcase_dns
 		qsmtp_lib
+		qsmtp_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -195,6 +203,7 @@ ADD_EXECUTABLE(testcase_mime
 		mime_test.c)
 TARGET_LINK_LIBRARIES(testcase_mime
 		qsmtp_lib
+		qsmtp_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 

@@ -28,6 +28,7 @@ ADD_EXECUTABLE(Qsmtpd
 
 TARGET_LINK_LIBRARIES(Qsmtpd
 	qsmtp_lib
+	qsmtp_io_lib
 	rcptfilters
 	${MEMCHECK_LIBRARIES}
 )
