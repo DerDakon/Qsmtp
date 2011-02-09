@@ -156,19 +156,7 @@ void test_log_writen(int priority __attribute__ ((unused)), const char **msg __a
 }
 
 int
-main(void)
-{
-	int err = 0;
-
-	testcase_setup_log_writen(test_log_writen);
-
-	err += test_rbl();
-
-	return err;
-}
-
-int
-ask_dnsa(const char *a, struct ips **b)
+test_ask_dnsa(const char *a, struct ips **b)
 {
 	unsigned int i;
 
@@ -198,4 +186,17 @@ dnstxt(char **a, const char *b)
 
 	*a = NULL;
 	return 0;
+}
+
+int
+main(void)
+{
+	int err = 0;
+
+	testcase_setup_log_writen(test_log_writen);
+	testcase_setup_ask_dnsa(test_ask_dnsa);
+
+	err += test_rbl();
+
+	return err;
 }

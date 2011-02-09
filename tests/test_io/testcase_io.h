@@ -8,6 +8,9 @@
 	extern void testcase_setup_##a(func_##a *f); \
 	extern void testcase_ignore_##a()
 
+struct ips;
+struct in6_addr;
+
 typedef int (func_net_read)(void);
 DECLARE_TC_SETUP(net_read);
 
@@ -49,5 +52,17 @@ DECLARE_TC_SETUP(ssl_error);
 
 typedef const char *(func_ssl_strerror)(void);
 DECLARE_TC_SETUP(ssl_strerror);
+
+typedef int (func_ask_dnsmx)(const char *, struct ips **);
+DECLARE_TC_SETUP(ask_dnsmx);
+
+typedef int (func_ask_dnsaaaa)(const char *, struct ips **);
+DECLARE_TC_SETUP(ask_dnsaaaa);
+
+typedef int (func_ask_dnsa)(const char *, struct ips **);
+DECLARE_TC_SETUP(ask_dnsa);
+
+typedef int (func_ask_dnsname)(const struct in6_addr *, char **);
+DECLARE_TC_SETUP(ask_dnsname);
 
 #endif /* _TESTCASE_IO_P_H */

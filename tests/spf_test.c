@@ -95,7 +95,7 @@ parseips(const char *list)
 }
 
 int
-ask_dnsmx(const char *domain, struct ips **ips)
+test_ask_dnsmx(const char *domain, struct ips **ips)
 {
 	const char *value = dnsentry_search(DNSTYPE_MX, domain);
 
@@ -140,7 +140,7 @@ ask_dnsmx(const char *domain, struct ips **ips)
 }
 
 int
-ask_dnsaaaa(const char *domain, struct ips **ips)
+test_ask_dnsaaaa(const char *domain, struct ips **ips)
 {
 	const char *value = dnsentry_search(DNSTYPE_AAAA, domain);
 	struct ips *cur;
@@ -160,7 +160,7 @@ ask_dnsaaaa(const char *domain, struct ips **ips)
 }
 
 int
-ask_dnsa(const char *domain, struct ips **ips)
+test_ask_dnsa(const char *domain, struct ips **ips)
 {
 	const char *value = dnsentry_search(DNSTYPE_A, domain);
 
@@ -178,7 +178,7 @@ ask_dnsa(const char *domain, struct ips **ips)
 }
 
 int
-ask_dnsname(const struct in6_addr *addr, char **name)
+test_ask_dnsname(const struct in6_addr *addr, char **name)
 {
 	char iptmp[INET6_ADDRSTRLEN];
 	size_t l;
@@ -2408,6 +2408,11 @@ test_suite(void)
 
 int main(int argc, char **argv)
 {
+	testcase_setup_ask_dnsa(test_ask_dnsa);
+	testcase_setup_ask_dnsaaaa(test_ask_dnsaaaa);
+	testcase_setup_ask_dnsmx(test_ask_dnsmx);
+	testcase_setup_ask_dnsname(test_ask_dnsname);
+
 	if (argc != 2)
 		return EINVAL;
 

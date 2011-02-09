@@ -24,4 +24,9 @@ DECLARE_TC_PTR(ssl_exit);
 DECLARE_TC_PTR(ssl_error);
 DECLARE_TC_PTR(ssl_strerror);
 
+DECLARE_TC_PTR(ask_dnsmx);
+DECLARE_TC_PTR(ask_dnsaaaa);
+DECLARE_TC_PTR(ask_dnsa);
+DECLARE_TC_PTR(ask_dnsname);
+
 #endif /* _TESTCASE_IO_P_H */

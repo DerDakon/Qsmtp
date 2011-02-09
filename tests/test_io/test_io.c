@@ -28,3 +28,8 @@ TC_SETUP(ssl_free);
 TC_SETUP(ssl_exit);
 TC_SETUP(ssl_error);
 TC_SETUP(ssl_strerror);
+
+TC_SETUP(ask_dnsmx);
+TC_SETUP(ask_dnsaaaa);
+TC_SETUP(ask_dnsa);
+TC_SETUP(ask_dnsname);
