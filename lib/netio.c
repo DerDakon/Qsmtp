@@ -267,7 +267,7 @@ loop_long:
  * -does not return on timeout, programm will be cancelled
  * -same as net_write but expects that line is <= 512 characters and includes CRLF
  */
-inline int
+int
 netwrite(const char *s)
 {
 	return netnwrite(s, strlen(s));
