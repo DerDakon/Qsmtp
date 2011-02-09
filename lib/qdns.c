@@ -225,7 +225,7 @@ ask_dnsa(const char *name, struct ips **result)
  *
  * @param ip the IP to look up
  * @param result name will be stored here
- * @return  how many names were found, negative on error
+ * @return how many names were found, negative on error
  * @retval 0 host not found
  * @retval -1 local error (e.g. ENOMEM)
  * @retval -2 temporary DNS error

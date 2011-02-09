@@ -24,7 +24,7 @@ typedef struct cstring {
 	size_t len;	/**< length of string */
 } cstring;
 
-#define STREMPTY(x) {(x).s = NULL; (x).len = 0; }
+#define STREMPTY(x) { (x).s = NULL; (x).len = 0; }
 
 static inline int newstr(string *, const size_t) __attribute__ ((nonnull (1)));
 
