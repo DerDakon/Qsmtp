@@ -682,15 +682,14 @@ send_qp(const char *buf, const off_t len)
 
 		/* Look if we have seen the final MIME boundary yet. If not, add it. */
 		if (!islast) {
+			send_qp(buf + off, len - off);
 			netnwrite("\r\n--", 4);
 			netnwrite(boundary.s, boundary.len);
 			netnwrite("--\r\n", 4);
-		}
-
-		/* All normal MIME parts are processed now, what follow is the epilogue.
-		 * Check if it needs recode. If it does, it is broken and can simply be
-		 * discarded */
-		if (need_recode(buf + off, len - off)) {
+		} else if (need_recode(buf + off, len - off)) {
+			/* All normal MIME parts are processed now, what follow is the epilogue.
+			 * Check if it needs recode. If it does, it is broken and can simply be
+			 * discarded */
 			log_write(LOG_ERR, "discarding invalid MIME epilogue");
 			netnwrite("\r\ninvalid MIME epilogue has been discarded.\r\n", 45);
 			lastlf = 1;

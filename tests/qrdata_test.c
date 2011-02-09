@@ -304,6 +304,21 @@ static struct {
 		.log_count = 2
 	},
 	{
+		.name = "NoEndBoundary",
+		.msg = "Subject: end boundary is missing\r"
+		       "Content-Type: multipart/mixed;\r"
+		       " boundary=\"------------0008\"\r"
+		       "\r"
+		       "--------------0008\r"
+		       "Content-Type: text/plain; charset=iso-8859-15\n"
+		       "\n"
+		       "This is the data part and it is again about money: \244\n"
+		       "\r",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 2
+	},
+	{
 		.name = NULL
 	}
 };
