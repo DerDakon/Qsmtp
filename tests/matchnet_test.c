@@ -3,6 +3,7 @@
  */
 
 #include "match.h"
+#include "test_io/testcase_io.h"
 
 #include <assert.h>
 #include <stdio.h>

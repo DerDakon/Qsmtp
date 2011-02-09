@@ -1,13 +1,15 @@
 /** \file spf_test.c
  \brief SPF testcases
  */
+#include "qsmtpd.h"
+#include "antispam.h"
+#include "sstring.h"
+#include "test_io/testcase_io.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <arpa/inet.h>
 #include <string.h>
-#include "qsmtpd.h"
-#include "antispam.h"
-#include "sstring.h"
 #include <unistd.h>
 #include <mime.h>
 
@@ -2424,20 +2426,3 @@ int main(int argc, char **argv)
 		return EINVAL;
 	}
 }
-
-void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
-{
-}
-
-inline void log_write(int priority __attribute__ ((unused)), const char *msg __attribute__ ((unused)))
-{
-}
-
-int data_pending(void)
-{
-	return 1;
-}
-
-#include "tls.h"
-SSL *ssl;
-

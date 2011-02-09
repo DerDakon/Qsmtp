@@ -2,6 +2,7 @@
  \brief SPF testcases
  */
 #include "qdns.h"
+#include "test_io/testcase_io.h"
 
 #include <stdlib.h>
 #include <stdio.h>

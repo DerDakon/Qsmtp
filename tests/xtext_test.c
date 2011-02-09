@@ -3,6 +3,8 @@
  */
 
 #include "xtext.h"
+#include "test_io/testcase_io.h"
+
 #include <stdio.h>
 
 static const char *valid_strings[] = {

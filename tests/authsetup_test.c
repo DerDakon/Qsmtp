@@ -5,6 +5,8 @@
 #include "qsauth.h"
 #include "qsmtpd.h"
 #include "sstring.h"
+#include "netio.h"
+#include "test_io/testcase_io.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -12,10 +14,7 @@
 #include <openssl/ssl.h>
 
 struct xmitstat xmitstat;
-SSL *ssl = NULL;
 unsigned long sslauth = 0;
-char linein[1002];
-size_t linelen;
 const char *auth_host = NULL;
 const char *auth_check = NULL;
 const char **auth_sub = NULL;
@@ -165,6 +164,8 @@ int main(int argc, char **argv)
 {
 	int errcnt = 0;
 
+	testcase_ignore_log_writen();
+
 	if (argc != 2) {
 		const char *errmsg = "required argument missing: base directory for control file tests\n";
 		write(2, errmsg, strlen(errmsg));
@@ -178,7 +179,6 @@ int main(int argc, char **argv)
 	}
 
 	memset(&xmitstat, 0, sizeof(xmitstat));
-	memset(linein, 0, sizeof(linein));
 	linelen = 0;
 
 	if (test_nocontrol() != 0)
@@ -190,31 +190,7 @@ int main(int argc, char **argv)
 	return errcnt;
 }
 
-void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
-{
-}
-
-inline void log_write(int priority __attribute__ ((unused)), const char *msg __attribute__ ((unused)))
-{
-}
-
-int netwrite(const char *s __attribute__ ((unused)))
-{
-	return 0;
-}
-
-size_t net_readline(size_t num __attribute__ ((unused)), char *buf __attribute__ ((unused)))
-{
-	return 0;
-}
-
 pid_t fork_clean(void)
 {
 	return 1;
-}
-
-#undef _exit
-void __attribute__ ((noreturn)) ssl_exit(int status)
-{
-	_exit(status);
 }

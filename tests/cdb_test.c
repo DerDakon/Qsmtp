@@ -1,3 +1,7 @@
+#include "cdb.h"
+#include "vpop.h"
+#include "test_io/testcase_io.h"
+
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -7,8 +11,6 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include "cdb.h"
-#include "vpop.h"
 
 static struct {
 	const char *key;

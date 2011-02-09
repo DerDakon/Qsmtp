@@ -1,4 +1,5 @@
 #include "qdns.h"
+#include "test_io/testcase_io.h"
 
 #include <stdio.h>
 #include <unistd.h>

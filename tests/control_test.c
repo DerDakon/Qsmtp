@@ -3,6 +3,7 @@
  */
 #include "control.h"
 #include "log.h"
+#include "test_io/testcase_io.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -520,6 +521,16 @@ test_listload()
 	return err;
 }
 
+void test_log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
+{
+	logcnt++;
+}
+
+inline void test_log_write(int priority __attribute__ ((unused)), const char *msg __attribute__ ((unused)))
+{
+	logcnt++;
+}
+
 int
 main(void)
 {
@@ -527,6 +538,9 @@ main(void)
 	int i;
 	int error = 0;
 	int fd;
+
+	testcase_setup_log_write(test_log_write);
+	testcase_setup_log_writen(test_log_writen);
 
 	puts("== Running tests for finddomainmm()");
 
@@ -632,14 +646,4 @@ main(void)
 	error += test_listload();
 
 	return error;
-}
-
-void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
-{
-	logcnt++;
-}
-
-inline void log_write(int priority __attribute__ ((unused)), const char *msg __attribute__ ((unused)))
-{
-	logcnt++;
 }

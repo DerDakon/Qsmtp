@@ -1,16 +1,15 @@
+ADD_SUBDIRECTORY(test_io)
+
 ADD_EXECUTABLE(testcase_spf
 		spf_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/spf.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c
-		${CMAKE_SOURCE_DIR}/lib/dns_helpers.c
-		${CMAKE_SOURCE_DIR}/lib/fmt.c
-		${CMAKE_SOURCE_DIR}/lib/match.c
-		${CMAKE_SOURCE_DIR}/lib/mime.c
 )
 
-IF (MEMCHECK_LIBRARIES)
-	TARGET_LINK_LIBRARIES(testcase_spf ${MEMCHECK_LIBRARIES})
-ENDIF (MEMCHECK_LIBRARIES)
+TARGET_LINK_LIBRARIES(testcase_spf
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
 
 ADD_TEST(NAME "SPF_received" COMMAND testcase_spf "_received_")
 ADD_TEST(NAME "SPF_parser" COMMAND testcase_spf "_parse_")
@@ -19,23 +18,22 @@ ADD_TEST(NAME "SPF_domain_redhat" COMMAND testcase_spf "redhat")
 ADD_TEST(NAME "SPF_domain_sf-mail" COMMAND testcase_spf "sf-mail")
 
 ADD_EXECUTABLE(testcase_control
-		control_test.c
-		${CMAKE_SOURCE_DIR}/lib/control.c
-		${CMAKE_SOURCE_DIR}/lib/mmap.c)
+		control_test.c)
 
-IF (MEMCHECK_LIBRARIES)
-	TARGET_LINK_LIBRARIES(testcase_control ${MEMCHECK_LIBRARIES})
-ENDIF (MEMCHECK_LIBRARIES)
+TARGET_LINK_LIBRARIES(testcase_control
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
 
 ADD_TEST(NAME "Control" COMMAND testcase_control)
 
 ADD_EXECUTABLE(testcase_base64
-		base64_test.c
-		${CMAKE_SOURCE_DIR}/lib/base64.c)
+		base64_test.c)
 
-IF (MEMCHECK_LIBRARIES)
-	TARGET_LINK_LIBRARIES(testcase_base64 ${MEMCHECK_LIBRARIES})
-ENDIF (MEMCHECK_LIBRARIES)
+TARGET_LINK_LIBRARIES(testcase_base64
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
 
 ADD_TEST(NAME "Base64" COMMAND testcase_base64)
 
@@ -44,7 +42,7 @@ ADD_EXECUTABLE(testcase_cdb
 		${CMAKE_SOURCE_DIR}/qsmtpd/vpop.c)
 TARGET_LINK_LIBRARIES(testcase_cdb
 		qsmtp_lib
-		qsmtp_io_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -53,28 +51,24 @@ ADD_TEST(NAME "CDB"
 
 ADD_EXECUTABLE(testcase_authsetup
 		authsetup_test.c
-		${CMAKE_SOURCE_DIR}/lib/base64.c
-		${CMAKE_SOURCE_DIR}/lib/control.c
-		${CMAKE_SOURCE_DIR}/lib/mmap.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/auth.c)
 
-IF (MEMCHECK_LIBRARIES)
-	TARGET_LINK_LIBRARIES(testcase_authsetup ${MEMCHECK_LIBRARIES})
-ENDIF (MEMCHECK_LIBRARIES)
+TARGET_LINK_LIBRARIES(testcase_authsetup
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
 
 ADD_TEST(NAME "AUTH_Setup"
 		COMMAND testcase_authsetup "${CMAKE_CURRENT_SOURCE_DIR}/authsetup")
 
 ADD_EXECUTABLE(testcase_auth
 		auth_test.c
-		${CMAKE_SOURCE_DIR}/lib/base64.c
-		${CMAKE_SOURCE_DIR}/lib/control.c
-		${CMAKE_SOURCE_DIR}/lib/mmap.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/auth.c)
 
-IF (MEMCHECK_LIBRARIES)
-	TARGET_LINK_LIBRARIES(testcase_auth ${MEMCHECK_LIBRARIES})
-ENDIF (MEMCHECK_LIBRARIES)
+TARGET_LINK_LIBRARIES(testcase_auth
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
 
 ADD_EXECUTABLE(auth_dummy auth_dummy.c)
 
@@ -93,7 +87,7 @@ ADD_EXECUTABLE(testcase_matchnet
 
 TARGET_LINK_LIBRARIES(testcase_matchnet
 		qsmtp_lib
-		qsmtp_io_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -105,7 +99,7 @@ ADD_EXECUTABLE(testcase_hostname
 
 TARGET_LINK_LIBRARIES(testcase_hostname
 		qsmtp_lib
-		qsmtp_io_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -117,7 +111,7 @@ ADD_EXECUTABLE(testcase_xtext
 
 TARGET_LINK_LIBRARIES(testcase_xtext
 		qsmtp_lib
-		qsmtp_io_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -127,7 +121,12 @@ ADD_TEST(NAME "Xtext"
 ADD_EXECUTABLE(testcase_qrdata
 		qrdata_test.c
 		${CMAKE_SOURCE_DIR}/qremote/qrdata.c
-		${CMAKE_SOURCE_DIR}/lib/mime.c
+)
+
+TARGET_LINK_LIBRARIES(testcase_qrdata
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
 )
 
 FOREACH(PATTERN
@@ -159,7 +158,7 @@ ADD_EXECUTABLE(testcase_fmt
 		fmt_test.c)
 TARGET_LINK_LIBRARIES(testcase_fmt
 		qsmtp_lib
-		qsmtp_io_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -170,7 +169,7 @@ ADD_EXECUTABLE(testcase_addrsyntax
 		addrsyntax_test.c)
 TARGET_LINK_LIBRARIES(testcase_addrsyntax
 		qsmtp_lib
-		qsmtp_io_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -181,7 +180,7 @@ ADD_EXECUTABLE(testcase_mmap
 		mmap_test.c)
 TARGET_LINK_LIBRARIES(testcase_mmap
 		qsmtp_lib
-		qsmtp_io_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -192,7 +191,7 @@ ADD_EXECUTABLE(testcase_dns
 		dns_test.c)
 TARGET_LINK_LIBRARIES(testcase_dns
 		qsmtp_lib
-		qsmtp_io_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -203,7 +202,7 @@ ADD_EXECUTABLE(testcase_mime
 		mime_test.c)
 TARGET_LINK_LIBRARIES(testcase_mime
 		qsmtp_lib
-		qsmtp_io_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 
@@ -213,10 +212,10 @@ ADD_TEST(NAME "MIME"
 ADD_EXECUTABLE(testcase_antispam
 		antispam_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c
-		${CMAKE_SOURCE_DIR}/lib/dns_helpers.c
-		${CMAKE_SOURCE_DIR}/lib/match.c
 )
 TARGET_LINK_LIBRARIES(testcase_antispam
+		qsmtp_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 

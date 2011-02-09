@@ -1,5 +1,6 @@
 #include "antispam.h"
 #include "qsmtpd.h"
+#include "test_io/testcase_io.h"
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -138,18 +139,7 @@ test_rbl()
 	return err;
 }
 
-int
-main(void)
-{
-	int err = 0;
-
-	err += test_rbl();
-
-	return err;
-}
-
-
-void log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
+void test_log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
 {
 	unsigned int i = 0;
 	static int firstseen;
@@ -165,13 +155,16 @@ void log_writen(int priority __attribute__ ((unused)), const char **msg __attrib
 	logcount++;
 }
 
-void log_write(int priority __attribute__ ((unused)), const char *msg __attribute__ ((unused)))
+int
+main(void)
 {
-}
+	int err = 0;
 
-int data_pending(void)
-{
-	return 1;
+	testcase_setup_log_writen(test_log_writen);
+
+	err += test_rbl();
+
+	return err;
 }
 
 int
@@ -206,6 +199,3 @@ dnstxt(char **a, const char *b)
 	*a = NULL;
 	return 0;
 }
-
-#include "tls.h"
-SSL *ssl;

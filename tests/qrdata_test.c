@@ -2,6 +2,7 @@
 #include "netio.h"
 #include "qrdata.h"
 #include "qremote.h"
+#include "test_io/testcase_io.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -10,6 +11,7 @@
 #include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 enum datastate {
 	ST_START,
@@ -26,8 +28,6 @@ unsigned int may_log_count;
 
 string heloname;
 unsigned int smtpext;
-char linein[4];
-size_t linelen = 3;
 
 char *outbuf;
 size_t outlen;
@@ -319,7 +319,6 @@ dots_detector(const char *msg, const size_t len)
 		fputs("invalid dot recoding\n", stderr);
 		exit(EINVAL);
 	}
-
 }
 
 static void
@@ -376,7 +375,6 @@ recode_detector(const char *msg, const size_t len)
 	/* compare only the length of tmp_orig here as .CRLF is appended */
 	if (strncmp(tmp_msg, tmp_orig, strlen(tmp_orig)) != 0) {
 		fputs("The messages differ after the third Content-Type header\n", stderr);
-fputs(msg, stderr);
 		exit(EINVAL);
 	}
 }
@@ -467,7 +465,6 @@ hdrwrap_detector(const char *msg, const size_t len)
  * This also checks that there is exactly one CRLF.CRLF sequence
  * within msg and that is at the end of the buffer.
  */
-
 static void
 checkcrlf(const char *msg, const size_t len)
 {
@@ -505,31 +502,6 @@ checkcrlf(const char *msg, const size_t len)
 			break;
 		}
 	}
-}
-
-int
-netwrite(const char *msg)
-{
-	switch (state) {
-	case ST_START:
-		if (strcasecmp(msg, "DATA\r\n") != 0) {
-			fputs("invalid message received: ", stderr);
-			fputs(msg, stderr);
-			fputc('\n', stderr);
-			exit(EINVAL);
-		}
-		state = ST_DATA;
-		break;
-	case ST_354:
-		return netnwrite(msg, strlen(msg));
-	default:
-		fputs("netwrite() called unexpected, argument: ", stderr);
-		fputs(msg, stderr);
-		fputc('\n', stderr);
-		exit(EFAULT);
-	}
-
-	return 0;
 }
 
 int
@@ -581,22 +553,39 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 }
 
 int
-netnwrite(const char *s, const size_t l)
+test_netnwrite(const char *s, const size_t l)
 {
-	if (state != ST_354) {
-		fputs("netnwrite() called unexpected\n", stderr);
+	const char *errmsg = NULL;
+
+	switch (state) {
+	case ST_START:
+		if ((strncasecmp(s, "DATA\r\n", l) != 0) || (l != strlen("DATA\r\n"))) {
+			errmsg = "invalid message received: ";
+			fflush(stderr);
+			write(2, errmsg, strlen(errmsg));
+			write(2, s, l);
+			write(2, "\n", l);
+			exit(EINVAL);
+		}
+		state = ST_DATA;
+		return 0;
+	case ST_354:
+		if (outpos + l >= outlen) {
+			fputs("output overflow\n", stderr);
+			exit(EINVAL);
+		}
+
+		memcpy(outbuf + outpos, s, l);
+		outpos += l;
+		return 0;
+	default:
+		errmsg = "netnwrite() called unexpected, argument: ";
+		fflush(stderr);
+		write(2, errmsg, strlen(errmsg));
+		write(2, s, l);
+		write(2, "\n", 1);
 		exit(EFAULT);
 	}
-
-	if (outpos + l >= outlen) {
-		fputs("output overflow\n", stderr);
-		exit(EINVAL);
-	}
-
-	memcpy(outbuf + outpos, s, l);
-	outpos += l;
-
-	return 0;
 }
 
 void
@@ -607,7 +596,7 @@ quit(void)
 }
 
 void
-log_write(int priority, const char *s)
+test_log_write(int priority, const char *s)
 {
 	if (may_log_count > 0) {
 		may_log_count--;
@@ -621,6 +610,9 @@ log_write(int priority, const char *s)
 int main(int argc, char **argv)
 {
 	unsigned int ascii;
+
+	testcase_setup_log_write(test_log_write);
+	testcase_setup_netnwrite(test_netnwrite);
 
 	if (argc == 1) {
 		fputs("Usage: ", stderr);
