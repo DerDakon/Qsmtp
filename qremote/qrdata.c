@@ -636,7 +636,7 @@ send_qp(const char *buf, const off_t len)
 			off += nextoff;
 		}
 
-		if (buf[off] == '-') {
+		if ((off < len) && (buf[off] == '-')) {
 			/* wow: end-boundary as first boundary. What next? Flying cows? */
 
 			/* first: add normal boundary to make this a more or less usefull MIME message, then add an end boundary */
@@ -662,7 +662,7 @@ send_qp(const char *buf, const off_t len)
 			netnwrite("--", 2);
 			netnwrite(boundary.s, boundary.len);
 			off += nextoff;
-			if (buf[off] == '-') {
+			if ((off < len) && (buf[off] == '-')) {
 				/* this is end boundary */
 				netnwrite("--", 2);
 				off += 2;

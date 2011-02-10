@@ -304,11 +304,11 @@ find_boundary(const char *buf, const off_t len, const cstring *boundary)
 
 	if (len < (off_t) (boundary->len + 3))
 		return 0;
-	while (pos < len - 3 - (off_t) boundary->len) {
+	while (pos <= len - 3 - (off_t) boundary->len) {
 		if (((buf[pos] == '\r') || (buf[pos] == '\n')) && (buf[pos + 1] == '-') && (buf[pos + 2] == '-')) {
 			if (!strncmp(buf + pos + 3, boundary->s, boundary->len)) {
 				pos += 3 + boundary->len;
-				if (WSPACE(buf[pos]))
+				if ((pos == len) || WSPACE(buf[pos]))
 					return pos;
 				if (pos + 1 < len) {
 					if ((buf[pos] == '-') && (buf[pos + 1] == '-') &&
