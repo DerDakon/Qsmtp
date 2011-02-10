@@ -347,6 +347,22 @@ static struct {
 		.log_count = 2
 	},
 	{
+		.name = "EndsWithFinalBoundary",
+		.msg = "Subject: end boundary is not followed by linebreak\n"
+		       "Content-Type: multipart/mixed;\r"
+		       " boundary=\"------------0008\"\r"
+		       "\r"
+		       "--------------0008\r"
+		       "Content-Type: text/plain; charset=iso-8859-15\n"
+		       "Content-Transfer-Encoding: 8bit\n"
+		       "\n"
+		       "This is the data part and it is again about money: \244\n"
+		       "--------------0008--",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 2
+	},
+	{
 		.name = NULL
 	}
 };
