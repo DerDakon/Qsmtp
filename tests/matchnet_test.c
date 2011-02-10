@@ -2,13 +2,18 @@
  \brief IP address with netmask testcases
  */
 
+#include "antispam.h"
 #include "match.h"
+#include "qsmtpd.h"
 #include "test_io/testcase_io.h"
 
 #include <assert.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <arpa/inet.h>
+
+struct xmitstat xmitstat;
 
 static int
 ip6_test_match(const char *ipstr, const char *matchstr, const int expect)
@@ -168,7 +173,18 @@ matchdomain_test()
 		i++;
 	}
 
+	/* now check all bad patterns at once, shouldn't make any difference */
+	if (domainmatch(testhost, strlen(testhost), badpatterns) != 0) {
+		fprintf(stderr, "domainmatch() should have returned 0, but returned 1\n");
+		err++;
+	}
+
 	return err;
+}
+
+int dnstxt(char **out __attribute__ ((unused)), const char *host __attribute__ ((unused)))
+{
+	return 0;
 }
 
 int main(void)

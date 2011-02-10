@@ -4,12 +4,14 @@
 #ifndef ANTISPAM_H
 #define ANTISPAM_H
 
+#include <sys/types.h>
+
 /* qsmtpd/antispam.c */
 
 extern void dotip6(char *);
 extern int check_rbl(char *const *, char **);
 extern void tarpit(void);
-extern int domainmatch(const char *, const unsigned int, const char **);
+extern int domainmatch(const char *fqdn, const size_t len, const char **list);
 extern int lookupipbl(int);
 
 /* qsmtpd/spf.c */

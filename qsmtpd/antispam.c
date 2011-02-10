@@ -233,23 +233,18 @@ check_ip6(const unsigned char *buf, const unsigned int len)
  * @return 1 on match, 0 otherwise
  *
  * -if list is NULL terminated and every list[x] and fqdn are 0-terminated there can't be any errors
- * -list is always freed
  */
 int
-domainmatch(const char *fqdn, const unsigned int len, const char **list)
+domainmatch(const char *fqdn, const size_t len, const char **list)
 {
 	unsigned int i = 0;
-	int rc = 0;
 
-	while (list[i]) {
-		if (matchdomain(fqdn, len, list[i])) {
-			rc = 1;
-			break;
-		}
+	while (list[i] != NULL) {
+		if (matchdomain(fqdn, len, list[i]))
+			return 1;
 		i++;
 	}
-	free(list);
-	return rc;
+	return 0;
 }
 
 /**

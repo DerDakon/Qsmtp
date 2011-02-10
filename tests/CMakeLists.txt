@@ -83,7 +83,8 @@ ADD_TEST(NAME "AUTH-LOGIN-errors"
 		COMMAND testcase_auth "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy" errors wrong)
 
 ADD_EXECUTABLE(testcase_matchnet
-		matchnet_test.c)
+		matchnet_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
 
 TARGET_LINK_LIBRARIES(testcase_matchnet
 		qsmtp_lib
