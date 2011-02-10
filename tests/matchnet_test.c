@@ -154,6 +154,13 @@ matchdomain_test()
 		".xample.net",
 		NULL
 	};
+	const char *mixedpatterns[] = {
+		badpatterns[1],
+		badpatterns[0],
+		goodpatterns[1],
+		badpatterns[2],
+		NULL
+	};
 	unsigned int i = 0;
 
 	while (goodpatterns[i] != NULL) {
@@ -176,6 +183,16 @@ matchdomain_test()
 	/* now check all bad patterns at once, shouldn't make any difference */
 	if (domainmatch(testhost, strlen(testhost), badpatterns) != 0) {
 		fprintf(stderr, "domainmatch() should have returned 0, but returned 1\n");
+		err++;
+	}
+
+	if (domainmatch(testhost, strlen(testhost), goodpatterns) != 1) {
+		fprintf(stderr, "domainmatch() should have returned 1, but returned 0\n");
+		err++;
+	}
+
+	if (domainmatch(testhost, strlen(testhost), mixedpatterns) != 1) {
+		fprintf(stderr, "domainmatch() should have returned 1, but returned 0\n");
 		err++;
 	}
 
