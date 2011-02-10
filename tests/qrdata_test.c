@@ -328,6 +328,7 @@ static struct {
 		       "Content-Type: text/plain; charset=iso-8859-15\n"
 		       "\n"
 		       "This is the data part and it is again about money: \244\n"
+		       "This line is long enough so it needs to be wrapped exaclty at the first do.t.\n"
 		       "--------------0008",
 		.filters = 0,
 		.recodeflag = 1,
