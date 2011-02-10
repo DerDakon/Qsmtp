@@ -335,6 +335,18 @@ static struct {
 		.log_count = 2
 	},
 	{
+		.name = "MultipartNoBoundary",
+		.msg = "Subject: message is declared as multipart but has no boundary\r"
+		       "Content-Type: multipart/mixed;\r"
+		       " boundary=\"------------0008\"\r"
+		       "\r\n"
+		       "This is the data part and it is again about money: \244\n"
+		       "This line is long enough so it needs to be wrapped exaclty at the first do.t.\n",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 2
+	},
+	{
 		.name = NULL
 	}
 };

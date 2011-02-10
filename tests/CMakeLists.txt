@@ -148,6 +148,7 @@ FOREACH(PATTERN
 		emptyCRLFheaderWith8bit
 		NoEndBoundary
 		EndInNotFinalBoundary
+		MultipartNoBoundary
 		InvalidPreamble)
 	ADD_TEST(NAME "QrData-${PATTERN}"
 			COMMAND testcase_qrdata ${PATTERN})
