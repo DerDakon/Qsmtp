@@ -270,11 +270,11 @@ lookupipbl(int fd)
 	if ( (i = fstat(fd, &st)) )
 		return i;
 	if (!st.st_size) {
-		while ( (rc = close(fd)) ) {
-			if (errno != EINTR)
-				return rc;
-		}
-		return 0;
+		do {
+			rc = close(fd);
+		} while ((rc == -1) && (errno == EINTR));
+
+		return rc;
 	}
 
 	map = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
