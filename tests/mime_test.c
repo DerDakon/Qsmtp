@@ -73,6 +73,12 @@ test_ws()
 			.result = NULL
 		}
 	};
+	const char *badpatterns[] = {
+		" (a broken text",
+		"(\ra broken\ntext ",
+		"(\ra broken\ntext \\)",
+		NULL
+	};
 	unsigned int i = 0;
 
 	while (patterns[i].raw != NULL) {
@@ -84,6 +90,17 @@ test_ws()
 		} else if (strcmp(res, patterns[i].result) != 0) {
 			fprintf(stderr, "test after '%s' is '%s', but expected was '%s'\n",
 					patterns[i].raw, res, patterns[i].result);
+			err++;
+		}
+		i++;
+	}
+
+	i = 0;
+	while (badpatterns[i] != NULL) {
+		const char *res = skipwhitespace(badpatterns[i], strlen(badpatterns[i]));
+		if (res != NULL) {
+			fprintf(stderr, "text '%s' found after '%s', but none expected\n",
+					res, badpatterns[i]);
 			err++;
 		}
 		i++;
