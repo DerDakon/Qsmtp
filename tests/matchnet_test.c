@@ -9,8 +9,11 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 
 struct xmitstat xmitstat;
@@ -86,21 +89,18 @@ ip6_test(void)
 static int
 ip4_match_test(const char *ipstr, const char *matchstr, const int expect)
 {
-	struct in6_addr s1;
 	struct in_addr s2;
 	unsigned char i;
 	int err;
 	uint32_t mask = 1;
 
-	err = inet_pton(AF_INET6, ipstr, &s1);
-	assert(err == 1);
 	err = inet_pton(AF_INET, matchstr, &s2);
 	assert(err == 1);
 
 	err = 0;
 
 	for (i = 32; i >= 1; --i) {
-		if (ip4_matchnet(&s1, &s2, i) != expect) {
+		if (ip4_matchnet(&xmitstat.sremoteip, &s2, i) != expect) {
 			char maskstr[INET6_ADDRSTRLEN];
 
 			inet_ntop(AF_INET, &s2, maskstr, sizeof(maskstr));
@@ -111,7 +111,7 @@ ip4_match_test(const char *ipstr, const char *matchstr, const int expect)
 		mask <<= 1;
 	}
 
-	if (ip4_matchnet(&s1, &s2, 0) != 1) {
+	if (ip4_matchnet(&xmitstat.sremoteip, &s2, 0) != 1) {
 		char maskstr[INET6_ADDRSTRLEN];
 
 		inet_ntop(AF_INET, &s2, maskstr, sizeof(maskstr));
@@ -129,9 +129,103 @@ ip4_test(void)
 	const char s1str[] = "172.17.42.253";
 	const char s2str[] = "62.27.20.61";
 	int err = 0;
+	char fnbuf[22] = "ip4_matchnet_XXXXXX";
+	int fd;
+	struct in_addr ip4;
+	int i;
+	char ch;
+
+	memset(&xmitstat, 0, sizeof(xmitstat));
+	xmitstat.ipv4conn = 1;
+	i = inet_pton(AF_INET6, ipstr, &xmitstat.sremoteip);
+	assert(i == 1);
 
 	err += ip4_match_test(ipstr, s1str, 1);
 	err += ip4_match_test(ipstr, s2str, 0);
+
+	fd = mkstemp(fnbuf);
+	if (fd == -1) {
+		fprintf(stderr, "can not open temporary file\n");
+		return ++err;
+	}
+
+	i = inet_pton(AF_INET, s2str, &ip4);
+	assert(i == 1);
+
+	/* Test an empty file. Should simply return "no match". */
+	i = lookupipbl(fd);
+	if (i != 0) {
+		fprintf(stderr, "lookupipbl() with empty file should return 0 but returned %i\n", i);
+		err++;
+	}
+
+	fd = open(fnbuf, O_APPEND | O_RDWR, 0600);
+
+	/* write 5 times the same IP with different netmasks.
+	 * None of them should match. */
+	for (i = 0; i < 5; i++) {
+		ch = 8 + 2 * i;
+		write(fd, &ip4, sizeof(ip4));
+		write(fd, &ch, 1);
+	}
+
+	i = lookupipbl(fd);
+	if (i != 0) {
+		fprintf(stderr, "lookupipbl() without matching nets should return 0 but returned %i\n", i);
+		err++;
+	}
+
+	fd = open(fnbuf, O_APPEND | O_RDWR, 0600);
+	if (fd == -1) {
+		fprintf(stderr, "can not open temporary file\n");
+		return ++err;
+	}
+	/* create a file that has invalid length */
+	write(fd, &ip4, sizeof(ip4));
+	i = lookupipbl(fd);
+	if (i != -1) {
+		fprintf(stderr, "lookupipbl() with file of invalid size should have returned -1 but returned %i\n", i);
+		err++;
+	}
+
+	fd = open(fnbuf, O_APPEND | O_RDWR, 0600);
+	if (fd == -1) {
+		fprintf(stderr, "can not open temporary file\n");
+		return ++err;
+	}
+	/* write an invalid netmask */
+	ch = 42;
+	write(fd, &ch, 1);
+	i = lookupipbl(fd);
+	if (i != -1) {
+		fprintf(stderr, "lookupipbl() with file containing invalid netmask should have returned -1 but returned %i\n", i);
+		err++;
+	}
+	fd = open(fnbuf, O_RDWR, 0600);
+	if (fd == -1) {
+		fprintf(stderr, "can not open temporary file\n");
+		return ++err;
+	}
+	if (lseek(fd, -1, SEEK_END) == -1) {
+		close(fd);
+		fprintf(stderr, "can not seek in temporary file\n");
+		return ++err;
+	}
+
+	ch = 24;
+	write(fd, &ch, 1);
+	i = inet_pton(AF_INET, s1str, &ip4);
+	assert(i);
+	write(fd, &ip4, sizeof(ip4));
+	write(fd, &ch, 1);
+
+	i = lookupipbl(fd);
+	if (i <= 0) {
+		fprintf(stderr, "lookupipbl() with file valid file with match should return greater 0 but returned %i\n", i);
+		err++;
+	}
+
+	unlink(fnbuf);
 
 	return err;
 }
@@ -216,6 +310,17 @@ int main(void)
 
 	if (matchdomain_test())
 		errcnt++;
+
+	/* Now ignore the log calls. Until now they were an error,
+	 * now lookupipbl() should complain about not being able to lock. */
+	testcase_ignore_log_write();
+	if (lookupipbl(-1) != -1) {
+		fprintf(stderr, "lookupipbl(-1) should return an error\n");
+		errcnt++;
+	} else if (errno != ENOLCK) {
+		fprintf(stderr, "lookupipbl(-1) should set errno to ENOLCK\n");
+		errcnt++;
+	}
 
 	return (errcnt != 0) ? 1 : 0;
 }
