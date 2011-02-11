@@ -278,15 +278,18 @@ lookupipbl(int fd)
 	}
 
 	map = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	if (map == MAP_FAILED) {
-		int e = errno;
+	i = errno;
+	do {
+		rc = close(fd);
+	} while ((rc == -1) && (errno != EINTR));
 
-		while (close(fd)) {
-			if (errno != EINTR)
-				break;
-		}
-		errno = e;
-		return -1;
+	if (map == MAP_FAILED)
+		return i;
+
+	if (rc == -1) {
+		i = errno;
+		munmap(map, st.st_size);
+		return i;
 	}
 
 	if (xmitstat.ipv4conn) {
@@ -295,10 +298,6 @@ lookupipbl(int fd)
 		rc = check_ip6(map, st.st_size);
 	}
 	munmap(map, st.st_size);
-	while ((i = close(fd))) {
-		if (errno != EINTR) {
-			break;
-		}
-	}
-	return i ? i : rc;
+
+	return rc;
 }
