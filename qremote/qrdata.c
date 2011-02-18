@@ -160,11 +160,12 @@ send_plain(const char *buf, const off_t len)
 static void
 recodeheader(void)
 {
-	char buf[64 + heloname.len + strlen(VERSIONSTRING)];
+	static const char recodedstr[] = "Content-Transfer-Encoding: "
+			"quoted-printable (recoded by: Qremote " QSMTPVERSION " at ";
+	char buf[heloname.len + 3 + strlen(recodedstr)];
 
-	memcpy(buf, "Content-Transfer-Encoding: quoted-printable (recoded by: " VERSIONSTRING " at ",
-			57 + strlen(VERSIONSTRING) + 4);
-	memcpy(buf + 61 + strlen(VERSIONSTRING), heloname.s, heloname.len);
+	memcpy(buf, recodedstr, strlen(recodedstr));
+	memcpy(buf + strlen(recodedstr), heloname.s, heloname.len);
 	buf[sizeof(buf) - 3] = ')';
 	buf[sizeof(buf) - 2] = '\r';
 	buf[sizeof(buf) - 1] = '\n';
