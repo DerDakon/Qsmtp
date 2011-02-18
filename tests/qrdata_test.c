@@ -688,8 +688,7 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 
 		if (ret == 0) {
 			if ((opos != outpos) || (epos != msg_expect_len)) {
-				fprintf(stderr, "message did not have the expected length %lu %lu %lu %lu\n",
-						(unsigned)epos, (unsigned)outlen, (unsigned)opos, (unsigned)msg_expect_len);
+				fprintf(stderr, "message did not have the expected length\n");
 				ret = EINVAL;
 			}
 		}
