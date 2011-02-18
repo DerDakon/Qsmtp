@@ -7,11 +7,15 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <mmap.h>
+#include <sys/mman.h>
 
 enum datastate {
 	ST_START,
@@ -32,6 +36,10 @@ unsigned int smtpext;
 char *outbuf;
 size_t outlen;
 size_t outpos;
+
+static int msgdata_mmaped;		/**< 1 if msgdata was mmap()'ed from file */
+static const unsigned char *msg_expect;	/**< if expected output is given it is mmap()'ed here */
+static off_t msg_expect_len;		/**< length of msg_expect */
 
 #ifdef DEBUG_IO
 int in_data;
@@ -403,76 +411,6 @@ static struct {
 	},
 	{
 		.name = "longChunkBeforeRecodeMultipart",
-		.msg = "Subject: long good block before stuff that needs recode\r\n"
-		       "Content-Type: multipart/mixed;\r"
-		       " boundary=\"------------0008\"\r\n\r\n"
-		       "--------------0008\r"
-				"Content-type:text/plain; charset=iso-8859-15\r\n\r\n"
-				"   50 78901234567890123456789012345678901234567890\r\n"
-				"  100 78901234567890123 56789012345678901234567890\r\n"
-				"  150 12345678901234567890123456789012345678901234\r\n"
-				"  200 12345678901234567890123456789012345678901234\r\n"
-				"  250 12345678901234567890123456789012345678901234\r\n"
-				"  300 12345678901234567890123456789012345678901234\r\n"
-				"  350 12345678901234567890123456789012345678901234\r\n"
-				"  400 12345678901234567890123456789012345678901234\r\n"
-				"  450 12345678901234567890123456789012345678901234\r\n"
-				"  500 12345678901234567890123456789012345678901234\r\n"
-				"  550 12345678901234567890123456789012345678901234\r\n"
-				"  600 12345678901234567890123456789012345678901234\r\n"
-				"  650 12345678901234567890123456789012345678901234\r\n"
-				"  700 12345678901234567890123456789012345678901234\r\n"
-				"  750 12345678901234567890123456789012345678901234\r\n"
-				"  800 12345678901234567890123456789012345678901234\r\n"
-				"  850 12345678901234567890123456789012345678901234\r\n"
-				"  900 12345678901234567890123456789012345678901234\r\n"
-				"  950 12345678901234567890123456789012345678901234\r\n"
-				" 1000 12345678901234567890123456789012345678901234\r\n"
-				" 1050 12345678901234567890123456789012345678901234\r\n"
-				" 1100 12345678901234567890123456789012345678901234\r\n"
-				" 1150 12345678901234567890123456789012345678901234\r\n"
-				" 1200 12345678901234567890123456789012345678901234\r\n"
-				" 1250 12345678901234567890123456789012345678901234\r\n"
-				" 1300 12345678901234567890123456789012345678901234\r\n"
-				" 1350 12345678901234567890123456789012345678901234\r\n"
-				" 1400 12345678901234567890123456789012345678901234\r\n"
-				" 1450 12345678901234567890123456789012345678901234\r\n"
-				" 1500 12345678901234567890123456789012345678901234\r\n"
-				"another line that needs r\244code\t\r\n"
-		       "--------------0008\r"
-				"Content-type:text/plain; charset=us-ascii\r\n\r\n"
-				"   50 78901234567890123456789012345678901234567890\r\n"
-				"  100 78901234567890123 56789012345678901234567890\r\n"
-				"  150 12345678901234567890123456789012345678901234\r\n"
-				"  200 12345678901234567890123456789012345678901234\r\n"
-				"  250 12345678901234567890123456789012345678901234\r\n"
-				"  300 12345678901234567890123456789012345678901234\r\n"
-				"  350 12345678901234567890123456789012345678901234\r\n"
-				"  400 12345678901234567890123456789012345678901234\r\n"
-				"  450 12345678901234567890123456789012345678901234\r\n"
-				"  500 12345678901234567890123456789012345678901234\r\n"
-				"  550 12345678901234567890123456789012345678901234\r\n"
-				"  600 12345678901234567890123456789012345678901234\r\n"
-				"  650 12345678901234567890123456789012345678901234\r\n"
-				"  700 12345678901234567890123456789012345678901234\r\n"
-				"  750 12345678901234567890123456789012345678901234\r\n"
-				"  800 12345678901234567890123456789012345678901234\r\n"
-				"  850 12345678901234567890123456789012345678901234\r\n"
-				"  900 12345678901234567890123456789012345678901234\r\n"
-				"  950 12345678901234567890123456789012345678901234\r\n"
-				" 1000 12345678901234567890123456789012345678901234\r\n"
-				" 1050 12345678901234567890123456789012345678901234\r\n"
-				" 1100 12345678901234567890123456789012345678901234\r\n"
-				" 1150 12345678901234567890123456789012345678901234\r\n"
-				" 1200 12345678901234567890123456789012345678901234\r\n"
-				" 1250 12345678901234567890123456789012345678901234\r\n"
-				" 1300 12345678901234567890123456789012345678901234\r\n"
-				" 1350 12345678901234567890123456789012345678901234\r\n"
-				" 1400 12345678901234567890123456789012345678901234\r\n"
-				" 1450 12345678901234567890123456789012345678901234\r\n"
-				" 1500 12345678901234567890123456789012345678901234\r\n"
-				"this part is ascii and doesn't need recoding\t\r\n"
-		       "--------------0008--\r\n",
 		.filters = 0,
 		.recodeflag = 1,
 		.log_count = 0
@@ -502,7 +440,7 @@ recode_detector(const char *msg, const size_t len)
 	unsigned int ct_cnt = 0;
 	unsigned int ct_cnt_orig = 0;
 	const char *tmp_msg = msg;
-	const char *tmp_orig = testpatterns[usepattern].msg;
+	const char *tmp_orig = msgdata;
 
 	if (need_recode(msg, len) != 0) {
 		fputs("The message should not need recoding after recoding\n", stderr);
@@ -530,15 +468,15 @@ recode_detector(const char *msg, const size_t len)
 
 	tmp_msg = strstr(msg, ct_str);
 	tmp_msg = strstr(tmp_msg + 1, ct_str);
-	tmp_orig = strstr(testpatterns[usepattern].msg, ct_str);
+	tmp_orig = strstr(msgdata, ct_str);
 	tmp_orig = strstr(tmp_orig + 1, ct_str);
 
-	if (tmp_msg - msg != tmp_orig - testpatterns[usepattern].msg) {
+	if (tmp_msg - msg != tmp_orig - msgdata) {
 		fputs("The length to the second Content-Type header differs in original and recoded message\n", stderr);
 		exit(EINVAL);
 	}
 
-	if (memcmp(msg, testpatterns[usepattern].msg, tmp_msg - msg) != 0) {
+	if (memcmp(msg, msgdata, tmp_msg - msg) != 0) {
 		fputs("The messages until the second Content-Type header differ\n", stderr);
 		exit(EINVAL);
 	}
@@ -565,8 +503,8 @@ recode_detector(const char *msg, const size_t len)
 static void
 hdrwrap_detector(const char *msg, const size_t len)
 {
-	const char *tmp_orig = testpatterns[usepattern].msg;
-	const size_t orig_len = strlen(tmp_orig);
+	const char *tmp_orig = msgdata;
+	const size_t orig_len = msgsize;
 	size_t orig_off = 0;
 	size_t new_off = 0;
 
@@ -697,6 +635,8 @@ netget(void)
 int
 checkreply(const char *status, const char **pre __attribute__ ((unused)), const int mask)
 {
+	int ret = 0;
+
 	if (strcmp("KZD", status) != 0)
 		exit(EINVAL);
 
@@ -721,9 +661,50 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 		exit(EFAULT);
 	}
 
+	/* we need to do the line ending recoding here as CONFIGURE_FILE
+	 * of CMake always outputs native line endings. */
+	if (msg_expect != NULL) {
+		off_t opos;
+		off_t epos = 0;
+
+		for (opos = 0; opos < outpos; opos++) {
+			if (outbuf[opos] == '\r') {
+				assert(outbuf[++opos] == '\n');
+				if (msg_expect[epos++] != '\n') {
+					fprintf(stderr, "unexpected line end detected in recoded buffer at position %lu\n",
+							(unsigned long) opos);
+					ret = EINVAL;
+					break;
+				}
+			} else if ((unsigned char)outbuf[opos] != msg_expect[epos]) {
+				fprintf(stderr, "unexpected character %u at pos %lu, %u was expected\n",
+						(unsigned char)outbuf[opos], (unsigned long)opos, msg_expect[epos]);
+				ret = EINVAL;
+				break;
+			} else {
+				epos++;
+			}
+		}
+
+		if (ret == 0) {
+			if ((opos != outpos) || (epos != msg_expect_len)) {
+				fprintf(stderr, "message did not have the expected length %lu %lu %lu %lu\n",
+						(unsigned)epos, (unsigned)outlen, (unsigned)opos, (unsigned)msg_expect_len);
+				ret = EINVAL;
+			}
+		}
+	}
+
 	free(outbuf);
 	outbuf = NULL;
-	exit(0);
+
+	if (msgdata_mmaped)
+		munmap((void *)msgdata, msgsize);
+
+	if (msg_expect != NULL)
+		munmap((void *)msg_expect, msg_expect_len);
+
+	exit(ret);
 }
 
 int
@@ -784,6 +765,8 @@ test_log_write(int priority, const char *s)
 int main(int argc, char **argv)
 {
 	unsigned int ascii;
+	int fd;
+	char fname[PATH_MAX];
 
 	testcase_setup_log_write(test_log_write);
 	testcase_setup_netnwrite(test_netnwrite);
@@ -810,15 +793,59 @@ int main(int argc, char **argv)
 
 	may_log_count = testpatterns[usepattern].log_count;
 
-	/* worst case we need to QP-encode every byte and append CRLF.CRLF */
-	/* also there could be some additional headers or boundaries */
-	outlen = strlen(testpatterns[usepattern].msg) * 3 + 200;
+	if (testpatterns[usepattern].msg != NULL) {
+		msgdata = testpatterns[usepattern].msg;
+		msgsize = strlen(msgdata);
+	} else {
+		snprintf(fname, sizeof(fname), "%s/qrdata_test_data/%s.in",
+				getenv("QRDATA_INPUT_DIR"), testpatterns[usepattern].name);
+		fd = open(fname, O_RDONLY);
+		if (fd == -1) {
+			fprintf(stderr, "error opening input file %s\n", fname);
+			return EFAULT;
+		}
+
+		msgdata = mmap_fd(fd, &msgsize);
+		close(fd);
+		if (msgdata == NULL) {
+			fprintf(stderr, "error mmap()'ing %s\n", fname);
+			return EFAULT;
+		}
+
+		msgdata_mmaped = 1;
+	}
+
+	snprintf(fname, sizeof(fname), "qrdata_test_data/%s.out", testpatterns[usepattern].name);
+	fd = open(fname, O_RDONLY);
+	if ((fd == -1) && (errno != ENOENT)) {
+		fprintf(stderr, "error opening output file %s\n", fname);
+		return EFAULT;
+	} else if (fd != -1) {
+		msg_expect = mmap_fd(fd, &msg_expect_len);
+		close(fd);
+		if (msg_expect == NULL) {
+			fprintf(stderr, "error mmap()'ing %s\n", fname);
+			return EFAULT;
+		}
+	}
+
+	/* worst case we need to QP-encode every byte and append CRLF.CRLF *
+	 * also there could be some additional headers or boundaries */
+	if (msg_expect_len != 0) {
+		off_t o;
+		outlen = msg_expect_len;
+
+		for (o = 0; o < msg_expect_len; o++)
+			if (msg_expect[o] == '\n')
+				outlen++;
+
+		outlen += 2;
+	} else {
+		outlen = msgsize * 3 + 200;
+	}
 	outbuf = malloc(outlen);
 	if (outbuf == NULL)
 		return ENOMEM;
-
-	msgdata = testpatterns[usepattern].msg;
-	msgsize = strlen(msgdata);
 
 	ascii = need_recode(msgdata, msgsize);
 
