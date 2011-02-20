@@ -416,6 +416,12 @@ static struct {
 		.log_count = 0
 	},
 	{
+		.name = "wrapHeadersWithLongParts",
+		.filters = 0,
+		.recodeflag = 4,
+		.log_count = 0
+	},
+	{
 		.name = NULL
 	}
 };

@@ -195,11 +195,11 @@ wrap_line(const char *buf, off_t len)
 		/* make sure that the parts are not too short */
 		if (partoff < 50) {
 			/* too short: look if we can find a longer part */
-			partoff = 800;
-			while ((partoff < 970) && (buf[pos + partoff] != ' '))
-				partoff++;
-			if (partoff >= 970)
-				partoff = 800;
+			off_t lateoff = 800;
+			while ((lateoff < 970) && (buf[pos + lateoff] != ' '))
+				lateoff++;
+			if (lateoff < 970)
+				partoff = lateoff;
 		}
 		if (partoff + bo >= sizeof(sendbuf) - 4) {
 			netnwrite(sendbuf, bo);
@@ -248,7 +248,7 @@ send_wrapped(const char *buf, off_t pos, off_t *off, off_t *ll, const unsigned i
 		po = wrap_line(buf + pos, *ll);
 		pos += po;
 		/* if wrap_line() has not send the entire line we can skip over
-			* the last part, we now know it's short enough */
+		 * the last part, we now know it's short enough */
 		if (po != *ll) {
 			*ll -= po;
 		} else {

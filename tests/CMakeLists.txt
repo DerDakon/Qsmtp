@@ -155,6 +155,7 @@ FOREACH(PATTERN
 		MultipartNoBoundary
 		longChunkBeforeRecode
 		longChunkBeforeRecodeMultipart
+		wrapHeadersWithLongParts
 		InvalidPreamble)
 	ADD_TEST(NAME "QrData-${PATTERN}"
 			COMMAND testcase_qrdata ${PATTERN})
