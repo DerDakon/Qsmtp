@@ -170,6 +170,14 @@ ENDFOREACH(PATTERN)
 SET_TESTS_PROPERTIES(QrData-8bitHeader PROPERTIES
 		PASS_REGULAR_EXPRESSION "^D5\\.6\\.3 message contains unencoded 8bit data in message header")
 
+ADD_TEST(NAME QrData-DATA-4xx-error COMMAND testcase_qrdata data_reply_400 temporary error)
+SET_TESTS_PROPERTIES(QrData-DATA-4xx-error PROPERTIES
+		PASS_REGULAR_EXPRESSION "^Z4\\.3\\.0 .*temporary error")
+
+ADD_TEST(NAME QrData-DATA-5xx-error COMMAND testcase_qrdata data_reply_500 permanent error)
+SET_TESTS_PROPERTIES(QrData-DATA-5xx-error PROPERTIES
+		PASS_REGULAR_EXPRESSION "^D5\\.3\\.0 .*permanent error")
+
 ADD_EXECUTABLE(testcase_fmt
 		fmt_test.c)
 TARGET_LINK_LIBRARIES(testcase_fmt

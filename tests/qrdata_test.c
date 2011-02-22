@@ -27,6 +27,7 @@ enum datastate {
 };
 
 static enum datastate state = ST_START;
+static unsigned int datareply;
 
 unsigned int may_log_count;
 
@@ -628,7 +629,10 @@ netget(void)
 	switch (state) {
 	case ST_DATA:
 		state = ST_354;
-		return 354;
+		if (datareply != 0)
+			return datareply;
+		else
+			return 354;
 	case ST_DATAEND:
 		state = ST_DATADONE;
 		return 250;
@@ -751,6 +755,9 @@ test_netnwrite(const char *s, const size_t l)
 void
 quit(void)
 {
+	if (datareply != 0)
+		exit(0);
+
 	fputs("quit() called unexpected\n", stderr);
 	exit(EFAULT);
 }
@@ -786,77 +793,98 @@ int main(int argc, char **argv)
 	heloname.s = "foo.bar.example.com";
 	heloname.len = strlen(heloname.s);
 
-	for (usepattern = 0; testpatterns[usepattern].name != NULL; usepattern++) {
-		if (strcmp(testpatterns[usepattern].name, argv[1]) == 0)
-			break;
-	}
+	if ((strcmp(argv[1], "data_reply_400") == 0) || (strcmp(argv[1], "data_reply_500") == 0)) {
+		int i;
 
-	if (testpatterns[usepattern].name == NULL) {
-		fputs("invalid testpattern specified\n", stderr);
-		return EFAULT;
-	}
+		if (strcmp(argv[1], "data_reply_400") == 0)
+			datareply = 400;
+		else
+			datareply = 500;
+		if (argc < 3) {
+			fprintf(stderr, "Usage: %s %s <output message>\n", argv[0], argv[1]);
+			return EFAULT;
+		}
 
-	may_log_count = testpatterns[usepattern].log_count;
-
-	if (testpatterns[usepattern].msg != NULL) {
-		msgdata = testpatterns[usepattern].msg;
-		msgsize = strlen(msgdata);
+		sprintf(linein, "%u ", datareply);
+		for (i = 2; i < argc; i++) {
+			strcat(linein, argv[i]);
+			strcat(linein, " ");
+		}
+		strcat(linein, "\r\n");
+		linelen = strlen(linein);
 	} else {
-		snprintf(fname, sizeof(fname), "%s/qrdata_test_data/%s.in",
-				getenv("QRDATA_INPUT_DIR"), testpatterns[usepattern].name);
+		for (usepattern = 0; testpatterns[usepattern].name != NULL; usepattern++) {
+			if (strcmp(testpatterns[usepattern].name, argv[1]) == 0)
+				break;
+		}
+
+		if (testpatterns[usepattern].name == NULL) {
+			fputs("invalid testpattern specified\n", stderr);
+			return EFAULT;
+		}
+
+		may_log_count = testpatterns[usepattern].log_count;
+
+		if (testpatterns[usepattern].msg != NULL) {
+			msgdata = testpatterns[usepattern].msg;
+			msgsize = strlen(msgdata);
+		} else {
+			snprintf(fname, sizeof(fname), "%s/qrdata_test_data/%s.in",
+					getenv("QRDATA_INPUT_DIR"), testpatterns[usepattern].name);
+			fd = open(fname, O_RDONLY);
+			if (fd == -1) {
+				fprintf(stderr, "error opening input file %s\n", fname);
+				return EFAULT;
+			}
+
+			msgdata = mmap_fd(fd, &msgsize);
+			close(fd);
+			if (msgdata == NULL) {
+				fprintf(stderr, "error mmap()'ing %s\n", fname);
+				return EFAULT;
+			}
+
+			msgdata_mmaped = 1;
+		}
+
+		snprintf(fname, sizeof(fname), "qrdata_test_data/%s.out", testpatterns[usepattern].name);
 		fd = open(fname, O_RDONLY);
-		if (fd == -1) {
-			fprintf(stderr, "error opening input file %s\n", fname);
+		if ((fd == -1) && (errno != ENOENT)) {
+			fprintf(stderr, "error opening output file %s\n", fname);
 			return EFAULT;
+		} else if (fd != -1) {
+			msg_expect = mmap_fd(fd, &msg_expect_len);
+			close(fd);
+			if (msg_expect == NULL) {
+				fprintf(stderr, "error mmap()'ing %s\n", fname);
+				return EFAULT;
+			}
 		}
 
-		msgdata = mmap_fd(fd, &msgsize);
-		close(fd);
-		if (msgdata == NULL) {
-			fprintf(stderr, "error mmap()'ing %s\n", fname);
+		/* worst case we need to QP-encode every byte and append CRLF.CRLF *
+		* also there could be some additional headers or boundaries */
+		if (msg_expect_len != 0) {
+			off_t o;
+			outlen = msg_expect_len;
+
+			for (o = 0; o < msg_expect_len; o++)
+				if (msg_expect[o] == '\n')
+					outlen++;
+
+			outlen += 2;
+		} else {
+			outlen = msgsize * 3 + 200;
+		}
+		outbuf = malloc(outlen);
+		if (outbuf == NULL)
+			return ENOMEM;
+
+		ascii = need_recode(msgdata, msgsize);
+
+		if (ascii != testpatterns[usepattern].recodeflag) {
+			fprintf(stderr, "need_recode() returned 0x%x, expected was 0x%x\n", ascii, testpatterns[usepattern].recodeflag);
 			return EFAULT;
 		}
-
-		msgdata_mmaped = 1;
-	}
-
-	snprintf(fname, sizeof(fname), "qrdata_test_data/%s.out", testpatterns[usepattern].name);
-	fd = open(fname, O_RDONLY);
-	if ((fd == -1) && (errno != ENOENT)) {
-		fprintf(stderr, "error opening output file %s\n", fname);
-		return EFAULT;
-	} else if (fd != -1) {
-		msg_expect = mmap_fd(fd, &msg_expect_len);
-		close(fd);
-		if (msg_expect == NULL) {
-			fprintf(stderr, "error mmap()'ing %s\n", fname);
-			return EFAULT;
-		}
-	}
-
-	/* worst case we need to QP-encode every byte and append CRLF.CRLF *
-	 * also there could be some additional headers or boundaries */
-	if (msg_expect_len != 0) {
-		off_t o;
-		outlen = msg_expect_len;
-
-		for (o = 0; o < msg_expect_len; o++)
-			if (msg_expect[o] == '\n')
-				outlen++;
-
-		outlen += 2;
-	} else {
-		outlen = msgsize * 3 + 200;
-	}
-	outbuf = malloc(outlen);
-	if (outbuf == NULL)
-		return ENOMEM;
-
-	ascii = need_recode(msgdata, msgsize);
-
-	if (ascii != testpatterns[usepattern].recodeflag) {
-		fprintf(stderr, "need_recode() returned 0x%x, expected was 0x%x\n", ascii, testpatterns[usepattern].recodeflag);
-		return EFAULT;
 	}
 
 	outpos = 0;
