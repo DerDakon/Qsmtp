@@ -239,6 +239,7 @@ static struct {
 	{
 		.name = "8bitLF",
 		.msg = "Subject: 8bit recode test\r"
+		       "Content-Transfer-Encoding: 8bit\r"
 		       "Content-Type: multipart/mixed;\r"
 		       " boundary=\"------------0008\"\r"
 		       "\r"
