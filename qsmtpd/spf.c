@@ -48,6 +48,8 @@ spfreceived(int fd, const int spf)
 
 	int rc;
 	char clientip[INET6_ADDRSTRLEN];
+	const char *spfdomain = (xmitstat.mailfrom.len == 0) ? HELOSTR : xmitstat.mailfrom.s;
+	const size_t spfdomainlen = (xmitstat.mailfrom.len == 0) ? HELOLEN : xmitstat.mailfrom.len;
 
 	if (spf == SPF_IGNORE)
 		return 0;
@@ -73,7 +75,7 @@ spfreceived(int fd, const int spf)
 	switch (spf) {
 	case SPF_FAIL_MALF:
 		WRITE(fd, "domain of\n\t");
-		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITEl(fd, spfdomain, spfdomainlen);
 		WRITE(fd, " uses mechanism not recognized by this client");
 		if ((xmitstat.spfexp != NULL) && (strchr(xmitstat.spfexp, '%') != NULL)) {
 			WRITE(fd, ", unsafe characters may have been replaced by '%'");
@@ -83,18 +85,18 @@ spfreceived(int fd, const int spf)
 	case SPF_HARD_ERROR:
 	case SPF_TEMP_ERROR:
 		WRITE(fd, "error in processing during lookup of ");
-		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITEl(fd, spfdomain, spfdomainlen);
 		WRITE(fd, ": DNS problem)\n");
 		break;
 	case SPF_NONE:
 		WRITE(fd, "domain of ");
-		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITEl(fd, spfdomain, spfdomainlen);
 		WRITE(fd, " does not designate permitted sender hosts)\n");
 		return 0;
 	case SPF_SOFTFAIL:
 	case SPF_FAIL_PERM:
 		WRITE(fd, "domain of ");
-		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITEl(fd, spfdomain, spfdomainlen);
 		WRITE(fd, " does not designate ");
 		WRITE(fd, clientip);
 		WRITE(fd, " as permitted sender)\n");
@@ -102,12 +104,12 @@ spfreceived(int fd, const int spf)
 	case SPF_NEUTRAL:
 		WRITE(fd, clientip);
 		WRITE(fd, " is neither permitted nor denied by domain of ");
-		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITEl(fd, spfdomain, spfdomainlen);
 		WRITE(fd, ")\n");
 		break;
 	case SPF_PASS:
 		WRITE(fd, "domain of ");
-		WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+		WRITEl(fd, spfdomain, spfdomainlen);
 		WRITE(fd, " designates ");
 		WRITE(fd, clientip);
 		WRITE(fd, " as permitted sender)\n");
