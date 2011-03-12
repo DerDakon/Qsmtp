@@ -1,12 +1,14 @@
 /** @file mime.c
   \brief MIME handling functions
  */
+#include "mime.h"
+
 #include <strings.h>
 #include <string.h>
 #include <unistd.h>
-#include "mime.h"
-#include "sstring.h"
+#include "netio.h"
 #include "qrdata.h"
+#include "sstring.h"
 
 /**
  * skip whitespaces in header line
@@ -139,10 +141,10 @@ is_multipart(const cstring *line, cstring *boundary)
 						boundary->len = e - ch - 10;
 						if (!e) {
 							write(1, "D5.6.3 boundary definition is unterminated quoted string\n", 58);
-							exit(0);
+							net_conn_shutdown(shutdown_abort);
 						} else if (boundary->len > 68) {
 							write(1, "D5.6.3 boundary definition is too long\n", 40);
-							exit(0);
+							net_conn_shutdown(shutdown_abort);
 						}
 						j = boundary->len;
 					} else {
@@ -155,7 +157,7 @@ is_multipart(const cstring *line, cstring *boundary)
 					}
 					if (!boundary->len) {
 						write(1, "D5.6.3 boundary definition is empty\n", 37);
-						exit(0);
+						net_conn_shutdown(shutdown_abort);
 					}
 					while (j > 0) {
 						j--;
@@ -167,7 +169,7 @@ is_multipart(const cstring *line, cstring *boundary)
 									(boundary->s[j] == '_') || (boundary->s[j] == '=') ||
 									(boundary->s[j] == '_'))) {
 							write(1, "D5.6.3 boundary definition contains invalid character\n", 55);
-							exit(0);
+							net_conn_shutdown(shutdown_abort);
 						}
 					}
 					/* we have a valid boundary definition, that's all what we're interested in */
