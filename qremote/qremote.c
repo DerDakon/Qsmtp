@@ -26,8 +26,9 @@
 #include "starttlsr.h"
 #include "qrdata.h"
 #include "fmt.h"
+#include "tls.h"
 
-int socketd;
+int socketd = -1;
 string heloname;
 unsigned int smtpext;
 char *rhost;
@@ -36,16 +37,42 @@ char *partner_fqdn;
 size_t chunksize;
 struct in6_addr outip;
 
-static void quitmsg(void);
+static void
+quitmsg(void)
+{
+	netwrite("QUIT\r\n");
+	do {
+		/* don't care about what he replies: we want to quit, if he don't want us to he must pay money *eg* */
+		if (net_read()) {
+			log_write(LOG_ERR, "network read error while waiting for QUIT reply");
+			break;
+		}
+	} while ((linelen >= 4) && (linein[3] == '-'));
+	close(socketd);
+	socketd = -1;
+}
+
+void
+net_conn_shutdown(const enum conn_shutdown_type sd_type)
+{
+	if ((sd_type == shutdown_clean) && (socketd >= 0))
+		quitmsg();
+
+	if (ssl != NULL) {
+		ssl_free(ssl);
+		ssl = NULL;
+	}
+
+	exit(0);
+}
 
 void
 err_mem(const int doquit)
 {
-	if (doquit)
-		quitmsg();
 /* write text including 0 byte */
 	write(1, "Z4.3.0 Out of memory.\n", 23);
-	_exit(0);
+
+	net_conn_shutdown(doquit ? shutdown_clean : shutdown_abort);
 }
 
 void
@@ -61,7 +88,7 @@ err_confn(const char **errmsg)
 	log_writen(LOG_ERR, errmsg);
 	/* write text including 0 byte */
 	write(1, "Z4.3.0 Configuration error.\n", 29);
-	_exit(0);
+	net_conn_shutdown(shutdown_clean);
 }
 
 static void
@@ -128,26 +155,10 @@ setup(void)
 #endif
 }
 
-static void
-quitmsg(void)
-{
-	netwrite("QUIT\r\n");
-	do {
-/* don't care about what he replies: we want to quit, if he don't want us to he must pay money *eg* */
-		if (net_read()) {
-			log_write(LOG_ERR, "network read error while waiting for QUIT reply");
-			break;
-		}
-	} while ((linelen >= 4) && (linein[3] == '-'));
-	close(socketd);
-	socketd = -1;
-}
-
 void
 quit(void)
 {
-	quitmsg();
-	exit(0);
+	net_conn_shutdown(shutdown_clean);
 }
 
 /**
@@ -420,7 +431,7 @@ dieerror(int error)
 				log_write(LOG_WARNING, "connection died");
 				break;
 	}
-	_exit(0);
+	net_conn_shutdown(shutdown_abort);
 }
 
 static const char *mailerrmsg[] = {"Connected to ", NULL, " but sender was rejected", NULL};

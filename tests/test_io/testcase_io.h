@@ -4,6 +4,8 @@
 #include <sys/types.h>
 #include <openssl/ssl.h>
 
+#include "netio.h"
+
 #define DECLARE_TC_SETUP(a) \
 	extern void testcase_setup_##a(func_##a *f); \
 	extern void testcase_ignore_##a()
@@ -31,6 +33,9 @@ DECLARE_TC_SETUP(net_readline);
 
 typedef int (func_data_pending)(void);
 DECLARE_TC_SETUP(data_pending);
+
+typedef void (func_net_conn_shutdown)(const enum conn_shutdown_type);
+DECLARE_TC_SETUP(net_conn_shutdown);
 
 typedef void (func_log_writen)(int priority, const char **s);
 DECLARE_TC_SETUP(log_writen);

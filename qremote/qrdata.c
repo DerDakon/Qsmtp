@@ -388,7 +388,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 		/* no empty line found: treat whole message as header. But this means we have
 		 * 8bit characters in header which is a bug in the client that we can't handle */
 		write(1, "D5.6.3 message contains unencoded 8bit data in message header\n", 63);
-		exit(0);
+		net_conn_shutdown(shutdown_abort);
 	}
 
 	if ((*multipart = is_multipart(&ctype, boundary)) > 0) {
@@ -401,7 +401,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 		}
 	} else if (*multipart < 0) {
 		write(1, "D5.6.3 syntax error in Content-Type message header\n", 52);
-		exit(0);
+		net_conn_shutdown(shutdown_abort);
 	} else {
 		if (!body_recode) {
 			wrap_header(buf, header);

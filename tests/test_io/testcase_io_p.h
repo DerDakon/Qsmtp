@@ -14,6 +14,7 @@ DECLARE_TC_PTR(netnwrite);
 DECLARE_TC_PTR(net_readbin);
 DECLARE_TC_PTR(net_readline);
 DECLARE_TC_PTR(data_pending);
+DECLARE_TC_PTR(net_conn_shutdown);
 
 DECLARE_TC_PTR(log_writen);
 DECLARE_TC_PTR(log_write);

@@ -775,6 +775,13 @@ test_log_write(int priority, const char *s)
 
 }
 
+void
+test_net_conn_shutdown(const enum conn_shutdown_type sdtype __attribute__((unused)))
+{
+	free(outbuf);
+	outbuf = NULL;
+}
+
 int main(int argc, char **argv)
 {
 	unsigned int ascii;
@@ -783,6 +790,7 @@ int main(int argc, char **argv)
 
 	testcase_setup_log_write(test_log_write);
 	testcase_setup_netnwrite(test_netnwrite);
+	testcase_setup_net_conn_shutdown(test_net_conn_shutdown);
 
 	if (argc == 1) {
 		fputs("Usage: ", stderr);

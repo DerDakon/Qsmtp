@@ -24,6 +24,12 @@ int in_data;
 size_t chunksize;
 
 void quit(void) { return; }
+
+void net_conn_shutdown(const enum conn_shutdown_type sd_type __attribute__ ((unused)))
+{
+	exit(0);
+}
+
 int net_writen(const char *const *s)
 {
 	int i = 0, rc = 0;

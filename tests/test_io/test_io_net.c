@@ -108,6 +108,20 @@ tc_ignore_data_pending(void)
 	return 0;
 }
 
+void
+net_conn_shutdown(const enum conn_shutdown_type sd_type)
+{
+	if (testcase_net_conn_shutdown != NULL)
+		testcase_net_conn_shutdown(sd_type);
+
+	exit(0);
+}
+
+void
+tc_ignore_net_conn_shutdown(const enum conn_shutdown_type sd_type __attribute__ ((unused)))
+{
+}
+
 time_t timeout;
 int socketd;
 

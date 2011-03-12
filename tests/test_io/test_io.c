@@ -19,6 +19,7 @@ TC_SETUP(netnwrite);
 TC_SETUP(net_readbin);
 TC_SETUP(net_readline);
 TC_SETUP(data_pending);
+TC_SETUP(net_conn_shutdown);
 
 TC_SETUP(log_writen);
 TC_SETUP(log_write);
