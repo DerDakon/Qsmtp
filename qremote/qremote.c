@@ -55,8 +55,12 @@ quitmsg(void)
 void
 net_conn_shutdown(const enum conn_shutdown_type sd_type)
 {
-	if ((sd_type == shutdown_clean) && (socketd >= 0))
+	if ((sd_type == shutdown_clean) && (socketd >= 0)) {
 		quitmsg();
+	} else if (socketd >= 0) {
+		close(socketd);
+		socketd = -1;
+	}
 
 	if (ssl != NULL) {
 		ssl_free(ssl);
