@@ -105,11 +105,11 @@ ctest_start(${dashboard_model})
 
 ctest_update()
 
-# avoid spamming the syslog with our messages: USE_SYSLOG off
+# avoid spamming the syslog with our messages: USESYSLOG off
 # avoid spamming the dashboard with doxygen warnings: BUILD_DOC off
 # get coverage: debug build
 ctest_configure(
-		OPTIONS "-DUSE_SYSLOG=Off;-DBUILD_DOC=Off;-DCMAKE_BUILD_TYPE=Debug"
+		OPTIONS "-DUSESYSLOG=Off;-DBUILD_DOC=Off;-DCMAKE_BUILD_TYPE=Debug"
 )
 ctest_build()
 
