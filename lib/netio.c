@@ -297,7 +297,7 @@ netnwrite(const char *s, const size_t l)
 
 	if (ssl) {
 		if (ssl_timeoutwrite(tv.tv_sec, s, l) <= 0) {
-			errno = EBADE;
+			errno = EPROTO;
 			return -1;
 		}
 		return 0;

@@ -1569,7 +1569,7 @@ smtploop(void)
 				case EMSGSIZE:	badcmds = 0;
 						flagbogus = netwrite("552 4.3.1 Too much mail data\r\n") ? errno : 0;
 						break;
-				case EBADE:	flagbogus = netwrite("550 5.7.5 data encryption error\r\n") ? errno : 0;
+				case EPROTO:	flagbogus = netwrite("550 5.7.5 data encryption error\r\n") ? errno : 0;
 						break;
 				case EROFS:	log_write(LOG_ERR, "HELP! queue filesystem looks read only!");
 						badcmds = 0;

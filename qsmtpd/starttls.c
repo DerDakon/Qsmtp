@@ -124,7 +124,7 @@ tls_verify(void)
 	if (ssl_timeoutrehandshake(timeout) <= 0) {
 		const char *err = ssl_strerror();
 		tls_out("rehandshake failed", err);
-		errno = EBADE;
+		errno = EPROTO;
 		return -1;
 	}
 
