@@ -35,12 +35,15 @@ TARGET_LINK_LIBRARIES(clearpass
 
 ADD_EXECUTABLE(addipbl addipbl.c)
 
+ADD_EXECUTABLE(sendremote sendremote.c)
+
 INSTALL(TARGETS
 		Qsurvey
 		testspf
 		qpencode
 		clearpass
 		addipbl
+		sendremote
 #		fcshell
 	DESTINATION bin
 	COMPONENT tools
