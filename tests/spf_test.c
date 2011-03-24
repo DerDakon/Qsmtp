@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
@@ -234,7 +235,6 @@ dns_resolve_txt(char **out, const char *host, const enum dnstype stype)
 
 	return 0;
 }
-
 
 int
 dnstxt(char **out, const char *host)
