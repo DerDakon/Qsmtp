@@ -256,4 +256,4 @@ TARGET_LINK_LIBRARIES(testcase_filter_badcc
 		${MEMCHECK_LIBRARIES}
 )
 ADD_TEST(NAME "Filter-badCC"
-		COMMAND testcase_filter_badcc)
+		COMMAND testcase_filter_badcc ${CMAKE_CURRENT_SOURCE_DIR}/filter_badcc)
