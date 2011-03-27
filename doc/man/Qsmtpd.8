@@ -128,6 +128,15 @@ only subdomains will be blocked:
 would block emails from *@*.example.org, but *@example.org would pass.
 
 .TP 4
+.I badcc
+.B (user)
+Unacceptable CC addresses.
+.B Qsmtpd
+will reject mails where a recipient address that matches an expression
+in this file is already present. The format of the file is the same as for 
+.IR badmailfrom .
+
+.TP 4
 .I clientca.pem
 A list of Certifying Authority (CA) certificates that are used to verify
 the client-presented certificates during a TLS-encrypted session.
