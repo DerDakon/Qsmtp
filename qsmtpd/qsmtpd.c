@@ -198,6 +198,7 @@ setup(void)
 	DIR *dir;
 	struct dirent *de;
 	unsigned long tl;
+	char **tmpconf;
 
 #ifdef USESYSLOG
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
@@ -329,15 +330,16 @@ setup(void)
 		return e;
 	}
 
-	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY), &gcbuf, &globalconf, NULL)) ) {
+	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY), &gcbuf, &tmpconf, NULL)) ) {
 		if ((errno == ENOENT) || !gcbuf) {
 			gcbuf = NULL;
-			globalconf = NULL;
+			tmpconf = NULL;
 		} else {
 			log_write(LOG_ERR, "error opening control/filterconf");
 			return errno;
 		}
 	}
+	globalconf = (const char **)tmpconf;
 
 	if ( (j = lloadfilefd(open("control/vpopbounce", O_RDONLY), &vpopbounce, 0)) < 0) {
 		int e = errno;
