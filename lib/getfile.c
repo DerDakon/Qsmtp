@@ -137,7 +137,6 @@ checkconfig(char *const *config, const char *flag, const size_t l)
 					return r;
 				}
 			}
-			break;
 		}
 		i++;
 	}
