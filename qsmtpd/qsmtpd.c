@@ -92,7 +92,7 @@ char *protocol;				/**< the protocol string to use (e.g. "ESMTP") */
 const char *auth_host;			/**< hostname for auth */
 const char *auth_check;			/**< checkpassword or one of his friends for auth */
 const char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
-char **globalconf;			/**< contents of the global "filterconf" file (or NULL) */
+const char **globalconf;		/**< contents of the global "filterconf" file (or NULL) */
 string heloname;			/**< the fqdn to show in helo */
 string liphost;				/**< replacement domain if TO address is <foo@[ip]> */
 int socketd = 1;			/**< the descriptor where messages to network are written to */

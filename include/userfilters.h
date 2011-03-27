@@ -15,7 +15,7 @@ struct userconf {
 	char **domainconf;		/**< dito for domain directory */
 };
 
-extern char **globalconf;
+extern const char **globalconf;
 
 extern int getfile(const struct userconf *, const char *, int *);
 extern int getfileglobal(const struct userconf *, const char *, int *);

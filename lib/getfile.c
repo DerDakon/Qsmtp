@@ -112,7 +112,7 @@ getfileglobal(const struct userconf *ds, const char *fn, int *type)
  * @return the value assotiated with flag, 0 if no match, -1 on syntax error
  */
 static long
-checkconfig(char *const *config, const char *flag, const size_t l)
+checkconfig(const char * const *config, const char *flag, const size_t l)
 {
 	int i = 0;
 
@@ -150,7 +150,7 @@ getsetting_internal(const struct userconf *ds, const char *flag, int *type, cons
 	long r;
 
 	*type = 0;
-	r = checkconfig(ds->userconf, flag, l);
+	r = checkconfig((const char **)ds->userconf, flag, l);
 	if (r > 0) {
 		return r;
 	} else if (r < 0) {
@@ -160,7 +160,7 @@ getsetting_internal(const struct userconf *ds, const char *flag, int *type, cons
 		return 0;
 	}
 	*type = 1;
-	r = checkconfig(ds->domainconf, flag, l);
+	r = checkconfig((const char **)ds->domainconf, flag, l);
 	if (r > 0) {
 		return r;
 	} else if (r < 0) {

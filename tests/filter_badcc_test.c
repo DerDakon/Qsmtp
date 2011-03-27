@@ -13,7 +13,7 @@
 struct xmitstat xmitstat;
 unsigned int goodrcpt;
 struct recip *thisrecip;
-char **globalconf;
+const char **globalconf;
 
 extern int cb_badcc(const struct userconf *ds, char **logmsg, int *t);
 

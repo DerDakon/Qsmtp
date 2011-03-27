@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-char **globalconf;
+const char **globalconf;
 
 static const char *dconfdata[] = {
 		"simple",
@@ -24,6 +24,12 @@ static const char *uconfdata[] = {
 		NULL
 };
 
+static const char *gconfdata[] = {
+		"forcenull=2",
+		"global=3",
+		NULL
+};
+
 static struct userconf ds;
 
 static int
@@ -33,8 +39,17 @@ test_flag(const char *flag, const long expect, const int expecttype)
 	long r = getsetting(&ds, flag, &t);
 
 	if ((r != expect) || (t != expecttype)) {
-		fprintf(stderr, "searching for '%s' should return %li (type %i), "
-				"but returned %li (type %i)\n",
+		fprintf(stderr, "searching for '%s' with getsetting() should return "
+				"%li (type %i), but returned %li (type %i)\n",
+				flag, expect, expecttype, r, t);
+		return 1;
+	}
+
+	r = getsettingglobal(&ds, flag, &t);
+
+	if ((r != expect) || (t != expecttype)) {
+		fprintf(stderr, "searching for '%s' with getsettingglobal() should return "
+				"%li (type %i), but returned %li (type %i)\n",
 				flag, expect, expecttype, r, t);
 		return 1;
 	}
@@ -63,6 +78,12 @@ int main()
 
 	err += test_flag("twenty", 20, 1);
 	err += test_flag("twentytwo", 22, 1);
+
+	/* now with user and global config */
+	globalconf = gconfdata;
+	ds.userconf = (char **)uconfdata;
+	err += test_flag("forcenull", 0, 1);
+	err += test_flag("global", 3, 2);
 
 	return err;
 }
