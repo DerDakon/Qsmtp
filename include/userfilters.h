@@ -37,9 +37,10 @@ extern long getsettingglobal(const struct userconf *, const char *, int *);
  *         \arg \c 4: policy denied, calling function should announce temporary error
  *         \arg \c 5: policy passed, mail is whitelisted (do not call other functions)
  */
-typedef int (*rcpt_cb)(const struct userconf *, char **logmsg, int *t);
+typedef int (*rcpt_cb)(const struct userconf *ds, char **logmsg, int *t);
 
 extern rcpt_cb rcpt_cbs[];
+extern rcpt_cb late_rcpt_cbs[];
 
 extern const char *blocktype[];
 

@@ -44,12 +44,14 @@ cb_badcc(const struct userconf *ds, char **logmsg, int *t)
 	if (!b)
 		return 0;
 
-	*logmsg = "bad CC";
-
-	/* look through the list of recipients but ignore the last one: this is the actual one */
-	for (np = head.tqh_first; np != thisrecip; np = np->entries.tqe_next) {
+	rc = 0;
+	/* look through the list of recipients but ignore the current one */
+	for (np = head.tqh_first; (np != NULL) && (rc == 0); np = np->entries.tqe_next) {
 		char *at = strchr(np->to.s, '@');
 		unsigned int i = 0;
+
+		if (np == thisrecip)
+			continue;
 
 		while (a[i]) {
 			if (*a[i] == '@') {
@@ -76,11 +78,12 @@ cb_badcc(const struct userconf *ds, char **logmsg, int *t)
 
 			i++;
 		}
-		if (rc)
-			break;
 	}
 	free(a);
 	free(b);
+
+	if (rc > 0)
+		*logmsg = "bad CC";
 
 	return rc;
 }

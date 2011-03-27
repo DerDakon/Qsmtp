@@ -50,6 +50,10 @@ rcpt_cb rcpt_cbs[] = {
 			cb_check2822,
 			NULL};
 
+rcpt_cb late_cbs[] = {
+			cb_badcc
+};
+
 /** string constants for the type of blocklists */
 const char *blocktype[] = {"user", "domain", "global"};
 
