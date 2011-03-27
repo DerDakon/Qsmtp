@@ -143,16 +143,8 @@ checkconfig(char *const *config, const char *flag, const size_t l)
 	return 0;
 }
 
-/**
- * get setting from user or domain filterconf file
- *
- * @param ds struct with the user/domain config info
- * @param flag name of the setting to find (case sensitive)
- * @param type if user (0) or domain (1) directory matched, ignore this if (result == -1)
- * @return value of setting, 1 if boolean setting (or no number given), 0 if setting not found, -1 on syntax error
- */
-long
-getsetting(const struct userconf *ds, const char *flag, int *type)
+static long
+getsetting_internal(const struct userconf *ds, const char *flag, int *type, const int useglobal)
 {
 	size_t l = strlen(flag);
 	long r;
@@ -169,9 +161,36 @@ getsetting(const struct userconf *ds, const char *flag, int *type)
 	}
 	*type = 1;
 	r = checkconfig(ds->domainconf, flag, l);
+	if (r > 0) {
+		return r;
+	} else if (r < 0) {
+		/* forced 0 from domain config */
+		if (errno)
+			return r;
+		return 0;
+	}
+	if (!useglobal)
+		return 0;
+
+	*type = 2;
+	r = checkconfig(globalconf, flag, l);
 	if ((r < 0) && !errno)
 		return 0;
 	return r;
+}
+
+/**
+ * get setting from user or domain filterconf file
+ *
+ * @param ds struct with the user/domain config info
+ * @param flag name of the setting to find (case sensitive)
+ * @param type if user (0) or domain (1) directory matched, ignore this if (result == -1)
+ * @return value of setting, 1 if boolean setting (or no number given), 0 if setting not found, -1 on syntax error
+ */
+long
+getsetting(const struct userconf *ds, const char *flag, int *type)
+{
+	return getsetting_internal(ds, flag, type, 0);
 }
 
 /**
@@ -185,31 +204,5 @@ getsetting(const struct userconf *ds, const char *flag, int *type)
 long
 getsettingglobal(const struct userconf *ds, const char *flag, int *type)
 {
-	size_t l = strlen(flag);
-	long r;
-
-	*type = 0;
-	r = checkconfig(ds->userconf, flag, l);
-	if (r > 0) {
-		return r;
-	} else if (r < 0) {
-		/* if user sets this to a value <0 this means "0 and don't override with domain setting */
-		if (errno)
-			return r;
-		return 0;
-	}
-	*type = 1;
-	r = checkconfig(ds->domainconf, flag, l);
-	if (r > 0) {
-		return r;
-	} else if (r < 0) {
-		if (errno)
-			return r;
-		return 0;
-	}
-	*type = 2;
-	r = checkconfig(globalconf, flag, l);
-	if ((r < 0) && !errno)
-		return 0;
-	return r;
+	return getsetting_internal(ds, flag, type, 1);
 }
