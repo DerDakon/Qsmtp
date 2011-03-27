@@ -152,10 +152,28 @@ int main(int argc, char **argv)
 	setup_recip_order(4, 2, 0, -1, -1);
 	thisrecip = &recips[2];
 	setup_userconf();
+	t = -1;
 	r = cb_badcc(&ds, &logmsg, &t);
 	if (r != 2) {
 		fprintf(stderr, "foo@example.net as first recipient with example.net following"
-				"should reject, but result is %i\n", r);
+				"should reject, but result is %i, t = %i\n", r, t);
+		err++;
+	} else if (t != 1) {
+		fprintf(stderr, "foo@example.net should reject with user policy,"
+				" but t is %i\n", t);
+		err++;
+	}
+
+	setup_recip_order(8, 0, 3, -1, -1);
+	t = -1;
+	r = cb_badcc(&ds, &logmsg, &t);
+	if (r != 2) {
+		fprintf(stderr, "bar@example.net should reject foo@example.com,"
+				"but result is %i, t = %i\n", r, t);
+		err++;
+	} else if (t != 0) {
+		fprintf(stderr, "bar@example.net should reject with domain policy,"
+				" but t is %i\n", t);
 		err++;
 	}
 
