@@ -15,6 +15,7 @@ static const char *dconfdata[] = {
 		"twenty=20",
 		"domain=42",
 		"invalid=invalid",
+		"forcenull=-2",
 		NULL
 };
 
@@ -49,14 +50,19 @@ int main()
 	ds.domainconf = (char **)dconfdata;
 	ds.userconf = (char **)uconfdata;
 
+	err += test_flag("domain", 0, 0);
 	err += test_flag("simple", 1, 1);
 	err += test_flag("one", 1, 1);
 	err += test_flag("two", 2, 1);
 	err += test_flag("nonexistent", 0, 1);
 	err += test_flag("invalid", -1, 1);
+	err += test_flag("forcenull", 0, 1);
+
+	/* now without userconfig, checks other branches */
+	ds.userconf = NULL;
+
 	err += test_flag("twenty", 20, 1);
 	err += test_flag("twentytwo", 22, 1);
-	err += test_flag("domain", 0, 0);
 
 	return err;
 }
