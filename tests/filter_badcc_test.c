@@ -37,10 +37,15 @@ static struct recip recips[] = {
 		.to = {
 			.s = "bar@example.net"
 		}
+	},
+	{
+		.to = {
+			.s = "baz@sub.example.net"
+		}
 	}
 };
 
-#define RCPT_PATTERNS 4
+#define RCPT_PATTERNS 5
 
 static struct userconf ds;
 
@@ -49,7 +54,7 @@ setup_userconf()
 {
 	if (strstr(thisrecip->to.s, "@example.net") != NULL) {
 		ds.domainpath.s = "example.net/";
-		if (strcmp(thisrecip->to.s, "foo@example.net")) {
+		if (strcmp(thisrecip->to.s, "foo@example.net") == 0) {
 			ds.userpath.s = "example.net/foo/";
 		} else {
 			ds.userpath.s = NULL;
@@ -70,18 +75,17 @@ setup_userconf()
 }
 
 static void
-setup_recip_order(unsigned int valid, int r0, int r1, int r2, int r3)
+setup_recip_order(unsigned int valid, int r0, int r1, int r2, int r3, int r4)
 {
 	/* it's easier to pass them as single values from outside
 	 * since this is only a testcase I go this way */
-	int rflags[RCPT_PATTERNS] = { r0, r1, r2, r3 };
+	int rflags[RCPT_PATTERNS] = { r0, r1, r2, r3, r4 };
 	int i;
 
 	assert(r0 >= 0);
-	assert(r0 < RCPT_PATTERNS);
-	assert(r1 < RCPT_PATTERNS);
-	assert(r2 < RCPT_PATTERNS);
-	assert(r3 < RCPT_PATTERNS);
+	for (i = 0; i < RCPT_PATTERNS; i++) {
+		assert(rflags[i] < RCPT_PATTERNS);
+	}
 	assert(valid < (1 << RCPT_PATTERNS));
 
 	i = 0;
@@ -125,7 +129,7 @@ int main(int argc, char **argv)
 	for (r = 0; r < RCPT_PATTERNS; r++)
 		recips[r].to.len = strlen(recips[r].to.s);
 
-	setup_recip_order(1, 0, -1, -1, -1);
+	setup_recip_order(1, 0, -1, -1, -1, -1);
 
 	r = cb_badcc(&ds, &logmsg, &t);
 	if (r != 0) {
@@ -134,7 +138,7 @@ int main(int argc, char **argv)
 		err++;
 	}
 
-	setup_recip_order(3, 0, 1, -1, -1);
+	setup_recip_order(3, 0, 1, -1, -1, -1);
 	r = cb_badcc(&ds, &logmsg, &t);
 	if (r != 0) {
 		fprintf(stderr, "for recipients without config no errors should happen,"
@@ -142,34 +146,47 @@ int main(int argc, char **argv)
 		err++;
 	}
 
-	setup_recip_order(5, 0, 2, -1, -1);
+	setup_recip_order(5, 0, 2, -1, -1, -1);
 	r = cb_badcc(&ds, &logmsg, &t);
 	if (r != 2) {
 		fprintf(stderr, "foo@example.net should reject bad CC, but result is %i\n", r);
 		err++;
 	}
 
-	setup_recip_order(4, 2, 0, -1, -1);
+	setup_recip_order(4, 2, 0, -1, -1, -1);
 	thisrecip = &recips[2];
 	setup_userconf();
 	t = -1;
 	r = cb_badcc(&ds, &logmsg, &t);
 	if (r != 2) {
 		fprintf(stderr, "foo@example.net as first recipient with example.net following"
-				"should reject, but result is %i, t = %i\n", r, t);
+				" should reject, but result is %i, t = %i\n", r, t);
 		err++;
-	} else if (t != 1) {
+	} else if (t != 0) {
 		fprintf(stderr, "foo@example.net should reject with user policy,"
 				" but t is %i\n", t);
 		err++;
 	}
 
-	setup_recip_order(8, 0, 3, -1, -1);
+	setup_recip_order(8, 0, 3, -1, -1, -1);
 	t = -1;
 	r = cb_badcc(&ds, &logmsg, &t);
 	if (r != 2) {
 		fprintf(stderr, "bar@example.net should reject foo@example.com,"
-				"but result is %i, t = %i\n", r, t);
+				" but result is %i, t = %i\n", r, t);
+		err++;
+	} else if (t != 1) {
+		fprintf(stderr, "bar@example.net should reject with domain policy,"
+				" but t is %i\n", t);
+		err++;
+	}
+
+	setup_recip_order(4, 4, 2, -1, -1, -1);
+	t = -1;
+	r = cb_badcc(&ds, &logmsg, &t);
+	if (r != 2) {
+		fprintf(stderr, "foo@example.net should reject baz@sub.example.net,"
+				" but result is %i, t = %i\n", r, t);
 		err++;
 	} else if (t != 0) {
 		fprintf(stderr, "bar@example.net should reject with domain policy,"
