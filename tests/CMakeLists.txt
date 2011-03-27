@@ -257,3 +257,12 @@ TARGET_LINK_LIBRARIES(testcase_filter_badcc
 )
 ADD_TEST(NAME "Filter-badCC"
 		COMMAND testcase_filter_badcc ${CMAKE_CURRENT_SOURCE_DIR}/filter_badcc)
+
+ADD_EXECUTABLE(testcase_getfile
+		getfile_test.c)
+TARGET_LINK_LIBRARIES(testcase_getfile
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+ADD_TEST(NAME "Getfile"
+		COMMAND testcase_getfile)
