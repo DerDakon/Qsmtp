@@ -255,3 +255,5 @@ TARGET_LINK_LIBRARIES(testcase_filter_badcc
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
+ADD_TEST(NAME "Filter-badCC"
+		COMMAND testcase_filter_badcc)
