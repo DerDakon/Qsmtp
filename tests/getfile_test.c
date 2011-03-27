@@ -36,13 +36,16 @@ static int
 test_flag(const char *flag, const long expect, const int expecttype)
 {
 	int t = -1;
-	long r = getsetting(&ds, flag, &t);
+	long r;
 
-	if ((r != expect) || (t != expecttype)) {
-		fprintf(stderr, "searching for '%s' with getsetting() should return "
-				"%li (type %i), but returned %li (type %i)\n",
-				flag, expect, expecttype, r, t);
-		return 1;
+	if (expecttype != 2) {
+		r = getsetting(&ds, flag, &t);
+		if ((r != expect) || (t != expecttype)) {
+			fprintf(stderr, "searching for '%s' with getsetting() should return "
+					"%li (type %i), but returned %li (type %i)\n",
+					flag, expect, expecttype, r, t);
+			return 1;
+		}
 	}
 
 	r = getsettingglobal(&ds, flag, &t);
@@ -69,7 +72,6 @@ int main()
 	err += test_flag("simple", 1, 1);
 	err += test_flag("one", 1, 1);
 	err += test_flag("two", 2, 1);
-	err += test_flag("nonexistent", 0, 1);
 	err += test_flag("invalid", -1, 1);
 	err += test_flag("forcenull", 0, 1);
 
@@ -84,6 +86,7 @@ int main()
 	ds.userconf = (char **)uconfdata;
 	err += test_flag("forcenull", 0, 1);
 	err += test_flag("global", 3, 2);
+	err += test_flag("nonexistent", 0, 2);
 
 	return err;
 }
