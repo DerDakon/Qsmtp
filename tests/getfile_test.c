@@ -27,6 +27,7 @@ static const char *uconfdata[] = {
 static const char *gconfdata[] = {
 		"forcenull=2",
 		"global=3",
+		"globalforcenull=-3",
 		NULL
 };
 
@@ -87,6 +88,7 @@ int main()
 	err += test_flag("forcenull", 0, 1);
 	err += test_flag("global", 3, 2);
 	err += test_flag("nonexistent", 0, 2);
+	err += test_flag("globalforcenull", 0, 2);
 
 	return err;
 }
