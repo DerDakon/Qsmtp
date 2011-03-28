@@ -62,7 +62,7 @@ lookupbmf(char *at, char **a)
 }
 
 int
-cb_badmailfrom(const struct userconf *ds, char **logmsg, int *t)
+cb_badmailfrom(const struct userconf *ds, const char **logmsg, int *t)
 {
 	int u;		/* if it is the user or domain policy */
 	char *b;	/* buffer to read file into */

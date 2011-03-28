@@ -9,7 +9,7 @@
 #include "log.h"
 
 int
-cb_boolean(const struct userconf *ds, char **logmsg, int *t)
+cb_boolean(const struct userconf *ds, const char **logmsg, int *t)
 {
 	int rc;
 
@@ -28,7 +28,6 @@ cb_boolean(const struct userconf *ds, char **logmsg, int *t)
 		*logmsg = "TLS required";
 		return rc ? rc : 1;
 	}
-
 
 	/* This rule is very tricky, normally you want bounce messages.
 	 * But if you are sure that there can't be any bounce messages (e.g. the address
@@ -52,5 +51,6 @@ cb_boolean(const struct userconf *ds, char **logmsg, int *t)
 			return rc ? rc : 1;
 		}
 	}
+
 	return 0;
 }

@@ -7,23 +7,23 @@
 
 /* add all your filters here */
 
-extern int cb_nomail(const struct userconf *, char **, int *);
-extern int cb_boolean(const struct userconf *, char **, int *);
-extern int cb_badmailfrom(const struct userconf *, char **, int *);
-extern int cb_dnsbl(const struct userconf *, char **, int *);
-extern int cb_check2822(const struct userconf *, char **, int *);
-extern int cb_ipbl(const struct userconf *, char **, int *);
-extern int cb_badcc(const struct userconf *, char **, int *);
-extern int cb_fromdomain(const struct userconf *, char **, int *);
-extern int cb_smtpbugs(const struct userconf *, char **, int *);
-extern int cb_spf(const struct userconf *, char **, int *);
-extern int cb_soberg(const struct userconf *, char **, int *);
-extern int cb_helo(const struct userconf *, char **, int *);
-extern int cb_usersize(const struct userconf *, char **, int *);
-extern int cb_forceesmtp(const struct userconf *, char **, int *);
-extern int cb_namebl(const struct userconf *, char **, int *);
-extern int cb_wildcardns(const struct userconf *, char **, int *);
-/*extern int cb_postfix(const struct userconf *, char **, int *);*/
+extern int cb_nomail(const struct userconf *, const char **, int *);
+extern int cb_boolean(const struct userconf *, const char **, int *);
+extern int cb_badmailfrom(const struct userconf *, const char **, int *);
+extern int cb_dnsbl(const struct userconf *, const char **, int *);
+extern int cb_check2822(const struct userconf *, const char **, int *);
+extern int cb_ipbl(const struct userconf *, const char **, int *);
+extern int cb_badcc(const struct userconf *, const char **, int *);
+extern int cb_fromdomain(const struct userconf *, const char **, int *);
+extern int cb_smtpbugs(const struct userconf *, const char **, int *);
+extern int cb_spf(const struct userconf *, const char **, int *);
+extern int cb_soberg(const struct userconf *, const char **, int *);
+extern int cb_helo(const struct userconf *, const char **, int *);
+extern int cb_usersize(const struct userconf *, const char **, int *);
+extern int cb_forceesmtp(const struct userconf *, const char **, int *);
+extern int cb_namebl(const struct userconf *, const char **, int *);
+extern int cb_wildcardns(const struct userconf *, const char **, int *);
+/*extern int cb_postfix(const struct userconf *, const char **, int *);*/
 
 /** the user filters will be called in the order in this array */
 rcpt_cb rcpt_cbs[] = {

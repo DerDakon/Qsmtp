@@ -8,7 +8,7 @@
 #include "qsmtpd.h"
 
 int
-cb_forceesmtp(const struct userconf *ds, char **logmsg, int *t)
+cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)
 {
 	char *b;		/* buffer to read file into */
 	char **a;		/* array of domains and/or mailaddresses to block */

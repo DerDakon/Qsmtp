@@ -82,7 +82,7 @@ loadjokers(struct dns_wc **wcs)
 static struct dns_wc *dns_wildcards;
 
 int
-cb_wildcardns(const struct userconf *ds, char **logmsg, int *t)
+cb_wildcardns(const struct userconf *ds, const char **logmsg, int *t)
 {
 	long u;			/* contents of control setting is stored here */
 	struct dns_wc *this;

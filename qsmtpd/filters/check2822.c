@@ -5,7 +5,7 @@
 #include "qsmtpd.h"
 
 int
-cb_check2822(const struct userconf *ds, char **logmsg __attribute__ ((unused)), int *t)
+cb_check2822(const struct userconf *ds, const char **logmsg __attribute__ ((unused)), int *t)
 {
 	/* This one is a bit special: it does not check the message for something
 	 * itself, it just loads the configuration if smtp_data should check the

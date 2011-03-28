@@ -11,7 +11,7 @@
 #include "qsmtpd.h"
 
 int
-cb_namebl(const struct userconf *ds, char **logmsg, int *t)
+cb_namebl(const struct userconf *ds, const char **logmsg, int *t)
 {
 	char *b;		/* buffer to read file into */
 	char **a;		/* array of blacklists to check */

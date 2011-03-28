@@ -17,7 +17,7 @@
  *  with a rejection code of "550 5.7.1 ".
  */
 int
-cb_nomail(const struct userconf *ds, char **logmsg, int *t)
+cb_nomail(const struct userconf *ds, const char **logmsg, int *t)
 {
 	int rc = 0;		/* return code */
 	size_t len;

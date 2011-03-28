@@ -9,7 +9,7 @@
 #include "qsmtpd.h"
 
 int
-cb_ipbl(const struct userconf *ds, char **logmsg, int *t)
+cb_ipbl(const struct userconf *ds, const char **logmsg, int *t)
 {
 	int i;			/* counter of the array position */
 	int rc;			/* return code */

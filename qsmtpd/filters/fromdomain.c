@@ -18,7 +18,7 @@ char *logmess[] = {"no MX", "temporary DNS error on from domain lookup", "NXDOMA
  * 4: reject mail if from domain resolves only to private nets (RfC 1918)
  */
 int
-cb_fromdomain(const struct userconf *ds, char **logmsg, int *t)
+cb_fromdomain(const struct userconf *ds, const char **logmsg, int *t)
 {
 	long u;			/* contents of control setting is stored here */
 

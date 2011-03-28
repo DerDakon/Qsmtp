@@ -989,7 +989,7 @@ smtp_rcpt(void)
 	string tmp;
 	char *more = NULL;
 	struct userconf ds;
-	char *errmsg;
+	const char *errmsg;
 	char *ucbuf, *dcbuf;	/* buffer for user and domain "filterconf" file */
 	int bt;			/* which policy matched */
 	const char *logmsg[] = {"rejected message to <", NULL, "> from <", MAILFROM,

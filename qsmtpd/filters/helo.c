@@ -13,7 +13,7 @@
  * 2) not beginning with '.': helo is blocked if it matches this string
  */
 int
-cb_helo(const struct userconf *ds, char **logmsg, int *t)
+cb_helo(const struct userconf *ds, const char **logmsg, int *t)
 {
 	int rc = 0;	/* return code */
 	long l;

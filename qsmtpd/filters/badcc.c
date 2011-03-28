@@ -23,7 +23,7 @@
  *    must be '.' or '@' so "aol.com" would reject "foo@aol.com" and "foo@bar.aol.com" but not "foo@no-aol.com"
  */
 int
-cb_badcc(const struct userconf *ds, char **logmsg, int *t)
+cb_badcc(const struct userconf *ds, const char **logmsg, int *t)
 {
 	char *b;		/* buffer to read file into */
 	char **a;		/* array of domains and/or mailaddresses to block */
