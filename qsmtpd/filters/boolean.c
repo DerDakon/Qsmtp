@@ -9,7 +9,7 @@
 #include "log.h"
 
 int
-cb_boolean(const struct userconf *ds, char **logmsg __attribute__ ((unused)), int *t)
+cb_boolean(const struct userconf *ds, char **logmsg, int *t)
 {
 	int rc;
 
