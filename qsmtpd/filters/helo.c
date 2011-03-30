@@ -26,7 +26,7 @@ cb_helo(const struct userconf *ds, const char **logmsg, int *t)
 						"", "HELO is my IP", "", ""};
 
 			/* just shut up compiler: logmsg will never be modified */
-			*logmsg = (char *) badtypes[xmitstat.helostatus - 1];
+			*logmsg = badtypes[xmitstat.helostatus - 1];
 			return 2;
 		}
 	}
