@@ -64,6 +64,8 @@ test_flag(const char *flag, const long expect, const int expecttype)
 int main()
 {
 	int err = 0;
+	long r;
+	int t;
 
 	memset(&ds, 0, sizeof(ds));
 	ds.domainconf = (char **)dconfdata;
@@ -89,6 +91,14 @@ int main()
 	err += test_flag("global", 3, 2);
 	err += test_flag("nonexistent", 0, 2);
 	err += test_flag("globalforcenull", 0, 2);
+
+	t = -1;
+	r = getsetting(&ds, "nonexistent", &t);
+	if ((r != 0) || (t != 1)) {
+		fprintf(stderr, "searching for 'nonexistent' with getsetting() should return "
+				"0 (type 1), but returned %li (type %i)\n", r, t);
+		return 1;
+	}
 
 	return err;
 }
