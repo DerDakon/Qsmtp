@@ -1,6 +1,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <syslog.h>
+#include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include "userfilters.h"
