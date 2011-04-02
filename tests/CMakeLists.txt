@@ -270,6 +270,18 @@ TARGET_LINK_LIBRARIES(testcase_filter_nomail
 ADD_TEST(NAME "Filter-NoMail"
 		COMMAND testcase_filter_nomail)
 
+ADD_EXECUTABLE(testcase_filter_fromdomain
+		filter_fromdomain_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/filters/fromdomain.c
+)
+TARGET_LINK_LIBRARIES(testcase_filter_fromdomain
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
+ADD_TEST(NAME "Filter-FromDomain"
+		COMMAND testcase_filter_fromdomain)
+
 ADD_EXECUTABLE(testcase_getfile
 		getfile_test.c)
 TARGET_LINK_LIBRARIES(testcase_getfile
