@@ -17,7 +17,7 @@
  * @param fd file descriptor of opened file
  * @param len length of mapping will be stored here
  * @return pointer to mapped area
- * @retval NULL an error occured (errno is set)
+ * @retval NULL an error occured (errno is set) or file is empty (errno is 0)
  */
 void *
 mmap_fd(int fd, off_t *len)
@@ -28,10 +28,12 @@ mmap_fd(int fd, off_t *len)
 
 	if ( (i = fstat(fd, &st)) )
 		return NULL;
+
+	*len = st.st_size;
+	errno = 0;
 	if (!st.st_size)
 		return NULL;
 
-	*len = st.st_size;
 	res = mmap(NULL, *len, PROT_READ, MAP_SHARED, fd, 0);
 
 	return (res == MAP_FAILED) ? NULL : res;

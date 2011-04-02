@@ -20,6 +20,7 @@
 #include "tls.h"
 #include "match.h"
 #include "netio.h"
+#include "mmap.h"
 
 /**
  * take a nibble and output it as hex to a buffer, followed by '.'
@@ -258,7 +259,7 @@ lookupipbl(int fd)
 {
 	int i, rc;
 	unsigned char *map;		/* map the file here */
-	struct stat st;
+	off_t flen;
 
 	while (flock(fd, LOCK_SH | LOCK_NB)) {
 		if (errno != EINTR) {
@@ -267,37 +268,32 @@ lookupipbl(int fd)
 			return -1;
 		}
 	}
-	if ( (i = fstat(fd, &st)) )
-		return i;
-	if (!st.st_size) {
+
+	map = mmap_fd(fd, &flen);
+	i = errno;
+	if (map == NULL) {
+		i = errno;
 		do {
 			rc = close(fd);
 		} while ((rc == -1) && (errno == EINTR));
-
-		return rc;
-	}
-
-	map = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
-	i = errno;
-	do {
-		rc = close(fd);
-	} while ((rc == -1) && (errno != EINTR));
-
-	if (map == MAP_FAILED)
-		return i;
-
-	if (rc == -1) {
-		i = errno;
-		munmap(map, st.st_size);
-		return i;
+		if ((i == ENOENT) || (i == 0))
+			return rc;
+		errno = i;
+		return -1;
 	}
 
 	if (xmitstat.ipv4conn) {
-		rc = check_ip4(map, st.st_size);
+		rc = check_ip4(map, flen);
 	} else {
-		rc = check_ip6(map, st.st_size);
+		rc = check_ip6(map, flen);
 	}
-	munmap(map, st.st_size);
+	munmap(map, flen);
+	do {
+		i = close(fd);
+	} while ((i == -1) && (errno == EINTR));
+
+	if (i != 0)
+		return i;
 
 	return rc;
 }
