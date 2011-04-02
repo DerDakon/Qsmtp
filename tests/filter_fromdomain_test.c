@@ -67,6 +67,7 @@ int main()
 		configline,
 		NULL
 	};
+	struct ips frommx;
 
 	testcase_setup_net_writen(test_net_writen);
 	testcase_setup_netwrite(test_netwrite);
@@ -89,11 +90,19 @@ int main()
 	r = inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
 	assert(r == 1);
 
+	err += check_expect(0, "checking local net 172.16.42.42 without MX");
+
+	frommx.addr = xmitstat.sremoteip;
+	frommx.priority = 42;
+	frommx.next = NULL;
+	xmitstat.frommx = &frommx;
+
 	err += check_expect(1, "checking local net 172.16.42.42");
 
 	sprintf(configline, "fromdomain=1");
 
 	xmitstat.fromdomain = 1;
+	xmitstat.frommx = NULL;
 	err += check_expect(1, "checking no MX");
 
 	return err;
