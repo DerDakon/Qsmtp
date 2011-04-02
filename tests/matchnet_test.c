@@ -168,6 +168,7 @@ ip4_test(void)
 		write(fd, &ip4, sizeof(ip4));
 		write(fd, &ch, 1);
 	}
+	/* file size is now 25 byte */
 
 	i = lookupipbl(fd);
 	if (i != 0) {
@@ -182,6 +183,7 @@ ip4_test(void)
 	}
 	/* create a file that has invalid length */
 	write(fd, &ip4, sizeof(ip4));
+	/* file size is now 29 byte */
 	i = lookupipbl(fd);
 	if (i != -1) {
 		fprintf(stderr, "lookupipbl() with file of invalid size should have returned -1 but returned %i\n", i);
@@ -196,6 +198,7 @@ ip4_test(void)
 	/* write an invalid netmask */
 	ch = 42;
 	write(fd, &ch, 1);
+	/* file size is now 30 byte */
 	i = lookupipbl(fd);
 	if (i != -1) {
 		fprintf(stderr, "lookupipbl() with file containing invalid netmask should have returned -1 but returned %i\n", i);
@@ -218,10 +221,24 @@ ip4_test(void)
 	assert(i);
 	write(fd, &ip4, sizeof(ip4));
 	write(fd, &ch, 1);
+	/* file size is now 35 byte */
 
 	i = lookupipbl(fd);
 	if (i <= 0) {
-		fprintf(stderr, "lookupipbl() with file valid file with match should return greater 0 but returned %i\n", i);
+		fprintf(stderr, "lookupipbl() with valid file with match should return greater 0 but returned %i\n", i);
+		err++;
+	}
+
+	/* test IPv6 connection, file now has invalid size for IPv6 */
+	xmitstat.ipv4conn = 0;
+	fd = open(fnbuf, O_RDONLY);
+	if (fd == -1) {
+		fprintf(stderr, "can not open temporary file\n");
+		return ++err;
+	}
+	i = lookupipbl(fd);
+	if (i != -1) {
+		fprintf(stderr, "lookupipbl() with file of invalid size for IPv6 should have returned -1 but returned %i\n", i);
 		err++;
 	}
 
