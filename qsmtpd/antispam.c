@@ -170,6 +170,30 @@ tarpit(void)
 		tarpitcount++;
 }
 
+typedef int (*ip_matchnet)(const struct in6_addr *ip, const void *ipbuf, const unsigned char netmask);
+
+static inline int
+check_ipbl_file(const size_t iplen, const off_t flen, const unsigned char *buf, ip_matchnet matchfunc)
+{
+	off_t i;
+	const size_t recordlen = iplen + 1;
+	const unsigned int maskmax = (unsigned int) (8 * iplen);
+
+	if (flen % recordlen)
+		return -1;
+	for (i = 0; i < flen; i += 5) {
+		/* cc shut up: we know what we are doing here */
+		unsigned char netmask = *(buf + iplen);
+
+		if ((netmask < 8) || (netmask > maskmax))
+			return -1;
+		if ((*matchfunc)(&xmitstat.sremoteip, (void *)buf, netmask))
+			return 1;
+		buf += recordlen;
+	}
+	return 0;
+}
+
 /**
  * check an IPv4 mapped IPv6 address against a local blocklist
  *
@@ -180,23 +204,9 @@ tarpit(void)
  * IP entries in the buffer must be network byte order
  */
 static int
-check_ip4(const unsigned char *buf, const unsigned int len)
+check_ip4(const unsigned char *buf, const off_t len)
 {
-	unsigned int i;
-
-	if (len % 5)
-		return -1;
-	for (i = 0; i < len; i += 5) {
-		/* cc shut up: we know what we are doing here */
-		const struct in_addr *ip = (struct in_addr *) buf;
-
-		if ((*(buf + 4) < 8) || (*(buf + 4) > 32))
-			return -1;
-		if (ip4_matchnet(&xmitstat.sremoteip, ip, *(buf + 4)))
-			return 1;
-		buf += 5;
-	}
-	return 0;
+	return check_ipbl_file(sizeof(struct in_addr), len, buf, (ip_matchnet)ip4_matchnet);
 }
 
 /**
@@ -209,20 +219,7 @@ check_ip4(const unsigned char *buf, const unsigned int len)
 static int
 check_ip6(const unsigned char *buf, const unsigned int len)
 {
-	unsigned int i;
-
-	if (len % 17)
-		return -1;
-	for (i = 0; i < len; i += 17) {
-		const struct in6_addr *ip = (struct in6_addr *) buf;
-
-		if ((*(buf + 16) < 8) || (*(buf + 16) > 128))
-			return -1;
-		if (ip6_matchnet(&xmitstat.sremoteip, ip, *(buf + 16)))
-			return 1;
-		buf += 9;
-	}
-	return 0;
+	return check_ipbl_file(sizeof(struct in6_addr), len, buf, (ip_matchnet)ip6_matchnet);
 }
 
 /**
