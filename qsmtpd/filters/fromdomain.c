@@ -80,23 +80,22 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, int *t)
 				const struct in_addr bench =   { .s_addr = htonl(0xc0120000) }; /* 192.18/15 */
 
 				/* 10.0.0.0/8 */
-				if (ip4_matchnet(&(thisip->addr), &priva, 8))
-					flagtmp = 1;
+				flagtmp = ip4_matchnet(&(thisip->addr), &priva, 8);
 				/* 172.16.0.0/12 */
-				if (!flagtmp && ip4_matchnet(&(thisip->addr), &privb, 12))
-					flagtmp = 1;
+				if (!flagtmp)
+					flagtmp = ip4_matchnet(&(thisip->addr), &privb, 12);
 				/* 192.168.0.0/16 */
-				if (!flagtmp && ip4_matchnet(&(thisip->addr), &privc, 16))
-					flagtmp = 1;
+				if (!flagtmp)
+					flagtmp = ip4_matchnet(&(thisip->addr), &privc, 16);
 				/* 169.254.0.0/16 */
-				if (!flagtmp && ip4_matchnet(&(thisip->addr), &linkloc, 16))
-					flagtmp = 1;
+				if (!flagtmp)
+					flagtmp = ip4_matchnet(&(thisip->addr), &linkloc, 16);
 				/* 192.0.2.0/24 */
-				if (!flagtmp && ip4_matchnet(&(thisip->addr), &testnet, 24))
-					flagtmp = 1;
-				/* 192.0.2.0/24 */
-				if (!flagtmp && ip4_matchnet(&(thisip->addr), &bench, 15))
-					flagtmp = 1;
+				if (!flagtmp)
+					flagtmp = ip4_matchnet(&(thisip->addr), &testnet, 24);
+				/* 192.18.0.0/15 */
+				if (!flagtmp)
+					flagtmp = ip4_matchnet(&(thisip->addr), &bench, 15);
 				if (!flagtmp)
 					flaghit = 0;
 			} else {
@@ -124,7 +123,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, int *t)
 		}
 		if (flaghit) {
 			*logmsg = "IPv6 only";
-			return netwrite("501 5.4.0 all your mail exchangers have IPv6 addresses and I am a IPv4-only host\r\n") ? -1 : 1;
+			return netwrite("501 5.4.0 all your mail exchangers have IPv6 addresses and I am an IPv4-only host\r\n") ? -1 : 1;
 		}
 	}
 #endif
