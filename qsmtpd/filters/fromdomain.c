@@ -64,7 +64,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, int *t)
 			return netwrite("501 5.4.0 all your mail exchangers have loopback addresses\r\n") ? -1 : 1;
 		}
 	}
-	if (u & 4) {
+	if ((u & 4) && (xmitstat.frommx != NULL)) {
 /* check if all MX entries resolve to private networks */
 		int flaghit = 1;
 		struct ips *thisip = xmitstat.frommx;
