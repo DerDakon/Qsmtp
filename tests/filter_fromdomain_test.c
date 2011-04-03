@@ -59,6 +59,27 @@ check_expect(const int r_expect, const char *errmsg)
 	return 1;
 }
 
+/* set up this IP as sender and MX ip */
+static void
+setup_ip(const char *ip)
+{
+	int r;
+
+	strcpy(xmitstat.remoteip, ip);
+	r = inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
+	assert(r == 1);
+
+	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip);
+
+	if (xmitstat.frommx == NULL)
+		return;
+
+	xmitstat.fromdomain = 0;
+	xmitstat.frommx->addr = xmitstat.sremoteip;
+	xmitstat.frommx->priority = 42;
+	xmitstat.frommx->next = NULL;
+}
+
 int main()
 {
 	int r;
@@ -86,16 +107,12 @@ int main()
 	err += check_expect(0, "checking deactivated fromdomain filter");
 
 	sprintf(configline, "fromdomain=4");
-	strcpy(xmitstat.remoteip, "::ffff:172.16.42.42");
-	r = inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
-	assert(r == 1);
+	setup_ip("::ffff:172.16.42.42");
 
 	err += check_expect(0, "checking local net 172.16.42.42 without MX");
 
-	frommx.addr = xmitstat.sremoteip;
-	frommx.priority = 42;
-	frommx.next = NULL;
 	xmitstat.frommx = &frommx;
+	setup_ip("::ffff:172.16.42.42");
 
 	err += check_expect(1, "checking local net 172.16.42.42");
 
@@ -106,13 +123,21 @@ int main()
 	err += check_expect(1, "checking no MX");
 
 	sprintf(configline, "fromdomain=7");
-	xmitstat.fromdomain = 0;
-	strcpy(xmitstat.remoteip, "::ffff:62.27.20.61");
-	r = inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
-	assert(r == 1);
-	frommx.addr = xmitstat.sremoteip;
 	xmitstat.frommx = &frommx;
+	setup_ip("::ffff:62.27.20.61");
 	err += check_expect(0, "checking mail.sf-mail.de");
+
+	sprintf(configline, "fromdomain=2");
+	setup_ip("::ffff:127.4.5.6");
+	err += check_expect(1, "checking IPv4 loopback net");
+
+	sprintf(configline, "fromdomain=2");
+	setup_ip("::1");
+	err += check_expect(1, "checking IPv6 loopback net");
+
+	sprintf(configline, "fromdomain=4");
+	setup_ip("feab::42:42:42");
+	err += check_expect(1, "checking IPv6 link local net");
 
 	return err;
 }
