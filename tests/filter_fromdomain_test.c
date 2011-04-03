@@ -27,7 +27,7 @@ test_net_writen(const char * const * msg)
 	unsigned int i;
 
 	for (i = 0; msg[i]; i++)
-		printf(msg[i]);
+		printf("%s", msg[i]);
 
 	return 0;
 }
