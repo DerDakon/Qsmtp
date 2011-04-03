@@ -35,7 +35,7 @@ test_net_writen(const char * const * msg)
 static int
 test_netwrite(const char *msg)
 {
-	printf(msg);
+	printf("%s", msg);
 	return 0;
 }
 
