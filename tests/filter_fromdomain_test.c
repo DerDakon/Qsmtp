@@ -134,8 +134,10 @@ int main()
 	setup_ip("::1");
 	err += check_expect(1, "checking IPv6 loopback net");
 
-	sprintf(configline, "fromdomain=4");
 	setup_ip("feab::42:42:42");
+	err += check_expect(0, "checking IPv6 link local net when only loopback is forbidden");
+
+	sprintf(configline, "fromdomain=4");
 	err += check_expect(1, "checking IPv6 link local net");
 
 	return err;
