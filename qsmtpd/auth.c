@@ -225,9 +225,10 @@ auth_login(void)
 			return -1;
 		if (authgetl() < 0)
 			return -1;
-		if ( (r = b64decode(authin.s, authin.len, &user) > 0) )
-			goto err_input;
+		r = b64decode(authin.s, authin.len, &user);
 		free(authin.s);
+		if (r > 0)
+			goto err_input;
 	}
 	if (r < 0)
 		return r;
