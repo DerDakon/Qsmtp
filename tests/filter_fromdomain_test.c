@@ -82,7 +82,6 @@ setup_ip(const char *ip)
 
 int main()
 {
-	int r;
 	char configline[32];
 	char *configarray[] = {
 		configline,
