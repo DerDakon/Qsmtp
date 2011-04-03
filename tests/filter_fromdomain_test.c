@@ -105,5 +105,14 @@ int main()
 	xmitstat.frommx = NULL;
 	err += check_expect(1, "checking no MX");
 
+	sprintf(configline, "fromdomain=7");
+	xmitstat.fromdomain = 0;
+	strcpy(xmitstat.remoteip, "::ffff:62.27.20.61");
+	r = inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
+	assert(r == 1);
+	frommx.addr = xmitstat.sremoteip;
+	xmitstat.frommx = &frommx;
+	err += check_expect(0, "checking mail.sf-mail.de");
+
 	return err;
 }
