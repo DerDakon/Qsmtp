@@ -28,8 +28,8 @@ extern int cb_wildcardns(const struct userconf *, const char **, int *);
 /** the user filters will be called in the order in this array */
 rcpt_cb rcpt_cbs[] = {
 /* offline checks first */
-			cb_nomail,
 			cb_boolean,
+			cb_nomail,
 			cb_smtpbugs,
 			cb_usersize,
 			cb_soberg,
