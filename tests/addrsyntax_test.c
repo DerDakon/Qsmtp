@@ -16,6 +16,7 @@ const char *valid[] = {
 	"me@[127.0.0.1]",
 	"me@[IPv6:::1]",
 	"me@[IPv6:ffe::ffff:0123]",
+	"toolonglocalpart12345678901234567890123456789012345678901234567890@example.com",	/* localpart >64 chars */
 	NULL
 };
 
@@ -25,7 +26,6 @@ const char *invalid[] = {
 	"\"f\\oo\"@bar.example.com",	/* invalid quoting */
 	"\"\noo\"@example.com",		/* invalid quoted control character */
 	"\"foo@example.com",		/* unterminated quote */
-	"toolonglocalpart12345678901234567890123456789012345678901234567890@example.com",	/* localpart too long */
 	"me@[127.0.0.256]",		/* invalid IPv4 address */
 	"me@[IPv6:::abcd:fg:0:8:9]",	/* invalid IPv6 address (invalid hex character 'g') */
 	"me@[IPv6:::abcd::1234:2]",	/* invalid IPv6 address (multiple ::) */

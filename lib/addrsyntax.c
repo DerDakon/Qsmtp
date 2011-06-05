@@ -85,9 +85,11 @@ parseaddr(const char *addr)
 
 	if (!at)
 		return 1 - domainvalid(addr);
-	/* localpart too long */
-	if ((at - addr) > 64)
-		return 0;
+	/* RfC says localpart should not be longer than 64 bytes
+	 * but one should be prepared to see longer ones. Since e.g.
+	 * ezmlm creates localparts with more characters we don't set
+	 * any limit on the length here. */
+
 	/* paranoid ones would check for (at == addr+i) here */
 	if (parselocalpart(addr) < 0)
 		return 0;
