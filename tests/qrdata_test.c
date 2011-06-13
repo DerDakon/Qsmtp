@@ -424,6 +424,18 @@ static struct {
 		.log_count = 0
 	},
 	{
+		.name = "8bitAroundSoftbreak",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 0
+	},
+	{
+		.name = "whitespaceBeforeLinebreak",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 0
+	},
+	{
 		.name = NULL
 	}
 };
@@ -442,18 +454,36 @@ dots_detector(const char *msg, const size_t len)
 }
 
 static void
-recode_detector(const char *msg, const size_t len)
+recode_detector_simple(const char *msg, const size_t len)
+{
+	const char *spacebreak;
+
+	if (need_recode(msg, len) != 0) {
+		fputs("The message should not need recoding after recoding\n", stderr);
+		exit(EINVAL);
+	}
+
+	spacebreak = strstr(msg, " =\r\n");
+	if (spacebreak != NULL) {
+		fputs("Unencoded space before soft linebreak found\n", stderr);
+		exit(EINVAL);
+	}
+
+	spacebreak = strstr(msg, "\t=\r\n");
+	if (spacebreak != NULL) {
+		fputs("Unencoded tab before soft linebreak found\n", stderr);
+		exit(EINVAL);
+	}
+}
+
+static void
+recode_detector(const char *msg, const size_t len __attribute__ ((unused)))
 {
 	static const char ct_str[] = "Content-Type:";
 	unsigned int ct_cnt = 0;
 	unsigned int ct_cnt_orig = 0;
 	const char *tmp_msg = msg;
 	const char *tmp_orig = msgdata;
-
-	if (need_recode(msg, len) != 0) {
-		fputs("The message should not need recoding after recoding\n", stderr);
-		exit(EINVAL);
-	}
 
 	do {
 		tmp_msg = strstr(tmp_msg + 1, ct_str);
@@ -655,6 +685,7 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 		exit(EINVAL);
 
 	checkcrlf(outbuf, outpos);
+	recode_detector_simple(outbuf, outpos);
 
 	switch (testpatterns[usepattern].filters) {
 	case 0:

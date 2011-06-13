@@ -1,0 +1,35 @@
+Content-type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable (recoded by: Qremote @QSMTP_VERSION@ at foo.bar.example.com)
+
+To force recoding: =E2=82=AC=E2=82=AC
+
+lines with whitespace and safe characters, should trigger the "add one mo=
+re character" branch in recode_qp().
+
+ a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a=
+ a a a a a a a a
+a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a=
+ a a a a a a a a a
+
+The same with unsafe characters so this doesn't trigger falsely:
+
+ =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D=20=
+=3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D=
+ =3D =3D =3D =3D =3D =3D =3D =3D =3D
+=3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D=
+ =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D =3D=20=
+=3D =3D =3D =3D =3D =3D =3D =3D =3D =3D
+
+Ok, this time with UTF8 data:
+
+ =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=
+=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC=
+ =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=
+=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC=
+ =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC
+=C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=
+=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC=
+ =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=
+=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC=
+ =C3=A4 =C3=B6 =C3=BC =C3=A4 =C3=B6 =C3=BC
+.

@@ -1,0 +1,19 @@
+Content-type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
+
+To force recoding: €€
+
+lines with whitespace and safe characters, should trigger the "add one more character" branch in recode_qp().
+
+ a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a a
+
+The same with unsafe characters so this doesn't trigger falsely:
+
+ = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+
+Ok, this time with UTF8 data:
+
+ ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü
+ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü ä ö ü
