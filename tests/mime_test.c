@@ -116,6 +116,9 @@ test_multipart(void)
 		"Content-Type: ", /* empty */
 		"Content-Type: (comment does not end",
 		"Content-Type: multipart/ju=nk", /* '=' is not allowed at this point */
+		"Content-Type: multipart/mixed", /* no boundary given */
+		"Content-Type: multipart/mixed;", /* no boundary given */
+		"Content-Type: multipart/mixed; foo=bar", /* no boundary given */
 		NULL
 	};
 	int ret = 0;
