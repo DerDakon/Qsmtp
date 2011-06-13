@@ -109,12 +109,43 @@ test_ws()
 	return err;
 }
 
+static int
+test_multipart(void)
+{
+	const char *bad_lines[] = {
+		"Content-Type: ", /* empty */
+		"Content-Type: (comment does not end",
+		"Content-Type: multipart/ju=nk", /* '=' is not allowed at this point */
+		NULL
+	};
+	int ret = 0;
+	int i;
+
+	for (i = 0; bad_lines[i] != NULL; i++) {
+		cstring boundary;
+		cstring line;
+
+		STREMPTY(line);
+		line.s = bad_lines[i];
+		line.len = strlen(line.s);
+
+		if (is_multipart(&line, &boundary) != -1) {
+			fprintf(stderr, "bad line '%s' was not detected\n",
+				bad_lines[i]);
+			ret++;
+		}
+	}
+
+	return ret;
+}
+
 int
 main(void)
 {
 	int err = 0;
 
 	err += test_ws();
+	err += test_multipart();
 
 	return err;
 }
