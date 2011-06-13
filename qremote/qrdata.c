@@ -7,6 +7,7 @@
  */
 #include <sys/types.h>
 #include <sys/mman.h>
+#include <assert.h>
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
@@ -472,14 +473,24 @@ recode_qp(const char *buf, off_t len)
 				idx += chunk;
 				chunk = 0;
 				/* recode last character if it was whitespace */
-				if (sendbuf[idx - 1] == '\t') {
-					sendbuf[idx - 1] = '=';
-					sendbuf[idx++] = '0';
-					sendbuf[idx++] = '9';
-				} else if (sendbuf[idx - 1] == ' ') {
-					sendbuf[idx - 1] = '=';
-					sendbuf[idx++] = '2';
-					sendbuf[idx++] = '0';
+				if ((sendbuf[idx - 1] == '\t') || (sendbuf[idx - 1] == ' ')) {
+					/* if the next character does not need recoding add
+					 * it to this line if this line would end in a whitespace
+					 * otherwise. " x" is shorter than "=20". */
+					if ((off < len) &&
+							((buf[off] > 32) && (buf[off] < 127) &&
+							(buf[off] != '='))) {
+						sendbuf[idx++] = buf[off++];
+					} else if (sendbuf[idx - 1] == '\t') {
+						sendbuf[idx - 1] = '=';
+						sendbuf[idx++] = '0';
+						sendbuf[idx++] = '9';
+					} else {
+						assert(sendbuf[idx - 1] == ' ');
+						sendbuf[idx - 1] = '=';
+						sendbuf[idx++] = '2';
+						sendbuf[idx++] = '0';
+					}
 				}
 				sendbuf[idx++] = '=';
 				sendbuf[idx++] = '\r';
