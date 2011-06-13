@@ -918,6 +918,8 @@ int main(int argc, char **argv)
 		outbuf = malloc(outlen);
 		if (outbuf == NULL)
 			return ENOMEM;
+		/* make sure strstr() and friends have properly terminated data */
+		memset(outbuf, 0, outlen);
 
 		ascii = need_recode(msgdata, msgsize);
 
