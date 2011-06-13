@@ -473,7 +473,7 @@ recode_qp(const char *buf, off_t len)
 				idx += chunk;
 				chunk = 0;
 				/* recode last character if it was whitespace */
-				if ((sendbuf[idx - 1] == '\t') || (sendbuf[idx - 1] == ' ')) {
+				if ((idx > 0) && ((sendbuf[idx - 1] == '\t') || (sendbuf[idx - 1] == ' '))) {
 					/* if the next character does not need recoding add
 					 * it to this line if this line would end in a whitespace
 					 * otherwise. " x" is shorter than "=20". */
