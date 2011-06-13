@@ -111,8 +111,7 @@ is_multipart(const cstring *line, cstring *boundary)
 
 	STREMPTY(*boundary);
 
-	/* the 10 is just strlen("multipart/") */
-	if (!strncasecmp(ch, "multipart/", 10)) {
+	if (!strncasecmp(ch, "multipart/", strlen("multipart/"))) {
 		size_t i = 10, j;
 
 		j = mime_token(ch + i, line->len - (ch - line->s) - i);
