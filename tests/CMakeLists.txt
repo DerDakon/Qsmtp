@@ -158,6 +158,7 @@ FOREACH(PATTERN
 		wrapHeadersWithLongParts
 		whitespaceBeforeLinebreak
 		8bitAroundSoftbreak
+		ContentTypeSyntaxError
 		InvalidPreamble)
 	ADD_TEST(NAME "QrData-${PATTERN}"
 			COMMAND testcase_qrdata ${PATTERN})
@@ -171,6 +172,9 @@ ENDFOREACH(PATTERN)
 
 SET_TESTS_PROPERTIES(QrData-8bitHeader PROPERTIES
 		PASS_REGULAR_EXPRESSION "^D5\\.6\\.3 message contains unencoded 8bit data in message header")
+
+SET_TESTS_PROPERTIES(QrData-ContentTypeSyntaxError PROPERTIES
+		PASS_REGULAR_EXPRESSION "^D5\\.6\\.3 syntax error in Content-Type message header")
 
 ADD_TEST(NAME QrData-DATA-4xx-error COMMAND testcase_qrdata data_reply_400 temporary error)
 SET_TESTS_PROPERTIES(QrData-DATA-4xx-error PROPERTIES

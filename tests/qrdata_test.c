@@ -373,6 +373,13 @@ static struct {
 		.log_count = 2
 	},
 	{
+		.name = "ContentTypeSyntaxError",
+		.msg = "Content-Type: \n\nfoo bar \244\n",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 0
+	},
+	{
 		.name = "longChunkBeforeRecode",
 		.msg = "Subject: long good block before stuff that needs recode\r\n"
 				"Content-type:text/plain; charset=iso-8859-15\r\n\r\n"
