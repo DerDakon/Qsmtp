@@ -467,7 +467,6 @@ recode_qp(const char *buf, off_t len)
 
 			/* add soft line break to make sure encoded line length < 80 */
 			if (llen > 72) {
-				chunk++;
 				memcpy(sendbuf + idx, buf + off, chunk);
 				off += chunk;
 				idx += chunk;
@@ -488,7 +487,7 @@ recode_qp(const char *buf, off_t len)
 				llen = 0;
 			}
 
-			if (!llen && (buf[off + chunk] == '.')){
+			if (!llen && (buf[off + chunk] == '.')) {
 				chunk++;
 				memcpy(sendbuf + idx, buf + off, chunk);
 				off += chunk;
