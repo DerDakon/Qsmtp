@@ -292,7 +292,7 @@ setup(void)
 		log_write(LOG_ERR, "can't figure out local IP");
 		return 1;
 	}
-	if (IN6_IS_ADDR_V4MAPPED(xmitstat.slocalip.s6_addr)) {
+	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.slocalip)) {
 		memcpy(xmitstat.localip, tmp + 7, strlen(tmp + 7));
 	} else {
 		memcpy(xmitstat.localip, tmp, strlen(tmp));
@@ -396,7 +396,7 @@ connsetup(void)
 {
 	int j;
 
-	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(xmitstat.sremoteip.s6_addr) ? 1 : 0;
+	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
 	j = ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s);
 	if (j == -1) {
