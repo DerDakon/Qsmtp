@@ -5,7 +5,7 @@ Your requirements:
  -qmail
  -openssl
  -vpopmail (optional)
- -CMake (>= 2.6, get it from http://www.cmake.org) to generate the build files
+ -CMake (>= 2.8, get it from http://www.cmake.org) to generate the build files
 
 How to install:
  1. Install qmail, apply all the patches you want. Ignore any problems with qmail-smtpd, it will not be needed.
