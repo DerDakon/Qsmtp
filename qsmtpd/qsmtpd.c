@@ -281,12 +281,32 @@ setup(void)
 		}
 	}
 
-	tmp = getenv("TCP6REMOTEIP");
-	if (!tmp || !*tmp || (inet_pton(AF_INET6, tmp, &xmitstat.sremoteip) <= 0)) {
-		log_write(LOG_ERR, "can't figure out IP of remote host");
+#ifdef IPV4ONLY
+	tmp = getenv("TCPLOCALIP");
+	if (!tmp || !*tmp) {
+		log_write(LOG_ERR, "can't figure out local IP (TCPLOCALIP not set)");
 		return 1;
 	}
-	memcpy(xmitstat.remoteip, tmp, strlen(tmp));
+	strncpy(xmitstat.remoteip, "::ffff:", sizeof(xmitstat.remoteip));
+	strncat(xmitstat.remoteip + strlen("::ffff:"), tmp, sizeof(xmitstat.remoteip) - strlen("::ffff:") - 1);
+	if (inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.slocalip) <= 0) {
+		log_write(LOG_ERR, "can't figure out local IP (parse error)");
+		return 1;
+	}
+	memcpy(xmitstat.localip, tmp + 7, strlen(tmp + 7));
+
+	tmp = getenv("TCPREMOTEIP");
+	if (!tmp || !*tmp) {
+		log_write(LOG_ERR, "can't figure out IP of remote host (TCPREMOTEIP not set)");
+		return 1;
+	}
+	xmitstat.remoteip[strlen("::ffff:")] = '\0';
+	strncat(xmitstat.remoteip + strlen("::ffff:"), tmp, sizeof(xmitstat.remoteip) - strlen("::ffff:") - 1);
+	if (inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip) <= 0) {
+		log_write(LOG_ERR, "can't figure out IP of remote host (parse error)");
+		return 1;
+	}
+#else /* IPV4ONLY */
 	tmp = getenv("TCP6LOCALIP");
 	if (!tmp || !*tmp || (inet_pton(AF_INET6, tmp, &xmitstat.slocalip) <= 0)) {
 		log_write(LOG_ERR, "can't figure out local IP");
@@ -297,6 +317,14 @@ setup(void)
 	} else {
 		memcpy(xmitstat.localip, tmp, strlen(tmp));
 	}
+
+	tmp = getenv("TCP6REMOTEIP");
+	if (!tmp || !*tmp || (inet_pton(AF_INET6, tmp, &xmitstat.sremoteip) <= 0)) {
+		log_write(LOG_ERR, "can't figure out IP of remote host");
+		return 1;
+	}
+	memcpy(xmitstat.remoteip, tmp, strlen(tmp));
+#endif /* IPV4ONLY */
 
 	/* RfC 2821, section 4.5.3.2: "Timeouts"
 	 * An SMTP server SHOULD have a timeout of at least 5 minutes while it
