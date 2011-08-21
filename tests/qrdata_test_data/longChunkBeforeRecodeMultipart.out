@@ -3,7 +3,8 @@ Content-Type: multipart/mixed;
  boundary="------------0008"
 
 --------------0008
-Content-Transfer-Encoding: quoted-printable (recoded by: Qremote @QSMTP_VERSION@ at foo.bar.example.com)
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by Qremote @QSMTP_VERSION@ at foo.bar.example.com
 Content-type:text/plain; charset=utf-8
 
    50 78901234567890123456789012345678901234567890

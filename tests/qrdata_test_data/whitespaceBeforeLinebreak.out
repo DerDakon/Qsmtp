@@ -1,5 +1,6 @@
 Content-type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable (recoded by: Qremote @QSMTP_VERSION@ at foo.bar.example.com)
+Content-Transfer-Encoding: quoted-printable
+X-MIME-Autoconverted: from 8bit to quoted-printable by Qremote @QSMTP_VERSION@ at foo.bar.example.com
 
 To force recoding: =E2=82=AC=E2=82=AC
 

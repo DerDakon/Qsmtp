@@ -162,12 +162,12 @@ static void
 recodeheader(void)
 {
 	static const char recodedstr[] = "Content-Transfer-Encoding: "
-			"quoted-printable (recoded by: Qremote " QSMTPVERSION " at ";
-	char buf[heloname.len + 3 + strlen(recodedstr)];
+			"quoted-printable\r\n"
+			"X-MIME-Autoconverted: from 8bit to quoted-printable by Qremote " QSMTPVERSION " at ";
+	char buf[heloname.len + 2 + strlen(recodedstr)];
 
 	memcpy(buf, recodedstr, strlen(recodedstr));
 	memcpy(buf + strlen(recodedstr), heloname.s, heloname.len);
-	buf[sizeof(buf) - 3] = ')';
 	buf[sizeof(buf) - 2] = '\r';
 	buf[sizeof(buf) - 1] = '\n';
 	netnwrite(buf, sizeof(buf));
