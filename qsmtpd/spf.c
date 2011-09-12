@@ -1263,8 +1263,8 @@ spfptr(const char *domain, const char *token)
 	i = validate_domain(&validdomains);
 	switch (i) {
 	case 0:
-		r = SPF_NONE;
-		break;
+		free(domainspec);
+		return SPF_NONE;
 	case -1:
 		r = -1;
 		break;

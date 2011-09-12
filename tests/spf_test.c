@@ -1544,6 +1544,22 @@ test_suite_ptr()
 			.key = "e5.example.com",
 			.value = "v=spf1 ptr:"
 		},
+		/* a special one for the no-validated-names test */
+		{
+			.type = DNSTYPE_A,
+			.key = "e6.example.com",
+			.value = "::ffff:1.2.3.8"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "::ffff:1.2.3.7",
+			.value = "e6.example.com"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e6.example.com",
+			.value = "v=spf1 ptr -all"
+		},
 		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
@@ -1598,6 +1614,14 @@ test_suite_ptr()
 			.mailfrom = "foo@e5.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "ptr-no-validated-domains",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.7",
+			.mailfrom = "foo@e6.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
 		},
 		{
 			.helo = NULL,
