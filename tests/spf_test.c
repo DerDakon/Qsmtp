@@ -2379,6 +2379,18 @@ test_behavior()
 			.value = "v=spf1 ptr:..: -all"
 		},
 		{
+			.type = DNSTYPE_A,
+			.key = "f.example.com",
+			.value = "::ffff:1.2.9.9"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "::ffff:1.2.9.9",
+			.value = "e.example.com;f.example.org;g.example.org;h.example.org;"
+					"i.example.org;j.example.org;k.example.org;l.example.org;"
+					"m.example.org;n.example.org;o.example.org;p.example.org"
+		},
+		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
@@ -2414,6 +2426,14 @@ test_behavior()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.8.3",
 			.mailfrom = "foo@invalid.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "ptr-many-names",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.9.9",
+			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
 		},
