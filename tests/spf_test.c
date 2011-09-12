@@ -2435,7 +2435,7 @@ test_behavior()
 			.remoteip = "::ffff:1.2.9.9",
 			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_FAIL_PERM
 		},
 		{
 			.helo = NULL,
