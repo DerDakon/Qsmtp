@@ -2359,9 +2359,24 @@ test_behavior()
 			.value = "e6.example.com"
 		},
 		{
+			.type = DNSTYPE_A,
+			.key = "e.example.com",
+			.value = "::ffff:1.2.8.3"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "::ffff:1.2.8.3",
+			.value = "e.example.com"
+		},
+		{
 			.type = DNSTYPE_SPF,
 			.key = "e6.example.com",
 			.value = "v=spf1 ptr -all"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "invalid.example.com",
+			.value = "v=spf1 ptr:..: -all"
 		},
 		{
 			.type = DNSTYPE_NONE,
@@ -2385,6 +2400,22 @@ test_behavior()
 			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "ptr-short-validated-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.8.3",
+			.mailfrom = "foo@e6.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "ptr-invalid-domainspec",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.8.3",
+			.mailfrom = "foo@invalid.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
 		},
 		{
 			.helo = NULL,
