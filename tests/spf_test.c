@@ -1544,22 +1544,6 @@ test_suite_ptr()
 			.key = "e5.example.com",
 			.value = "v=spf1 ptr:"
 		},
-		/* a special one for the no-validated-names test */
-		{
-			.type = DNSTYPE_A,
-			.key = "e6.example.com",
-			.value = "::ffff:1.2.3.8"
-		},
-		{
-			.type = DNSTYPE_NAME,
-			.key = "::ffff:1.2.3.7",
-			.value = "e6.example.com"
-		},
-		{
-			.type = DNSTYPE_SPF,
-			.key = "e6.example.com",
-			.value = "v=spf1 ptr -all"
-		},
 		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
@@ -1614,14 +1598,6 @@ test_suite_ptr()
 			.mailfrom = "foo@e5.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
-		},
-		{
-			.name = "ptr-no-validated-domains",
-			.helo = "mail.example.com",
-			.remoteip = "::ffff:1.2.3.7",
-			.mailfrom = "foo@e6.example.com",
-			.exp = NULL,
-			.result = SPF_FAIL_PERM
 		},
 		{
 			.helo = NULL,
@@ -2369,6 +2345,62 @@ test_parse()
 }
 
 static int
+test_behavior()
+{
+	const struct dnsentry ptrentries[] = {
+		{
+			.type = DNSTYPE_A,
+			.key = "e6.example.com",
+			.value = "::ffff:1.2.3.8"
+		},
+		{
+			.type = DNSTYPE_NAME,
+			.key = "::ffff:1.2.3.7",
+			.value = "e6.example.com"
+		},
+		{
+			.type = DNSTYPE_SPF,
+			.key = "e6.example.com",
+			.value = "v=spf1 ptr -all"
+		},
+		{
+			.type = DNSTYPE_NONE,
+			.key = NULL,
+			.value = NULL
+		},
+	};
+	const struct suite_testcase ptrtestcases[] = {
+		{
+			.name = "ptr-no-validated-domains",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.7",
+			.mailfrom = "foo@e6.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "ptr-no-reverse-lookup",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.3",
+			.mailfrom = "foo@e6.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.helo = NULL,
+			.remoteip = NULL,
+			.mailfrom = NULL,
+			.exp = NULL,
+			.result = -1
+		}
+	};
+
+	dnsdata = ptrentries;
+
+	return run_suite_test(ptrtestcases);
+}
+
+static int
 test_received()
 {
 	int err = 0;
@@ -2446,6 +2478,8 @@ int main(int argc, char **argv)
 		return runtest(&spftest_sfmail);
 	else if (strcmp(argv[1], "_parse_") == 0)
 		return test_parse();
+	else if (strcmp(argv[1], "_behavior_") == 0)
+		return test_behavior();
 	else if (strcmp(argv[1], "_received_") == 0)
 		return test_received();
 	else if (strcmp(argv[1], "_suite_") == 0)
