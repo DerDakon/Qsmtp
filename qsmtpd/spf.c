@@ -1421,10 +1421,9 @@ txtlookup(char **txt, const char *domain)
 		len--;
 	}
 
-	if (len == 0) {
-		errno = EINVAL;
-		return -1;
-	}
+	/* Either spf_domainspec() is called before or it is checked to not 
+	 * contain only dots. */
+	assert(len != 0);
 
 	while (len - offs > 253) {
 		const char *dot = strchr(domain + offs, '.');
