@@ -944,8 +944,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 			/* toplabel mal only be alphanum or '-' and
 			 * must have at least one ALPHA */
 			for (tmp = dot + 1; tmp <= last; tmp++) {
-				if (isalpha(*tmp))
-					hasalpha = 1;
+				hasalpha |= isalpha(*tmp);
 				if (!isalnum(*tmp) && (*tmp != '-'))
 					return SPF_FAIL_MALF;
 			}
