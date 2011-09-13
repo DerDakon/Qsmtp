@@ -2269,6 +2269,21 @@ test_parse()
 			.value = "v=spf1 exp -all"
 		},
 		{
+			.type = DNSTYPE_TXT,
+			.key = "a-end.example.net",
+			.value = "v=spf1 a"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "a-colon-end.example.net",
+			.value = "v=spf1 a:"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "exists-colon-end.example.net",
+			.value = "v=spf1 exists:"
+		},
+		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
@@ -2304,6 +2319,9 @@ test_parse()
 		SPF_FAIL_MALF,
 		SPF_FAIL_MALF,
 		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_NEUTRAL,
 		SPF_FAIL_MALF,
 		SPF_FAIL_MALF
 	};
