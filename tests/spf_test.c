@@ -2244,6 +2244,31 @@ test_parse()
 			.value = "v=spf1 redirect=foo.example.com/16"
 		},
 		{
+			.type = DNSTYPE_TXT,
+			.key = "exists-no-delimiter.example.net",
+			.value = "v=spf1 exists -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "ip4-no-delimiter.example.net",
+			.value = "v=spf1 ip4 -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "ip6-no-delimiter.example.net",
+			.value = "v=spf1 ip6 -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "redirect-no-delimiter.example.net",
+			.value = "v=spf1 redirect -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "exp-no-delimiter.example.net",
+			.value = "v=spf1 exp -all"
+		},
+		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
@@ -2262,6 +2287,11 @@ test_parse()
 		SPF_PASS,
 		SPF_FAIL_MALF,
 		SPF_SOFTFAIL,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
+		SPF_FAIL_MALF,
 		SPF_FAIL_MALF,
 		SPF_FAIL_MALF,
 		SPF_FAIL_MALF,
