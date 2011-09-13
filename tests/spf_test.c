@@ -2421,6 +2421,11 @@ test_behavior()
 					"m.example.org;n.example.org;o.example.org;p.example.org"
 		},
 		{
+			.type = DNSTYPE_SPF,
+			.key = "domainspec-nonalpha.example.com",
+			.value = "v=spf1 include:foo.bar- -all"
+		},
+		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
@@ -2466,6 +2471,14 @@ test_behavior()
 			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "domainspec-nonalpha",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.9.9",
+			.mailfrom = "foo@domainspec-nonalpha.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
 		},
 		{
 			.helo = NULL,
