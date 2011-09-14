@@ -216,7 +216,7 @@ urlencode(const char *token, char **result)
 			case ')':
 				break;
 			default:
-				/* we need to add the string in betwenn and 3 characters: %xx */
+				/* we need to add the string in between and 3 characters: %xx */
 				newlen = len + 3 + (token - last);
 				tmp = realloc(res, newlen + 1);
 				if (!tmp) {
