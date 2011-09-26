@@ -150,7 +150,8 @@ tls_init(void)
 	}
 
 	ssl = myssl;
-	ssl_rfd = ssl_wfd = socketd;
+	SSL_set_rfd(myssl, socketd);
+	SSL_set_wfd(myssl, socketd);
 	if (ssl_timeoutconn(timeout) <= 0) {
 		tls_quitmsg("ZTLS connect failed", ssl_strerror());
 	}

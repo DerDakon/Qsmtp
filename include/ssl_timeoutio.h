@@ -15,8 +15,6 @@
 extern int ssl_timeoutconn(time_t);
 extern int ssl_timeoutaccept(time_t);
 extern int ssl_timeoutrehandshake(time_t);
-extern int ssl_rfd;
-extern int ssl_wfd;
 
 extern int ssl_timeoutread(time_t, char *, const int);
 extern int ssl_timeoutwrite(time_t, const char *, const int);

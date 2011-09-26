@@ -2,6 +2,7 @@
  \brief SSL encoding and decoding functions for network I/O
  */
 #include <sys/select.h>
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include "ssl_timeoutio.h"
@@ -10,8 +11,6 @@
 
 #define ndelay_on(fd) fcntl(fd,F_SETFL,fcntl(fd,F_GETFL) | O_NONBLOCK)
 #define ndelay_off(fd) fcntl(fd,F_SETFL,fcntl(fd,F_GETFL) & ~O_NONBLOCK)
-
-int ssl_rfd = -1, ssl_wfd = -1; /* SSL_get_Xfd() are broken */
 
 /**
  * call SSL function for given data buffer
@@ -29,6 +28,7 @@ ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 {
 	int n = 0;
 	const time_t end = t + time(NULL);
+	int fd = -1;
 
 	do {
 		fd_set fds;
@@ -46,16 +46,24 @@ ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 
 		FD_ZERO(&fds);
 		switch (SSL_get_error(ssl, r)) {
-			case SSL_ERROR_WANT_READ:
-				FD_SET(ssl_rfd, &fds);
-				n = select(ssl_rfd + 1, &fds, NULL, NULL, &tv);
-				break;
-			case SSL_ERROR_WANT_WRITE:
-				FD_SET(ssl_wfd, &fds);
-				n = select(ssl_wfd + 1, NULL, &fds, NULL, &tv);
-				break;
-			default:
-				return r; /* some other error */
+		case SSL_ERROR_WANT_READ:
+			if (fd < 0) {
+				fd = SSL_get_rfd(ssl);
+				assert(fd >= 0);
+			}
+			FD_SET(fd, &fds);
+			n = select(fd + 1, &fds, NULL, NULL, &tv);
+			break;
+		case SSL_ERROR_WANT_WRITE:
+			if (fd < 0) {
+				fd = SSL_get_wfd(ssl);
+				assert(fd >= 0);
+			}
+			FD_SET(fd, &fds);
+			n = select(fd + 1, NULL, &fds, NULL, &tv);
+			break;
+		default:
+			return r; /* some other error */
 		}
 
 		/* n is the number of descriptors that changed status */
@@ -71,6 +79,8 @@ int
 ssl_timeoutaccept(time_t t)
 {
 	int r;
+	int ssl_wfd = SSL_get_wfd(ssl);
+	int ssl_rfd = SSL_get_rfd(ssl);
 
 	/* if connection is established, keep NDELAY */
 	if (ndelay_on(ssl_rfd) == -1 || ndelay_on(ssl_wfd) == -1)
@@ -91,6 +101,8 @@ int
 ssl_timeoutconn(time_t t)
 {
 	int r;
+	int ssl_wfd = SSL_get_wfd(ssl);
+	int ssl_rfd = SSL_get_rfd(ssl);
 
 	/* if connection is established, keep NDELAY */
 	if ( (ndelay_on(ssl_rfd) == -1) || (ndelay_on(ssl_wfd) == -1) )
