@@ -486,6 +486,8 @@ main(int argc, char *argv[])
 /* for all MX entries we got: try to enable connection, check if the SMTP server wants us
  * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
 	do {
+		int flagerr = 0;
+
 /*		if (i < 0) {
 			if (errno == ENOMEM)
 				err_mem(1);
@@ -500,13 +502,38 @@ main(int argc, char *argv[])
 			quitmsg();
 			continue;
 		}
-		if (linein[3] != ' ') {
+		while (strncmp("220-", linein, 4) == 0) {
+			if (net_read() == 0)
+				continue;
+
+			flagerr = 1;
+			switch (errno) {
+			case ENOMEM:
+					err_mem(1);
+			case EINVAL:
+			case E2BIG:
+					(void) write(1, "Zsyntax error in server reply\n", 31);
+					quitmsg();
+					break;
+			default:
+				{
+					const char *tmp = strerror(errno);
+
+					write(1, "Z", 1);
+					write(1, tmp, strlen(tmp) + 1);
+					quitmsg();
+				}
+			}
+		}
+		if (flagerr)
+			continue;
+
+		if (strncmp("220 ", linein, 4)) {
 			const char *dropmsg[] = {"invalid greeting from ", NULL, NULL};
 
 			getrhost(mx);
 			dropmsg[1] = rhost;
 			log_writen(LOG_WARNING, dropmsg);
-			while ((netget() == 220) && (linein[3] != ' ')) {}
 			quitmsg();
 		}
 	} while ((socketd < 0) || (i = greeting()));
