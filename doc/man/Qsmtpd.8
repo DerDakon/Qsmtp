@@ -322,7 +322,38 @@ If the code does not match this requirements or is not found at all the code giv
 used. The rejection line may be of any length, the message will be folded if necessary. The file may contain 
 comments, but only one valid line.
 
-.SH "Debugging"
+.TP 4
+.I relayclients
+
+Holds a list of IPv4 addresses allowed for relaying. Every address is followed by a netmask length specifying
+if a whole network is allowed to relay. Use the
+.B addipbl
+command to add new entries to this file.
+
+.TP 4
+.I relayclients6
+Works the same as
+.IR relayclients ,
+but for IPv6 addresses.
+
+.SH RELAYING
+
+By default
+.B Qsmtpd
+does not allow relaying. Contrary to
+.B qmail-smtpd
+it will not look at the
+.I RELAYCLIENT
+environment variable.
+
+Relaying is permitted in one of two cases: the user has authenticated himself using SMTP AUTH or a SSL client
+certificate, or the IP address of the client is found in one of the
+.I relayclients
+or
+.I relayclients6
+control files (see above).
+
+.SH DEBUGGING
 If
 .B Qsmtpd
 has been with the
