@@ -482,10 +482,9 @@ check_received(int spfstatus, int log)
 		} else {
 			while (*tmp != ';') {
 				if (*tmp == '\n') {
-					if (*(tmp + 1) == '\0') {
-						tmp = NULL;
+					if (*(tmp + 1) == '\0')
 						break;
-					}
+
 					fputs("value did not end before end of line\n", stderr);
 					fputs(buf, stderr);
 					return 1;
