@@ -65,7 +65,7 @@ ip6_test_match(const char *ipstr, const char *matchstr, const int expect)
 static int
 ip6_test(void)
 {
-	struct in6_addr s1, s2;
+	struct in6_addr s1;
 	int err = 0;
 	const char s1str[] = "fe80::1234:6789:50ab:cdef";
 	const char s2str[] = "2001::1234:6789:50ab:cdef";
@@ -73,7 +73,6 @@ ip6_test(void)
 	err = inet_pton(AF_INET6, s1str, &s1);
 	assert(err == 1);
 	err = 0;
-	s2 = s1;
 
 	if (ip6_matchnet(&s1, &s1, 128) != 1) {
 		printf("Error: IPv6 address %s does not match itself\n", s1str);
