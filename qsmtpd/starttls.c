@@ -11,24 +11,8 @@
 #include "ssl_timeoutio.h"
 #include "qsmtpd.h"
 
-int tls_init(void);
-int tls_verify(void);
-
 int ssl_verified = 0;
 const char *ssl_verify_err = 0;
-
-/**
- * initialize STARTTLS mode
- *
- * @return 0 on successful initialization, else error code
- */
-int
-smtp_starttls(void)
-{
-	if (ssl || !xmitstat.esmtp)
-		return 1;
-	return tls_init();
-}
 
 static RSA *
 tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
@@ -70,7 +54,7 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 	return DH_generate_parameters(keylen, DH_GENERATOR_2, NULL, NULL);
 }
 
-void
+static void
 tls_out(const char *s1, const char *s2)
 {
 	const char *msg[] = {"454 4.3.0 TLS ", s1, NULL, NULL, NULL};
@@ -82,18 +66,23 @@ tls_out(const char *s1, const char *s2)
 	net_writen(msg);
 }
 
-void tls_err(const char *s) { tls_out(s, ssl_error()); }
+static void
+tls_err(const char *s)
+{
+	tls_out(s, ssl_error());
+}
 
 #define CLIENTCA "control/clientca.pem"
 #define CLIENTCRL "control/clientcrl.pem"
 #define SERVERCERT "control/servercert.pem"
 
+#if 0
 /**
  * verify is authenticated to relay by SSL certificate
  *
  * @return -1 on error, 0 if client is not authenticated, >0 if client is authenticated
  */
-int
+static int
 tls_verify(void)
 {
 	char *clientbuf, **clients;
@@ -192,8 +181,10 @@ tls_verify(void)
 
 	return tlsrelay;
 }
+#endif
 
-int tls_init()
+static int
+tls_init()
 {
 	SSL *myssl;
 	SSL_CTX *ctx;
@@ -312,4 +303,17 @@ int tls_init()
 
 	/* have to discard the pre-STARTTLS HELO/EHLO argument, if any */
 	return 0;
+}
+
+/**
+ * initialize STARTTLS mode
+ *
+ * @return 0 on successful initialization, else error code
+ */
+int
+smtp_starttls(void)
+{
+	if (ssl || !xmitstat.esmtp)
+		return 1;
+	return tls_init();
 }
