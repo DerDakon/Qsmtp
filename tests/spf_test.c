@@ -322,6 +322,14 @@ static struct spftestcase spftest_sfmail = {
 
 struct xmitstat xmitstat;
 string heloname;
+static const char defaulthelo[] = "myhelo.example.net";
+
+static void
+init_helo(const char *helo)
+{
+	newstr(&heloname, strlen(helo));
+	memcpy(heloname.s, helo, strlen(helo));
+}
 
 static int
 check_received(int spfstatus, int log)
@@ -533,6 +541,7 @@ runtest(struct spftestcase *tc)
 	int err = 0;
 
 	setup_transfer(tc->helo, tc->from, tc->goodip);
+	init_helo(defaulthelo);
 
 	dnsdata = tc->dns;
 
@@ -562,6 +571,8 @@ runtest(struct spftestcase *tc)
 	STREMPTY(xmitstat.helostr);
 	free(xmitstat.remotehost.s);
 	STREMPTY(xmitstat.remotehost);
+	free(heloname.s);
+	STREMPTY(heloname);
 
 	return err;
 }
@@ -931,8 +942,7 @@ run_suite_test(const struct suite_testcase *testcases)
 	unsigned int i = 0;
 	int err = 0;
 
-	newstr(&heloname, strlen("myhelo.example.net"));
-	memcpy(heloname.s, "myhelo.example.net", strlen("myhelo.example.net"));
+	init_helo(defaulthelo);
 
 	while (testcases[i].helo != NULL) {
 		int r;
@@ -2341,8 +2351,7 @@ test_parse()
 		return ENOMEM;
 	memcpy(xmitstat.helostr.s, parseentries[0].key, strlen(parseentries[0].key));
 	memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
-	newstr(&heloname, strlen(myhelo));
-	memcpy(heloname.s, myhelo, strlen(myhelo));
+	init_helo(myhelo);
 	newstr(&xmitstat.mailfrom, strlen(mailfrom));
 	memcpy(xmitstat.mailfrom.s, mailfrom, strlen(mailfrom));
 
@@ -2530,8 +2539,7 @@ test_received()
 		return ENOMEM;
 	memcpy(xmitstat.helostr.s, strchr(mailfrom, '@') + 1, strlen(strchr(mailfrom, '@') + 1));
 	memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
-	newstr(&heloname, strlen(myhelo));
-	memcpy(heloname.s, myhelo, strlen(myhelo));
+	init_helo(myhelo);
 	newstr(&xmitstat.mailfrom, strlen(mailfrom));
 	memcpy(xmitstat.mailfrom.s, mailfrom, strlen(mailfrom));
 
