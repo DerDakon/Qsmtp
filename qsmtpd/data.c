@@ -200,7 +200,7 @@ queue_header(void)
 /* write the "Received: " line to mail header */
 	WRITEL(fd, "Received: from ");
 	if (!i) {
-		if (xmitstat.remotehost.s && xmitstat.remotehost.len) {
+		if (xmitstat.remotehost.len) {
 			WRITE(fd, xmitstat.remotehost.s, xmitstat.remotehost.len);
 		} else {
 			WRITEL(fd, "unknown");
