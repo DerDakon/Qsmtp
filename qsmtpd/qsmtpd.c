@@ -187,6 +187,38 @@ freeppol(void)
 	}
 }
 
+/**
+ * check if the amount of bad commands was reached
+ *
+ * If the client has sent too many consecutive bad commands the
+ * connection will be terminated.
+ */
+void
+check_max_bad_commands(void)
+{
+	const char *msg[] = {"dropped connection from [", xmitstat.remoteip,
+			"] {too many bad commands}", NULL };
+
+	if (badcmds++ <= MAXBADCMDS)
+		return;
+
+	/* -ignore possible errors here, we exit anyway
+	 * -don't use tarpit: this might be a virus or something going wild,
+	 *  tarpit would allow him to waste even more bandwidth */
+	netwrite("550-5.7.1 too many bad commands\r\n");
+	log_writen(LOG_INFO, msg);
+	netwrite("550 5.7.1 die slow and painful\r\n");
+
+	freedata();
+	freeppol();
+
+	free(protocol);
+	free(gcbuf);
+	free(globalconf);
+
+	exit(0);
+}
+
 static int
 setup(void)
 {
@@ -1553,19 +1585,7 @@ smtploop(void)
 
 /* error handling */
 		if (flagbogus) {
-			if (badcmds > MAXBADCMDS) {
-				const char *msg[] = {"dropped connection from [", xmitstat.remoteip,
-							"] {too many bad commands}", NULL };
-
-				/* -ignore possible errors here, we exit anyway
-				 * -don't use tarpit: this might be a virus or something going wild,
-				 *  tarpit would allow him to waste even more bandwidth */
-				netwrite("550-5.7.1 too many bad commands\r\n");
-				log_writen(LOG_INFO, msg);
-				netwrite("550 5.7.1 die slow and painful\r\n");
-				exit(0);
-			}
-			badcmds++;
+			check_max_bad_commands();
 			/* set flagbogus again in the switch statement to check if an error
 			 * occured during error handling. This is a very bad sign: either
 			 * we are very short of resources or the client is really really broken */
