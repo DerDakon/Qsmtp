@@ -40,6 +40,7 @@
 #include "qsdata.h"
 #include "xtext.h"
 #include "fmt.h"
+#include "qmaildir.h"
 
 int smtp_noop(void);
 int smtp_quit(void);

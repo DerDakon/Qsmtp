@@ -27,6 +27,7 @@
 #include "qrdata.h"
 #include "fmt.h"
 #include "tls.h"
+#include "qmaildir.h"
 
 int socketd = -1;
 string heloname;
