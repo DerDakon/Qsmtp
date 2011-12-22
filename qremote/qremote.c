@@ -427,13 +427,19 @@ greeting(void)
 void
 dieerror(int error)
 {
+	const char *logmsg[] = { "connection to ", rhost, NULL, NULL };
+
 	switch (error) {
-		case ETIMEDOUT:	write(1, "Zconnection to remote timed out\n", 33);
-				log_write(LOG_WARNING, "connection timed out");
-				break;
-		case ECONNRESET:write(1, "Zconnection to remote server died\n", 35);
-				log_write(LOG_WARNING, "connection died");
-				break;
+	case ETIMEDOUT:
+		write(1, "Zconnection to remote timed out\n", 33);
+		logmsg[2] = " timed out";
+		log_writen(LOG_WARNING, logmsg);
+		break;
+	case ECONNRESET:
+		write(1, "Zconnection to remote server died\n", 35);
+		logmsg[2] = " died";
+		log_writen(LOG_WARNING, logmsg);
+		break;
 	}
 	net_conn_shutdown(shutdown_abort);
 }
