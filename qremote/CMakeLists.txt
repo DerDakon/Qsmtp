@@ -1,3 +1,9 @@
+OPTION(QREMOTE_PEDANTIC_STATUS_CODES "Be pedantic about the status codes Qremote accepts from remote servers" OFF)
+
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/statuscodes.h.tmpl ${CMAKE_CURRENT_BINARY_DIR}/statuscodes.h @ONLY)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
 SET(QREMOTE_SRCS
 	qremote.c
 	conn.c

@@ -28,6 +28,7 @@
 #include "fmt.h"
 #include "tls.h"
 #include "qmaildir.h"
+#include "statuscodes.h"
 
 int socketd = -1;
 string heloname;
@@ -283,14 +284,14 @@ checkreply(const char *status, const char **pre, const int mask)
 	if (status) {
 		int m;
 
-		if ((res >= 211) && (res <= 252)) {
+		if ((res >= SUCCESS_MINIMUM_STATUS) && (res <= SUCCESS_MAXIMUM_STATUS)) {
 			if (status[0] == ' ') {
 				ignore = 1;
 			} else {
 				write(1, status, 1);
 			}
 			m = 1;
-		} else if ((res >= 421) && (res <= 452)) {
+		} else if ((res >= TEMP_MINIMUM_STATUS) && (res <= TEMP_MAXIMUM_STATUS)) {
 			write(1, status + 1, 1);
 			m = 2;
 		} else {
