@@ -8,6 +8,7 @@ SET(QSMTPD_SRCS
 	spf.c
 	vpop.c
 	data.c
+	syntax.c
 )
 
 SET(QSMTPD_HDRS
@@ -15,6 +16,7 @@ SET(QSMTPD_HDRS
 	../include/qsauth.h
 	../include/qsdata.h
 	../include/qsmtpd.h
+	syntax.h
 	../include/userfilters.h
 	../include/vpop.h
 )

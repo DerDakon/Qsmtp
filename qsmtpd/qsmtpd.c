@@ -41,6 +41,7 @@
 #include "xtext.h"
 #include "fmt.h"
 #include "qmaildir.h"
+#include "syntax.h"
 
 int smtp_noop(void);
 int smtp_quit(void);
@@ -102,9 +103,6 @@ int authhide;				/**< hide source of authenticated mail */
 
 struct recip *thisrecip;
 
-static int badcmds = 0;			/**< bad commands in a row */
-
-#define MAXBADCMDS	5		/**< maximum number of illegal commands in a row */
 #define MAXRCPT		500		/**< maximum number of recipients in a single mail */
 
 /**
@@ -186,38 +184,6 @@ freeppol(void)
 		free(l->name);
 		free(l);
 	}
-}
-
-/**
- * check if the amount of bad commands was reached
- *
- * If the client has sent too many consecutive bad commands the
- * connection will be terminated.
- */
-void
-check_max_bad_commands(void)
-{
-	const char *msg[] = {"dropped connection from [", xmitstat.remoteip,
-			"] {too many bad commands}", NULL };
-
-	if (badcmds++ <= MAXBADCMDS)
-		return;
-
-	/* -ignore possible errors here, we exit anyway
-	 * -don't use tarpit: this might be a virus or something going wild,
-	 *  tarpit would allow him to waste even more bandwidth */
-	netwrite("550-5.7.1 too many bad commands\r\n");
-	log_writen(LOG_INFO, msg);
-	netwrite("550 5.7.1 die slow and painful\r\n");
-
-	freedata();
-	freeppol();
-
-	free(protocol);
-	free(gcbuf);
-	free(globalconf);
-
-	exit(0);
 }
 
 static int
@@ -1429,36 +1395,6 @@ smtp_vrfy(void)
 	return netwrite("252 send some mail, I'll do my very best\r\n") ? errno : 0;
 }
 
-/**
- * \brief check if there is already more input from network available
- * \returns error code if data is available
- * \retval 0 if no input
- *
- * This function should only be used in situations where the client should NOT
- * have sent any more data, i.e. where he must wait for our reply before sending
- * more. This is a sign of a broken SMTP engine on the other side, the input should
- * not be used anymore.
- */
-int
-hasinput(void)
-{
-	int rc;
-
-	if ( (rc = data_pending()) < 0)
-		return errno;
-	if (!rc)
-		return 0;
-
-	/* there is input data pending. This means the client sent some before our
-	 * reply. His SMTP engine is broken so we don't let him send the mail */
-	/* first: consume the first line of input so client will trigger the bad
-	 * commands counter if he ignores everything we send */
-	rc = net_read() ? errno : 0;
-	if (rc)
-		return rc;
-	return netwrite("550 5.5.0 you must wait for my reply\r\n") ? errno : EBOGUS;
-}
-
 int
 smtp_noop(void)
 {
@@ -1479,6 +1415,22 @@ smtp_rset(void)
 	return netwrite("250 2.0.0 ok\r\n") ? errno : 0;
 }
 
+/**
+ * \brief clean up the allocated data and exit the process
+ * \param rc desired return code of the process
+ */
+void
+conn_cleanup(const int rc)
+{
+	freedata();
+	freeppol();
+
+	free(protocol);
+	free(gcbuf);
+	free(globalconf);
+	exit(rc);
+}
+
 int
 smtp_quit(void)
 {
@@ -1486,13 +1438,7 @@ smtp_quit(void)
 	int rc;
 
 	rc = net_writen(msg);
-	freedata();
-	freeppol();
-
-	free(protocol);
-	free(gcbuf);
-	free(globalconf);
-	exit(rc ? errno : 0);
+	conn_cleanup(rc ? errno : 0);
 }
 
 static int
@@ -1553,18 +1499,45 @@ static int flagbogus;
 static void __attribute__ ((noreturn))
 smtploop(void)
 {
+	badcmds = 0;
+
 	if (!getenv("BANNER")) {
 		const char *msg[] = {"220 ", heloname.s, " " VERSIONSTRING " ESMTP", NULL};
+		const char quitcmd[] = "QUIT";
 
-		if (! (flagbogus = hasinput()) ) {
-			flagbogus = net_writen(msg) ? errno : 0;
-		} else {
-/* check if someone talks to us like a HTTP proxy and kill the connection if */
+		flagbogus = hasinput(0);
+		switch (flagbogus) {
+		case EBOGUS:
+			/* check if someone talks to us like a HTTP proxy and kill the connection if */
 			if (!strncmp("POST / HTTP/1.", linein, 14)) {
-				const char *logmsg[] = {"dropped connection from [", xmitstat.remoteip, "]: client is talking HTTP to me", NULL};
+				const char *logmsg[] = {"dropped connection from [", xmitstat.remoteip,
+						"]: client is talking HTTP to me", NULL };
 				log_writen(LOG_INFO, logmsg);
 				exit(0);
+			} else {
+				/* this is just a broken SMTP engine */
+				wait_for_quit();
 			}
+		case 0:
+			flagbogus = net_writen(msg) ? errno : 0;
+			if (flagbogus == 0)
+				break;
+		default:
+			/* There was a communication error. Announce temporary error. */
+			(void) net_writen(msg);
+
+			(void) net_read();
+
+			/* explicitely catch QUIT here: responding with 450 here is bogus */
+			if (!strncasecmp(linein, quitcmd, strlen(quitcmd))) {
+				if (!linein[strlen(quitcmd)])
+					smtp_quit();
+			}
+			netwrite("450 4.5.0 transmission error, please try again\r\n");
+
+			/* a conformant client would catch this error, send quit and try again.
+			 * So just wait for quit and reject any further command. */
+			wait_for_quit();
 		}
 	}
 

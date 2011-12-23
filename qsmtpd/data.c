@@ -16,6 +16,7 @@
 #include "tls.h"
 #include "qsdata.h"
 #include "fmt.h"
+#include "syntax.h"
 
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
 
@@ -447,7 +448,7 @@ smtp_data(void)
 	if ( (i = queue_init()) )
 		return i;
 
-	if ( (rc = hasinput()) ) {
+	if ( (rc = hasinput(1)) ) {
 		while (close(fd0[1]) && (errno == EINTR));
 		while (close(fd1[1]) && (errno == EINTR));
 		while ((waitpid(qpid, NULL, 0) == -1) && (errno == EINTR));

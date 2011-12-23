@@ -71,8 +71,9 @@ extern int authhide;			/**< hide source of authenticated mail */
 
 extern int err_control(const char *);
 extern void freedata(void);
-extern int hasinput(void);
 extern pid_t fork_clean();
+void __attribute__ ((noreturn)) conn_cleanup(const int rc);
+extern int __attribute__ ((noreturn)) smtp_quit(void);
 
 #define EBOGUS 1002
 #define EDONE 1003
