@@ -3,6 +3,7 @@
  */
 #include <fcntl.h>
 #include <errno.h>
+#include <stdio.h>
 #include <string.h>
 #include "tls.h"
 #include "netio.h"
