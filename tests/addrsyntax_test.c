@@ -107,6 +107,14 @@ struct {
 		.more = "",
 		.retval = 3
 	},
+	/* an ordinary address in uppercase */
+	{
+		.in = "FOO@BAR.EXAMPLE.COM>",
+		.flags = 0,
+		.addr = "foo@bar.example.com",
+		.more = "",
+		.retval = 3
+	},
 	/* an ordinary address with following text*/
 	{
 		.in = "foo@bar.example.com> text beyond",
@@ -114,6 +122,46 @@ struct {
 		.addr = "foo@bar.example.com",
 		.more = " text beyond",
 		.retval = 3
+	},
+	/* an address with source route of 1 entry */
+	{
+		.in = "@example.org:foo@bar.example.com>",
+		.flags = 1,
+		.addr = "foo@bar.example.com",
+		.more = "",
+		.retval = 3
+	},
+	/* an address with source route of 2 entries */
+	{
+		.in = "@baz.exmple.org,@example.org:foo@bar.example.com>",
+		.flags = 1,
+		.addr = "foo@bar.example.com",
+		.more = "",
+		.retval = 3
+	},
+	/* an address with source route of 3 entries */
+	{
+		.in = "@baz.exmple.org,@bar.exmple.org,@example.org:foo@bar.example.com>",
+		.flags = 1,
+		.addr = "foo@bar.example.com",
+		.more = "",
+		.retval = 3
+	},
+	/* an address with invalid source route */
+	{
+		.in = "foo@baz.exmple.org:foo@bar.example.com>",
+		.flags = 1,
+		.addr = "",
+		.more = "",
+		.retval = 0
+	},
+	/* an address with source route of 3 entries */
+	{
+		.in = "@baz.exmple.org,foo@bar.example.com>",
+		.flags = 1,
+		.addr = "",
+		.more = "",
+		.retval = 0
 	},
 	{
 		.in = NULL
