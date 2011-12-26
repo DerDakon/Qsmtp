@@ -46,7 +46,7 @@ const char *validparts[] = {
 	NULL
 };
 
-struct {
+static struct {
 	const char *in;
 	int flags;
 	const char *addr;
@@ -57,8 +57,6 @@ struct {
 	{
 		.in = "postmaster>",
 		.flags = 0,
-		.addr = "",
-		.more = "",
 		.retval = 0
 	},
 	{
@@ -72,8 +70,12 @@ struct {
 	{
 		.in = "postmaster>",
 		.flags = 2,
-		.addr = "",
-		.more = "",
+		.retval = 0
+	},
+	/* address without terminating right angle */
+	{
+		.in = "foo@bar.example.com",
+		.flags = 0,
 		.retval = 0
 	},
 	{
@@ -87,16 +89,12 @@ struct {
 	{
 		.in = ">",
 		.flags = 1,
-		.addr = "",
-		.more = "",
 		.retval = 0
 	},
 	/* empty address is only valid for flags == 0 */
 	{
 		.in = ">",
 		.flags = 2,
-		.addr = "",
-		.more = "",
 		.retval = 0
 	},
 	/* an ordinary address */
@@ -133,7 +131,7 @@ struct {
 	},
 	/* an address with source route of 2 entries */
 	{
-		.in = "@baz.exmple.org,@example.org:foo@bar.example.com>",
+		.in = "@baz.example.org,@example.org:foo@bar.example.com>",
 		.flags = 1,
 		.addr = "foo@bar.example.com",
 		.more = "",
@@ -141,7 +139,7 @@ struct {
 	},
 	/* an address with source route of 3 entries */
 	{
-		.in = "@baz.exmple.org,@bar.exmple.org,@example.org:foo@bar.example.com>",
+		.in = "@baz.example.org,@bar.example.org,@example.org:foo@bar.example.com>",
 		.flags = 1,
 		.addr = "foo@bar.example.com",
 		.more = "",
@@ -149,18 +147,45 @@ struct {
 	},
 	/* an address with invalid source route */
 	{
-		.in = "foo@baz.exmple.org:foo@bar.example.com>",
+		.in = "foo@baz.example.org:foo@bar.example.com>",
 		.flags = 1,
-		.addr = "",
-		.more = "",
 		.retval = 0
 	},
-	/* an address with source route of 3 entries */
+	/* an address with another invalid source route */
 	{
-		.in = "@baz.exmple.org,foo@bar.example.com>",
+		.in = "@baz.example.org,foo@bar.example.com>",
 		.flags = 1,
-		.addr = "",
-		.more = "",
+		.retval = 0
+	},
+	/* an address with a source route terminated by an invalid delimiter */
+	{
+		.in = "@baz.example.org;foo@bar.example.com>",
+		.flags = 1,
+		.retval = 0
+	},
+	/* an address with invalid domain in source route */
+	{
+		.in = "@baz...example.org:foo@bar.example.com>",
+		.flags = 1,
+		.retval = 0
+	},
+	/* an address with invalid domain in source route with multiple entries */
+	{
+		.in = "@bar...example.com,@baz.example.org:foo@bar.example.com>",
+		.flags = 1,
+		.retval = 0
+	},
+	/* an otherwise valid, but too long source route */
+	{
+		.in = "@baz001.example.org,@baz002.example.org,@baz003.example.org,"
+				"@baz004.example.org,@baz005.example.org,@baz006.example.org,"
+				"@baz007.example.org,@baz008.example.org,@baz009.example.org,"
+				"@baz010.example.org,@baz011.example.org,@baz012.example.org,"
+				"@baz013.example.org,@baz012.example.org,@baz015.example.org,"
+				"@baz016.example.org,@baz015.example.org,@baz018.example.org,"
+				"@baz019.example.org,@baz018.example.org,@baz021.example.org,"
+				"@baz022.example.org:foo@bar.example.com>",
+		.flags = 1,
 		.retval = 0
 	},
 	{
@@ -178,6 +203,7 @@ addrsyntax_test(void)
 		char inbuf[512];
 		string outaddr;
 		char *more = NULL;
+		const size_t explen = (syntaxpatterns[i].addr == NULL) ? 0 : strlen(syntaxpatterns[i].addr);
 
 		STREMPTY(outaddr);
 		strcpy(inbuf, syntaxpatterns[i].in);
@@ -191,12 +217,13 @@ addrsyntax_test(void)
 			continue;
 		}
 
-		if ((outaddr.len != strlen(syntaxpatterns[i].addr)) ||
+		if ((outaddr.len != explen) ||
 				((outaddr.s != NULL) && (strcmp(outaddr.s, syntaxpatterns[i].addr) != 0))) {
-			fprintf (stderr, "ERROR: did not return address %s, but %s (lenght %lu)\n",
-					syntaxpatterns[i].addr, outaddr.s, (unsigned long)outaddr.len);
+			fprintf (stderr, "ERROR: did not return address %s (lenght %lu), but %s (lenght %lu)\n",
+					syntaxpatterns[i].addr, (unsigned long)explen, outaddr.s, (unsigned long)outaddr.len);
 			err++;
-		} else if ((more != NULL) && (syntaxpatterns[i].more) && strcmp(more, syntaxpatterns[i].more) != 0) {
+		} else if ((more != NULL) && (syntaxpatterns[i].more != NULL) &&
+					strcmp(more, syntaxpatterns[i].more) != 0) {
 			fprintf (stderr, "ERROR: returned 'more' as %s instead of %s\n",
 					more, syntaxpatterns[i].more);
 			err++;
