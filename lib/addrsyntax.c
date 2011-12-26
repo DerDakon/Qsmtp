@@ -213,10 +213,8 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	}
 	/* empty address is only allowed in MAIL FROM */
 	if (!flags && !len) {
-		if (addr) {
-			addr->s = NULL;
-			addr->len = 0;
-		}
+		if (addr)
+			STREMPTY(*addr);
 		return 1;
 	}
 	*l = '\0'; /* from now on the complete mail address is just *f */
