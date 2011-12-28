@@ -32,10 +32,10 @@
 
 int socketd = -1;
 string heloname;
-unsigned int smtpext;
-char *rhost;
-size_t rhostlen;
-char *partner_fqdn;
+unsigned int smtpext;	/**< the SMTP extensions supported by the remote server */
+char *rhost;		/**< the DNS name (if present) and IP address of the remote server to be used in log messages */
+size_t rhostlen;	/**< valid length of rhost */
+char *partner_fqdn;	/**< the DNS name of the remote server, or NULL if no reverse lookup exists */
 size_t chunksize;
 struct in6_addr outip;
 
