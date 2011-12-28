@@ -7,15 +7,15 @@
 #include "libowfatconn.h"
 
 /**
- * get info out of the DNS
+ * \brief get info out of the DNS
  *
- * @param name the name to look up
- * @param result first element of a list of results will be placed
- * @return  0 on success
- *          1 if host is not existent
- *          2 if temporary DNS error
- *          3 if permanent DNS error
- *         -1 on error
+ * \param name the name to look up
+ * \param result first element of a list of results will be placed
+ * \retval  0 on success
+ * \retval  1 if host is not existent
+ * \retval  2 if temporary DNS error
+ * \retval  3 if permanent DNS error
+ * \retval -1 on error
  */
 int
 ask_dnsmx(const char *name, struct ips **result)
@@ -101,15 +101,15 @@ ask_dnsmx(const char *name, struct ips **result)
 }
 
 /**
- * get AAAA record from of the DNS
+ * \brief get AAAA record from of the DNS
  *
- * @param name the name to look up
- * @param result first element of a list of results will be placed
- * @return  0 on success
- *          1 if host is not existent
- *          2 if temporary DNS error
- *          3 if permanent DNS error
- *         -1 on error
+ * \param name the name to look up
+ * \param result first element of a list of results will be placed
+ * \retval  0 on success
+ * \retval  1 if host is not existent
+ * \retval  2 if temporary DNS error
+ * \retval  3 if permanent DNS error
+ * \retval -1 on error
  */
 int
 ask_dnsaaaa(const char *name, struct ips **result)
@@ -159,15 +159,15 @@ ask_dnsaaaa(const char *name, struct ips **result)
 }
 
 /**
- * get A record from of the DNS
+ * \brief get A record from of the DNS
  *
- * @param name the name to look up
- * @param result first element of a list of results will be placed, or NULL if only return code is of interest
- * @return  0 on success
- *          1 if host is not existent
- *          2 if temporary DNS error
- *          3 if permanent DNS error
- *         -1 on error
+ * \param name the name to look up
+ * \param result first element of a list of results will be placed, or NULL if only return code is of interest
+ * \retval  0 on success
+ * \retval  1 if host is not existent
+ * \retval  2 if temporary DNS error
+ * \retval  3 if permanent DNS error
+ * \retval -1 on error
  */
 int
 ask_dnsa(const char *name, struct ips **result)
@@ -221,7 +221,7 @@ ask_dnsa(const char *name, struct ips **result)
 }
 
 /**
- * get host name for IP address
+ * \brief get host name for IP address
  *
  * @param ip the IP to look up
  * @param result name will be stored here
