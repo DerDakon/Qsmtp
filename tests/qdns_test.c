@@ -414,12 +414,16 @@ test_errors(void)
 	struct ips *i = NULL;
 
 	r = ask_dnsmx(timeouthost, &i);
-	if ((r != -1) || (errno != ETIMEDOUT))
+	if ((r != 2) || (errno != ETIMEDOUT)) {
+		fprintf(stderr, "lookup of %s returned %i, errno %i\n", timeouthost, r, errno);
 		err++;
+	}
 
 	r = ask_dnsmx(timeoutmx, &i);
-	if ((r != -1) || (errno != ETIMEDOUT))
+	if ((r != 2) || (errno != ETIMEDOUT)) {
+		fprintf(stderr, "lookup of %s returned %i, errno %i\n", timeouthost, r, errno);
 		err++;
+	}
 
 	return err;
 }
