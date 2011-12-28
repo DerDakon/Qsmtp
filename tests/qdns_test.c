@@ -227,8 +227,8 @@ test_fwdrev(void)
 
 		res = NULL;
 
-		if (ask_dnsaaaa(dns_entries[idx].name, &res) != 0) {
-			if (ask_dnsa(dns_entries[idx].name, &res) != 0) {
+		if (ask_dnsa(dns_entries[idx].name, &res) != 0) {
+			if (ask_dnsaaaa(dns_entries[idx].name, &res) != 0) {
 				fprintf(stderr, "%s has returned neither IPv4 nor IPv6 address\n", dns_entries[idx].name);
 				err++;
 				idx++;
