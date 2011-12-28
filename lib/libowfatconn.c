@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stralloc.h>
 #include <dns.h>
+#include <netinet/in.h>
 #include "libowfatconn.h"
 
 /**
@@ -126,12 +127,12 @@ dnstxt(char **out, const char *host)
  * @retval -1 an error occurred, errno is set
  */
 int
-dnsname(char **out, const char *ip)
+dnsname(char **out, const struct in6_addr *ip)
 {
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
 	int r;
 
-	r = dns_name6(&sa, ip);
+	r = dns_name6(&sa, (const char *)ip->s6_addr);
 	if (r)
 		return r;
 	if (!(r = stralloc_0(&sa))) {

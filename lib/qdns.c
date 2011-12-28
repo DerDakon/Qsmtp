@@ -237,7 +237,7 @@ ask_dnsname(const struct in6_addr *ip, char **result)
 {
 	int r;
 
-	r = dnsname(result, (const char *)ip->s6_addr);
+	r = dnsname(result, ip);
 	if (!r)
 		return *result ? 1 : 0;
 	switch (errno) {

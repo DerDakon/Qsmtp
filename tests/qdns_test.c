@@ -233,7 +233,7 @@ int dnsmx(char **out, unsigned int *len, const char *host)
 	return -1;
 }
 
-int dnsname(char **out, const char *ip)
+int dnsname(char **out, const struct in6_addr *ip)
 {
 	char ipstr[INET6_ADDRSTRLEN];
 	int i = 0;
