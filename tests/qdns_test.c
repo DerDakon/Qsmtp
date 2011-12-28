@@ -147,11 +147,6 @@ int dnsip6(char **out, unsigned int *len, const char *host)
 	do {
 		char *n;
 
-		if (IN6_IS_ADDR_V4MAPPED(&addr)) {
-			r = findip(host, &addr, r + 1);
-			continue;
-		}
-
 		n = realloc(*out, *len + 16);
 		if (n == NULL) {
 			free(*out);
@@ -266,12 +261,67 @@ test_fwdrev(void)
 	return err;
 }
 
+static int
+test_implicit_mx(void)
+{
+	int err = 0;
+	unsigned int idx = 0;
+	struct ips *res;
+
+	while (dns_entries[idx].name != NULL) {
+		struct ips *cur;
+
+		if ((idx > 0) && (strcmp(dns_entries[idx - 1].name, dns_entries[idx].name) == 0)) {
+			idx++;
+			continue;
+		}
+
+		res = NULL;
+
+		if (ask_dnsmx(dns_entries[idx].name, &res) != 0) {
+			fprintf(stderr, "%s did not return implicit MX entries\n", dns_entries[idx].name);
+			err++;
+			idx++;
+			continue;
+		}
+
+		cur = res;
+		while (cur != NULL) {
+			char *nname = NULL;
+
+			if (cur->priority != 65536) {
+				fprintf(stderr, "MX priority for %s was not set to 65536, but %u\n", dns_entries[idx].name, cur->priority);
+				err++;
+			}
+
+			if (ask_dnsname(&cur->addr, &nname) <= 0) {
+				fprintf(stderr, "no reverse lookup found for implicit MX IP of %s\n", dns_entries[idx].name);
+				err++;
+			} else {
+				if (strcmp(nname, dns_entries[idx].name) != 0) {
+					fprintf(stderr, "reverse lookup %s different from %s\n", nname, dns_entries[idx].name);
+					err++;
+				}
+				free(nname);
+			}
+
+			cur = cur->next;
+		}
+
+		freeips(res);
+		idx++;
+	}
+
+	return err;
+}
+
 int
 main(void)
 {
 	int err = 0;
 
 	err += test_fwdrev();
+	err += test_implicit_mx();
 
 	return err;
 }
