@@ -27,10 +27,13 @@ hascolon(const char *s)
 }
 
 /**
- * smtproute - get static route for domain
- * @remhost: target to look up
- * @reml: strlen(remhost)
- * @returns: MX list if route present, else NULL
+ * @brief get static route for domain
+ *
+ * @param remhost target to look up
+ * @param reml strlen(remhost)
+ * @param targetport port on the remote host to connect to
+ * @returns MX list if route present
+ * @retval NULL a runtime error occurred while reading the control file, errno is set
  *
  * If control/smtproutes contains a syntax error the program is terminated.
  * On runtime error (out of memory) NULL is returned and errno is set.
