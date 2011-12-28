@@ -182,8 +182,28 @@ int dnstxt(char **out __attribute__((unused)), const char *host __attribute__((u
 	return -1;
 }
 
-int dnsmx(char **out __attribute__((unused)), unsigned int *len __attribute__((unused)), const char *host __attribute__((unused)))
+static const char mxname[] = "mx.example.com";
+
+int dnsmx(char **out, unsigned int *len, const char *host)
 {
+	if (strcmp(host, mxname) == 0) {
+		unsigned short *alsoout;
+
+		*len = 4 + strlen(dns_entries[0].name) + strlen(dns_entries[4].name);
+		*out = malloc(*len);
+		if (*out == NULL)
+			return -1;
+
+		alsoout = (unsigned short *)*out;
+		*alsoout = htons(10);
+		memcpy(*out + 2, dns_entries[0].name, strlen(dns_entries[0].name));
+		alsoout = (unsigned short *)(*out + strlen(dns_entries[0].name) + 2);
+		*alsoout = htons(20);
+		memcpy(*out + 4 + strlen(dns_entries[0].name), dns_entries[4].name, strlen(dns_entries[4].name));
+
+		return 0;
+	}
+
 	errno = ENOENT;
 	return -1;
 }
@@ -315,6 +335,52 @@ test_implicit_mx(void)
 	return err;
 }
 
+static int
+test_mx(void)
+{
+	int err = 0;
+	struct ips *res = NULL;
+	struct ips *cur;
+
+	if (ask_dnsmx(mxname, &res) != 0) {
+		fprintf(stderr, "lookup of %s did not return MX entries\n", mxname);
+		return ++err;
+	}
+
+	cur = res;
+	while (cur != NULL) {
+		char *nname = NULL;
+
+		if (ask_dnsname(&cur->addr, &nname) <= 0) {
+			fprintf(stderr, "no reverse lookup found for MX IP\n");
+			err++;
+		} else {
+			if (strcmp(nname, dns_entries[0].name) == 0) {
+				if (cur->priority != 10) {
+					fprintf(stderr, "MX entries for %s should have priority 10, but have %u\n", nname, cur->priority);
+					err++;
+				}
+			} else 	if (strcmp(nname, dns_entries[4].name) == 0) {
+				if (cur->priority != 30) {
+					fprintf(stderr, "MX entries for %s should have priority 10, but have %u\n", nname, cur->priority);
+					err++;
+				}
+			} else {
+				fprintf(stderr, "unexpected reverse lookup %s for MX priority %u\n", nname, cur->priority);
+				err++;
+			}
+
+			free(nname);
+		}
+
+		cur = cur->next;
+	}
+	
+	freeips(res);
+
+	return err;
+}
+
 int
 main(void)
 {
@@ -322,6 +388,7 @@ main(void)
 
 	err += test_fwdrev();
 	err += test_implicit_mx();
+	err += test_mx();
 
 	return err;
 }
