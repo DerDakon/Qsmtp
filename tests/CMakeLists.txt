@@ -229,6 +229,17 @@ TARGET_LINK_LIBRARIES(testcase_dns
 ADD_TEST(NAME "DNS"
 		COMMAND testcase_dns)
 
+ADD_EXECUTABLE(testcase_qdns
+		qdns_test.c
+		../lib/qdns.c)
+TARGET_LINK_LIBRARIES(testcase_qdns
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "QDNS"
+		COMMAND testcase_qdns)
+
 ADD_EXECUTABLE(testcase_mime
 		mime_test.c)
 TARGET_LINK_LIBRARIES(testcase_mime
