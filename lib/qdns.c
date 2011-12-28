@@ -1,9 +1,10 @@
 /** \file qdns.c
  \brief DNS query functions
  */
-#include <errno.h>
-#include <string.h>
 #include "qdns.h"
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
 #include "libowfatconn.h"
 
 /**
