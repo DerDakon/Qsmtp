@@ -1,5 +1,5 @@
-/** \file qsmtpd.h
- * \brief definitions for common parts from Qsmtpd exported from qsmtpd.c
+/** \file syntax.h
+ * \brief functions to handle syntax error in the commands an SMTP client sends
  */
 #ifndef SYNTAX_H
 #define SYNTAX_H
