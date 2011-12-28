@@ -63,10 +63,18 @@ static struct {
 	}
 };
 
+static const char timeouthost[] = "timeout.example.com";
+static const char timeoutmx[] = "timeoutmx.example.com";
+
 static int
 findip(const char *name, struct in6_addr *addr, int start)
 {
 	int i = start;
+
+	if ((strcmp(name, timeouthost) == 0) || (strcmp(name, timeoutmx) == 0)) {
+		errno = ETIMEDOUT;
+		return -1;
+	}
 
 	while (dns_entries[i].name != NULL) {
 		if (strcmp(dns_entries[i].name, name) == 0) {
@@ -201,6 +209,23 @@ int dnsmx(char **out, unsigned int *len, const char *host)
 		*alsoout = htons(20);
 		memcpy(*out + 4 + strlen(dns_entries[0].name), dns_entries[4].name, strlen(dns_entries[4].name));
 
+		return 0;
+	} else if (strcmp(host, timeouthost) == 0) {
+		errno = ETIMEDOUT;
+		return -1;
+	} else if (strcmp(host, timeoutmx) == 0) {
+		unsigned short *alsoout;
+
+		*len = strlen(timeoutmx) + 2;
+		*out = malloc(*len);
+
+		if (*out == NULL)
+			return -1;
+
+		alsoout = (unsigned short *)*out;
+		*alsoout = htons(10);
+
+		memcpy(*out + 2, timeoutmx, strlen(timeoutmx));
 		return 0;
 	}
 
@@ -381,6 +406,24 @@ test_mx(void)
 	return err;
 }
 
+static int
+test_errors(void)
+{
+	int err = 0;
+	int r;
+	struct ips *i = NULL;
+
+	r = ask_dnsmx(timeouthost, &i);
+	if ((r != -1) || (errno != ETIMEDOUT))
+		err++;
+
+	r = ask_dnsmx(timeoutmx, &i);
+	if ((r != -1) || (errno != ETIMEDOUT))
+		err++;
+
+	return err;
+}
+
 int
 main(void)
 {
@@ -389,6 +432,7 @@ main(void)
 	err += test_fwdrev();
 	err += test_implicit_mx();
 	err += test_mx();
+	err += test_errors();
 
 	return err;
 }
