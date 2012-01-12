@@ -21,8 +21,8 @@ hascolon(const char *s)
 {
 	char *colon = strchr(s, ':');
 
-	if (!*colon)
-		return 0;
+	if (!colon)
+		return 1;
 	return (*(colon + 1) == ':');
 }
 
