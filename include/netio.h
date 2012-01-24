@@ -36,10 +36,10 @@ enum conn_shutdown_type {
 /**
  * \brief shutdown the connection and end the program
  * \param sd_type specifies the way the shutdown should be performed
- * 
+ *
  * This is a forward declaration only, every program has to implement
  * this function in a way that matches how it works.
- * 
+ *
  * A shutdown_clean shutdown is e.g. sending QUIT to the server and waiting for it's
  * reply. A shutdown with shutdown_abort is e.g. hard dropping of the connection if
  * the client sends spam and has a broken SMTP engine that does not react to error codes.

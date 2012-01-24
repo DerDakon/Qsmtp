@@ -43,7 +43,7 @@ mmap_fd(int fd, off_t *len)
  * map a file into memory
  *
  * The file is flock()'ed to allow atomic modification of this file.
- * 
+ *
  * @param fname path to file to map
  * @param len length of mapping will be stored here
  * @param fd file descriptor of opened file will be stored here

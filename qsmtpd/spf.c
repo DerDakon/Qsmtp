@@ -397,7 +397,7 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
  * build a list of validated domain names for the connected host
  * @param domainlist where to store the array
  * @return how many entries are in domainlist, negative on error
- * 
+ *
  * If this functions returns 0 all lookups were successfully, but no
  * validated domain names were found.
  */
@@ -1006,7 +1006,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
  * @retval 0 no domainspec present
  * @retval 1 domainspec is present
  * @retval -SPF_FAIL_MALF invalid characters detected
- * 
+ *
  * This does not check the domainspec itself, it only checks if one is given.
  */
 static int
@@ -1164,7 +1164,7 @@ spfa(const char *domain, const char *token)
 		break;
 	case 1:
 		return SPF_NONE;
-	case 2:	
+	case 2:
 		return SPF_TEMP_ERROR;
 	case -1:
 		return -1;
@@ -1405,7 +1405,7 @@ spfip6(const char *domain)
  * @param txt result pointer
  * @param domain domain token to look up
  * @returns the same error codes as dnstxt()
- * 
+ *
  * This will take two SPF specific contraints into account:
  * - trailing dots are ignored
  * - if domain is longer than 253 characters parts are removed until it is shorter
@@ -1421,7 +1421,7 @@ txtlookup(char **txt, const char *domain)
 		len--;
 	}
 
-	/* Either spf_domainspec() is called before or it is checked to not 
+	/* Either spf_domainspec() is called before or it is checked to not
 	 * contain only dots. */
 	assert(len != 0);
 

@@ -34,7 +34,7 @@
  *          writing by another process) the file is treated as non existent
  *
  * The input file will be closed before this function returns.
- * 
+ *
  * striptab == 2 means: the only whitespace in a non-comment line may be immediately
  * before the line break, in any amount.
  */

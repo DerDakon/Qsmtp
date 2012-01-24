@@ -64,7 +64,7 @@ reverseip4(char *buf)
 
 	r.s_addr = ((xmitstat.sremoteip.s6_addr32[3] & 0xff) << 24) |
 			((xmitstat.sremoteip.s6_addr32[3] & 0xff00) << 8) |
-			((xmitstat.sremoteip.s6_addr32[3] >> 8 ) & 0xff00) | 
+			((xmitstat.sremoteip.s6_addr32[3] >> 8 ) & 0xff00) |
 			((xmitstat.sremoteip.s6_addr32[3] >> 24) & 0xff);
 	inet_ntop(AF_INET, &r, buf, INET_ADDRSTRLEN);
 	return strlen(buf);
@@ -77,7 +77,7 @@ reverseip4(char *buf)
  * @param txt pointer to "char *" where the TXT record of the listing will be stored if existent
  * @return index of first match
  * @retval -1 if not listed or error (if not listed errno is set to 0)
- * 
+ *
  * If no match was found but temporary DNS errors were encountered errno
  * is set to EAGAIN.
  */

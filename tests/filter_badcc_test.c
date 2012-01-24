@@ -29,7 +29,7 @@ static struct recip recips[] = {
 		}
 	},
 	{
-		.to = { 
+		.to = {
 			.s = "foo@example.net"
 		}
 	},

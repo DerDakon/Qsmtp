@@ -540,7 +540,7 @@ recode_detector(const char *msg, const size_t len __attribute__ ((unused)))
  * \brief check if the wrapped header is still the same
  * \param msg recoded message
  * \param len length of recoded message
- * 
+ *
  * This compares the original and the recoded messages. It
  * takes into account that the amount of whitespace may not
  * be preserved after recoding.

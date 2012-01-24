@@ -88,7 +88,7 @@ queue_init(void)
 	case -1:	if ( (i = err_fork()) )
 				return i;
 			return EDONE;
-	case 0:		
+	case 0:
 			while (close(fd0[1])) {
 				if (errno != EINTR)
 					_exit(120);
