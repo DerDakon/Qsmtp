@@ -475,7 +475,7 @@ main(int argc, char *argv[])
 	if (rcptcount <= 0) {
 		log_write(LOG_CRIT, "too few arguments");
 		write(1, "Zinternal error: Qremote called with invalid arguments\n", 56);
-		return 0;
+		net_conn_shutdown();
 	}
 
 	getmxlist(argv[1], &mx);
@@ -488,7 +488,7 @@ main(int argc, char *argv[])
 			err_mem(0);
 		log_write(LOG_CRIT, "can't fstat() input");
 		write(1, "Zinternal error: can't fstat() input\n", 38);
-		return 0;
+		net_conn_shutdown();
 	}
 	msgsize = st.st_size;
 	msgdata = mmap(NULL, msgsize, PROT_READ, MAP_SHARED, 0, 0);
@@ -496,7 +496,7 @@ main(int argc, char *argv[])
 	if (msgdata == MAP_FAILED) {
 		log_write(LOG_CRIT, "can't mmap() input");
 		write(1, "Zinternal error: can't mmap() input\n", 37);
-		return 0;
+		net_conn_shutdown();
 	}
 	dup2(0, 42);
 
