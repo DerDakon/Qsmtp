@@ -264,6 +264,19 @@ TARGET_LINK_LIBRARIES(testcase_antispam
 ADD_TEST(NAME "Antispam"
 		COMMAND testcase_antispam)
 
+ADD_EXECUTABLE(testcase_all_filters
+		all_filters_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c
+)
+TARGET_LINK_LIBRARIES(testcase_all_filters
+		rcptfilters
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
+ADD_TEST(NAME "All_Filters"
+		COMMAND testcase_all_filters)
+
 ADD_EXECUTABLE(testcase_filter_badcc
 		filter_badcc_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/badcc.c
