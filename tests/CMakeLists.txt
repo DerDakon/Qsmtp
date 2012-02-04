@@ -308,3 +308,12 @@ TARGET_LINK_LIBRARIES(testcase_getfile
 )
 ADD_TEST(NAME "Getfile"
 		COMMAND testcase_getfile)
+
+# This is a brute force test just to get some "real" coverage on the file.
+# It will always fail, either because ${AUTOQMAIL} doesn't exist or doesn't
+# have the proper configuration files or simply because we do not pass it
+# any arguments.
+ADD_TEST(NAME "Qremote_noinput_noargs"
+		COMMAND Qremote)
+SET_TESTS_PROPERTIES(Qremote_noinput_noargs PROPERTIES
+		PASS_REGULAR_EXPRESSION "^Z")
