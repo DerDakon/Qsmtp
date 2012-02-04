@@ -69,6 +69,12 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 		ssl = NULL;
 	}
 
+#ifdef USESYSLOG
+	closelog();
+#endif
+
+	free(heloname.s);
+
 	exit(0);
 }
 
