@@ -21,7 +21,7 @@ cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)
 	if (xmitstat.esmtp)
 		return 0;
 
-	if (xmitstat.ipv4conn) {
+	if (connection_is_ipv4()) {
 		fnb = "forceesmtp";
 	} else {
 		fnb = "forceesmtpv6";

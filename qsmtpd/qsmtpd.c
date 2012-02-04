@@ -423,7 +423,11 @@ connsetup(void)
 {
 	int j;
 
+#ifdef IPV4ONLY
+	xmitstat.ipv4conn = 1;
+#else /* IPV4ONLY */
 	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
+#endif /* IPV4ONLY */
 
 	j = ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s);
 	if (j == -1) {
@@ -1044,7 +1048,7 @@ smtp_rcpt(void)
 /* check if client is allowed to relay by IP */
 		if (!relayclient) {
 			int fd;
-			const char *fn = xmitstat.ipv4conn ? "control/relayclients" : "control/relayclients6";
+			const char *fn = connection_is_ipv4() ? "control/relayclients" : "control/relayclients6";
 
 			relayclient = 2;
 			if ( (fd = open(fn, O_RDONLY)) < 0) {

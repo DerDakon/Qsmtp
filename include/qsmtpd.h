@@ -102,4 +102,14 @@ extern struct recip *thisrecip;
 
 #define MAILFROM (xmitstat.mailfrom.len ? xmitstat.mailfrom.s : "")
 
+static inline int
+connection_is_ipv4(void)
+{
+#ifdef IPV4ONLY
+	return 1;
+#else /* IPV4ONLY */
+	return xmitstat.ipv4conn;
+#endif /* IPV4ONLY */
+}
+
 #endif

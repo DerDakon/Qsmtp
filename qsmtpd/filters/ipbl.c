@@ -17,7 +17,7 @@ cb_ipbl(const struct userconf *ds, const char **logmsg, int *t)
 	const char *fnb;	/* filename of the blacklist file */
 	const char *fnw;	/* filename of the whitelist file */
 
-	if (xmitstat.ipv4conn) {
+	if (connection_is_ipv4()) {
 		fnb = "ipbl";
 		fnw = "ipwl";
 	} else {

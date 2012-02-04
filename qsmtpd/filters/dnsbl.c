@@ -21,7 +21,7 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 	const char *fnw;	/* filename of the whitelist file */
 	char *txt = NULL;	/* TXT record of the rbl entry */
 
-	if (xmitstat.ipv4conn) {
+	if (connection_is_ipv4()) {
 		fnb = "dnsbl";
 		fnw = "whitednsbl";
 	} else {

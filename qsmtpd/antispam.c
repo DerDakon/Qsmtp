@@ -94,7 +94,7 @@ check_rbl(char *const *rbls, char **txt)
 		return -1;
 	}
 
-	if (xmitstat.ipv4conn) {
+	if (connection_is_ipv4()) {
 		l = reverseip4(lookup);
 		lookup[l++] = '.';
 	} else {
@@ -279,7 +279,7 @@ lookupipbl(int fd)
 		return -1;
 	}
 
-	if (xmitstat.ipv4conn) {
+	if (connection_is_ipv4()) {
 		rc = check_ip4(map, flen);
 	} else {
 		rc = check_ip6(map, flen);
