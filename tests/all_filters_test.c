@@ -64,5 +64,29 @@ main(void)
 		}
 	}
 
+	/* Now change some global state to get better coverage. But the
+	 * result may not change, the mail may still not be blocked. */
+	xmitstat.esmtp = 1; /* yes */
+	xmitstat.ipv4conn = 1; /* yes */
+	xmitstat.check2822 = 2; /* no decision yet */
+	xmitstat.helostatus = 1; /* HELO is my name */
+	xmitstat.fromdomain = 3; /* permanent error */
+	xmitstat.spacebug = 1; /* yes */
+	xmitstat.mailfrom.s = "user@invalid";
+	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
+	xmitstat.helostr.s = "my.host.example.org";
+	xmitstat.helostr.len = strlen(xmitstat.helostr.s);
+
+	for (i = 0; rcpt_cbs[i] != NULL; i++) {
+		const char *errmsg;
+		int bt = 0;
+		int r = rcpt_cbs[i](&uc, &errmsg, &bt);
+
+		if (r != 0) {
+			fprintf(stderr, "filter %i returned %i\n", i, r);
+			err++;
+		}
+	}
+
 	return err;
 }
