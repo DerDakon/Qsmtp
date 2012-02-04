@@ -141,7 +141,10 @@ setup(void)
 	}
 
 	if ( (j = loadoneliner("control/outgoingip", &ipbuf, 1) ) >= 0 ) {
-		if (inet_pton(AF_INET6, ipbuf, &outip) <= 0) {
+		int r = inet_pton(AF_INET6, ipbuf, &outip);
+
+		free(ipbuf);
+		if (r <= 0) {
 			err_conf("parse error in control/outgoingip");
 		}
 #ifdef IPV4ONLY
