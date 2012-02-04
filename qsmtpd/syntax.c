@@ -1,8 +1,8 @@
-/** \file pipelining.c
- \brief PIPELINING helper functions
+/** \file syntax.c
+ \brief syntax checking helper functions
 
- This file contains functions to make the implementation of SMTP
- PIPELINING extension as defined in RfC 2920 easier at other places.
+ This file contains functions to needed to handle syntax errors in input
+ commands.
  */
 #include "syntax.h"
 
