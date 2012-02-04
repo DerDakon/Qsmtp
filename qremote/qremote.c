@@ -488,6 +488,7 @@ main(int argc, char *argv[])
 			err_mem(0);
 		log_write(LOG_CRIT, "can't fstat() input");
 		write(1, "Zinternal error: can't fstat() input\n", 38);
+		freeips(mx);
 		net_conn_shutdown(shutdown_abort);
 	}
 	msgsize = st.st_size;
@@ -496,6 +497,7 @@ main(int argc, char *argv[])
 	if (msgdata == MAP_FAILED) {
 		log_write(LOG_CRIT, "can't mmap() input");
 		write(1, "Zinternal error: can't mmap() input\n", 37);
+		freeips(mx);
 		net_conn_shutdown(shutdown_abort);
 	}
 	dup2(0, 42);
