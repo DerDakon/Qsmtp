@@ -11,6 +11,7 @@
 #include "qdns.h"
 #include "ssl_timeoutio.h"
 #include "qsmtpd.h"
+#include "syntax.h"
 
 int ssl_verified = 0;
 const char *ssl_verify_err = 0;
@@ -270,6 +271,8 @@ tls_init()
 	SSL_set_tmp_dh_callback(myssl, tmp_dh_cb);
 	SSL_set_rfd(myssl, 0);
 	SSL_set_wfd(myssl, socketd);
+
+	sync_pipelining();
 
 	if (netwrite("220 ready for tls\r\n"))
 		return errno;

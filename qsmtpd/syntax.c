@@ -68,6 +68,36 @@ wait_for_quit(void)
 }
 
 /**
+ * \brief check if there are already commands in the pipeline
+ *
+ * This function should be called directly after the last command in a
+ * pipelined command group, before the command sends out it's response.
+ * If there is something in the command pipeline all following commands
+ * will be handled as errors until the client disconnects.
+ *
+ * This function will only return if everything is fine.
+ *
+ * This may be called regardless if the session is using ESMTP or not.
+ */
+void
+sync_pipelining(void)
+{
+	if (!data_pending())
+		return;
+
+	/* if we are not using ESMTP PIPELINING isn't allowed. Use a different
+	 * error code. */
+	if (!xmitstat.esmtp)
+		hasinput(1);
+
+	/* Ok, that was simple, we have a pipelining error here.
+	 * First announce that something went wrong. */
+	(void) netwrite("503 5.5.1 SMTP command sent after end of PIPELINING command group\r\n");
+
+	wait_for_quit();
+}
+
+/**
  * \brief check if there is already more input from network available
  * \param quitloop if set the command will loop until the client disconnects if there is input data
  * \returns error code if data is available or error happens

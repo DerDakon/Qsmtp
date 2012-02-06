@@ -449,15 +449,10 @@ smtp_data(void)
 		return netwrite("554 5.1.1 no valid recipients\r\n") ? errno : EDONE;
 	}
 
+	sync_pipelining();
+
 	if ( (i = queue_init()) )
 		return i;
-
-	if ( (rc = hasinput(1)) ) {
-		while (close(fd0[1]) && (errno == EINTR));
-		while (close(fd1[1]) && (errno == EINTR));
-		while ((waitpid(qpid, NULL, 0) == -1) && (errno == EINTR));
-		return rc;
-	}
 
 	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n")) {
 		int e = errno;

@@ -1407,6 +1407,7 @@ smtp_vrfy(void)
 int
 smtp_noop(void)
 {
+	sync_pipelining();
 	return netwrite("250 2.0.0 ok\r\n") ? errno : 0;
 }
 
