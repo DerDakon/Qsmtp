@@ -439,6 +439,11 @@ connsetup(void)
 		xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
 	}
 	xmitstat.remoteinfo = getenv("TCPREMOTEINFO");
+	xmitstat.remoteport = getenv("TCPREMOTEPORT");
+	if (!xmitstat.remoteport || !*xmitstat.remoteport) {
+		log_write(LOG_ERR, "can't figure out port of remote host (TCPREMOTEPORT not set)");
+		xmitstat.remoteport = NULL;
+	}
 
 	return 0;
 }

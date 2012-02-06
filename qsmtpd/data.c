@@ -209,6 +209,10 @@ queue_header(void)
 		WRITEL(fd, " ([");
 		WRITE(fd, xmitstat.remoteip, strlen(xmitstat.remoteip));
 		WRITEL(fd, "]");
+		if (xmitstat.remoteport) {
+			WRITEL(fd, ":");
+			WRITEL(fd, xmitstat.remoteport);
+		}
 		if (xmitstat.helostr.len) {
 			WRITEL(fd, " HELO ");
 			WRITE(fd, xmitstat.helostr.s, xmitstat.helostr.len);
