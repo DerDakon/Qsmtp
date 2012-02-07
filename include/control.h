@@ -8,12 +8,12 @@
 
 typedef int (*checkfunc)(const char *);
 
-extern size_t lloadfilefd(int, char **, const int striptab);
-extern int loadintfd(int, unsigned long *, const unsigned long def);
-extern size_t loadoneliner(const char *, char **, const int optional);
-extern size_t loadonelinerfd(int fd, char **buf);
-extern int loadlistfd(int, char **, char ***, checkfunc);
-extern int finddomainfd(int, const char *, const int);
-extern int finddomainmm(const char *, const off_t, const char *);
+extern size_t lloadfilefd(int, char **, const int striptab) __attribute__ ((nonnull (2)));
+extern int loadintfd(int, unsigned long *, const unsigned long def) __attribute__ ((nonnull (2)));
+extern size_t loadoneliner(const char *, char **, const int optional) __attribute__ ((nonnull (1, 2)));
+extern size_t loadonelinerfd(int fd, char **buf) __attribute__ ((nonnull (2)));
+extern int loadlistfd(int, char **, char ***, checkfunc) __attribute__ ((nonnull (2, 3)));
+extern int finddomainfd(int, const char *, const int) __attribute__ ((nonnull (2)));
+extern int finddomainmm(const char *, const off_t, const char *) __attribute__ ((nonnull (3)));
 
 #endif
