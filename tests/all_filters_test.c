@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <arpa/inet.h> 
 
 struct xmitstat xmitstat;
 unsigned int goodrcpt;
@@ -46,6 +47,7 @@ default_session_config(void)
 	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
 	xmitstat.helostr.s = "my.host.example.org";
 	xmitstat.helostr.len = strlen(xmitstat.helostr.s);
+	strncpy(xmitstat.remoteip, "::ffff:192.168.8.9", sizeof(xmitstat.remoteip) - 1);
 
 	TAILQ_INIT(&head);
 }
@@ -75,6 +77,22 @@ errormsg_matches(const char *msg, const char *expect)
 	}
 
 	return (expect[pos] == '\0');
+}
+
+static unsigned int log_count;
+
+void
+test_log_writen(int priority, const char **s)
+{
+	int i;
+
+	printf("log priority %i: ", priority);
+	for (i = 0; s[i] != NULL; i++)
+		printf("%s", s[i]);
+
+	printf("\n");
+
+	log_count++;
 }
 
 int
@@ -148,6 +166,9 @@ main(int argc, char **argv)
 	snprintf(confpath, sizeof(confpath), "%s/0/", argv[1]);
 	basedir = opendir(confpath);
 
+	testcase_setup_log_writen(test_log_writen);
+	testcase_ignore_ask_dnsa();
+
 	while (basedir != NULL) {
 		char userpath[PATH_MAX];
 		int j;
@@ -155,11 +176,14 @@ main(int argc, char **argv)
 		const char *failmsg = NULL;	/* expected failure message */
 		int r = 0;			/* filter result */
 		const char *fmsg = NULL;	/* returned failure message */
+		unsigned int exp_log_count = 0;	/* expected log messages */
 
 		closedir(basedir);
 
 		/* set default configuration */
 		default_session_config();
+
+		log_count = 0;
 
 		thisrecip = &dummyrecip;
 		firstrecip.to.s = "baz@example.com";
@@ -189,19 +213,34 @@ main(int argc, char **argv)
 						xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
 					} else if (strcmp(b[k], "esmtp") == 0) {
 						xmitstat.esmtp = 1;
-					} else if (strcmp(b[k], "ipv6") == 0) {
-						xmitstat.ipv4conn = 0;
+					} else if (strcmp(b[k], "ip:") == 0) {
+						strncpy(xmitstat.remoteip, b[k] + strlen("ip:"),
+								sizeof(xmitstat.remoteip) - 1);
 					} else if (str_starts_with(b[k], "failmsg:")) {
 						failmsg = b[k] + strlen("failmsg:");
-					} else if (*b[k] != '#') {
-						fprintf(stderr, "unexpected line in %s: %s\n", userpath, b[k]);
-						free(a);
-						free(b);
-						return 1;
+					} else if (str_starts_with(b[k], "logmsg:")) {
+						char *endptr;
+						exp_log_count = strtoul(b[k] + strlen("logmsg:"),
+								&endptr, 10);
+						if (*endptr != '\0') {
+							fprintf(stderr, "parse error in %s line %i: %s\n",
+									userpath, k, b[k]);
+							free(a);
+							free(b);
+							return 1;
+						}
 					}
 				}
 			}
 		}
+
+		if (inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip) <= 0) {
+			fprintf(stderr, "bad ip address given: %s\n", xmitstat.remoteip);
+			free(a);
+			free(b);
+			return 1;
+		}
+		xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
 		snprintf(userpath, sizeof(userpath), "%s/%i/user/", argv[1], i);
 		basedir = opendir(userpath);
@@ -250,6 +289,11 @@ main(int argc, char **argv)
 						j, failmsg, fmsg);
 				err++;
 			}
+		}
+
+		if (log_count != exp_log_count) {
+			fprintf(stderr, "expected %u log messages, got %u\n", exp_log_count, log_count);
+			err++;
 		}
 
 		i++;
