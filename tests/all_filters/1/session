@@ -1,0 +1,2 @@
+mailfrom:foo@example.com
+failmsg:bad_mail_from
