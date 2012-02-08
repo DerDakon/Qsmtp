@@ -81,6 +81,16 @@ test_cdb(void)
 		return err;
 	}
 
+	/* call cdb_seekmm() with invalid file descriptor */
+	errno = 0;
+	cdb_buf = cdb_seekmm(-1, "foo", strlen("foo"), &cdb_mmap, &st);
+	if ((cdb_buf != NULL) || (errno == 0)) {
+		err = errno;
+		printf("ERROR: cdb_seekmm(-1, ...) returned %p and errno %i\n",
+				cdb_buf, err);
+		return 1;
+	}
+
 	while (cdb_testvector[tvidx].key != NULL) {
 		char cdb_key[260];
 		size_t cdbkeylen;
