@@ -68,6 +68,8 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 
 						err_confn(logmsg);
 					}
+				} else {
+					*targetport = 25;
 				}
 				if (ask_dnsaaaa(target, &mx)) {
 					const char *logmsg[] = {"cannot find IP address for static route \"",
