@@ -197,17 +197,17 @@ int dnsmx(char **out, unsigned int *len, const char *host)
 	if (strcmp(host, mxname) == 0) {
 		unsigned short *alsoout;
 
-		*len = 4 + strlen(dns_entries[0].name) + strlen(dns_entries[4].name);
+		*len = 4 + strlen(dns_entries[0].name) + strlen(dns_entries[4].name) + 2;
 		*out = malloc(*len);
 		if (*out == NULL)
 			return -1;
 
 		alsoout = (unsigned short *)*out;
 		*alsoout = htons(10);
-		memcpy(*out + 2, dns_entries[0].name, strlen(dns_entries[0].name));
-		alsoout = (unsigned short *)(*out + strlen(dns_entries[0].name) + 2);
+		memcpy(*out + 2, dns_entries[0].name, strlen(dns_entries[0].name) + 1);
+		alsoout = (unsigned short *)(*out + strlen(dns_entries[0].name) + 3);
 		*alsoout = htons(20);
-		memcpy(*out + 4 + strlen(dns_entries[0].name), dns_entries[4].name, strlen(dns_entries[4].name));
+		memcpy(*out + 5 + strlen(dns_entries[0].name), dns_entries[4].name, strlen(dns_entries[4].name) + 1);
 
 		return 0;
 	} else if (strcmp(host, timeouthost) == 0) {
@@ -216,7 +216,7 @@ int dnsmx(char **out, unsigned int *len, const char *host)
 	} else if (strcmp(host, timeoutmx) == 0) {
 		unsigned short *alsoout;
 
-		*len = strlen(timeoutmx) + 2;
+		*len = strlen(timeoutmx) + 3;
 		*out = malloc(*len);
 
 		if (*out == NULL)
@@ -225,7 +225,7 @@ int dnsmx(char **out, unsigned int *len, const char *host)
 		alsoout = (unsigned short *)*out;
 		*alsoout = htons(10);
 
-		memcpy(*out + 2, timeoutmx, strlen(timeoutmx));
+		memcpy(*out + 2, timeoutmx, strlen(timeoutmx) + 1);
 		return 0;
 	}
 
