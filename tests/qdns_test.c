@@ -386,8 +386,8 @@ test_mx(void)
 					err++;
 				}
 			} else 	if (strcmp(nname, dns_entries[4].name) == 0) {
-				if (cur->priority != 30) {
-					fprintf(stderr, "MX entries for %s should have priority 10, but have %u\n", nname, cur->priority);
+				if (cur->priority != 20) {
+					fprintf(stderr, "MX entries for %s should have priority 20, but have %u\n", nname, cur->priority);
 					err++;
 				}
 			} else {
