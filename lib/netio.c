@@ -315,6 +315,8 @@ netnwrite(const char *s, const size_t l)
 	if (write(socketd, s, l) < 0) {
 		if (errno == EPIPE)
 			dieerror(ECONNRESET);
+		else if ((errno == ECONNRESET) || (errno == ETIMEDOUT))
+			dieerror(errno);
 		return -1;
 	}
 	return 0;
