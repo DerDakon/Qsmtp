@@ -1166,7 +1166,12 @@ smtp_rcpt(void)
 			}
 
 			if (i == -1) {
-				const char *logmess[] = {"error in filter for user ", r->to.s, NULL};
+				char filterno[ULSTRLEN];
+				char errnostr[ULSTRLEN];
+				const char *logmess[] = {"error ", errnostr, " in filter ", filterno, " for user ", r->to.s, NULL};
+
+				ultostr(errno, errnostr);
+				ultostr(j, filterno);
 
 				log_writen(LOG_WARNING, logmess);
 				e = 1;
