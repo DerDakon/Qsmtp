@@ -272,6 +272,7 @@ tls_init()
 	SSL_set_rfd(myssl, 0);
 	SSL_set_wfd(myssl, socketd);
 
+	/* protection against CVE-2011-1431 */
 	sync_pipelining();
 
 	if (netwrite("220 ready for tls\r\n"))
