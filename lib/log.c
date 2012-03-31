@@ -45,7 +45,7 @@ log_writen(int priority, const char **s)
 	syslog(priority, "%s", buf);
 #endif
 #ifndef NOSTDERR
-	write((priority > LOG_INFO) ? 2 : 1, buf, i);
+	write(2, buf, i);
 #endif
 	free(buf);
 }
