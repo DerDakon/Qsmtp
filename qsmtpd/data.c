@@ -418,6 +418,42 @@ queue_result(void)
 	}
 }
 
+/**
+ * @brief check if header lines violate RfC822
+ * @param headerflags flags which headers were already found
+ * @param hdrname the header found on error
+ * @return if processing should continue
+ * @retval 0 nothing special found
+ * @retval 1 a known header was found
+ * @retval -2 a duplicate header was found (hdrname is set)
+ * @retval -8 unencoded 8 bit data was found
+ */
+static int
+check_rfc822_headers(unsigned int *headerflags, const char **hdrname)
+{
+	const char *searchpattern[] = { "Date:", "From:", "Message-Id:", NULL };
+	int j;
+
+	for (j = 0; searchpattern[j] != NULL; j++) {
+		if (!strncasecmp(searchpattern[j], linein, strlen(searchpattern[j]))) {
+			if ((*headerflags) & (1 << j)) {
+				*hdrname = searchpattern[j];
+				return -2;
+			} else {
+				*headerflags |= (1 << j);
+				return 1;
+			}
+		}
+	}
+
+	for (j = linelen - 1; j >= 0; j--) {
+		if (linein[j] < 0)
+			return -8;
+	}
+
+	return 0;
+}
+
 static unsigned long msgsize;
 
 /**
@@ -431,14 +467,19 @@ smtp_data(void)
 	char s[ULSTRLEN];		/* msgsize */
 	const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
 					"> from ip [", xmitstat.remoteip, "] (", s, " bytes) {",
-					NULL, NULL};
+					NULL, NULL, NULL, NULL};
 	int i, rc;
 	int fd;
-	int flagdate = 0, flagfrom = 0;	/* Date: and From: are required in header,
+	unsigned int headerflags = 0;	/* Date: and From: are required in header,
 					 * else message is bogus (RfC 2822, section 3.6).
+					 * We also scan for Message-Id here.
 					 * RfC 2821 says server SHOULD NOT check for this,
-					 * but we let the user decide */
+					 * but we let the user decide.*/
+#define HEADER_HAS_DATE 0x1
+#define HEADER_HAS_FROM 0x2
+#define HEADER_HAS_MSGID 0x4
 	const char *errmsg = NULL;
+	char errbuf[96];			/* for dynamically constructed error messages */
 	unsigned int hops = 0;		/* number of "Received:"-lines */
 
 	msgsize = 0;
@@ -491,34 +532,32 @@ smtp_data(void)
 			int flagr = 1;	/* if the line may be a "Received:" or "Delivered-To:"-line */
 
 			if (xmitstat.check2822 & 1) {
-				if (!strncasecmp("Date:", linein, 5)) {
-					if (flagdate) {
-						logmail[9] = "more than one 'Date:' in header}";
-						errmsg = "550 5.6.0 message does not comply to RfC2822: "
-								"more than one 'Date:'\r\n";
-						goto loop_data;
-					} else {
-						flagdate = 1;
-						flagr = 0;
-					}
-				} else if (!strncasecmp("From:", linein, 5)) {
-					if (flagfrom) {
-						logmail[9] = "more than one 'From:' in header}";
-						errmsg = "550 5.6.0 message does not comply to RfC2822: "
-								"more than one 'From:'\r\n";
-						goto loop_data;
-					} else {
-						flagfrom = 1;
-						flagr = 0;
-					}
+				const char *hdrname;
+				switch (check_rfc822_headers(&headerflags, &hdrname)) {
+				case 0:
+					break;
+				case 1:
+					flagr = 0;
+					break;
+				case -2: {
+					const char *errtext = "550 5.6.0 message does not comply to RfC2822: "
+							"more than one '";
+
+					logmail[9] = "more than one '";
+					logmail[10] = hdrname;
+					logmail[11] = "' in header}";
+
+					errmsg = errbuf;
+					memcpy(errbuf, errtext, strlen(errtext));
+					memcpy(errbuf + strlen(errtext), hdrname, strlen(hdrname));
+					memcpy(errbuf + strlen(errtext) + strlen(hdrname), "'\r\n", 4);
+					goto loop_data;
 				}
-				for (i = linelen - 1; i >= 0; i--) {
-					if (linein[i] < 0) {
-						logmail[9] = "8bit-character in message header}";
-						errmsg = "550 5.6.0 message does not comply to RfC2822: "
-								"8bit character in message header\r\n";
-						goto loop_data;
-					}
+				case -8:
+					logmail[9] = "8bit-character in message header}";
+					errmsg = "550 5.6.0 message does not comply to RfC2822: "
+							"8bit character in message header\r\n";
+					goto loop_data;
 				}
 			}
 			if (flagr) {
@@ -563,11 +602,11 @@ smtp_data(void)
 			goto loop_data;
 	}
 	if (xmitstat.check2822 & 1) {
-		if (!flagdate) {
+		if (!(headerflags & HEADER_HAS_DATE)) {
 			logmail[9] = "no 'Date:' in header}";
 			errmsg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n";
 			goto loop_data;
-		} else if (!flagfrom) {
+		} else if (!(headerflags & HEADER_HAS_FROM)) {
 			logmail[9] = "no 'From:' in header}";
 			errmsg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n";
 			goto loop_data;
