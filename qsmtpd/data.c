@@ -177,9 +177,7 @@ date822(char *buf)
 					return rc; \
 				}
 
-#define WRITEL(fd, str)		if ( (rc = write(fd, str, strlen(str))) < 0) { \
-					return rc; \
-				}
+#define WRITEL(fd, str)		WRITE(fd, str, strlen(str))
 
 static int
 queue_header(void)
@@ -245,7 +243,6 @@ queue_header(void)
 }
 
 #undef WRITE
-#undef WRITEL
 #define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) { \
 					goto err_write; \
 				}
@@ -297,7 +294,7 @@ queue_envelope(const unsigned long msgsize)
 /* write the envelope information to qmail-queue */
 
 	/* write the return path to qmail-queue */
-	WRITE(fd, "F", 1);
+	WRITEL(fd, "F");
 	WRITE(fd, MAILFROM, xmitstat.mailfrom.len + 1);
 
 	while (head.tqh_first != NULL) {
@@ -308,7 +305,7 @@ queue_envelope(const unsigned long msgsize)
 			const char *at = strchr(l->to.s, '@');
 
 			log_writen(LOG_INFO, logmail);
-			WRITE(fd, "T", 1);
+			WRITEL(fd, "T");
 			if (at && (*(at + 1) == '[')) {
 				WRITE(fd, l->to.s, at - l->to.s + 1);
 				WRITE(fd, liphost.s, liphost.len + 1);
@@ -595,7 +592,7 @@ smtp_data(void)
 			WRITE(fd, linein, linelen);
 			msgsize += linelen + 2;
 		}
-		WRITE(fd, "\n", 1);
+		WRITEL(fd, "\n");
 		/* this has to stay here and can't be combined with the net_read before the while loop:
 		 * if we combine them we add an extra new line for the line that ends the transmission */
 		if (net_read())
@@ -603,13 +600,13 @@ smtp_data(void)
 	}
 	if (submission_mode) {
 		if (!(headerflags & HEADER_HAS_DATE)) {
-			WRITE(fd, "Date: ", 6);
+			WRITEL(fd, "Date: ");
 			WRITE(fd, datebuf + 3, 32);
 		}
 		if (!(headerflags & HEADER_HAS_FROM)) {
-			WRITE(fd, "From: <", 7);
+			WRITEL(fd, "From: <");
 			WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
-			WRITE(fd, ">\n", 2);
+			WRITEL(fd, ">\n");
 		}
 		if (!(headerflags & HEADER_HAS_MSGID)) {
 			char timebuf[20];
@@ -617,7 +614,7 @@ smtp_data(void)
 			struct timezone tz = { .tz_minuteswest = 0, .tz_dsttime = 0 };
 			size_t l;
 
-			WRITE(fd, "Message-Id: <", 13);
+			WRITEL(fd, "Message-Id: <");
 
 			gettimeofday(&ti, &tz);
 			ultostr((const unsigned long) ti.tv_sec, timebuf);
@@ -626,9 +623,9 @@ smtp_data(void)
 			ultostr(ti.tv_usec, timebuf + l + 1);
 			l += 1 + strlen(timebuf + l + 1);
 			WRITE(fd, timebuf, l);
-			WRITE(fd, "@", 1);
+			WRITEL(fd, "@");
 			WRITE(fd, msgidhost.s, msgidhost.len);
-			WRITE(fd, ">\n", 2);
+			WRITEL(fd, ">\n");
 		}
 	} else {
 		if (xmitstat.check2822 & 1) {
@@ -645,7 +642,7 @@ smtp_data(void)
 	}
 	if (!linelen) {
 		/* if(linelen) message has no body and we already are at the end */
-		WRITE(fd, "\n", 1);
+		WRITEL(fd, "\n");
 		if (net_read())
 			goto loop_data;
 		while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes)) {
@@ -664,7 +661,7 @@ smtp_data(void)
 			WRITE(fd, linein + offset, linelen - offset);
 			msgsize += linelen + 2 - offset;
 
-			WRITE(fd, "\n", 1);
+			WRITEL(fd, "\n");
 			if (net_read())
 				goto loop_data;
 		}
@@ -846,7 +843,7 @@ smtp_bdat(void)
 			chunksize -= chunk;
 			msgsize += chunk;
 			if (lastcr && (inbuf[0] != '\n'))
-				WRITE(fd, "\r", 1);
+				WRITEL(fd, "\r");
 			lastcr = (inbuf[chunk - 1] == '\r');
 
 			o = 0;
