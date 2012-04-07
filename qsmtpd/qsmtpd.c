@@ -233,7 +233,7 @@ setup(void)
 		return EINVAL;
 	}
 
-	j = loadoneliner("control/msgidhost", &msgidhost.s, 0);
+	j = loadoneliner("control/msgidhost", &msgidhost.s, 1);
 	if (j < 0) {
 		msgidhost.s = strdup(heloname.s);
 		if (msgidhost.s == NULL)
