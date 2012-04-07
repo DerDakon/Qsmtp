@@ -649,7 +649,7 @@ smtp_data(void)
 		if (errno != EINTR)
 			goto err_write;
 	}
-	fd0[1] = 0;
+	fd0[1] = -1;
 	if (queue_envelope(msgsize))
 		goto err_write;
 
@@ -669,7 +669,7 @@ loop_data:
 		}
 	}
 	while (close(fd0[1]) && (errno == EINTR));
-	fd0[1] = 0;
+	fd0[1] = -1;
 	/* eat all data until the transmission ends. But just drop it and return
 	 * an error defined before jumping here */
 	do {
