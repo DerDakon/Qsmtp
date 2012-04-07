@@ -49,7 +49,7 @@ rset_queue(void)
 {
 	if (fd0[1]) {
 		while (close(fd0[1]) && (errno == EINTR));
-		fd0[1] = 0;
+		fd0[1] = -1;
 	}
 	while (close(fd1[1]) && (errno == EINTR));
 }
@@ -894,7 +894,7 @@ smtp_bdat(void)
 			if (errno != EINTR)
 				goto err_write;
 		}
-		fd0[1] = 0;
+		fd0[1] = -1;
 		if (queue_envelope(msgsize))
 			goto err_write;
 
@@ -905,7 +905,7 @@ smtp_bdat(void)
 	if (bdaterr) {
 		if (fd1[1]) {
 			rset_queue();
-			fd1[1] = 0;
+			fd1[1] = -1;
 		}
 	} else {
 		const char *bdatmess[] = {"250 2.5.0 ", linein + 5, " octets received", NULL};
