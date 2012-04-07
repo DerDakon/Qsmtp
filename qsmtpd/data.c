@@ -25,6 +25,7 @@ static int fd0[2], fd1[2];		/* the fds to communicate with qmail-queue */
 static pid_t qpid;			/* the pid of qmail-queue */
 unsigned long maxbytes;
 static int chunked;			/* set to 1 if BDAT transfer is running */
+static char datebuf[35] = ">; ";		/* the date for the From- and Received-lines */
 
 static int
 err_pipe(void)
@@ -185,7 +186,6 @@ queue_header(void)
 {
 	int fd = fd0[1];
 	int rc;
-	char datebuf[35] = ">; ";		/* the date for the Received-line */
 	size_t i = (authhide && (xmitstat.authname.len || xmitstat.tlsclient)) ? 2 : 0;
 	/* do not bother that the next two messages are basically the same:
 	 * the compiler is usually clever enought to find that out, too */
@@ -601,15 +601,46 @@ smtp_data(void)
 		if (net_read())
 			goto loop_data;
 	}
-	if (xmitstat.check2822 & 1) {
+	if (submission_mode) {
 		if (!(headerflags & HEADER_HAS_DATE)) {
-			logmail[9] = "no 'Date:' in header}";
-			errmsg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n";
-			goto loop_data;
-		} else if (!(headerflags & HEADER_HAS_FROM)) {
-			logmail[9] = "no 'From:' in header}";
-			errmsg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n";
-			goto loop_data;
+			WRITE(fd, "Date: ", 6);
+			WRITE(fd, datebuf + 3, 32);
+		}
+		if (!(headerflags & HEADER_HAS_FROM)) {
+			WRITE(fd, "From: <", 7);
+			WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+			WRITE(fd, ">\n", 2);
+		}
+		if (!(headerflags & HEADER_HAS_MSGID)) {
+			char timebuf[20];
+			struct timeval ti;
+			struct timezone tz = { .tz_minuteswest = 0, .tz_dsttime = 0 };
+			size_t l;
+
+			WRITE(fd, "Message-Id: <", 13);
+
+			gettimeofday(&ti, &tz);
+			ultostr((const unsigned long) ti.tv_sec, timebuf);
+			l = strlen(timebuf);
+			timebuf[l] = '.';
+			ultostr(ti.tv_usec, timebuf + l + 1);
+			l += 1 + strlen(timebuf + l + 1);
+			WRITE(fd, timebuf, l);
+			WRITE(fd, "@", 1);
+			WRITE(fd, msgidhost.s, msgidhost.len);
+			WRITE(fd, ">\n", 2);
+		}
+	} else {
+		if (xmitstat.check2822 & 1) {
+			if (!(headerflags & HEADER_HAS_DATE)) {
+				logmail[9] = "no 'Date:' in header}";
+				errmsg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n";
+				goto loop_data;
+			} else if (!(headerflags & HEADER_HAS_FROM)) {
+				logmail[9] = "no 'From:' in header}";
+				errmsg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n";
+				goto loop_data;
+			}
 		}
 	}
 	if (!linelen) {

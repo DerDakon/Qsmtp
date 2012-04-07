@@ -61,6 +61,7 @@ extern const char *auth_host;		/**< hostname for auth */
 extern const char *auth_check;		/**< checkpassword or one of his friends for auth */
 extern const char **auth_sub;		/**< subprogram and arguments to be invoked by auth_check (usually /bin/true) */
 extern string heloname;			/**< the fqdn to show in helo */
+extern string msgidhost;			/**< the fqdn to use if a message-id is added */
 extern string liphost;			/**< replacement domain if to address is <foo@[ip]> */
 extern unsigned int goodrcpt;		/**< number of valid recipients */
 extern int badbounce;			/**< bounce message with more than one recipient */
@@ -69,6 +70,7 @@ extern unsigned long databytes;		/**< maximum message size */
 extern int relayclient;			/**< flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
 extern long comstate;			/**< status of the command state machine */
 extern int authhide;			/**< hide source of authenticated mail */
+extern int submission_mode;		/**< if we should act as message submission agent */
 
 extern int err_control(const char *);
 extern void freedata(void);

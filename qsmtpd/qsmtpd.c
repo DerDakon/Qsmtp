@@ -96,10 +96,12 @@ const char *auth_check;			/**< checkpassword or one of his friends for auth */
 const char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
 const char **globalconf;		/**< contents of the global "filterconf" file (or NULL) */
 string heloname;			/**< the fqdn to show in helo */
+string msgidhost;			/**< the fqdn to use if a message-id is added */
 string liphost;				/**< replacement domain if TO address is <foo@[ip]> */
 int socketd = 1;			/**< the descriptor where messages to network are written to */
 long comstate = 0x001;			/**< status of the command state machine, initialized to noop */
 int authhide;				/**< hide source of authenticated mail */
+int submission_mode;		/**< if we should act as message submission agent */
 
 struct recip *thisrecip;
 
@@ -229,6 +231,20 @@ setup(void)
 	if (domainvalid(heloname.s)) {
 		log_write(LOG_ERR, "control/me contains invalid name");
 		return EINVAL;
+	}
+
+	j = loadoneliner("control/msgidhost", &msgidhost.s, 0);
+	if (j < 0) {
+		msgidhost.s = strdup(heloname.s);
+		if (msgidhost.s == NULL)
+			return ENOMEM;
+		msgidhost.len = heloname.len;
+	} else {
+		msgidhost.len = j;
+		if (domainvalid(msgidhost.s)) {
+			log_write(LOG_ERR, "control/msgidhost contains invalid name");
+			return EINVAL;
+		}
 	}
 
 	if (( (j = loadoneliner("control/localiphost", &liphost.s, 1)) < 0) && (errno != ENOENT))
@@ -1443,6 +1459,8 @@ conn_cleanup(const int rc)
 	free(protocol);
 	free(gcbuf);
 	free(globalconf);
+	free(heloname.s);
+	free(msgidhost.s);
 	exit(rc);
 }
 
@@ -1672,6 +1690,8 @@ smtploop(void)
 int
 main(int argc, char **argv)
 {
+	const char *localport = getenv("TCPLOCALPORT");
+
 	if (setup()) {
 		/* setup failed: make sure we wait until the "quit" of the other host but
 		 * do not process any mail. Commands RSET, QUIT and NOOP are still allowed.
@@ -1687,6 +1707,8 @@ main(int argc, char **argv)
 		xmitstat.check2822 = 2;
 		TAILQ_INIT(&head);		/* Initialize the recipient list. */
 	}
+
+	submission_mode = (localport != NULL) && (strcmp(localport, "587") == 0);
 
 	/* Check if parameters given. If they are given assume they are for auth checking */
 	auth_host = NULL;
