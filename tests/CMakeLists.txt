@@ -330,3 +330,16 @@ ADD_TEST(NAME "Qremote_noinput_noargs"
 		COMMAND Qremote)
 SET_TESTS_PROPERTIES(Qremote_noinput_noargs PROPERTIES
 		PASS_REGULAR_EXPRESSION "^Z")
+
+ADD_EXECUTABLE(testcase_qsdata
+		qsdata_test.c
+)
+
+TARGET_LINK_LIBRARIES(testcase_qsdata
+		testcase_io_lib
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "Qsmtpd_data"
+		COMMAND testcase_qsdata)
