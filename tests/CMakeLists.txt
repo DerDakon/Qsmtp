@@ -335,6 +335,12 @@ ADD_EXECUTABLE(testcase_qsdata
 		qsdata_test.c
 )
 
+# Another brute force test, this time for Qsmtpd
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit.cmake" @ONLY)
+ADD_TEST(NAME "Qsmtpd_quit"
+		COMMAND "${CMAKE_COMMAND}"
+				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit.cmake")
+
 TARGET_LINK_LIBRARIES(testcase_qsdata
 		testcase_io_lib
 		qsmtp_lib
