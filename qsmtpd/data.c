@@ -145,6 +145,8 @@ date822(char *buf)
 	long tz;
 
 	ti = time(NULL);
+	tzset();
+	tz = timezone / 60;
 	localtime_r(&ti, &stm);
 	memcpy(buf, weekday[stm.tm_wday], 3);
 	memcpy(buf + 3, ", ", 2);
@@ -160,8 +162,6 @@ date822(char *buf)
 	buf[22] = ':';
 	two_digit(buf + 23, stm.tm_sec);
 	buf[25] = ' ';
-	tzset();
-	tz = timezone / 60;
 	buf[26] = (tz <= 0) ? '+' : '-';
 	if (tz < 0)
 	    tz = -tz;
