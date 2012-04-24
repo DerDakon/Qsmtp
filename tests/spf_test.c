@@ -2293,6 +2293,21 @@ test_parse()
 			.value = "v=spf1 exists:"
 		},
 		{
+			.type = DNSTYPE_TXT,
+			.key = "marf-example-1.example.net",
+			.value = "v=spf1 ra=postmaster -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "marf-example-2.example.net",
+			.value = "v=spf1 mx:example.org ra=postmaster -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "marf-example-3.example.net",
+			.value = "v=spf1 mx:example.org -all ra=postmaster rp=10 rr=e"
+		},
+		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
@@ -2332,7 +2347,10 @@ test_parse()
 		SPF_FAIL_MALF,
 		SPF_NEUTRAL,
 		SPF_FAIL_MALF,
-		SPF_FAIL_MALF
+		SPF_FAIL_MALF,
+		SPF_FAIL_PERM,
+		SPF_FAIL_PERM,
+		SPF_FAIL_PERM
 	};
 	int err = 0;
 	unsigned int i = 0;

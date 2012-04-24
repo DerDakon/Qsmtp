@@ -1475,6 +1475,90 @@ match_mechanism(const char *token, const char *mechanism, const char *delimiters
 }
 
 /**
+ * check if the given token is a valid SPF modifier-name
+ *
+ * @param token the token to parse
+ * @return the length of the modifier-name, i.e. the position of the terminating '='
+ * @retval 0 the given token is no valid modifier-name
+ */
+static size_t
+spf_modifier_name(const char *token)
+{
+	size_t res = 0;
+
+	if (!*token)
+		return 0;
+
+	/* modifier name is ALPHA *( ALPHA / DIGIT / "-" / "_" / "." ), i.e.
+		* ([a-zA-Z][a-zA-Z0-9-_\.]*) */
+	if (!(((*token >= 'a') && (*token <= 'z')) ||
+			((*token >= 'A') && (*token <= 'Z'))))
+		return 0;
+
+	res++;
+
+	while (token[res] && !WSPACE(token[res])) {
+		if (token[res] == '=')
+			return res;
+
+		if (((*token >= 'a') && (*token <= 'z')) ||
+				((*token >= 'A') && (*token <= 'Z')) ||
+				((*token >= '0') && (*token <= '9')) ||
+				(*token == '_') ||
+				(*token == '-') ||
+				(*token == '.')) {
+			res++;
+		} else {
+			break;
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * write the bad token to the SPF explanation record
+ *
+ * @param token the current token string
+ */
+static void
+record_bad_token(const char *token)
+{
+	/* This is an invalid token. Go back to the last whitespace
+	 * and copy that to spfexp so it can be recorded in the
+	 * Received-SPF line if the user still accepts the mail. We
+	 * know there is at least one whitespace after the v=spf1
+	 * token. Then go back until the next whitespace or to the
+	 * end, replace any unsafe char by '?' */
+
+	const char *tokenend = token;
+
+	tokenend = token;
+	while (!WSPACE(*(token - 1)))
+		token--;
+
+	while (!WSPACE(*tokenend) && (*tokenend != '\0'))
+		tokenend++;
+
+	xmitstat.spfexp = malloc(tokenend - token + 1);
+	/* it's just logging, ignore if it fails */
+	if(xmitstat.spfexp != NULL) {
+		const size_t toklen = tokenend - token;
+		size_t tpos;
+
+		xmitstat.spfexp[toklen] = '\0';
+
+		for (tpos = 0; tpos < toklen; tpos++) {
+			/* filter out everything that is not a valid entry in a MIME header */
+			if (TSPECIAL(token[tpos]) || (token[tpos] <= ' ') || (token[tpos] >= 127))
+				xmitstat.spfexp[tpos] = '%';
+			else
+				xmitstat.spfexp[tpos] = token[tpos];
+		}
+	}
+}
+
+/**
  * look up SPF records for domain
  *
  * @param domain no idea what this might be for
@@ -1636,59 +1720,34 @@ spflookup(const char *domain, const int rec)
 			}
 
 			mechanism = "include";
-		} else if ( (mechlen = match_mechanism(token, "redirect", "=")) != 0) {
-			token += mechlen;
-
-			if (*token++ == '=') {
-				if (!redirect) {
-					redirect = token;
-				}
-			} else {
-				result = SPF_FAIL_MALF;
-			}
-		} else if ( (mechlen = match_mechanism(token, "exp", "=")) != 0) {
-			token += mechlen;
-			if (*token++ != '=') {
-				result = SPF_FAIL_MALF;
-			}
-			/* ignore them for now, will be checked later on failure */
 		} else {
-			/* This is an invalid token. Go back to the last whitespace
-			 * and copy that to spfexp so it can be recorded in the
-			 * Received-SPF line if the user still accepts the mail. We
-			 * know there is at least one whitespace after the v=spf1
-			 * token. Then go back until the next whitespace or to the
-			 * end, replace any unsafe char by '?' */
+			/* assume this is a modifier (defined in RfC 4408, section 4.6.1) */
+			size_t eq = spf_modifier_name(token);
 
-			char *tokenend;
+			if (eq == 0) {
+				prefix = SPF_FAIL_MALF;
+				result = SPF_PASS;
+				break;
+			} else {
+				char *mres = NULL;
 
-			prefix = SPF_FAIL_MALF;
-			result = SPF_PASS;
+				result = spf_makro(token + eq + 1, domain, 0, &mres);
+				if (result == SPF_FAIL_MALF) {
+					prefix = SPF_FAIL_MALF;
+					result = SPF_PASS;
 
-			tokenend = token;
-			while (!WSPACE(*(token - 1)))
-				token--;
-
-			while (!WSPACE(*tokenend) && (*tokenend != '\0'))
-				tokenend++;
-
-			xmitstat.spfexp = malloc(tokenend - token + 1);
-			if(xmitstat.spfexp != NULL) {
-				const size_t toklen = tokenend - token;
-				size_t tpos;
-
-				xmitstat.spfexp[toklen] = '\0';
-
-				for (tpos = 0; tpos < toklen; tpos++) {
-					/* filter out everything that is not a valid entry in a MIME header */
-					if (TSPECIAL(token[tpos]) || (token[tpos] <= ' ') || (token[tpos] >= 127))
-						xmitstat.spfexp[tpos] = '%';
-					else
-						xmitstat.spfexp[tpos] = token[tpos];
+					record_bad_token(token);
+					break;
+				} else if (result == 0) {
+					/* we don't need it here */
+					free(mres);
+					if (!redirect && (strncasecmp(token, "redirect", strlen("redirect")) == 0))
+						redirect = token + eq + 1;
+					token += eq + 1;
+				} else {
+					break;
 				}
 			}
-
-			break;
 		}
 /* skip to the end of this token */
 		while (*token && !WSPACE(*token)) {
