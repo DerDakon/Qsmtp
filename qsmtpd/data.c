@@ -528,7 +528,7 @@ smtp_data(void)
 		} else {
 			int flagr = 1;	/* if the line may be a "Received:" or "Delivered-To:"-line */
 
-			if (xmitstat.check2822 & 1) {
+			if ((xmitstat.check2822 & 1) || submission_mode) {
 				const char *hdrname;
 				switch (check_rfc822_headers(&headerflags, &hdrname)) {
 				case 0:
