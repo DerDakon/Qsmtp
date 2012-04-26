@@ -697,7 +697,7 @@ spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned 
 int
 spf_makro(const char *token, const char *domain, int ex, char **result)
 {
-	char *res;
+	char *res = NULL;
 	const char *p;
 	unsigned int l;
 	size_t toklen = 0;
@@ -726,11 +726,13 @@ spf_makro(const char *token, const char *domain, int ex, char **result)
 	} else {
 		l = p - token;
 
-		res = malloc(l);
-		if (!res) {
-			return -1;
+		if (l != 0) {
+			res = malloc(l);
+			if (!res) {
+				return -1;
+			}
+			memcpy(res, token, l);
 		}
-		memcpy(res, token, l);
 		do {
 			int z;
 
