@@ -322,6 +322,12 @@ TARGET_LINK_LIBRARIES(testcase_getfile
 ADD_TEST(NAME "Getfile"
 		COMMAND testcase_getfile)
 
+ADD_EXECUTABLE(testcase_netio
+		netio_test.c
+		${CMAKE_SOURCE_DIR}/lib/netio.c)
+ADD_TEST(NAME "NetIO"
+		COMMAND testcase_netio)
+
 # This is a brute force test just to get some "real" coverage on the file.
 # It will always fail, either because ${AUTOQMAIL} doesn't exist or doesn't
 # have the proper configuration files or simply because we do not pass it
