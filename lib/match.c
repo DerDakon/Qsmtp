@@ -12,7 +12,9 @@
  * @param ip the IP address to check (network byte order)
  * @param net the network to check (network byte order)
  * @param mask the network mask, must be 0 <= netmask <= 32
- * @return 1 on match, 0 else
+ * @return if address is within net/mask
+ * @retval 1 on match
+ * @retval 0 no match
  */
 int
 ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigned char mask)
@@ -70,7 +72,8 @@ ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsign
  * @param domain the domain to check
  * @param dl length of domain
  * @param expr the expression to match
- * @return 1 on match, 0 otherwise
+ * @retval 1 on match
+ * @retval 0 otherwise
  */
 int
 matchdomain(const char *domain, const size_t dl, const char *expr)

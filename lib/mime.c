@@ -15,7 +15,8 @@
  *
  * @param line header field
  * @param len length of data, must be > 0
- * @return pointer to first character after whitespace, NULL on syntax error (e.g. unfinished comment)
+ * @return pointer to first character after whitespace
+ * @retval NULL syntax error (e.g. unfinished comment)
  *
  * This function skips whitespace and comments from the current position. If a newline is encountered
  * before a non-whitespace and non-comment character it is also skipped, including all following whitespace.
@@ -93,7 +94,9 @@ skipwhitespace(const char *line, const size_t len)
  *
  * @param line header field
  * @param boundary reference to boundary is stored here
- * @return 1 if line contains multipart/(*) declaration, 0 if other type, -1 on syntax error
+ * @retval 1 line contains multipart/(*) declaration
+ * @retval 0 other type
+ * @retval -1 syntax error
  */
 int
 is_multipart(const cstring *line, cstring *boundary)
@@ -191,7 +194,8 @@ is_multipart(const cstring *line, cstring *boundary)
  *
  * @param msg message data to scan
  * @param len length of data
- * @return length of header field, 0 if field does not end until end of data
+ * @return length of header field
+ * @retval 0 if field does not end until end of data
  */
 size_t
 getfieldlen(const char *msg, const size_t len)
@@ -222,7 +226,8 @@ getfieldlen(const char *msg, const size_t len)
  *
  * @param line header line to scan
  * @param len length of line
- * @return length of parameter, 0 on syntax error
+ * @return length of parameter
+ * @retval 0 syntax error
  */
 size_t
 mime_param(const char *line, const size_t len)
@@ -266,7 +271,8 @@ mime_param(const char *line, const size_t len)
  *
  * @param line header line to scan
  * @param len length of line
- * @return length of parameter, 0 on syntax error
+ * @return length of parameter
+ * @retval 0 syntax error
  */
 size_t
 mime_token(const char *line, const size_t len)
@@ -296,7 +302,8 @@ mime_token(const char *line, const size_t len)
  * @param buf buffer to scan
  * @param len length of buffer
  * @param boundary boundary limit string
- * @return offset of first character behind next boundary, 0 if no boundary found
+ * @return offset of first character behind next boundary
+ * @retval 0 no boundary found
  */
 off_t
 find_boundary(const char *buf, const off_t len, const cstring *boundary)

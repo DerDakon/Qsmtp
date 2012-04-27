@@ -15,7 +15,8 @@
  * @param ds strings of user and domain directory
  * @param fn filename to search
  * @param type if user (0) or domain (1) directory matched, ignore this if (result == -1)
- * @return file descriptor of opened file, -1 on error (errno is set)
+ * @return file descriptor of opened file
+ * @retval -1 on error (errno is set)
  */
 int
 getfile(const struct userconf *ds, const char *fn, int *type)
@@ -75,7 +76,8 @@ getfile(const struct userconf *ds, const char *fn, int *type)
  * @param ds strings of user and domain directory
  * @param fn filename to search
  * @param type if user (0), domain (1) or global (2) directory matched, ignore this if (result == -1)
- * @return file descriptor of opened file, -1 on error (errno is set)
+ * @return file descriptor of opened file
+ * @retval -1 on error (errno is set)
  */
 int
 getfileglobal(const struct userconf *ds, const char *fn, int *type)
@@ -109,7 +111,9 @@ getfileglobal(const struct userconf *ds, const char *fn, int *type)
  * @param config list of settings, last entry has to be NULL, list may be NULL
  * @param flag the value to find
  * @param l strlen(flag)
- * @return the value assotiated with flag, 0 if no match, -1 on syntax error
+ * @return the value assotiated with flag
+ * @retval 0 no match
+ * @retval -1 syntax error
  */
 static long
 checkconfig(const char * const *config, const char *flag, const size_t l)
@@ -185,7 +189,10 @@ getsetting_internal(const struct userconf *ds, const char *flag, int *type, cons
  * @param ds struct with the user/domain config info
  * @param flag name of the setting to find (case sensitive)
  * @param type if user (0) or domain (1) directory matched, ignore this if (result == -1)
- * @return value of setting, 1 if boolean setting (or no number given), 0 if setting not found, -1 on syntax error
+ * @return value of setting
+ * @retval 1 boolean setting or no number given
+ * @retval 0 setting not found
+ * @retval -1 on syntax error
  */
 long
 getsetting(const struct userconf *ds, const char *flag, int *type)
@@ -199,7 +206,10 @@ getsetting(const struct userconf *ds, const char *flag, int *type)
  * @param ds struct with the user/domain config info
  * @param flag name of the setting to find (case sensitive)
  * @param type if user (0), domain (1) or global (2) file matched, ignore this if (result == -1)
- * @return value of setting, 1 if boolean setting (or no number given), 0 if setting not found, -1 on syntax error
+ * @return value of setting
+ * @retval 1 boolean setting or no number given
+ * @retval 0 setting not found
+ * @retval -1 on syntax error
  */
 long
 getsettingglobal(const struct userconf *ds, const char *flag, int *type)

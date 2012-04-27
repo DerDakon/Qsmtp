@@ -85,7 +85,8 @@ void DEBUG_OUT(const char *s, const size_t l)
  *
  * @param buffer buffer to put the data in
  * @param len maximum length of data to read (one char less is read, the last one is set to '\0')
- * @return -1 on error (errno is set), number of bytes read otherwise
+ * @return number of bytes read
+ * @retval -1 on error (errno is set)
  */
 static size_t
 readinput(char *buffer, const size_t len)
@@ -123,8 +124,8 @@ readinput(char *buffer, const size_t len)
 /**
  * read one line from the network
  *
- * @return  0 on success
- *         -1 on error (errno is set)
+ * @retval 0 on success
+ * @retval -1 on error (errno is set)
  *
  * does not return on timeout, programm will be cancelled
  */
@@ -261,8 +262,8 @@ loop_long:
  * write one line to the network
  *
  * @param s line to be written (nothing else it written so it should contain CRLF)
- * @return 0 on success
- *         -1 on error (errno is set)
+ * @retval 0 on success
+ * @retval -1 on error (errno is set)
  *
  * -does not return on timeout, programm will be cancelled
  * -same as net_write but expects that line is <= 512 characters and includes CRLF
@@ -278,8 +279,8 @@ netwrite(const char *s)
  *
  * @param s line to be written (nothing else it written so it should contain CRLF)
  * @param l length of s
- * @return 0 on success
- *         -1 on error (errno is set)
+ * @retval 0 on success
+ * @retval -1 on error (errno is set)
  *
  * does not return on timeout, programm will be cancelled
  */
@@ -326,8 +327,8 @@ netnwrite(const char *s, const size_t l)
  * write one line to the network, fold if needed
  *
  * @param s array of strings to send
- * @return 0 on success
- *         -1 on error (errno is set)
+ * @retval 0 on success
+ * @retval -1 on error (errno is set)
  *
  * does not return on timeout, programm will be cancelled
  *
@@ -395,7 +396,8 @@ net_writen(const char *const *s)
  *
  * @param num number of bytes to read
  * @param buf buffer to store data (must have enough space for (num + 1) bytes)
- * @return number of bytes read, -1 on error
+ * @return number of bytes read
+ * @retval -1 on error
  */
 size_t
 net_readbin(size_t num, char *buf)
@@ -432,7 +434,8 @@ net_readbin(size_t num, char *buf)
  *
  * @param num number of bytes to read, must be < 1002 so everything behind the CRLF can be copied back to lineinn
  * @param buf buffer to store data (must have enough space)
- * @return number of bytes read, -1 on error
+ * @return number of bytes read
+ * @retval -1 on error
  */
 size_t
 net_readline(size_t num, char *buf)
@@ -487,7 +490,9 @@ net_readline(size_t num, char *buf)
 /**
  * check if there is data ready to be read without blocking
  *
- * @return 0 if no data, 1 if data, -1 on error
+ * @retval 0 if no data
+ * @retval 1 if data
+ * @retval -1 on error
  */
 int
 data_pending(void)

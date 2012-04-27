@@ -25,7 +25,8 @@
  *            1: compact {'\\0'}* to a single '\\0'
  *            0: do nothing but load the file into the buffer
  *
- * @return length of buffer on success, -1 on error (errno is set)
+ * @return length of buffer
+ * @retval -1 on error (errno is set)
  *
  * if the file is empty (size 0 or only comments and blank lines) 0
  * is returned and buf is set to NULL
@@ -185,7 +186,8 @@ lloadfilefd(int fd, char **buf, const int striptab)
  * @param fd file descriptor to read from (will be closed)
  * @param result value will be stored here
  * @param def default value if file does not exist
- * @return 0 on success, -1 on error. Parse errors in the file will set errno to EINVAL
+ * @retval 0 on success
+ * @retval -1 on error, parse errors in the file will set errno to EINVAL
  */
 int
 loadintfd(int fd, unsigned long *result, const unsigned long def)
@@ -219,7 +221,8 @@ loadintfd(int fd, unsigned long *result, const unsigned long def)
  * @param filename don't know what this can ever mean ;)
  * @param buf the buffer where the contents of the file will go, memory will be malloced
  * @param optional if set to 0 write an error message to syslog if the file does not exist
- * @return length of the string, -1 on error
+ * @return length of the string
+ * @retval -1 on error
  */
 size_t
 loadoneliner(const char *filename, char **buf, const int optional)
@@ -255,7 +258,8 @@ loadoneliner(const char *filename, char **buf, const int optional)
 *
 * @param fd opened file descriptor
 * @param buf the buffer where the contents of the file will go, memory will be malloced
-* @return length of the string, -1 on error
+* @return length of the string
+* @retval -1 on error
 *
 * fd will be closed.
 */
@@ -289,7 +293,8 @@ loadonelinerfd(int fd, char **buf)
  * @param buf the buffer where the data should be stored (memory will be malloced)
  * @param bufa array to be build from buf (memory will be malloced)
  * @param cf function to check if an entry is valid or NULL if not to
- * @return 0 on success, -1 on error
+ * @retval 0 on success
+ * @retval -1 on error
  *
  * if the file does not exist or has no content *buf and *bufa will be set to NULL
  */
@@ -351,7 +356,9 @@ loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
  * @param fd file descriptor
  * @param domain domain name to find
  * @param cl close fd or not
- * @return 1 on match, 0 if none, -1 on error
+ * @retval 1 on match
+ * @retval 0 if none
+ * @retval -1 on error
  *
  * trainling spaces and tabs in a line are ignored, lines beginning with '#' are ignored, CR in file will cause trouble
  */
@@ -412,7 +419,9 @@ finddomainfd(int fd, const char *domain, const int cl)
  * @param map memory region where file ist mmapped to
  * @param size size of mmapped area
  * @param domain domain name to find
- * @return 1 on match, 0 if none, -1 on error
+ * @retval 1 on match
+ * @retval 0 if none
+ * @retval -1 on error
  *
  * trailing spaces and tabs in a line are ignored, lines beginning with '#' are ignored, CR in file will cause trouble
  */

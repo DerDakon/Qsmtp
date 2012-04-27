@@ -18,7 +18,9 @@ static const char *b64alpha =
  * @param in base64 text
  * @param l length of in
  * @param out string to store decoded string (memory will be malloced)
- * @return -1 on error (errno will be set), 0 on success, 1 on parse error
+ * @retval -1 on error (errno will be set)
+ * @retval 0 on success
+ * @retval 1 on parse error
  */
 int
 b64decode(const char *in, size_t l, string *out)
@@ -92,7 +94,8 @@ b64decode(const char *in, size_t l, string *out)
  *
  * @param in plain text string
  * @param out string to store Base64 string (memory will be malloced)
- * @return -1 on error, 0 on success
+ * @retval 0 on success
+ * @retval -1 on error
  */
 int
 b64encode(const string *in, string *out)
