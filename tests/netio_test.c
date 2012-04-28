@@ -381,6 +381,7 @@ test_long_lines(void)
 	if (unexpected_pending())
 		return 1;
 
+	/* a line that is clearly too long */
 	for (i = 0; i <= 100; i++)
 		send_all_test_data(digits);
 	send_all_test_data(valid);
@@ -388,6 +389,75 @@ test_long_lines(void)
 	if (read_check_error(E2BIG))
 		ret++;
 
+	if (read_check("valid"))
+		ret++;
+
+	/* a line that is too long and that has it's CRLF
+	 * wrapped at the buffer boundary */
+	for (i = 0; i < 100; i++)
+		send_all_test_data(digits);
+	send_all_test_data(valid);
+
+	if (read_check_error(E2BIG))
+		ret++;
+
+	if (read_check("valid"))
+		ret++;
+
+	/* a line that is too long and that has it's CRLF
+	 * wrapped at the buffer boundary when inside loop_long() */
+	for (i = 0; i < 200; i++)
+		send_all_test_data(digits);
+	send_all_test_data("X");
+	send_all_test_data(valid);
+
+	if (read_check_error(E2BIG))
+		ret++;
+
+	if (read_check("valid"))
+		ret++;
+
+	/* a line that is too long and then doesn't end in
+	 * CRLF, so it becomes even longer */
+	for (i = 0; i < 100; i++)
+		send_all_test_data(digits);
+	send_all_test_data("\r");
+	for (i = 0; i < 10; i++)
+		send_all_test_data(digits);
+	send_all_test_data(valid);
+
+	if (read_check_error(E2BIG))
+		ret++;
+
+	if (read_check("valid"))
+		ret++;
+
+	/* a line that is too long and then does end in CRCRLF */
+	for (i = 0; i < 100; i++)
+		send_all_test_data(digits);
+	send_all_test_data("\r");
+	send_all_test_data(valid);
+
+	if (read_check_error(E2BIG))
+		ret++;
+
+	if (read_check("valid"))
+		ret++;
+
+	/* a line that is too long and ands in LF. Since no more data is
+	 * available in the buffer at that time it should be taken as
+	 * line end. */
+	for (i = 0; i <= 100; i++)
+		send_all_test_data(digits);
+	send_all_test_data("\n");
+
+	if (read_check_error(E2BIG))
+		ret++;
+
+	send_all_test_data(valid);
+
+	if (read_check(""))
+		ret++;
 	if (read_check("valid"))
 		ret++;
 

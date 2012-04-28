@@ -190,38 +190,38 @@ static void
 loop_long(int has_cr)
 {
 	const char *p;
-	/* if readoffset is set the last character in the previous buffer was '\r' */
-	linenlen = 0;
 	do {
-		size_t j = readinput(linein, sizeof(linein));
+		int valid;
+		/* The idea here is to read input until we find a valid line end (CRLF),
+		 * drop everything until this point (i.e. the too long line) and keep
+		 * the rest in the buffer, but still return with an error code. */
+		linenlen = readinput(linein, sizeof(linein));
 
-		if (j == (size_t) -1)
+		if (linenlen == (size_t) -1) {
+			/* reset that to 0, otherwise it will confuse net_read() */
+			linenlen = 0;
 			return;
+		}
+		/* detect if the linebreak is interrupted by buffer end */
 		if (has_cr && (linein[0] == '\n')) {
 			p = linein + 1;
+			linenlen--;
 			break;
 		}
-		p = linein;
-		if ((linein[0] != '\r') && (linein[1] == '\n'))
-			linein[1] = '\0';
 		has_cr = 0;
-		while (p && (*(p + 1) != '\n')) {
-			if (p == linein + sizeof(linein) - 1) {
-				has_cr = 1;
-				p = NULL;
-				break;
-			}
-			/* catch "\r\r" */
-			if (*p == '\r') {
-				p++;
-				j--;
-			}
-			p = memchr(p, '\r', j);
-			j -= (p - linein);
+
+		p = find_eol(linein, linenlen, &valid);
+
+		if (!valid && (p == linein + linenlen) && (*(p - 1) == '\r')) {
+			/* we need to read more data */
+			has_cr = 1;
+		} else if (p != NULL) {
+			/* skip the broken part */
+			linenlen -= (p - linein);
 		}
-	} while (!p);
-	linenlen = p - linein - 2;
-	memcpy(lineinn, p + 2, linenlen);
+	} while ((p == NULL) || has_cr);
+
+	memcpy(lineinn, p, linenlen);
 	errno = E2BIG;
 }
 
@@ -303,7 +303,7 @@ net_read(void)
 		/* the whole buffer is filled, but neither CR nor LF is found */
 		loop_long(0);
 		return -1;
-	} else if ((p == linein + sizeof(linein) - 1) && (*p == '\r')) {
+	} else if ((p == linein + sizeof(linein) - 1) && (*(p - 1) == '\r')) {
 		/* We found a CR, but a too long line. Let's find out if an LF will follow. */
 		loop_long(1);
 		return -1;
