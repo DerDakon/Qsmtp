@@ -323,8 +323,9 @@ ADD_TEST(NAME "Getfile"
 		COMMAND testcase_getfile)
 
 ADD_EXECUTABLE(testcase_netio
-		netio_test.c
-		${CMAKE_SOURCE_DIR}/lib/netio.c)
+		netio_test.c)
+TARGET_LINK_LIBRARIES(testcase_netio
+		qsmtp_io_lib)
 ADD_TEST(NAME "NetIO"
 		COMMAND testcase_netio)
 

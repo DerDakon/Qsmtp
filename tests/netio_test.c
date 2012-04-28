@@ -85,6 +85,20 @@ read_check(const char *data)
 	return 0;
 }
 
+static int
+read_check_error(const int errcode)
+{
+	if (net_read() != -1) {
+		fprintf(stderr, "%s: reading damaged data did not fail\n", testname);
+		return 1;
+	} else if (errno != errcode) {
+		fprintf(stderr, "%s: reading damaged data did not return %i, but %i\n",
+				testname, errcode, errno);
+		return 1;
+	}
+	return 0;
+}
+
 static inline void
 send_all_test_data(const char *buf)
 {
@@ -116,7 +130,6 @@ test_pending()
 
 	/* now we have data read, and another line of data should be pending */
 
-	linelen = 1;
 	if (!data_pending()) {
 		fprintf(stderr, "no data available on first try\n");
 		ret++;
@@ -175,13 +188,8 @@ test_bare_lf_start()
 	/* detection of bare LF in direct input */
 	send_all_test_data(dummydata);
 
-	if (net_read() != -1) {
-		fprintf(stderr, "reading damaged data did not fail\n");
+	if (read_check_error(EINVAL))
 		ret++;
-	} else if (errno != EINVAL) {
-		fprintf(stderr, "reading damaged data did not return EINVAL, but %i\n", errno);
-		ret++;
-	}
 
 	if (read_check("bar"))
 		ret++;
@@ -203,13 +211,8 @@ test_bare_lf_mid()
 	if (read_check("good"))
 		ret++;
 
-	if (net_read() != -1) {
-		fprintf(stderr, "reading damaged data did not fail\n");
+	if (read_check_error(EINVAL))
 		ret++;
-	} else if (errno != EINVAL) {
-		fprintf(stderr, "reading damaged data did not return EINVAL, but %i\n", errno);
-		ret++;
-	}
 
 	if (read_check("bar"))
 		ret++;
@@ -221,13 +224,8 @@ test_bare_lf_mid()
 	if (read_check("good"))
 		ret++;
 
-	if (net_read() != -1) {
-		fprintf(stderr, "reading damaged data did not fail\n");
+	if (read_check_error(EINVAL))
 		ret++;
-	} else if (errno != EINVAL) {
-		fprintf(stderr, "reading damaged data did not return EINVAL, but %i\n", errno);
-		ret++;
-	}
 
 	send_all_test_data("\r\n");
 	if (read_check("bar"))
@@ -240,13 +238,8 @@ test_bare_lf_mid()
 	if (read_check("good"))
 		ret++;
 
-	if (net_read() != -1) {
-		fprintf(stderr, "reading damaged data did not fail\n");
+	if (read_check_error(EINVAL))
 		ret++;
-	} else if (errno != EINVAL) {
-		fprintf(stderr, "reading damaged data did not return EINVAL, but %i\n", errno);
-		ret++;
-	}
 
 	send_all_test_data("\n");
 	if (read_check("bar"))
@@ -269,13 +262,8 @@ test_bare_cr()
 	/* detection of bare LF in direct input */
 	send_all_test_data(dummydata);
 
-	if (net_read() != -1) {
-		fprintf(stderr, "reading damaged data did not fail\n");
+	if (read_check_error(EINVAL))
 		ret++;
-	} else if (errno != EINVAL) {
-		fprintf(stderr, "reading damaged data did not return EINVAL, but %i\n", errno);
-		ret++;
-	}
 
 	if (read_check("bar"))
 		ret++;
@@ -297,13 +285,8 @@ test_bare_cr_lf()
 	/* detection of bare LF in direct input */
 	send_all_test_data(dummydata);
 
-	if (net_read() != -1) {
-		fprintf(stderr, "reading damaged data did not fail\n");
+	if (read_check_error(EINVAL))
 		ret++;
-	} else if (errno != EINVAL) {
-		fprintf(stderr, "reading damaged data did not return EINVAL, but %i\n", errno);
-		ret++;
-	}
 
 	if (read_check("bar"))
 		ret++;
@@ -325,13 +308,8 @@ test_bare_lf_cr()
 	/* detection of bare LF in direct input */
 	send_all_test_data(dummydata);
 
-	if (net_read() != -1) {
-		fprintf(stderr, "reading damaged data did not fail\n");
+	if (read_check_error(EINVAL))
 		ret++;
-	} else if (errno != EINVAL) {
-		fprintf(stderr, "reading damaged data did not return EINVAL, but %i\n", errno);
-		ret++;
-	}
 
 	if (read_check("bar"))
 		ret++;
@@ -407,13 +385,8 @@ test_long_lines(void)
 		send_all_test_data(digits);
 	send_all_test_data(valid);
 
-	if (net_read() != -1) {
-		fprintf(stderr, "reading damaged data did not fail\n");
+	if (read_check_error(E2BIG))
 		ret++;
-	} else if (errno != E2BIG) {
-		fprintf(stderr, "reading damaged data did not return EINVAL, but %i\n", errno);
-		ret++;
-	}
 
 	if (read_check("valid"))
 		ret++;
