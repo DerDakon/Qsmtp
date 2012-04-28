@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <ssl/ssl.h>
+#include <openssl/ssl.h>
 
 #ifdef DEBUG_IO
 #include "log.h"
