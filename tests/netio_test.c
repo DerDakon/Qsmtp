@@ -122,6 +122,50 @@ test_pending()
 	return ret;
 }
 
+static int
+test_bare_lf()
+{
+	int ret = 0;
+	const char dummydata[] = "good\r\nfoo\nbar\r\n";
+
+	if (data_pending()) {
+		fprintf(stderr, "data pending at start of bare LF test\n");
+		return 1;
+	}
+
+	/* check detection of bare LF in input buffer */
+	if (netwrite(dummydata) != 0) {
+		fprintf(stderr, "writing test data failed\n");
+		return ++ret;
+	}
+
+	if (net_read() != 0) {
+		fprintf(stderr, "reading good data did not succeed\n");
+		ret++;
+	} else if ((linelen != 4) || (strcmp(linein, "good") != 0)) {
+		fprintf(stderr, "reading valid data did not return the correct data\n");
+		ret++;
+	}
+
+	if (net_read() != -1) {
+		fprintf(stderr, "reading damaged data did not fail\n");
+		ret++;
+	} else if (errno != EINVAL) {
+		fprintf(stderr, "reading damaged data did not return EINVAL, but %i\n", errno);
+		ret++;
+	}
+
+	if (net_read() != 0) {
+		fprintf(stderr, "reading after bare LF did not succeed\n");
+		ret++;
+	} else if ((linelen != 3) || (strcmp(linein, "bar") != 0)) {
+		fprintf(stderr, "reading valid data after bare LF did not return the correct data\n");
+		ret++;
+	}
+
+	return ret;
+}
+
 int main(void)
 {
 	int ret = 0;
@@ -145,6 +189,7 @@ int main(void)
 	socketd = pipefd[1];
 
 	ret += test_pending();
+	ret += test_bare_lf();
 
 	return ret;
 }
