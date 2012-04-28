@@ -180,6 +180,52 @@ find_eol(const char *buffer, const size_t buflen, int *valid)
 }
 
 /**
+ * read input until a line with a valid length is in buffer
+ * @param has_cr if the previous buffer ended with CR
+ *
+ * This function will set errno to the proper error code before
+ * returning.
+ */
+static void
+loop_long(int has_cr)
+{
+	const char *p;
+	/* if readoffset is set the last character in the previous buffer was '\r' */
+	linenlen = 0;
+	do {
+		size_t j = readinput(linein, sizeof(linein));
+
+		if (j == (size_t) -1)
+			return;
+		if (has_cr && (linein[0] == '\n')) {
+			p = linein + 1;
+			break;
+		}
+		p = linein;
+		if ((linein[0] != '\r') && (linein[1] == '\n'))
+			linein[1] = '\0';
+		has_cr = 0;
+		while (p && (*(p + 1) != '\n')) {
+			if (p == linein + sizeof(linein) - 1) {
+				has_cr = 1;
+				p = NULL;
+				break;
+			}
+			/* catch "\r\r" */
+			if (*p == '\r') {
+				p++;
+				j--;
+			}
+			p = memchr(p, '\r', j);
+			j -= (p - linein);
+		}
+	} while (!p);
+	linenlen = p - linein - 2;
+	memcpy(lineinn, p + 2, linenlen);
+	errno = E2BIG;
+}
+
+/**
  * read one line from the network
  *
  * @retval 0 on success
@@ -255,12 +301,12 @@ net_read(void)
 		}
 	} else if (p == NULL) {
 		/* the whole buffer is filled, but neither CR nor LF is found */
-		readoffset = 0;
-		goto loop_long;
+		loop_long(0);
+		return -1;
 	} else if ((p == linein + sizeof(linein) - 1) && (*p == '\r')) {
 		/* We found a CR, but a too long line. Let's find out if an LF will follow. */
-		readoffset = 1;
-		goto loop_long;
+		loop_long(1);
+		return -1;
 	} else {
 		/* copy the rest of the input buffer back to lineinn, then return error */
 		if (p != linein + readoffset) {
@@ -280,40 +326,6 @@ net_read(void)
 	DEBUG_IN(linelen);
 
 	return 0;
-loop_long:
-	/* if readoffset is set the last character in the previous buffer was '\r' */
-	linenlen = 0;
-	do {
-		size_t j = readinput(linein, sizeof(linein));
-
-		if (j == (size_t) -1)
-			return -1;
-		if (readoffset && (linein[0] == '\n')) {
-			p = linein + 1;
-			break;
-		}
-		p = linein;
-		if ((linein[0] != '\r') && (linein[1] == '\n'))
-			linein[1] = '\0';
-		while (p && (*(p + 1) != '\n')) {
-			if (p == linein + sizeof(linein) - 1) {
-				readoffset = 1;
-				goto loop_long;
-			}
-			/* catch "\r\r" */
-			if (*p == '\r') {
-				p++;
-				j--;
-			}
-			p = memchr(p, '\r', j);
-			j -= (p - linein);
-		}
-		readoffset = 0;
-	} while (!p);
-	linenlen = linein + datain - p - 2;
-	memcpy(lineinn, p + 2, linenlen);
-	errno = E2BIG;
-	return -1;
 }
 
 /**
