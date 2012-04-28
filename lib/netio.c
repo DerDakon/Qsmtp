@@ -122,6 +122,64 @@ readinput(char *buffer, const size_t len)
 }
 
 /**
+ * detect the end of the first line in the given buffer
+ *
+ * @param buffer input buffer to check
+ * @param buflen amount of data in buffer
+ * @param valid a flag is stored here if the line is valid
+ * @return the first character after the line end
+ * @retval NULL buffer does neither contain CR nor LF
+ *
+ * If the buffer begins with a sequence of characters that contains
+ * a stray CR or LF a pointer one character behind this is returned and
+ * valid is set to 0. If the buffer begins with a valid line ending in
+ * CRLF a pointer behind the LF is returned. If neither CR nor LF is
+ * found NULL is returned.
+ */
+static const char *
+find_eol(const char *buffer, const size_t buflen, int *valid)
+{
+	const char *cr, *lf;
+
+	cr = memchr(buffer, '\r', buflen);
+	lf = memchr(buffer, '\n', buflen);
+
+	/* both are found and form a correct CRLF pair */
+	if ((cr != NULL) && (lf == cr + 1)) {
+		*valid = 1;
+		return lf + 1;
+	/* neither is found */
+	} else if ((cr == NULL) && (lf == NULL)) {
+		*valid = 0;
+		return NULL;
+	/* something went wrong */
+	} else {
+		*valid = 0;
+
+		if (cr == NULL) {
+			return lf + 1;
+		} else if (lf == NULL) {
+			return cr + 1;
+		} else if (cr < lf) {
+			/* check if LF is also a stray one, possibly skip
+			 * to there in one step */
+			if (*(lf - 1) != '\r')
+				return lf + 1;
+			else
+				return cr + 1;
+		} else {
+			/* check if the CR is also a stray one and not
+			 * exactly at the end of the buffer */
+			if ((cr < buffer + buflen - 2) &&
+					(*(cr + 1) != '\n'))
+				return cr + 1;
+			else
+				return lf + 1;
+		}
+	}
+}
+
+/**
  * read one line from the network
  *
  * @retval 0 on success
@@ -134,84 +192,84 @@ net_read(void)
 {
 	size_t datain;
 	size_t readoffset = 0;
-	size_t i;
-	char *p;
+	const char *p;
+	int valid;
 
 	if (linenlen) {
-		char *c;
+		p = find_eol(lineinn, linenlen, &valid);
 
-		memcpy(linein, lineinn, linenlen);
-		linein[linenlen] = '\0';
-
-		c = memchr(linein, '\n', linenlen);
-		if (c) {
-			/* First skip the input, then check for error.
-			 * In case of input error we can still loop until
-			 * end of input. */
-			linelen = c - linein - 1;
-			/* at this point the new linein is ready */
-
-			linenlen = linein + linenlen - c - 1;
-			if (linenlen) {
-				/* copy back rest of the buffer back to lineinn */
-				memcpy(lineinn, c + 1, linenlen);
-			}
-
-			if (*(c - 1) != '\r') {
-				errno = EINVAL;
-				return -1;
-			}
-			*(c - 1) = '\0';
+		if (valid) {
+			linelen = p - lineinn - 2;
+			memcpy(linein, lineinn, linelen);
+			linein[linelen] = '\0';
+			linenlen -= (linelen + 2);
+			/* still data in input buffer */
+			if (linenlen != 0)
+				memmove(lineinn, p, linenlen);
 
 			DEBUG_IN(linelen);
-
 			return 0;
-		} else {
+		/* neither is found, so everything currently in the
+		 * buffer is read, and more must be read from network */
+		} else if ((p == NULL) ||
+		/* only CR is found and it is at the end of the input buffer */
+				((*(p - 1) == '\r') && (p == lineinn + linenlen))) {
 			readoffset = linenlen;
 			memcpy(linein, lineinn, linenlen);
 			linenlen = 0;
+		/* something went wrong */
+		} else {
+			linenlen -= (p - lineinn);
+			if (linenlen != 0)
+				memmove(lineinn, p, linenlen);
+			errno = EINVAL;
+			return -1;
 		}
 	}
-readin:
-	datain = readinput(linein + readoffset, sizeof(linein) - readoffset);
-	/* now the first readoffset characters of linein are filled with the stuff from the last buffer (if any),
-	 * the next datain characters are filled with the data just read, then there is a '\0' */
 
-	if (datain == (size_t) -1)
-		return -1;
+	do {
+		datain = readinput(linein + readoffset, sizeof(linein) - readoffset);
+		/* now the first readoffset characters of linein are filled with the stuff from the last buffer (if any),
+		* the next datain characters are filled with the data just read, then there is a '\0' */
 
-	/* RfC 2821, section 2.3.7:
-	 * "Conforming implementations MUST NOT recognize or generate any other
-	 * character or character sequence [than <CRLF>] as a line terminator" */
+		if (datain == (size_t) -1)
+			return -1;
 
-	readoffset += datain;
-	p = memchr(linein, '\r', readoffset);
-	if (!p) {
-		if (readoffset > sizeof(linein) - 2) {
-		    readoffset = 0;
-		    goto loop_long;
-		} else {
-			/* There was data, but not enough. Give it another chance */
-			goto readin;
+		/* RfC 2821, section 2.3.7:
+		* "Conforming implementations MUST NOT recognize or generate any other
+		* character or character sequence [than <CRLF>] as a line terminator" */
+
+		readoffset += datain;
+
+		p = find_eol(linein, readoffset, &valid);
+	} while ((p == NULL) && (readoffset < sizeof(linein) - 1));
+
+	if (valid) {
+		linelen = p - linein - 2;
+		linein[linelen] = '\0';
+		/* if there is more data put it back into the buffer */
+		if (p != linein + readoffset) {
+			linenlen = readoffset - (p - linein);
+			if (linenlen != 0)
+				memcpy(lineinn, p, linenlen);
 		}
-	} else if (p == linein + sizeof(linein) - 1) {
+	} else if (p == NULL) {
+		/* the whole buffer is filled, but neither CR nor LF is found */
+		readoffset = 0;
+		goto loop_long;
+	} else if ((p == linein + sizeof(linein) - 1) && (*p == '\r')) {
+		/* We found a CR, but a too long line. Let's find out if an LF will follow. */
 		readoffset = 1;
 		goto loop_long;
-	} else if (!*(p + 1)) {
-		/* There was data, but not enough. Give it another chance */
-		goto readin;
-	} else if (*(p + 1) != '\n') {
+	} else {
+		/* copy the rest of the input buffer back to lineinn, then return error */
+		if (p != linein + readoffset) {
+			linenlen = readoffset - (p - linein);
+			if (linenlen != 0)
+				memcpy(lineinn, p, linenlen);
+		}
 		errno = EINVAL;
 		return -1;
-	}
-
-	linelen = p - linein;
-	*p = '\0';
-
-	i = readoffset - linelen - 2;
-	if (i) {
-		memcpy(lineinn + linenlen, p + 2, i);
-		linenlen += i;
 	}
 
 	/* do this again here: if there is a broken client that
