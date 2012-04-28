@@ -21,6 +21,10 @@ SET(QSMTP_IO_LIB_HDRS
 )
 
 ADD_LIBRARY(qsmtp_io_lib ${QSMTP_IO_LIB_SRCS} ${QSMTP_IO_LIB_HDRS})
+TARGET_LINK_LIBRARIES(qsmtp_io_lib
+		${OPENSSL_LIBRARIES}
+		${OWFAT_LIBRARIES}
+)
 
 SET(QSMTP_LIB_SRCS
 	dns_helpers.c
@@ -52,10 +56,6 @@ SET(QSMTP_LIB_HDRS
 ADD_LIBRARY(qsmtp_lib ${QSMTP_LIB_SRCS} ${QSMTP_LIB_HDRS})
 
 # qsmtp_lib is not linked against qsmtp_io_lib even if that
-# would be the right this for the binaries. This allows the
+# would be the right thing for the binaries. This allows the
 # testcases to easily link against qsmtp_lib and implementing
 # the io stuff themself.
-TARGET_LINK_LIBRARIES(qsmtp_lib
-		${OPENSSL_LIBRARIES}
-		${OWFAT_LIBRARIES}
-)
