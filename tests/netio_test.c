@@ -390,6 +390,37 @@ test_cont(void)
 	return ret;
 }
 
+static int
+test_long_lines(void)
+{
+	int ret = 0;
+	int i;
+	const char digits[] = "0123456789";
+	const char valid[] = "\r\nvalid\r\n";
+
+	testname = "long lines";
+
+	if (unexpected_pending())
+		return 1;
+
+	for (i = 0; i <= 100; i++)
+		send_all_test_data(digits);
+	send_all_test_data(valid);
+
+	if (net_read() != -1) {
+		fprintf(stderr, "reading damaged data did not fail\n");
+		ret++;
+	} else if (errno != E2BIG) {
+		fprintf(stderr, "reading damaged data did not return EINVAL, but %i\n", errno);
+		ret++;
+	}
+
+	if (read_check("valid"))
+		ret++;
+
+	return ret;
+}
+
 int main(void)
 {
 	int ret = 0;
@@ -414,7 +445,7 @@ int main(void)
 	socketd = pipefd[1];
 
 	/* test any combination of tests */
-	for (i = 1; i < 0x80; i++) {
+	for (i = 1; i < 0x100; i++) {
 		if (i & 1)
 			ret += test_pending();
 		if (i & 2)
@@ -429,6 +460,8 @@ int main(void)
 			ret += test_bare_lf_cr();
 		if (i & 0x40)
 			ret += test_cont();
+		if (i & 0x80)
+			ret += test_long_lines();
 	}
 
 	if (data_pending()) {
