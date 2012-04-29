@@ -418,7 +418,7 @@ net_writen(const char *const *s)
 
 	for (i = 0; s[i]; i++) {
 		size_t off = 0;
-		size_t l = strlen(s[i]);
+		const size_t l = strlen(s[i]);
 
 		if (len + l > sizeof(msg) - 2) {
 			char c = msg[3];
@@ -427,7 +427,7 @@ net_writen(const char *const *s)
 			msg[len++] = '\r';
 			msg[len++] = '\n';
 			/* ignore if this fails: if the last on succeeds this must be enough for the client */
-			(void) netnwrite(msg, len + 2);
+			(void) netnwrite(msg, len);
 			len = 4;
 			/* check if s[i] itself is too big */
 			if (l + 6 > sizeof(msg)) {

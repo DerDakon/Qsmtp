@@ -79,7 +79,7 @@ read_check(const char *data)
 		fprintf(stderr, "%s: reading good data did not succeed\n", testname);
 		return 1;
 	} else if ((linelen != strlen(data)) || (strcmp(linein, data) != 0)) {
-		fprintf(stderr, "%s: reading valid data did not return the correct data (%s)\n", testname, data);
+		fprintf(stderr, "%s: reading valid data did not return the correct data (%s), but %s\n", testname, data, linein);
 		return 1;
 	}
 	return 0;
@@ -464,6 +464,86 @@ test_long_lines(void)
 	return ret;
 }
 
+static int
+test_net_writen(void)
+{
+	int ret = 0;
+	const char *simple[] = { "250 first", "second", "third", NULL};
+	const char *longthings[] = { "250 012345678901234567890123456789", NULL, "abcdefghijklmnopqrstuvwxyz", NULL };
+	const char *many[60] = { "250 ", "0123456789" };
+	char exp[520];
+	int i;
+
+	testname = "net_writen";
+
+	if (unexpected_pending())
+		return ++ret;
+
+	/* a simple concat */
+	if (net_writen(simple) != 0) {
+		fprintf(stderr, "%s: cannot write 'simple' output\n", testname);
+		return ++ret;
+	}
+
+	if (read_check("250 firstsecondthird"))
+		ret++;
+	if (data_pending()) {
+		fprintf(stderr, "%s: spurious data after 'simple' test\n", testname);
+		ret++;
+	}
+
+	/* many small messages */
+	for (i = 2; i < 59; i++)
+		many[i] = many[1];
+	many[59] = NULL;
+
+	if (net_writen(many) != 0) {
+		fprintf(stderr, "%s: cannot write 'many' output\n", testname);
+		return ++ret;
+	}
+
+	strcpy(exp, many[0]);
+	exp[3] = '-';
+	for (i = 1; i < 51; i++)
+		strcat(exp, many[1]);
+
+	if (read_check(exp))
+		ret++;
+
+	strcpy(exp, many[0]);
+	for (i = 51; i < 59; i++)
+		strcat(exp, many[1]);
+
+	if (read_check(exp))
+		ret++;
+	if (data_pending()) {
+		fprintf(stderr, "%s: spurious data after 'many' test\n", testname);
+		ret++;
+	}
+
+	/* only 3 messages, but the second one is too long to be used
+	 * together with any of the other 2 */
+	exp[0] = '\0';
+	for (i = 0; i < 50; i++)
+		strcat(exp, many[1]);
+	longthings[1] = exp;
+	if (net_writen(longthings) != 0) {
+		fprintf(stderr, "%s: cannot write 'long' output\n", testname);
+		return ++ret;
+	}
+	if (read_check("250-012345678901234567890123456789"))
+		ret++;
+	memmove(exp + 4, exp, strlen(exp));
+	memcpy(exp, "250-", 4);
+	if (read_check(exp))
+		ret++;
+	if (read_check("250 abcdefghijklmnopqrstuvwxyz"))
+		ret++;
+
+
+	return ret;
+}
+
 int main(void)
 {
 	int ret = 0;
@@ -506,6 +586,8 @@ int main(void)
 		if (i & 0x80)
 			ret += test_long_lines();
 	}
+
+	ret += test_net_writen();
 
 	if (data_pending()) {
 		fprintf(stderr, "data pending at end of tests\n");
