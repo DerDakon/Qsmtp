@@ -99,10 +99,14 @@ read_check_error(const int errcode)
 	return 0;
 }
 
-static inline void
+static void
 send_all_test_data(const char *buf)
 {
-	send_test_data(buf, strlen(buf));
+	/* write data through the pipe, this should cause input data to be available */
+	if (netwrite(buf) != 0) {
+		fprintf(stderr, "%s: writing test data failed\n", testname);
+		exit(1);
+	}
 }
 
 static int
