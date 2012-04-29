@@ -520,6 +520,31 @@ test_binary(void)
 		ret++;
 	}
 
+	/* writing normal data first, keeping something of that in buffer
+	 * to be prepended to binary test data, but having more in the buffer
+	 * than it is read binary */
+	send_all_test_data("first\r\n01");
+	send_all_test_data(bindata);
+	send_all_test_data("third\r\n");
+
+	if (read_check("first"))
+		ret++;
+
+	num = net_readbin(strlen(longbindata), outbuf);
+	if (num == (size_t)-1) {
+		fprintf(stderr, "%s: reading binary data failed, error %i\n", testname, errno);
+		ret++;
+	} else if (num != strlen(longbindata)) {
+		fprintf(stderr, "%s: reading binary data did not return %lu byte, but %lu\n",
+				testname, (unsigned long) strlen(longbindata), (unsigned long) num);
+		ret++;
+	} else if (strncmp(outbuf, longbindata, strlen(longbindata)) != 0) {
+		fprintf(stderr, "%s: binary data read does not match expected data\n", testname);
+		ret++;
+	}
+
+	if (read_check("third"))
+		ret++;
 
 	return ret;
 }
