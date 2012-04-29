@@ -583,6 +583,7 @@ net_readline(size_t num, char *buf)
 
 		if (done)
 			return offs;
+		num -= offs;
 	}
 	while (num) {
 		/* do not directly read into the output buffer here. readinput()
@@ -596,7 +597,7 @@ net_readline(size_t num, char *buf)
 		 * the other code simpler. */
 		if ((offs > 0) && (buf[offs - 1] == '\r')) {
 			if (lineinn[0] == '\n') {
-				get_from_inbuffer(buf, 1, 0);
+				get_from_inbuffer(buf + offs, 1, 0);
 				return offs + 1;
 			} else {
 				/* crap detected */

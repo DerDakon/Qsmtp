@@ -684,6 +684,51 @@ test_readline(void)
 	if (readline_check("ok\r\n", 0))
 		ret++;
 
+	testname = "readline cont";
+	if (unexpected_pending())
+		return ++ret;
+
+	/* get a line wrap between buffer and next read */
+	send_all_test_data(okpattern);
+	send_test_data(okpattern, strlen(okpattern) - 2);
+
+	if (read_check("ok"))
+		ret++;
+
+	send_all_test_data("\r\n");
+
+	if (readline_check("ok\r\n", 0))
+		ret++;
+
+	testname = "readline invalid buffer";
+	if (unexpected_pending())
+		return ++ret;
+	/* put some invalid CRLF sequences in the buffer */
+	send_all_test_data(okpattern);
+	send_all_test_data(straypattern);
+
+	if (read_check("ok"))
+		ret++;
+	if (readline_check(NULL, EINVAL))
+		ret++;
+	if (read_check("proper"))
+		ret++;
+
+	testname = "readline stray CR cont";
+	if (unexpected_pending())
+		return ++ret;
+	/* put a stray CR in the buffer, then valid data behind it */
+	send_all_test_data(okpattern);
+	send_test_data(okpattern, strlen(okpattern) - 1);
+
+	if (read_check("ok"))
+		ret++;
+	send_all_test_data(okpattern);
+	if (readline_check(NULL, EINVAL))
+		ret++;
+	if (readline_check("ok\r\n", 0))
+		ret++;
+
 	return ret;
 }
 
