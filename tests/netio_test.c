@@ -469,6 +469,62 @@ test_long_lines(void)
 }
 
 static int
+test_binary(void)
+{
+	int ret = 0;
+	char outbuf[64];
+	size_t num;
+	const char longbindata[] = "01binary\r\n";
+	const char *bindata = longbindata + 2;
+
+	testname = "binary";
+
+	if (unexpected_pending())
+		return ++ret;
+
+	/* directly readind binary data */
+	send_all_test_data(bindata);
+
+	num = net_readbin(strlen(bindata), outbuf);
+	if (num == (size_t)-1) {
+		fprintf(stderr, "%s: reading binary data failed, error %i\n", testname, errno);
+		ret++;
+	} else if (num != strlen(bindata)) {
+		fprintf(stderr, "%s: reading binary data did not return %lu byte, but %lu\n",
+				testname, (unsigned long) strlen(bindata), (unsigned long) num);
+		ret++;
+	} else if (strncmp(outbuf, bindata, strlen(bindata)) != 0) {
+		fprintf(stderr, "%s: binary data read does not match expected data\n", testname);
+		ret++;
+	}
+
+	/* writing normal data first, keeping something of that in buffer
+	 * to be prepended to binary test data */
+	send_all_test_data("first\r\n01");
+
+	if (read_check("first"))
+		ret++;
+
+	send_all_test_data(bindata);
+
+	num = net_readbin(strlen(longbindata), outbuf);
+	if (num == (size_t)-1) {
+		fprintf(stderr, "%s: reading binary data failed, error %i\n", testname, errno);
+		ret++;
+	} else if (num != strlen(longbindata)) {
+		fprintf(stderr, "%s: reading binary data did not return %lu byte, but %lu\n",
+				testname, (unsigned long) strlen(longbindata), (unsigned long) num);
+		ret++;
+	} else if (strncmp(outbuf, longbindata, strlen(longbindata)) != 0) {
+		fprintf(stderr, "%s: binary data read does not match expected data\n", testname);
+		ret++;
+	}
+
+
+	return ret;
+}
+
+static int
 test_net_writen(void)
 {
 	int ret = 0;
@@ -572,7 +628,7 @@ int main(void)
 	socketd = pipefd[1];
 
 	/* test any combination of tests */
-	for (i = 1; i < 0x100; i++) {
+	for (i = 1; i < 0x200; i++) {
 		if (i & 1)
 			ret += test_pending();
 		if (i & 2)
@@ -589,6 +645,8 @@ int main(void)
 			ret += test_cont();
 		if (i & 0x80)
 			ret += test_long_lines();
+		if (i & 0x100)
+			ret += test_binary();
 	}
 
 	ret += test_net_writen();
