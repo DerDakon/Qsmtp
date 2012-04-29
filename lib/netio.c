@@ -627,7 +627,8 @@ net_readline(size_t num, char *buf)
 			if (linenlen >= num) {
 				/* enough to satisfy the request */
 				get_from_inbuffer(buf + offs, num, 0);
-				return offs + num;
+				offs += num;
+				num = 0;
 			} else {
 				/* we still need data: copy everything we have and try again */
 				memcpy(buf + offs, lineinn, linenlen);
