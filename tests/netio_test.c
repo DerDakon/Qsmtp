@@ -121,15 +121,18 @@ readline_check(const char *expect, int error)
 	assert(len <= sizeof(buffer));
 	size_t r = net_readline(len + 1, buffer);
 	if (r != rexp) {
-		fprintf(stderr, "%s: net_readline() returned %i, but expected was %i\n", testname, r, rexp);
+		fprintf(stderr, "%s: net_readline() returned %lu, but expected was %lu\n",
+				testname, (unsigned long) r, (unsigned long) rexp);
 		return 1;
 	} else if ((r == (size_t)-1) && (error != errno)) {
-		fprintf(stderr, "%s: net_readline() returned error %i, but expected was %i\n", testname, errno, error);
+		fprintf(stderr, "%s: net_readline() returned error %i, but expected was %i\n",
+				testname, errno, error);
 		return 1;
 	} else if (r == -1) {
 		return 0;
 	} else if (r != strlen(expect)) {
-		fprintf(stderr, "%s: net_readline() returned unexpected length %lu\n", testname, (unsigned long) r);
+		fprintf(stderr, "%s: net_readline() returned unexpected length %lu\n",
+				testname, (unsigned long) r);
 		return 1;
 	} else if (strncmp(buffer, expect, rexp) != 0) {
 		fprintf(stderr, "%s: net_readline() returned unexpected data\n", testname);
