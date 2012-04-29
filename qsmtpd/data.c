@@ -689,10 +689,15 @@ smtp_data(void)
 loop_data:
 	rc = errno;
 	if (logmail[9] == NULL) {
-		if (rc == EINVAL) {
+		switch (rc) {
+		case EINVAL:
 			logmail[9] = "bad CRLF sequence}";
 			errmsg = "500 5.5.2 bad <CRLF> sequence\r\n";
-		} else {
+			break;
+		case E2BIG:
+			logmail[9] = "too long SMTP line}";
+			break;
+		default:
 			logmail[9] = "read error}";
 		}
 	}
