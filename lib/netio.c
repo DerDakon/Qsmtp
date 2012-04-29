@@ -506,53 +506,115 @@ net_readbin(size_t num, char *buf)
  * @param buf buffer to store data (must have enough space)
  * @return number of bytes read
  * @retval -1 on error
+ *
+ * The trailing CRLF sequence is kept in the buffer. This function
+ * will return an error if it detects a bare CR or LF in the middle
+ * of the input data, but it cannot detect if the CR goes in one call
+ * and LF in the next, so it will allow the output to be just LF or
+ * to end in CR.
+ *
+ * num and buf must be 1 byte bigger than the expected size to allow a trailing '\0'
+ * to be read.
  */
 size_t
 net_readline(size_t num, char *buf)
 {
 	size_t offs = 0;
+	const char *n;
+	int valid;
 
 	if (linenlen) {
-		char *n = memchr(lineinn, '\n', linenlen);
+		int done;	/* if function must return after copying */
 
-		if (n) {
-			size_t m = (n - lineinn);
-
-			if (m < num)
-				num = m;
+		/* LF found at start of buffer (user needs to check for CRLF wrap himself) */
+		if (lineinn[0] == '\n') {
+			buf[0] = '\n';
+			linenlen--;
+			if (linenlen)
+				memmove(lineinn, lineinn + 1, linenlen);
+			return 1;
 		}
-		/* now num is the number of bytes to copy from lineinn */
-		if (linenlen > num) {
-			memcpy(buf, lineinn, num);
-			memmove(lineinn, lineinn + num, linenlen - num);
-			linenlen -= num;
-			return num;
+
+		n = find_eol(lineinn, linenlen, &valid);
+		/* copy data to the user if:
+		 * -everything is fine, i.e. valid EOL found
+		 * -no EOL found
+		 * -CR is found at end of buffer
+		 */
+		if (valid || ((n != NULL) && (*(n - 1) == '\r') && (n = lineinn + linenlen))) {
+			/* Found a valid linebreak or part of it.
+			 * If the input buffer has more data than the user
+			 * requested copy part of it, otherwise drain the buffer
+			 * and return. */
+			if (n == lineinn + num) {
+				offs = num;
+				done = 1;
+			} else {
+				offs = n - lineinn;
+				/* if the last we have in buffer is CR, but
+				 * we are asked to read more: read more. */
+				done = valid;
+			}
+		} else if (n == NULL) {
+			/* no linebreak found */
+			if (linenlen >= num) {
+				offs = num;
+				done = 1;
+			} else {
+				offs = linenlen;
+				done = 0;
+			}
 		} else {
-			memcpy(buf, lineinn, linenlen);
-			num -= linenlen;
-			offs = linenlen;
-			linenlen = 0;
+			/* invalid CRLF detected */
+			size_t skip = n - lineinn;
+			if (skip < linenlen)
+				memmove(lineinn, n, linenlen - skip);
+			linenlen -= skip;
+			errno = EINVAL;
+			return -1;
 		}
+
+		memcpy(buf, lineinn, offs);
+		if (offs < linenlen)
+			memmove(lineinn, lineinn + offs, linenlen - offs);
+		linenlen -= offs;
+
+		if (done)
+			return offs;
 	}
 	while (num) {
 		size_t r;
-		char *n;
 
 		r = readinput(buf + offs, num);
 		if (r == (size_t) -1)
 			return -1;
-		n = memchr(buf + offs, '\n', r);
+		n = find_eol(buf, offs + r, &valid);
 		/* if there is a LF in the buffer copy everything behind it to lineinn */
 		if (n) {
-			size_t rest = buf + offs + r - n - 1;
+			size_t rest = buf + offs + r - n;
 
-			memcpy(lineinn, n + 1, rest);
-			linenlen = rest;
-			offs += r - rest;
-			return offs;
+			if (rest != 0) {
+				memcpy(lineinn, n, rest);
+				linenlen = rest;
+			}
+			offs += (r - rest);
+			num -= (r - rest);
+
+			if (valid || (buf[0] == '\n'))
+				return offs;
+			if ((*(n - 1) != '\r') || (rest != 0)) {
+				/* this is an invalid line ending */
+				errno = EINVAL;
+				return -1;
+			}
+			/* Now we know: the last thing we read is a CR.
+			 * Check if we could read more data. */
+			if (num <= 1)
+				return offs;
+		} else {
+			offs += r;
+			num -= r;
 		}
-		offs += r;
-		num -= r;
 	}
 	return offs;
 }

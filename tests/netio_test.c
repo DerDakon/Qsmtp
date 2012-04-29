@@ -1,6 +1,7 @@
 #include "log.h"
 #include "netio.h"
 #include "tls.h"
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -18,9 +19,12 @@ log_write(int priority __attribute__ ((unused)), const char *s __attribute__ ((u
 SSL *ssl;
 int socketd;
 
+static const char *testname;
+
 void
 dieerror(int error)
 {
+	fprintf(stderr, "%s: exiting with error %i\n", testname, error);
 	exit(error);
 }
 
@@ -48,8 +52,6 @@ SSL_pending(const SSL *s __attribute__ ((unused)))
 		return allow_ssl_pending;
 	}
 }
-
-static const char *testname;
 
 static int
 unexpected_pending(void)
@@ -107,6 +109,33 @@ send_all_test_data(const char *buf)
 		fprintf(stderr, "%s: writing test data failed\n", testname);
 		exit(1);
 	}
+}
+
+static int
+readline_check(const char *expect, int error)
+{
+	char buffer[64];
+	const size_t len = (expect == NULL) ? sizeof(buffer) / 2 : strlen(expect);
+	const size_t rexp = (expect == NULL) ? (size_t) -1 : len;
+
+	assert(len <= sizeof(buffer));
+	size_t r = net_readline(len + 1, buffer);
+	if (r != rexp) {
+		fprintf(stderr, "%s: net_readline() returned %i, but expected was %i\n", testname, r, rexp);
+		return 1;
+	} else if ((r == (size_t)-1) && (error != errno)) {
+		fprintf(stderr, "%s: net_readline() returned error %i, but expected was %i\n", testname, errno, error);
+		return 1;
+	} else if (r == -1) {
+		return 0;
+	} else if (r != strlen(expect)) {
+		fprintf(stderr, "%s: net_readline() returned unexpected length %lu\n", testname, (unsigned long) r);
+		return 1;
+	} else if (strncmp(buffer, expect, rexp) != 0) {
+		fprintf(stderr, "%s: net_readline() returned unexpected data\n", testname);
+		return 1;
+	}
+	return 0;
 }
 
 static int
@@ -550,6 +579,58 @@ test_binary(void)
 }
 
 static int
+test_readline(void)
+{
+	int ret = 0;
+	const char okpattern[] = "ok\r\n";
+	const char straypattern[] = "stray cr\rstray lf\nproper\r\n";
+
+	testname = "readline";
+
+	if (unexpected_pending())
+		return ++ret;
+
+	/* send data once, read it back */
+	send_all_test_data(okpattern);
+
+	if (readline_check("ok\r\n", 0))
+		ret++;
+
+	/* send data 3 times, read it back in parts*/
+	send_all_test_data(okpattern);
+	send_all_test_data(okpattern);
+	send_all_test_data(okpattern);
+
+	if (readline_check("ok\r\n", 0))
+		ret++;
+	if (readline_check("ok\r", 0))
+		ret++;
+	if (readline_check("\n", 0))
+		ret++;
+	if (readline_check("ok\r\n", 0))
+		ret++;
+
+	/* send partial data with CR at end */
+	send_all_test_data(okpattern);
+	send_test_data(okpattern, strlen(okpattern) - 1);
+
+	if (readline_check("ok\r\n", 0))
+		ret++;
+	if (readline_check("ok\r", 0))
+		ret++;
+
+	/* data with error */
+	send_all_test_data(straypattern);
+
+	if (readline_check(NULL, EINVAL))
+		ret++;
+	if (readline_check("proper\r\n", 0))
+		ret++;
+
+	return ret;
+}
+
+static int
 test_net_writen(void)
 {
 	int ret = 0;
@@ -653,7 +734,7 @@ int main(void)
 	socketd = pipefd[1];
 
 	/* test any combination of tests */
-	for (i = 1; i < 0x200; i++) {
+	for (i = 1; i < 0x400; i++) {
 		if (i & 1)
 			ret += test_pending();
 		if (i & 2)
@@ -672,6 +753,8 @@ int main(void)
 			ret += test_long_lines();
 		if (i & 0x100)
 			ret += test_binary();
+		if (i & 0x200)
+			ret += test_readline();
 	}
 
 	ret += test_net_writen();
