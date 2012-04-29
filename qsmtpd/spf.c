@@ -706,7 +706,7 @@ spf_makro(const char *token, const char *domain, int ex, char **result)
 		toklen = strlen(token);
 	} else {
 		p = token;
-		while ((*p != '\0') && ((ex == 1) || !WSPACE(*p)) && (*p != '/')) {
+		while ((*p != '\0') && !WSPACE(*p) && (*p != '/')) {
 			p++;
 			toklen++;
 		}
