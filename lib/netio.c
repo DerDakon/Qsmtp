@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <assert.h>
 #include "netio.h"
 #include "log.h"
 #include "ssl_timeoutio.h"
@@ -16,6 +17,27 @@ size_t linelen;				/**< length of the line */
 static char lineinn[sizeof(linein)];	/**< if more than one line was in linein the rest is stored here */
 static size_t linenlen;			/**< length of the lineinn */
 time_t timeout;				/**< how long to wait for data */
+
+/**
+ * read the first characters of lineinn
+ * @param dest destination buffer or NULL to simply drop the data
+ * @param len characters to copy
+ * @param droplen additional characters to drop (usually 2 to drop CRLF)
+ *
+ * Move the rest of the buffer content forward (if any).
+ */
+static void
+get_from_inbuffer(char *dest, const size_t len, const size_t droplen)
+{
+	assert(len + droplen <= linenlen);
+	if (dest != NULL)
+		memcpy(dest, lineinn, len);
+
+	linenlen -= (len + droplen);
+	/* still data in input buffer */
+	if (linenlen != 0)
+		memmove(lineinn, lineinn + len + droplen, linenlen);
+}
 
 #ifdef DEBUG_IO
 #include <syslog.h>
@@ -246,12 +268,8 @@ net_read(void)
 
 		if (valid) {
 			linelen = p - lineinn - 2;
-			memcpy(linein, lineinn, linelen);
+			get_from_inbuffer(linein, linelen, 2);
 			linein[linelen] = '\0';
-			linenlen -= (linelen + 2);
-			/* still data in input buffer */
-			if (linenlen != 0)
-				memmove(lineinn, p, linenlen);
 
 			DEBUG_IN(linelen);
 			return 0;
@@ -265,9 +283,7 @@ net_read(void)
 			linenlen = 0;
 		/* something went wrong */
 		} else {
-			linenlen -= (p - lineinn);
-			if (linenlen != 0)
-				memmove(lineinn, p, linenlen);
+			get_from_inbuffer(NULL, 0, p - lineinn);
 			errno = EINVAL;
 			return -1;
 		}
@@ -476,9 +492,7 @@ net_readbin(size_t num, char *buf)
 
 	if (linenlen) {
 		if (linenlen > num) {
-			memcpy(buf, lineinn, num);
-			memmove(lineinn, lineinn + num, linenlen - num);
-			linenlen -= num;
+			get_from_inbuffer(buf, num, 0);
 			return num;
 		} else {
 			memcpy(buf, lineinn, linenlen);
@@ -512,9 +526,6 @@ net_readbin(size_t num, char *buf)
  * of the input data, but it cannot detect if the CR goes in one call
  * and LF in the next, so it will allow the output to be just LF or
  * to end in CR.
- *
- * num and buf must be 1 byte bigger than the expected size to allow a trailing '\0'
- * to be read.
  */
 size_t
 net_readline(size_t num, char *buf)
@@ -528,10 +539,7 @@ net_readline(size_t num, char *buf)
 
 		/* LF found at start of buffer (user needs to check for CRLF wrap himself) */
 		if (lineinn[0] == '\n') {
-			buf[0] = '\n';
-			linenlen--;
-			if (linenlen)
-				memmove(lineinn, lineinn + 1, linenlen);
+			get_from_inbuffer(buf, 1, 0);
 			return 1;
 		}
 
@@ -546,7 +554,7 @@ net_readline(size_t num, char *buf)
 			 * If the input buffer has more data than the user
 			 * requested copy part of it, otherwise drain the buffer
 			 * and return. */
-			if (n == lineinn + num) {
+			if (n >= lineinn + num) {
 				offs = num;
 				done = 1;
 			} else {
@@ -566,54 +574,66 @@ net_readline(size_t num, char *buf)
 			}
 		} else {
 			/* invalid CRLF detected */
-			size_t skip = n - lineinn;
-			if (skip < linenlen)
-				memmove(lineinn, n, linenlen - skip);
-			linenlen -= skip;
+			get_from_inbuffer(NULL, 0, n - lineinn);
 			errno = EINVAL;
 			return -1;
 		}
 
-		memcpy(buf, lineinn, offs);
-		if (offs < linenlen)
-			memmove(lineinn, lineinn + offs, linenlen - offs);
-		linenlen -= offs;
+		get_from_inbuffer(buf, offs, 0);
 
 		if (done)
 			return offs;
 	}
 	while (num) {
-		size_t r;
-
-		r = readinput(buf + offs, num);
-		if (r == (size_t) -1)
+		/* do not directly read into the output buffer here. readinput()
+		 * needs to be able to write the trailing '\0', so use the other
+		 * buffer to make sure we can fill the entire caller buffer */
+		linenlen = readinput(lineinn, sizeof(lineinn));
+		if (linenlen == (size_t) -1)
 			return -1;
-		n = find_eol(buf, offs + r, &valid);
-		/* if there is a LF in the buffer copy everything behind it to lineinn */
-		if (n) {
-			size_t rest = buf + offs + r - n;
 
-			if (rest != 0) {
-				memcpy(lineinn, n, rest);
-				linenlen = rest;
-			}
-			offs += (r - rest);
-			num -= (r - rest);
-
-			if (valid || (buf[0] == '\n'))
-				return offs;
-			if ((*(n - 1) != '\r') || (rest != 0)) {
-				/* this is an invalid line ending */
+		/* First check if we need to care for a CRLF wrap, this makes
+		 * the other code simpler. */
+		if ((offs > 0) && (buf[offs - 1] == '\r')) {
+			if (lineinn[0] == '\n') {
+				get_from_inbuffer(buf, 1, 0);
+				return offs + 1;
+			} else {
+				/* crap detected */
 				errno = EINVAL;
 				return -1;
 			}
-			/* Now we know: the last thing we read is a CR.
-			 * Check if we could read more data. */
-			if (num <= 1)
-				return offs;
+		}
+		/* Now we know that there is neither CR nor LF in buf as we would
+		 * have detected that before. All further CRLF detection can be
+		 * limited to lineinn. */
+		n = find_eol(lineinn, linenlen, &valid);
+
+		if (n) {
+			size_t rest = lineinn + linenlen - n;
+
+			if (valid || (lineinn[0] == '\n') || ((rest == 0) && (*(n - 1) == '\r'))) {
+				const size_t cp = (linenlen - rest) > num ? num : linenlen - rest;
+				get_from_inbuffer(buf + offs, cp, 0);
+
+				return offs + cp;
+			} else {
+				get_from_inbuffer(NULL, 0, linenlen - rest);
+				errno = EINVAL;
+				return -1;
+			}
 		} else {
-			offs += r;
-			num -= r;
+			/* neither CR nor LF in buffer */
+			if (linenlen >= num) {
+				/* enough to satisfy the request */
+				get_from_inbuffer(buf + offs, num, 0);
+				return offs + num;
+			} else {
+				/* we still need data: copy everything we have and try again */
+				memcpy(buf + offs, lineinn, linenlen);
+				offs += linenlen;
+				num -= linenlen;
+			}
 		}
 	}
 	return offs;

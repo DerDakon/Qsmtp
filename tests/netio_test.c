@@ -20,6 +20,7 @@ SSL *ssl;
 int socketd;
 
 static const char *testname;
+static const char digits[] = "0123456789";
 
 void
 dieerror(int error)
@@ -115,11 +116,16 @@ static int
 readline_check(const char *expect, int error)
 {
 	char buffer[64];
-	const size_t len = (expect == NULL) ? sizeof(buffer) / 2 : strlen(expect);
+	const size_t len = (expect == NULL) ? 0 : strlen(expect);
 	const size_t rexp = (expect == NULL) ? (size_t) -1 : len;
 
 	assert(len <= sizeof(buffer));
-	size_t r = net_readline(len + 1, buffer);
+	size_t r;
+	/* read in as much data as possible to allow buffer testing */
+	if ((expect == NULL) || ((len > 2) && (expect[len - 2] == '\r') && (expect[len - 1] == '\n')))
+		r = net_readline(sizeof(buffer), buffer);
+	else
+		r = net_readline(len, buffer);
 	if (r != rexp) {
 		fprintf(stderr, "%s: net_readline() returned %lu, but expected was %lu\n",
 				testname, (unsigned long) r, (unsigned long) rexp);
@@ -409,7 +415,6 @@ test_long_lines(void)
 {
 	int ret = 0;
 	int i;
-	const char digits[] = "0123456789";
 	const char valid[] = "\r\nvalid\r\n";
 
 	testname = "long lines";
@@ -587,8 +592,9 @@ test_readline(void)
 	int ret = 0;
 	const char okpattern[] = "ok\r\n";
 	const char straypattern[] = "stray cr\rstray lf\nproper\r\n";
+	int i;
 
-	testname = "readline";
+	testname = "readline simple";
 
 	if (unexpected_pending())
 		return ++ret;
@@ -598,6 +604,11 @@ test_readline(void)
 
 	if (readline_check("ok\r\n", 0))
 		ret++;
+
+	testname = "readline many";
+
+	if (unexpected_pending())
+		return ++ret;
 
 	/* send data 3 times, read it back in parts*/
 	send_all_test_data(okpattern);
@@ -613,6 +624,11 @@ test_readline(void)
 	if (readline_check("ok\r\n", 0))
 		ret++;
 
+	testname = "readline partial end";
+
+	if (unexpected_pending())
+		return ++ret;
+
 	/* send partial data with CR at end */
 	send_all_test_data(okpattern);
 	send_test_data(okpattern, strlen(okpattern) - 1);
@@ -622,12 +638,50 @@ test_readline(void)
 	if (readline_check("ok\r", 0))
 		ret++;
 
+	testname = "readline stray";
+
+	if (unexpected_pending())
+		return ++ret;
+
 	/* data with error */
 	send_all_test_data(straypattern);
 
 	if (readline_check(NULL, EINVAL))
 		ret++;
 	if (readline_check("proper\r\n", 0))
+		ret++;
+
+	testname = "readline long";
+
+	if (unexpected_pending())
+		return ++ret;
+
+	/* longer data chunks */
+	for (i = 0; i < 5; i++)
+		send_all_test_data(digits);
+
+	if (readline_check("0123", 0))
+		ret++;
+	if (readline_check("456789", 0))
+		ret++;
+	for (i = 0; i < 4; i++)
+		if (readline_check(digits, 0))
+			ret++;
+
+	testname = "readline CRLF wrap";
+	if (unexpected_pending())
+		return ++ret;
+
+	/* get a CRLF wrap between buffer and next read */
+	send_all_test_data(okpattern);
+	send_test_data(okpattern, strlen(okpattern) - 1);
+
+	if (read_check("ok"))
+		ret++;
+
+	send_all_test_data("\n");
+
+	if (readline_check("ok\r\n", 0))
 		ret++;
 
 	return ret;
@@ -639,7 +693,7 @@ test_net_writen(void)
 	int ret = 0;
 	const char *simple[] = { "250 first", "second", "third", NULL};
 	const char *longthings[] = { "250 012345678901234567890123456789", NULL, "abcdefghijklmnopqrstuvwxyz", NULL };
-	const char *many[60] = { "250 ", "0123456789" };
+	const char *many[60] = { "250 ", digits };
 	char exp[520];
 	int i;
 
