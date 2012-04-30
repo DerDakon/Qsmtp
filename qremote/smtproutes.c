@@ -59,9 +59,11 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 				if (port) {
 					char *more;
 
+					/* overwrite the colon ending the hostname so the code
+					 * below will not take this as part of the host name */
 					*port++ = '\0';
 					*targetport = strtoul(port, &more, 10);
-					if (*more || (*targetport >= 65536)) {
+					if (*more || (*targetport >= 65536) || (*targetport == 0)) {
 						const char *logmsg[] = {"invalid port number given for \"",
 									target, "\" given as target for \"",
 									remhost, "\"", NULL};
