@@ -69,6 +69,8 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 									target, "\" given as target for \"",
 									remhost, "\"", NULL};
 
+						free(smtproutes);
+						/* smtproutbuf not freed here as "port" still references it */
 						err_confn(logmsg);
 					}
 				} else {
@@ -79,6 +81,8 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 									target, "\" given as target for \"",
 									remhost, "\"", NULL};
 
+					free(smtproutes);
+					free(smtproutbuf);
 					err_confn(logmsg);
 				} else {
 					struct ips *m = mx;
