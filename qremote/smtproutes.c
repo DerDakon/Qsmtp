@@ -82,7 +82,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 									remhost, "\"", NULL};
 
 					free(smtproutes);
-					free(smtproutbuf);
+					/* smtproutbuf not freed here as "port" still references it */
 					err_confn(logmsg);
 				} else {
 					struct ips *m = mx;
