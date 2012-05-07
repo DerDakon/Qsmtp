@@ -549,7 +549,7 @@ net_readline(size_t num, char *buf)
 		 * -no EOL found
 		 * -CR is found at end of buffer
 		 */
-		if (valid || ((n != NULL) && (*(n - 1) == '\r') && (n = lineinn + linenlen))) {
+		if (valid || ((n != NULL) && (*(n - 1) == '\r') && (n == lineinn + linenlen))) {
 			/* Found a valid linebreak or part of it.
 			 * If the input buffer has more data than the user
 			 * requested copy part of it, otherwise drain the buffer
