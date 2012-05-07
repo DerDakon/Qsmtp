@@ -64,7 +64,8 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			return -1;
 		}
 	}
-	if ( (i = fstat(fd, &st)) ) {
+	i = fstat(fd, &st);
+	if (i != 0) {
 		int err = errno;
 		do {
 			i = close(fd);
@@ -193,9 +194,9 @@ int
 loadintfd(int fd, unsigned long *result, const unsigned long def)
 {
 	char *tmpbuf, *l;
-	size_t i;
+	const size_t i = lloadfilefd(fd, &tmpbuf, 2);
 
-	if ( (i = lloadfilefd(fd, &tmpbuf, 2)) == (size_t) -1)
+	if (i == (size_t) -1)
 		return -1;
 
 	if (!i) {
@@ -266,9 +267,9 @@ loadoneliner(const char *filename, char **buf, const int optional)
 size_t
 loadonelinerfd(int fd, char **buf)
 {
-	size_t j;
+	const size_t j = lloadfilefd(fd, buf, 1);
 
-	if ( (j = lloadfilefd(fd, buf, 1)) == (size_t) -1)
+	if (j == (size_t) -1)
 		return j;
 
 	if (!*buf) {
@@ -301,9 +302,10 @@ loadonelinerfd(int fd, char **buf)
 int
 loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
 {
-	size_t i, j, k;
+	size_t i, k;
+	size_t j = lloadfilefd(fd, buf, 3);
 
-	if ( (j = lloadfilefd(fd, buf, 3)) == (size_t) -1)
+	if (j == (size_t) -1)
 		return -1;
 
 	if (!j) {
