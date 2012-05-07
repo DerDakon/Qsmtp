@@ -329,6 +329,25 @@ TARGET_LINK_LIBRARIES(testcase_netio
 ADD_TEST(NAME "NetIO"
 		COMMAND testcase_netio)
 
+ADD_EXECUTABLE(testcase_smtproutes
+		smtproutes_test.c
+		${CMAKE_SOURCE_DIR}/qremote/smtproutes.c)
+TARGET_LINK_LIBRARIES(testcase_smtproutes
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
+
+FOREACH (ROUTETEST nomatch complete_match with_port port_0 port_100k port_char no_colon unresolved)
+	ADD_TEST(NAME "SMTProutes-${ROUTETEST}"
+			COMMAND testcase_smtproutes
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}")
+	IF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}/errmsg")
+		FILE(READ "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}/errmsg" ROUTETEST_MSG)
+		SET_TESTS_PROPERTIES(SMTProutes-${ROUTETEST} PROPERTIES
+			PASS_REGULAR_EXPRESSION "^(.*\n)?LOG: ${ROUTETEST_MSG}$")
+	ENDIF ()
+ENDFOREACH (ROUTETEST)
+
 # This is a brute force test just to get some "real" coverage on the file.
 # It will always fail, either because ${AUTOQMAIL} doesn't exist or doesn't
 # have the proper configuration files or simply because we do not pass it
