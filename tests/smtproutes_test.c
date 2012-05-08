@@ -17,7 +17,7 @@ test_log_writen(int priority __attribute__((unused)), const char **msg)
 
 	printf("LOG: ");
 	for (i = 0; msg[i] != NULL; i++)
-		printf(msg[i]);
+		printf("%s", msg[i]);
 	printf("\n");
 }
 
