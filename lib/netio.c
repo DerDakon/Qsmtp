@@ -304,6 +304,16 @@ net_read(void)
 		readoffset += datain;
 
 		p = find_eol(linein, readoffset, &valid);
+
+		/* a CR was found at the current end of the input, but there is more
+		 * space to read more data (i.e. the line is not yet too long). Try again
+		 * to see if the next byte would be just the missing LF */
+		if (!valid && (p == linein + readoffset) && (readoffset < sizeof(linein) - 1) &&
+				(*(p - 1) == '\r')) {
+			datain = readinput(linein + readoffset, 2);
+			if (datain == 1)
+				valid = (*p == '\n');
+		}
 	} while ((p == NULL) && (readoffset < sizeof(linein) - 1));
 
 	if (valid) {
