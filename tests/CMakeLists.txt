@@ -357,6 +357,13 @@ ADD_TEST(NAME "Qremote_noinput_noargs"
 SET_TESTS_PROPERTIES(Qremote_noinput_noargs PROPERTIES
 		PASS_REGULAR_EXPRESSION "^Z")
 
+# In case we have a proper configuration this may even check some more lines.
+# Since the destination address should really not exists this will still fail.
+ADD_TEST(NAME "Qremote_to_invalid"
+		COMMAND Qremote invalid.invalid from@invalid.invalid to@invalid.invalid)
+SET_TESTS_PROPERTIES(Qremote_noinput_noargs PROPERTIES
+		PASS_REGULAR_EXPRESSION "^Z")
+
 ADD_EXECUTABLE(testcase_qsdata
 		qsdata_test.c
 )
