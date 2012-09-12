@@ -383,3 +383,6 @@ TARGET_LINK_LIBRARIES(testcase_ipme
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
+ADD_TEST(NAME "IPme"
+		COMMAND testcase_ipme)
+
