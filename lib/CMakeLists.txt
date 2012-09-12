@@ -31,6 +31,7 @@ SET(QSMTP_LIB_SRCS
 	control.c
 	getfile.c
 	base64.c
+	ipme.c
 	match.c
 	mime.c
 	cdb.c
@@ -45,6 +46,7 @@ SET(QSMTP_LIB_HDRS
 	../include/cdb.h
 	../include/control.h
 	../include/fmt.h
+	../include/ipme.h
 	../include/match.h
 	../include/mime.h
 	../include/mmap.h

@@ -26,6 +26,7 @@
 #include "starttlsr.h"
 #include "qrdata.h"
 #include "fmt.h"
+#include "ipme.h"
 #include "tls.h"
 #include "qmaildir.h"
 #include "statuscodes.h"
@@ -479,6 +480,7 @@ main(int argc, char *argv[])
 	}
 
 	getmxlist(argv[1], &mx);
+	mx = filter_my_ips(mx);
 	sortmx(&mx);
 
 	/* this shouldn't fail normally: qmail-rspawn did it before successfully */

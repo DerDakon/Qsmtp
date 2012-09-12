@@ -375,3 +375,11 @@ TARGET_LINK_LIBRARIES(testcase_qsdata
 
 ADD_TEST(NAME "Qsmtpd_data"
 		COMMAND testcase_qsdata)
+
+ADD_EXECUTABLE(testcase_ipme
+		ipme_test.c)
+TARGET_LINK_LIBRARIES(testcase_ipme
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
