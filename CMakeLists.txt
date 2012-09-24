@@ -15,7 +15,10 @@ IF (COMMAND cmake_policy)
 	CMAKE_POLICY(SET CMP0003 NEW)
 ENDIF (COMMAND cmake_policy)
 
-SET(AUTOQMAIL /var/qmail)
+IF (NOT AUTOQMAIL)
+	SET(AUTOQMAIL /var/qmail)
+ENDIF ()
+SET(AUTOQMAIL "${AUTOQMAIL}" CACHE PATH "Directory of qmail installation (usually /var/qmail)")
 
 SET(QSMTP_VERSION_MAJOR 0)
 SET(QSMTP_VERSION_MINOR 22)
