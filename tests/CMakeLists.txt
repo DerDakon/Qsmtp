@@ -1,3 +1,11 @@
+# check if the qmail directory is maintained by the build, which means
+# we are running inside the testsuite and can mess with that directory
+IF (AUTOQMAIL MATCHES "^${CMAKE_BINARY_DIR}/")
+	SET(AUTOQMAIL_FROM_TESTSUITE TRUE)
+ELSE ()
+	SET(AUTOQMAIL_FROM_TESTSUITE FALSE)
+ENDIF ()
+
 ADD_SUBDIRECTORY(test_io)
 
 ADD_EXECUTABLE(testcase_spf
@@ -354,15 +362,22 @@ ENDFOREACH (ROUTETEST)
 # any arguments.
 ADD_TEST(NAME "Qremote_noinput_noargs"
 		COMMAND Qremote)
-SET_TESTS_PROPERTIES(Qremote_noinput_noargs PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z")
 
 # In case we have a proper configuration this may even check some more lines.
 # Since the destination address should really not exists this will still fail.
 ADD_TEST(NAME "Qremote_to_invalid"
 		COMMAND Qremote invalid.invalid from@invalid.invalid to@invalid.invalid)
-SET_TESTS_PROPERTIES(Qremote_noinput_noargs PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z")
+
+IF (AUTOQMAIL_FROM_TESTSUITE)
+	SET_TESTS_PROPERTIES(Qremote_noinput_noargs PROPERTIES
+			PASS_REGULAR_EXPRESSION "^Zinternal error: Qremote called with invalid arguments\n")
+	SET_TESTS_PROPERTIES(Qremote_to_invalid PROPERTIES
+			PASS_REGULAR_EXPRESSION "^Z4\\.4\\.3 cannot find a mail exchanger for invalid\\.invalid\n")
+ELSE ()
+	SET_TESTS_PROPERTIES(Qremote_noinput_noargs Qremote_to_invalid
+			PROPERTIES
+			PASS_REGULAR_EXPRESSION "^Z")
+ENDIF ()
 
 ADD_EXECUTABLE(testcase_qsdata
 		qsdata_test.c

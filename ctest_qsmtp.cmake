@@ -117,6 +117,9 @@ ctest_read_custom_files(${CMAKE_CURRENT_LIST_DIR})
 
 ctest_empty_binary_directory(${CTEST_BINARY_DIRECTORY})
 
+file(MAKE_DIRECTORY "${CTEST_BINARY_DIRECTORY}/var/qmail/control")
+file(WRITE "${CTEST_BINARY_DIRECTORY}/var/qmail/control/me" "${CTEST_SITE}\n")
+
 ctest_start(${dashboard_model})
 
 ctest_update()
@@ -125,7 +128,7 @@ ctest_update()
 # avoid spamming the dashboard with doxygen warnings: BUILD_DOC off
 # get coverage: debug build
 ctest_configure(
-		OPTIONS "-DUSESYSLOG=Off;-DBUILD_DOC=Off;-DCMAKE_BUILD_TYPE=Debug"
+		OPTIONS "-DUSESYSLOG=Off;-DBUILD_DOC=Off;-DCMAKE_BUILD_TYPE=Debug;-DAUTOQMAIL=${CTEST_BINARY_DIRECTORY}/var/qmail"
 )
 ctest_build()
 
