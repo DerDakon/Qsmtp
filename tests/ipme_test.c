@@ -11,7 +11,9 @@ static const char *testips[] = {
 	"::ffff:127.0.0.1",	/* IPv4 localhost, you must have it */
 	"::ffff:10.255.255.255", /* broadcast in private network, valid but can't be configured if you are sane */
 	"::1",	/* IPv6 broadcast, you must have it unless IPV4ONLY is defined */
-	"ff01::1" /* IPv6 broadcast, valid but can't be configured if you are sane */
+	"ff01::1", /* IPv6 broadcast, valid but can't be configured if you are sane */
+	"::ffff:0.0.0.0", /* localhost, localnet */
+	"::ffff:127.4.5.6" /* anything in 127/8 is localhost */
 };
 
 /**
