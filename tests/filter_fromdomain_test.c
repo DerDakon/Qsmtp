@@ -115,6 +115,18 @@ int main()
 
 	err += check_expect(1, "checking local net 172.16.42.42");
 
+	/* TEST-NET-1 */
+	setup_ip("::ffff:192.0.2.1");
+	err += check_expect(1, "checking TEST-NET-1 192.0.2.1");
+
+	/* TEST-NET-2 */
+	setup_ip("::ffff:198.51.100.2");
+	err += check_expect(1, "checking TEST-NET-2 198.51.100.2");
+
+	/* TEST-NET-3 */
+	setup_ip("::ffff:203.0.113.3");
+	err += check_expect(1, "checking TEST-NET-3 203.0.113.3");
+
 	sprintf(configline, "fromdomain=1");
 
 	xmitstat.fromdomain = 1;
