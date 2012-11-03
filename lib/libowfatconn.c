@@ -28,8 +28,12 @@ dnsip6(char **out, unsigned int *len, const char *host)
 
 	r = dns_ip6(&sa, &fqdn);
 	free(fqdn.s);
-	*out = sa.s;
-	*len = sa.len;
+	if (r == 0) {
+		*out = sa.s;
+		*len = sa.len;
+	} else {
+		free(sa.s);
+	}
 	return r;
 }
 
@@ -54,8 +58,12 @@ dnsip4(char **out, unsigned int *len, const char *host)
 
 	r = dns_ip4(&sa, &fqdn);
 	free(fqdn.s);
-	*out = sa.s;
-	*len = sa.len;
+	if (r == 0) {
+		*out = sa.s;
+		*len = sa.len;
+	} else {
+		free(sa.s);
+	}
 	return r;
 }
 
@@ -80,8 +88,12 @@ dnsmx(char **out, unsigned int *len, const char *host)
 
 	r = dns_mx(&sa, &fqdn);
 	free(fqdn.s);
-	*out = sa.s;
-	*len = sa.len;
+	if (r == 0) {
+		*out = sa.s;
+		*len = sa.len;
+	} else {
+		free(sa.s);
+	}
 	return r;
 }
 
@@ -105,8 +117,10 @@ dnstxt(char **out, const char *host)
 
 	r = dns_txt(&sa, &fqdn);
 	free(fqdn.s);
-	if (r)
+	if (r) {
+		free(sa.s);
 		return r;
+	}
 
 	r = stralloc_0(&sa);
 
@@ -133,8 +147,10 @@ dnsname(char **out, const struct in6_addr *ip)
 	int r;
 
 	r = dns_name6(&sa, (const char *)ip->s6_addr);
-	if (r)
+	if (r) {
+		free(sa.s);
 		return r;
+	}
 	if (!(r = stralloc_0(&sa))) {
 		free(sa.s);
 		return -1;
