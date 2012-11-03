@@ -311,8 +311,15 @@ net_read(void)
 		if (!valid && (p == linein + readoffset) && (readoffset < sizeof(linein) - 1) &&
 				(*(p - 1) == '\r')) {
 			datain = readinput(linein + readoffset, 2);
-			if (datain == 1)
+			if (datain == 1) {
+				/* check if it is the missing \n */
 				valid = (*p == '\n');
+				/* if it is, we must also skip that of course */
+				if (valid) {
+					readoffset++;
+					p++;
+				}
+			}
 		}
 	} while ((p == NULL) && (readoffset < sizeof(linein) - 1));
 
