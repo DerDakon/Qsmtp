@@ -5,6 +5,7 @@
 #include <stralloc.h>
 #include <dns.h>
 #include <netinet/in.h>
+#include <string.h>
 #include "libowfatconn.h"
 
 /**
@@ -35,6 +36,19 @@ mangle_ip_ret(struct stralloc *sa, char **out, unsigned int *len, int r)
 }
 
 /**
+ * @brief create a stralloc for the given string
+ *
+ * Even if the s member of the stralloc is not const, we
+ * trust everyone who takes a const stralloc not to change it.
+ */
+#define const_stralloc_from_string(str) \
+	{ \
+		.a = strlen(str) + 1, \
+		.len = strlen(str), \
+		.s = (char *)str \
+	}
+
+/**
  * @brief query DNS for IPv6 address of host
  *
  * @param out result string will be stored here, memory is malloced
@@ -46,6 +60,8 @@ mangle_ip_ret(struct stralloc *sa, char **out, unsigned int *len, int r)
 int
 dnsip6(char **out, unsigned int *len, const char *host)
 {
+	/* we can't use const_stralloc_from_string() here as dns_ip6()
+	 * modifies it's second argument. */
 	stralloc fqdn = {.a = 0, .len = 0, .s = NULL};
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
 	int r;
@@ -70,15 +86,11 @@ dnsip6(char **out, unsigned int *len, const char *host)
 int
 dnsip4(char **out, unsigned int *len, const char *host)
 {
-	stralloc fqdn = {.a = 0, .len = 0, .s = NULL};
+	const stralloc fqdn = const_stralloc_from_string(host);
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
 	int r;
 
-	if (!stralloc_copys(&fqdn, host))
-		return -1;
-
 	r = dns_ip4(&sa, &fqdn);
-	free(fqdn.s);
 	return mangle_ip_ret(&sa, out, len, r);
 }
 
@@ -94,15 +106,11 @@ dnsip4(char **out, unsigned int *len, const char *host)
 int
 dnsmx(char **out, unsigned int *len, const char *host)
 {
-	stralloc fqdn = {.a = 0, .len = 0, .s = NULL};
+	const stralloc fqdn = const_stralloc_from_string(host);
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
 	int r;
 
-	if (!stralloc_copys(&fqdn, host))
-		return -1;
-
 	r = dns_mx(&sa, &fqdn);
-	free(fqdn.s);
 	return mangle_ip_ret(&sa, out, len, r);
 }
 
@@ -118,14 +126,10 @@ int
 dnstxt(char **out, const char *host)
 {
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
-	stralloc fqdn = {.a = 0, .len = 0, .s = NULL};
+	const stralloc fqdn = const_stralloc_from_string(host);
 	int r;
 
-	if (!stralloc_copys(&fqdn, host))
-		return -1;
-
 	r = dns_txt(&sa, &fqdn);
-	free(fqdn.s);
 	if ((r != 0) || (sa.len == 0)) {
 		free(sa.s);
 		*out = NULL;
