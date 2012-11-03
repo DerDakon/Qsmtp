@@ -43,6 +43,8 @@ enum conn_shutdown_type {
  * A shutdown_clean shutdown is e.g. sending QUIT to the server and waiting for it's
  * reply. A shutdown with shutdown_abort is e.g. hard dropping of the connection if
  * the client sends spam and has a broken SMTP engine that does not react to error codes.
+ *
+ * Calling this function even before the connection was established is fine.
  */
 extern void net_conn_shutdown(const enum conn_shutdown_type sd_type) __attribute__ ((noreturn));
 

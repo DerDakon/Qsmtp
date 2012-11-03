@@ -13,6 +13,7 @@
 #include "qdns.h"
 #include "control.h"
 #include "match.h"
+#include "netio.h"
 #include "log.h"
 #include "qremote.h"
 
@@ -160,7 +161,7 @@ getmxlist(char *remhost, struct ips **mx)
 			write(1, "Z4.4.3 cannot find a mail exchanger for ", 40);
 			write(1, remhost, reml);
 			write(1, "\n", 2);
-			exit(0);
+			net_conn_shutdown(shutdown_abort);
 		}
 	}
 }
