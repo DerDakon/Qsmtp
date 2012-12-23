@@ -188,6 +188,47 @@ freeppol(void)
 	}
 }
 
+/**
+ * @brief check if the current client is authenticated
+ * @return if the client may relay
+ * @retval 1 the client may relay
+ * @retval 0 the client is not permitted to relay
+ * @retval <0 an error code
+ */
+static int
+is_authenticated(void)
+{
+	if (xmitstat.authname.len || xmitstat.tlsclient)
+		return 1;
+
+	/* check if client is allowed to relay by IP */
+	if (!relayclient) {
+		int fd;
+		const char *fn = connection_is_ipv4() ? "control/relayclients" : "control/relayclients6";
+
+		relayclient = 2;
+		if ( (fd = open(fn, O_RDONLY)) < 0) {
+			if (errno != ENOENT) {
+				return err_control(fn) ? -errno : -EDONE;
+			}
+		} else {
+			int ipbl;
+
+			if ((ipbl = lookupipbl(fd)) < 0) {
+				const char *logmess[] = {"parse error in ", fn, NULL};
+
+				/* reject everything on parse error, else this
+					* would turn into an open relay by accident */
+				log_writen(LOG_ERR, logmess);
+			} else if (ipbl) {
+				relayclient = 1;
+			}
+		}
+	}
+
+	return (relayclient & 2) ? 0 : 1;
+}
+
 static int
 setup(void)
 {
@@ -1065,34 +1106,14 @@ smtp_rcpt(void)
 		log_writen(LOG_INFO, logmsg);
 		free(tmp.s);
 		return EBOGUS;
-	} else if ((i == -2) && !xmitstat.authname.len && !xmitstat.tlsclient) {
-/* check if client is allowed to relay by IP */
-		if (!relayclient) {
-			int fd;
-			const char *fn = connection_is_ipv4() ? "control/relayclients" : "control/relayclients6";
+	} else if (i == -2) {
+		int r = is_authenticated();
 
-			relayclient = 2;
-			if ( (fd = open(fn, O_RDONLY)) < 0) {
-				if (errno != ENOENT) {
-					return err_control(fn) ? errno : EDONE;
-				}
-			} else {
-				int ipbl;
-
-				if ((ipbl = lookupipbl(fd)) < 0) {
-					const char *logmess[] = {"parse error in ", fn, NULL};
-
-					/* reject everything on parse error, else this
-					 * would turn into an open relay by accident */
-					log_writen(LOG_ERR, logmess);
-				} else if (ipbl) {
-					relayclient = 1;
-				}
-			 }
-		}
-		if (relayclient & 2) {
+		if (r < 0) {
+			return -r;
+		} else if (r == 0) {
 			const char *logmess[] = {"rejected message to <", tmp.s, "> from <", MAILFROM,
-							"> from IP [", xmitstat.remoteip, "] {relaying denied}", NULL};
+					"> from IP [", xmitstat.remoteip, "] {relaying denied}", NULL};
 
 			log_writen(LOG_INFO, logmess);
 			free(tmp.s);
