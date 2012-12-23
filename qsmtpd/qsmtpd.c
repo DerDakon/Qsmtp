@@ -1313,6 +1313,19 @@ smtp_from(void)
 		return EINVAL;
 	if (bugoffset != 0)
 		xmitstat.spacebug = 1;
+
+	/* if we are in submission mode we require authentication before any mail */
+	if (submission_mode) {
+		int r = is_authenticated();
+		if (r < 0) {
+			return -r;
+		} else if (!r) {
+			if (netwrite("550 5.7.1 mail denied for policy reasons\r\n") < 0)
+				return errno;
+			return EDONE;
+		}
+	}
+
 	i = addrparse(linein + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, &ds);
 	xmitstat.frommx = NULL;
 	xmitstat.fromdomain = 0;
