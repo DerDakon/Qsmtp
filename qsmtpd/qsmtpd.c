@@ -1320,7 +1320,7 @@ smtp_from(void)
 		if (r < 0) {
 			return -r;
 		} else if (!r) {
-			if (netwrite("550 5.7.1 mail denied for policy reasons\r\n") < 0)
+			if (netwrite("550 5.7.1 authentication required\r\n") < 0)
 				return errno;
 			return EDONE;
 		}
