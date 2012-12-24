@@ -859,6 +859,7 @@ int main(int argc, char **argv)
 		}
 		strcat(linein, "\r\n");
 		linelen = strlen(linein);
+		ascii = 0;
 	} else {
 		for (usepattern = 0; testpatterns[usepattern].name != NULL; usepattern++) {
 			if (strcmp(testpatterns[usepattern].name, argv[1]) == 0)
