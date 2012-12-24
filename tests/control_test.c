@@ -69,7 +69,7 @@ createTestFile(const char * const name, const char * const value)
 		fputs("ERROR: can not create temporary file for testcase\n", stderr);
 		exit(1);
 	}
-	if (write(fd, value, strlen(value)) != strlen(value)) {
+	if (write(fd, value, strlen(value)) != (ssize_t)strlen(value)) {
 		fputs("ERROR: writing value to test file did not work\n", stderr);
 		close(fd);
 		unlink(name);
@@ -203,7 +203,7 @@ test_lload()
 	}
 
 	/* fd is already closed so locking must fail */
-	if ((lloadfilefd(fd, &buf, 0) != -1) || (errno != ENOLCK)) {
+	if ((lloadfilefd(fd, &buf, 0) != (size_t)-1) || (errno != ENOLCK)) {
 		fputs("Trying to lock an already closed fd must fail\n", stderr);
 		err++;
 	}

@@ -174,7 +174,7 @@ spf_makroparam(const char *token, int *num, int *r, int *delim)
 		*r = 1;
 	}
 	do {
-		int k;
+		size_t k;
 
 		t = token;
 		for (k = 0; k < strlen(spf_delimiters); k++) {

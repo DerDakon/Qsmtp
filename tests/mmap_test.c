@@ -32,7 +32,7 @@ main(void)
 
 	/* include trailing 0 */
 	t = write(fd, pattern1, strlen(pattern1) + 1);
-	if (t != strlen(pattern1) + 1) {
+	if (t != (ssize_t)(strlen(pattern1) + 1)) {
 		fprintf(stderr, "error writing to test file, result %zi", t);
 		close(fd);
 		unlink(testfname);
@@ -43,13 +43,13 @@ main(void)
 	u = write(fd, pattern2, strlen(pattern2));
 	close(fd);
 
-	if (u != strlen(pattern2)) {
+	if (u != (ssize_t)strlen(pattern2)) {
 		fprintf(stderr, "error writing to test file, result %zi", u);
 		unlink(testfname);
 		return 3;
 	}
 
-	assert(t + u == cmplen);
+	assert(t + u == (ssize_t)cmplen);
 
 	/* mmap() on already closed fd, should fail */
 	buf = mmap_fd(fd, &len);

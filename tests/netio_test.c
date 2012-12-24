@@ -134,7 +134,7 @@ readline_check(const char *expect, int error)
 		fprintf(stderr, "%s: net_readline() returned error %i, but expected was %i\n",
 				testname, errno, error);
 		return 1;
-	} else if (r == -1) {
+	} else if (r == (size_t)-1) {
 		return 0;
 	} else if (r != strlen(expect)) {
 		fprintf(stderr, "%s: net_readline() returned unexpected length %lu\n",

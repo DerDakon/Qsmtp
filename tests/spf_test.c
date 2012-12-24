@@ -337,7 +337,7 @@ check_received(int spfstatus, int log)
 	int fd[2];
 	char buf[1024];
 	int r;
-	ssize_t off = 0;
+	size_t off = 0;
 	const char hdrline[] = "Received-SPF: ";
 	const char *spfstates[] = { "pass", "fail", "softfail", "none", "neutral", "temperror", "permerror", NULL };
 	const char *tmp;

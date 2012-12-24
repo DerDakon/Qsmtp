@@ -141,7 +141,7 @@ setup(void)
 	if ( (j = loadintfd(open("control/chunksizeremote", O_RDONLY), &chunk, 32768)) < 0) {
 		err_conf("parse error in control/chunksizeremote");
 	} else {
-		if (chunk >= (1 << 31)) {
+		if (chunk >= ((unsigned long)1 << 31)) {
 			err_conf("chunksize in control/chunksizeremote too big");
 		}
 		chunksize = chunk & 0xffffffff;

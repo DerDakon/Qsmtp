@@ -1088,7 +1088,7 @@ smtp_rcpt(void)
 	const char *logmsg[] = {"rejected message to <", NULL, "> from <", MAILFROM,
 					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL};
 	const char *okmsg[] = {"250 2.1.0 recipient <", NULL, "> OK", NULL};
-	int bugoffset = 0;
+	size_t bugoffset = 0;
 
 	while ((bugoffset < linelen - 8) && (linein[8 + bugoffset] == ' '))
 		bugoffset++;
@@ -1304,7 +1304,7 @@ smtp_from(void)
 	struct statvfs sbuf;
 	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> is syntactically correct", NULL};
 	char *s;
-	int bugoffset = 0;
+	size_t bugoffset = 0;
 
 	/* detect broken clients that have spaces between ':' and '<' */
 	while ((bugoffset < linelen - 10) && (linein[10 + bugoffset] == ' '))
@@ -1551,7 +1551,7 @@ http_post(void)
 static int
 line_valid()
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < linelen; i++) {
 		/* linein is signed char, so non-ASCII characters are <0 */
