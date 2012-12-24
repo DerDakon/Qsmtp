@@ -34,7 +34,7 @@ static int lastlf = 1;		/* set if last byte sent was a LF */
  * @return logical or of:
  *   - 1: buffer has 8bit characters
  *   - 2: buffer contains line longer 998 chars
- *   - 4: header contains line linger 998 chars
+ *   - 4: header contains line longer 998 chars
  */
 unsigned int
 need_recode(const char *buf, off_t len)
@@ -710,6 +710,11 @@ send_qp(const char *buf, const off_t len)
 	}
 }
 
+/**
+ * send the message data
+ *
+ * @param recodeflag the result of need_recode() for the input data
+ */
 void
 send_data(unsigned int recodeflag)
 {
@@ -746,6 +751,11 @@ send_data(unsigned int recodeflag)
 }
 
 #ifdef CHUNKING
+/**
+ * send the message data as binary chunk
+ *
+ * @param recodeflag the result of need_recode() for the input data
+ */
 void
 send_bdat(unsigned int recodeflag)
 {
