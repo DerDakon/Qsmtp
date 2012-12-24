@@ -1107,11 +1107,11 @@ smtp_rcpt(void)
 		free(tmp.s);
 		return EBOGUS;
 	} else if (i == -2) {
-		int r = is_authenticated();
+		j = is_authenticated();
 
-		if (r < 0) {
-			return -r;
-		} else if (r == 0) {
+		if (j < 0) {
+			return -j;
+		} else if (j == 0) {
 			const char *logmess[] = {"rejected message to <", tmp.s, "> from <", MAILFROM,
 					"> from IP [", xmitstat.remoteip, "] {relaying denied}", NULL};
 
