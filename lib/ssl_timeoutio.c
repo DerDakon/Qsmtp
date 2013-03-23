@@ -27,7 +27,7 @@ static int ssl_timeoutio(int (*fun)(), time_t, char *, int) __attribute__ ((nonn
 static int
 ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 {
-	int n = 0;
+	int n;
 	const time_t end = t + time(NULL);
 	int fd = -1;
 
