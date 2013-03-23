@@ -18,7 +18,7 @@
 #include "qremote.h"
 
 extern int socketd;
-static unsigned int targetport = 25;
+unsigned int targetport = 25;
 
 static int
 conn(const struct in6_addr remoteip, const struct in6_addr *outip)

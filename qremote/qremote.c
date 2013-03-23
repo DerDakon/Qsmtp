@@ -480,7 +480,8 @@ main(int argc, char *argv[])
 	}
 
 	getmxlist(argv[1], &mx);
-	mx = filter_my_ips(mx);
+	if (targetport == 25)
+		mx = filter_my_ips(mx);
 	sortmx(&mx);
 
 	/* this shouldn't fail normally: qmail-rspawn did it before successfully */
