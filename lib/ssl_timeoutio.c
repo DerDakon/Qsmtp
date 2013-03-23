@@ -138,8 +138,6 @@ ssl_timeoutrehandshake(time_t t)
 
 int ssl_timeoutread(time_t t, char *buf, const int len)
 {
-	if (SSL_pending(ssl))
-		return SSL_read(ssl, buf, len);
 	return ssl_timeoutio(SSL_read, t, buf, len);
 }
 
