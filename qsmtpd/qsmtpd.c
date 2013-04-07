@@ -1755,24 +1755,12 @@ main(int argc, char **argv)
 
 			log_writen(LOG_WARNING, msg);
 		} else {
-			int fd = open(auth_check, O_RDONLY);
-
-			/* allow EACCES: mode may be 1711 */
-			if ((fd < 0) && (errno != EACCES)) {
-				const char *msg[] = {"checkpassword program '", auth_check, "' does not exist", NULL};
+			if (access(auth_check, X_OK) == 0) {
+				auth_host = argv[1];
+			} else {
+				const char *msg[] = {"checkpassword program '", auth_check, "' is not executable, error was '", strerror(errno), "'", NULL};
 
 				log_writen(LOG_WARNING, msg);
-			} else if (fd >= 0) {
-				int r;
-
-				while ((r = close(fd)) && (errno == EINTR));
-				if (!r) {
-					auth_host = argv[1];
-				} else {
-					flagbogus = errno;
-				}
-			} else {
-				auth_host = argv[1];
 			}
 		}
 	} else if (argc != 1) {
