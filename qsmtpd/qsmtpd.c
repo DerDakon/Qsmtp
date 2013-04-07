@@ -14,6 +14,7 @@
 #include <sys/file.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
@@ -1568,9 +1569,9 @@ smtploop(void)
 {
 	badcmds = 0;
 
+	assert(strcmp(commands[1].name, "QUIT") == 0);
 	if (!getenv("BANNER")) {
 		const char *msg[] = {"220 ", heloname.s, " " VERSIONSTRING " ESMTP", NULL};
-		const char quitcmd[] = "QUIT";
 
 		flagbogus = hasinput(0);
 		switch (flagbogus) {
@@ -1596,8 +1597,8 @@ smtploop(void)
 			(void) net_read();
 
 			/* explicitely catch QUIT here: responding with 450 here is bogus */
-			if (!strncasecmp(linein, quitcmd, strlen(quitcmd))) {
-				if (!linein[strlen(quitcmd)])
+			if (!strncasecmp(linein, commands[1].name, commands[1].len)) {
+				if (!linein[commands[1].len])
 					smtp_quit();
 			}
 			netwrite("450 4.5.0 transmission error, please try again\r\n");
