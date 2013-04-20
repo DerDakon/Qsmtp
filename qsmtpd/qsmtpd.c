@@ -666,17 +666,17 @@ int
 smtp_ehlo(void)
 {
 	/* can this be self-growing? */
-#ifdef CHUNKING
-	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n250-CHUNKING\r\n",
-#else
 	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n",
-#endif
-				NULL, NULL, NULL, NULL, NULL, NULL, NULL};
+			NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 	unsigned int next = 3;	/* next index in to be used */
 	char sizebuf[ULSTRLEN];
 	int rc;
 	char *authtypes = NULL;
 	const char *localport = getenv("TCPLOCALPORT");
+
+#ifdef CHUNKING
+	msg[next++] = "250-CHUNKING\r\n";
+#endif
 
 	if (!ssl) {
 		const char *protocol_esmtp = "ESMTP";
