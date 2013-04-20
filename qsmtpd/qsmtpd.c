@@ -679,12 +679,13 @@ smtp_ehlo(void)
 	const char *localport = getenv("TCPLOCALPORT");
 
 	if (!ssl) {
+		const char *protocol_esmtp = "ESMTP";
 		char *tmp;
-		tmp = realloc(protocol, 6);
+		tmp = realloc(protocol, strlen(protocol_esmtp) + 1);
 		if (tmp == NULL)
 			return ENOMEM;
 		protocol = tmp;
-		memcpy(protocol, "ESMTP", 6);	/* also copy trailing '\0' */
+		memcpy(protocol, protocol_esmtp, strlen(protocol_esmtp) + 1);	/* also copy trailing '\0' */
 	}
 	if (helovalid(linein + 5) < 0)
 		return errno;
