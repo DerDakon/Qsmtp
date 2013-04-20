@@ -669,7 +669,7 @@ smtp_ehlo(void)
 	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n",
 			NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 	unsigned int next = 3;	/* next index in to be used */
-	char sizebuf[ULSTRLEN];
+	char sizebuf[ULSTRLEN + 2]; /* holds a size and CRLF */
 	int rc;
 	char *authtypes = NULL;
 	const char *localport = getenv("TCPLOCALPORT");
@@ -708,15 +708,16 @@ smtp_ehlo(void)
 		}
 	}
 
-/* this must stay last: it begins with "250 " and does not have "\r\n" at the end so net_writen works */
+/* this must stay last: it begins with "250 " */
 	if (databytes) {
 		msg[next++] = "250 SIZE ";
 		ultostr(databytes, sizebuf);
+		strcat(sizebuf, "\r\n");
 		msg[next] = sizebuf;
 	} else {
-		msg[next] = "250 SIZE";
+		msg[next] = "250 SIZE\r\n";
 	}
-	rc = (net_writen(msg) < 0) ? errno : 0;
+	rc = (net_write_multiline(msg) < 0) ? errno : 0;
 	xmitstat.spf = 0;
 	xmitstat.esmtp = 1;
 	xmitstat.datatype = 1;

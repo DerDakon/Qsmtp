@@ -12,6 +12,7 @@ extern size_t linelen;
 
 extern int net_read(void);
 extern int net_writen(const char *const *) __attribute__ ((nonnull (1)));
+extern int net_write_multiline(const char *const *) __attribute__ ((nonnull (1)));
 extern int netwrite(const char *) __attribute__ ((nonnull (1)));
 extern int netnwrite(const char *, const size_t) __attribute__ ((nonnull (1)));
 extern size_t net_readbin(size_t, char *) __attribute__ ((nonnull (2)));

@@ -495,6 +495,58 @@ net_writen(const char *const *s)
 }
 
 /**
+ * write multiple lines to the network
+ *
+ * @param s array of strings to send
+ * @retval 0 on success
+ * @retval -1 on error (errno is set)
+ *
+ * This combines all given strings into one buffer and send them out to the
+ * network. This allows the underlying network stack to use the least sensible
+ * number of packets, reducing network latency. If memory allocation fails for
+ * the intermediate buffer the lines may be send in smaller chunks, which is
+ * less efficient but is no other loss in functionality.
+ *
+ * Does not return on timeout, programm will be cancelled.
+ *
+ * If one part or multiple consecutive parts covers a whole SMTP line this line
+ * must conform to the SMTP line length limit (512 bytes).
+ */
+int
+net_write_multiline(const char *const *s)
+{
+	size_t len = 0;
+	char *buf;
+	int i;
+
+	for (i = 0; s[i]; i++)
+		len += strlen(s[i]);
+
+	buf = malloc(len + 1);
+	if (buf == NULL) {
+		for (i = 0; s[i]; i++) {
+			int j = netwrite(s[i]);
+			if (j != 0)
+				return j;
+		}
+		return 0;
+	}
+
+	buf[0] = '\0';
+	for (i = 0; s[i]; i++)
+		strcat(buf, s[i]);
+
+	assert(buf[len - 1] == '\n');
+	assert(buf[len - 2] == '\r');
+
+	i = netnwrite(buf, len);
+
+	free(buf);
+
+	return i;
+}
+
+/**
  * read a given number of bytes from network as binary data (i.e. without any mangling)
  *
  * @param num number of bytes to read

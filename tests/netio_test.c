@@ -812,6 +812,74 @@ test_net_writen(void)
 	return ret;
 }
 
+static int
+test_net_write_multiline(void)
+{
+	int ret = 0;
+	const char *simple[] = { "250 first", "second", "third", "\r\n", NULL};
+	const char *longthings[] = { "250 012345678901234567890123456789", NULL, "abcdefghijklmnopqrstuvwxyz", "\r\n", NULL };
+	const char *many[30] = { "250 ", digits };
+	char exp[520];
+	int i;
+
+	testname = "net_write_multiline";
+
+	if (unexpected_pending())
+		return ++ret;
+
+	/* a simple concat */
+	if (net_write_multiline(simple) != 0) {
+		fprintf(stderr, "%s: cannot write 'simple' output\n", testname);
+		return ++ret;
+	}
+
+	if (read_check("250 firstsecondthird"))
+		ret++;
+	if (data_pending()) {
+		fprintf(stderr, "%s: spurious data after 'simple' test\n", testname);
+		ret++;
+	}
+
+	/* many small messages */
+	for (i = 2; i < 28; i++)
+		many[i] = many[1];
+	many[28] = "\r\n";
+	many[29] = NULL;
+
+	if (net_write_multiline(many) != 0) {
+		fprintf(stderr, "%s: cannot write 'many' output\n", testname);
+		return ++ret;
+	}
+
+	strcpy(exp, many[0]);
+	for (i = 1; i < 28; i++)
+		strcat(exp, many[1]);
+
+	if (read_check(exp))
+		ret++;
+
+	if (data_pending()) {
+		fprintf(stderr, "%s: spurious data after 'many' test\n", testname);
+		ret++;
+	}
+
+	exp[0] = '\0';
+	for (i = 0; i < 30; i++)
+		strcat(exp, many[1]);
+	longthings[1] = exp;
+	if (net_write_multiline(longthings) != 0) {
+		fprintf(stderr, "%s: cannot write 'long' output\n", testname);
+		return ++ret;
+	}
+	memmove(exp + strlen(longthings[0]), exp, strlen(exp));
+	memcpy(exp, longthings[0], strlen(longthings[0]));
+	strcat(exp, longthings[2]);
+	if (read_check(exp))
+		ret++;
+
+	return ret;
+}
+
 int main(void)
 {
 	int ret = 0;
@@ -860,6 +928,7 @@ int main(void)
 	}
 
 	ret += test_net_writen();
+	ret += test_net_write_multiline();
 
 	if (data_pending()) {
 		fprintf(stderr, "data pending at end of tests\n");
