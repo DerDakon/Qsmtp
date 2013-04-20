@@ -461,7 +461,7 @@ static const char *mailerrmsg[] = {"Connected to ", NULL, " but sender was rejec
 int
 main(int argc, char *argv[])
 {
-	const char *netmsg[6];
+	const char *netmsg[10];
 	int rcptstat = 1;	/* this means: all recipients have been rejected */
 	int i;
 	struct ips *mx = NULL;
@@ -592,18 +592,28 @@ main(int argc, char *argv[])
 	if (smtpext & SMTPEXT_8BITMIME) {
 		netmsg[lastmsg++] = (recodeflag & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
 	}
-	netmsg[lastmsg] = NULL;
-	net_writen(netmsg);
-
-	netmsg[0] = "RCPT TO:<";
-	netmsg[2] = ">";
-	netmsg[3] = NULL;
 	if (smtpext & SMTPEXT_PIPELINING) {
 /* server allows PIPELINING: first send all the messages, then check the replies.
  * This allows to hide network latency. */
-		for (i = 3; i < argc; i++) {
-			netmsg[1] = argv[i];
-			net_writen(netmsg);
+		/* batch the first recipient with the from */
+		netmsg[lastmsg++] = "\r\nRCPT TO:<";
+		netmsg[lastmsg++] = argv[3];
+		netmsg[lastmsg++] = ">\r\n";
+		netmsg[lastmsg] = NULL;
+		net_write_multiline(netmsg);
+
+		lastmsg = 1;
+		netmsg[0] = "RCPT TO:<";
+		for (i = 4; i < argc; i++) {
+			netmsg[lastmsg++] = argv[i];
+			if ((i == argc - 1) || ((i % 4) == 3)) {
+				netmsg[lastmsg++] = ">\r\n";
+				netmsg[lastmsg] = NULL;
+				net_write_multiline(netmsg);
+				lastmsg = 1;
+			} else {
+				netmsg[lastmsg++] = ">\r\nRCPT TO:<";
+			}
 		}
 /* MAIL FROM: reply */
 		if (checkreply(" ZD", mailerrmsg, 6) >= 300) {
@@ -622,8 +632,16 @@ main(int argc, char *argv[])
 			quit();
 	} else {
 /* server does not allow pipelining: we must do this one by one */
+		netmsg[lastmsg] = NULL;
+		net_writen(netmsg);
+
 		if (checkreply(" ZD", mailerrmsg, 6) >= 300)
 			quit();
+
+		netmsg[0] = "RCPT TO:<";
+		netmsg[2] = ">";
+		netmsg[3] = NULL;
+
 		for (i = 3; i < argc; i++) {
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
