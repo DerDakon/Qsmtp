@@ -48,9 +48,10 @@ err_mem(const int doquit)
 }
 
 void
-err_confn(const char **errmsg)
+err_confn(const char **errmsg, void *freebuf)
 {
 	log_writen(LOG_ERR, errmsg);
+	free(freebuf);
 	/* write text including 0 byte */
 	write(1, "Z4.3.0 Configuration error.\n", 29);
 	_exit(0);
@@ -60,7 +61,7 @@ void
 err_conf(const char *errmsg)
 {
 	const char *msg[] = {errmsg, NULL};
-	err_confn(msg);
+	err_confn(msg, NULL);
 }
 
 void

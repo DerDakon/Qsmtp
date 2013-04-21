@@ -71,7 +71,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 
 						free(smtproutes);
 						/* smtproutbuf not freed here as "port" still references it */
-						err_confn(logmsg);
+						err_confn(logmsg, smtproutbuf);
 					}
 				} else {
 					*targetport = 25;
@@ -83,7 +83,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 
 					free(smtproutes);
 					/* smtproutbuf not freed here as "port" still references it */
-					err_confn(logmsg);
+					err_confn(logmsg, smtproutbuf);
 				} else {
 					struct ips *m = mx;
 					while (m) {

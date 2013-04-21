@@ -92,13 +92,22 @@ void
 err_conf(const char *errmsg)
 {
 	const char *msg[] = {errmsg, NULL};
-	err_confn(msg);
+	err_confn(msg, NULL);
 }
 
+/**
+ * @brief log a configuration error and exit
+ * @param errmsg array of strings to combine to the message to log
+ * @param freebuf a pointer to a buffer passed to free() after logging
+ *
+ * Use freebuf if the contents of this buffer need to be part of errmsg.
+ * If you do not have anything to free just pass NULL.
+ */
 void
-err_confn(const char **errmsg)
+err_confn(const char **errmsg, void *freebuf)
 {
 	log_writen(LOG_ERR, errmsg);
+	free(freebuf);
 	/* write text including 0 byte */
 	write(1, "Z4.3.0 Configuration error.\n", 29);
 	net_conn_shutdown(shutdown_clean);

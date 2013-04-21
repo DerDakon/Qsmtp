@@ -22,9 +22,10 @@ test_log_writen(int priority __attribute__((unused)), const char **msg)
 }
 
 void
-err_confn(const char **msg)
+err_confn(const char **msg, void *freebuf)
 {
 	test_log_writen(0, msg);
+	free(freebuf);
 
 	exit(1);
 }
