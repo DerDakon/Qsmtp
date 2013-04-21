@@ -871,7 +871,7 @@ test_net_write_multiline(void)
 		fprintf(stderr, "%s: cannot write 'long' output\n", testname);
 		return ++ret;
 	}
-	memmove(exp + strlen(longthings[0]), exp, strlen(exp));
+	memmove(exp + strlen(longthings[0]), exp, strlen(exp) + 1);
 	memcpy(exp, longthings[0], strlen(longthings[0]));
 	strcat(exp, longthings[2]);
 	if (read_check(exp))
