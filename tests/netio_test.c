@@ -82,7 +82,7 @@ read_check(const char *data)
 		fprintf(stderr, "%s: reading good data did not succeed\n", testname);
 		return 1;
 	} else if ((linelen != strlen(data)) || (strcmp(linein, data) != 0)) {
-		fprintf(stderr, "%s: reading valid data did not return the correct data (%s), but %s\n", testname, data, linein);
+		fprintf(stderr, "%s: reading valid data did not return the correct data\nexpected:\t%s\ngot:      \t\n%s\n", testname, data, linein);
 		return 1;
 	}
 	return 0;
