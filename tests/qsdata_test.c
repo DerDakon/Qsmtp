@@ -1,7 +1,12 @@
 #include "../qsmtpd/data.c"
 
+#include "antispam.h"
+
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <time.h>
+#include <unistd.h>
 
 int relayclient;
 unsigned long sslauth;
@@ -57,9 +62,19 @@ sync_pipelining(void)
 }
 
 int
-spfreceived(int fd __attribute__ ((unused)), const int spf __attribute__ ((unused)))
+spfreceived(int fd, const int spf)
 {
-	return -1;
+	char buf[64];
+	ssize_t r;
+
+	snprintf(buf, sizeof(buf), "Received-SPF: testcase, spf %i\n", spf);
+
+	r = write(fd, buf, strlen(buf));
+
+	if ((r == strlen(buf)) && (r > 0))
+		return 0;
+	else
+		return -1;
 }
 
 static int
@@ -86,13 +101,15 @@ check_twodigit(void)
 	return ret;
 }
 
+static const time_t time2012 = 1334161937;
+static const char * timestr2012 = "Wed, 11 Apr 2012 18:32:17 +0200";
+
 static int
 check_date822(void)
 {
 	char buf[32];
-	const char *expt[] = { "Thu, 01 Jan 1970 00:00:00 +0000",
-			"Wed, 11 Apr 2012 18:32:17 +0200" };
-	const time_t testtimes[] = { 0, 1334161937 };
+	const char *expt[] = { "Thu, 01 Jan 1970 00:00:00 +0000", timestr2012 };
+	const time_t testtimes[] = { 0, time2012 };
 	const char *tzones[] = { "TZ=UTC", "TZ=CET" };
 	int ret = 0;
 	int i;
@@ -116,6 +133,172 @@ check_date822(void)
 	return ret;
 }
 
+static int
+check_queueheader(void)
+{
+	struct recip to;
+	int err = 0;
+	int idx;
+
+	if (pipe(fd0) != 0)
+		return 1;
+
+	if (fcntl(fd0[0] ,F_SETFL,fcntl(fd0[0] ,F_GETFL) | O_NONBLOCK) != 0)
+		return 2;
+
+	/* setup */
+	testtime = time2012;
+	protocol = "TEST_PROTOCOL";
+	to.ok = 1;
+	to.to.s = "test@example.com";
+	to.to.len = strlen(to.to.s);
+
+	heloname.s = "testcase.example.net";
+	heloname.len = strlen(heloname.s);
+
+	thisrecip = &to;
+
+	TAILQ_INIT(&head);
+	TAILQ_INSERT_TAIL(&head, &to, entries);
+
+	for (idx = 0; idx < 8; idx++) {
+		char outbuf[2048];
+		ssize_t off = 0;
+		ssize_t mismatch = -1;
+		const char *expect;
+		const char *testname;
+
+		memset(&xmitstat, 0, sizeof(xmitstat));
+
+		strncpy(xmitstat.remoteip, "192.0.2.42", sizeof(xmitstat.remoteip));
+
+		switch (idx) {
+		case 0:
+			testname = "minimal";
+			relayclient = 1;
+			expect = "Received: from unknown ([192.0.2.42])\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 1:
+			testname = "reverse DNS";
+			relayclient = 1;
+			xmitstat.remotehost.s = "sender.example.net";
+			expect = "Received: from sender.example.net ([192.0.2.42])\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 2:
+			testname = "reverse DNS and port";
+			relayclient = 1;
+			xmitstat.remotehost.s = "sender.example.net";
+			xmitstat.remoteport = "42";
+			expect = "Received: from sender.example.net ([192.0.2.42]:42)\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 3:
+			testname = "minimal + HELO";
+			relayclient = 1;
+			xmitstat.helostr.s = "sender";
+			expect = "Received: from unknown ([192.0.2.42] HELO sender)\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 4:
+			testname = "minimal + SPF";
+			relayclient = 0;
+			xmitstat.spf = SPF_PASS;
+			expect = "Received-SPF: testcase, spf 1\n"
+					"Received: from unknown ([192.0.2.42])\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 5:
+			testname = "minimal + auth";
+			relayclient = 1;
+			xmitstat.authname.s = "authuser";
+			expect = "Received: from unknown ([192.0.2.42]) (auth=authuser)\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOLA\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 6:
+			testname = "authhide";
+			/* no relayclient, but since we are authenticated there must not be a SPF header */
+			relayclient = 0;
+			authhide = 1;
+			xmitstat.authname.s = "authuser";
+			expect = "Received: from (auth=authuser)\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOLA\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 7:
+			testname = "chunked";
+			chunked = 1;
+			authhide = 0;
+			relayclient = 1;
+			expect = "Received: from unknown ([192.0.2.42])\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) TEST_PROTOCOL\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+		}
+
+		if (xmitstat.remotehost.s != NULL)
+			xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
+		if (xmitstat.helostr.s != NULL)
+			xmitstat.helostr.len = strlen(xmitstat.helostr.s);
+		if (xmitstat.authname.s != NULL)
+			xmitstat.authname.len = strlen(xmitstat.authname.s);
+
+		printf("Running test: %s\n", testname);
+
+		if (queue_header()) {
+			err = 3;
+			break;
+		}
+
+		while (off < sizeof(outbuf) - 1) {
+			ssize_t r = read(fd0[0], outbuf + off, 1);
+			if (r < 0) {
+				if (errno != EAGAIN) {
+					fprintf(stderr, "read failed with error %i\n", errno);
+					err = 4;
+				}
+				break;
+			}
+			if ((mismatch < 0) && (outbuf[off] != expect[off])) {
+				mismatch = off;
+				fprintf(stderr, "output mismatch at position %zi, got %c (0x%02x), expected %c (0x%02x)\n",
+					mismatch, outbuf[off], outbuf[off], expect[off], expect[off]);
+				err = 5;
+				// do not break, read the whole input
+			}
+			off++;
+		}
+		outbuf[off] = '\0';
+
+		if (err != 0) {
+			fprintf(stderr, "expected output not found, got:\n%s\nexpected:\n%s\n", outbuf, expect);
+			if (strlen(outbuf) != strlen(expect))
+				fprintf(stderr, "expected length: %zi, got length: %zi\n", strlen(expect), strlen(outbuf));
+			break;
+		}
+
+		if (off == sizeof(outbuf) - 1) {
+			fprintf(stderr, "too long output received\n");
+			err = 6;
+			break;
+		} else if (off == 0) {
+			fprintf(stderr, "no output received\n");
+			err = 7;
+			break;
+		}
+	}
+
+	close(fd0[0]);
+	close(fd0[1]);
+	return err;
+}
+
 int main()
 {
 	int ret = 0;
@@ -124,6 +307,7 @@ int main()
 
 	ret += check_twodigit();
 	ret += check_date822();
+	ret += check_queueheader();
 
 	return ret;
 }
