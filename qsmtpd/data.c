@@ -437,6 +437,11 @@ check_rfc822_headers(unsigned int *headerflags, const char **hdrname)
 	const char *searchpattern[] = { "Date:", "From:", "Message-Id:", NULL };
 	int j;
 
+	for (j = linelen - 1; j >= 0; j--) {
+		if (linein[j] < 0)
+			return -8;
+	}
+
 	for (j = 0; searchpattern[j] != NULL; j++) {
 		if (!strncasecmp(searchpattern[j], linein, strlen(searchpattern[j]))) {
 			if ((*headerflags) & (1 << j)) {
@@ -447,11 +452,6 @@ check_rfc822_headers(unsigned int *headerflags, const char **hdrname)
 				return 1;
 			}
 		}
-	}
-
-	for (j = linelen - 1; j >= 0; j--) {
-		if (linein[j] < 0)
-			return -8;
 	}
 
 	return 0;
