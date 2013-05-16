@@ -173,9 +173,12 @@ date822(char *buf)
 	two_digit(buf + 29, tz % 60);
 }
 
-#define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) { \
-					return rc; \
-				}
+#define WRITE(fd,buf,len) \
+		do { \
+			if ( (rc = write(fd, buf, len)) < 0 ) { \
+				return rc; \
+			} \
+		} while (0)
 
 #define WRITEL(fd, str)		WRITE(fd, str, strlen(str))
 
@@ -243,9 +246,12 @@ queue_header(void)
 }
 
 #undef WRITE
-#define WRITE(fd,buf,len)	if ( (rc = write(fd, buf, len)) < 0 ) { \
-					goto err_write; \
-				}
+#define WRITE(fd,buf,len) \
+		do { \
+			if ( (rc = write(fd, buf, len)) < 0 ) { \
+				goto err_write; \
+			} \
+		} while (0)
 
 static int
 queue_envelope(const unsigned long msgsize)
