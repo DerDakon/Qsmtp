@@ -570,7 +570,7 @@ smtp_data(void)
 						errmsg = "554 5.4.6 too many hops, this message is looping\r\n";
 						goto loop_data;
 					}
-				} else if ((linelen > 20) && !strncmp("Delivered-To:", linein, 13)) {
+				} else if ((linelen >= 20) && !strncmp("Delivered-To:", linein, 13)) {
 					/* we write it exactly this way, noone else is allowed to
 					 * change our header lines so we do not need to use strncasecmp
 					 *
@@ -579,7 +579,7 @@ smtp_data(void)
 					 * 1: ' '
 					 * 1: at least 1 character localpart
 					 * 1: @
-					 * 2: at least 2 characters domain name
+					 * 1: at least 1 character domain name
 					 * 1: '.'
 					 * 2: at least 2 characters top level domain */
 					struct recip *np;
