@@ -398,7 +398,7 @@ TARGET_LINK_LIBRARIES(testcase_qsdata
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
 SET_TESTS_PROPERTIES(Qsmtpd_quit PROPERTIES
-		PASS_REGULAR_EXPRESSION "^220 [^\n]*\n221 2\\.0\\.0 [^\n]*\n$")
+		PASS_REGULAR_EXPRESSION "^220 [^\n] ${QSMTP_VERSION} ESMTP\n221 2\\.0\\.0 [^\n] service closing transmission channel\n$")
 
 
 ADD_TEST(NAME "Qsmtpd_data"
