@@ -1,2 +1,2 @@
-execute_process(COMMAND "${CMAKE_COMMAND}" -E echo quit
+execute_process(COMMAND "${CMAKE_COMMAND}" -P "@CMAKE_CURRENT_SOURCE_DIR@/quit.cmake"
 		COMMAND "@CMAKE_BINARY_DIR@/qsmtpd/Qsmtpd")

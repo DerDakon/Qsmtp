@@ -395,6 +395,12 @@ TARGET_LINK_LIBRARIES(testcase_qsdata
 		${MEMCHECK_LIBRARIES}
 )
 
+# Do not add \r here, looks like CMake automatically strips it, so just
+# assume we are doing it right.
+SET_TESTS_PROPERTIES(Qsmtpd_quit PROPERTIES
+		PASS_REGULAR_EXPRESSION "^220 [^\n]*\n221 2\\.0\\.0 [^\n]*\n$")
+
+
 ADD_TEST(NAME "Qsmtpd_data"
 		COMMAND testcase_qsdata)
 
@@ -407,4 +413,3 @@ TARGET_LINK_LIBRARIES(testcase_ipme
 )
 ADD_TEST(NAME "IPme"
 		COMMAND testcase_ipme)
-
