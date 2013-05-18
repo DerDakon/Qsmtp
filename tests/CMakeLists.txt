@@ -383,23 +383,39 @@ ADD_EXECUTABLE(testcase_qsdata
 		qsdata_test.c
 )
 
-# Another brute force test, this time for Qsmtpd
-CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit.cmake" @ONLY)
-ADD_TEST(NAME "Qsmtpd_quit"
-		COMMAND "${CMAKE_COMMAND}"
-				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit.cmake")
-
 TARGET_LINK_LIBRARIES(testcase_qsdata
 		testcase_io_lib
 		qsmtp_lib
 		${MEMCHECK_LIBRARIES}
 )
 
+# Another brute force test, this time for Qsmtpd
+SET(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/quit.cmake")
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit.cmake" @ONLY)
+ADD_TEST(NAME "Qsmtpd_quit"
+		COMMAND "${CMAKE_COMMAND}"
+				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit.cmake")
+
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit_no_ips.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit_no_ips.cmake" @ONLY)
+ADD_TEST(NAME "Qsmtpd_quit_no_ips"
+		COMMAND "${CMAKE_COMMAND}"
+				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit_no_ips.cmake")
+
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
-SET_TESTS_PROPERTIES(Qsmtpd_quit PROPERTIES
-		PASS_REGULAR_EXPRESSION "^220 [^\n]* ${QSMTP_VERSION} ESMTP\n221 2\\.0\\.0 [^\n]* service closing transmission channel\n$")
+SET_TESTS_PROPERTIES(Qsmtpd_quit Qsmtpd_quit_no_ips PROPERTIES
+		PASS_REGULAR_EXPRESSION "^220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n221 2\\.0\\.0 [^\n ]* service closing transmission channel\n$")
 
+SET(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/postmaster_rset.cmake")
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit_postmaster.cmake" @ONLY)
+ADD_TEST(NAME "Qsmtpd_postmaster_rset"
+		COMMAND "${CMAKE_COMMAND}"
+				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit_postmaster.cmake")
+
+# Do not add \r here, looks like CMake automatically strips it, so just
+# assume we are doing it right.
+SET_TESTS_PROPERTIES(Qsmtpd_postmaster_rset PROPERTIES
+		PASS_REGULAR_EXPRESSION "^220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n250 [^\n ]*\n250 2\\.0\\.0 ok\n250 2\\.0\\.0 ok\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n250 2\\.0\\.0 ok\n503 5\\.5\\.1 Bad sequence of commands\n221 2\\.0\\.0 [^\n ]* service closing transmission channel\n$")
 
 ADD_TEST(NAME "Qsmtpd_data"
 		COMMAND testcase_qsdata)

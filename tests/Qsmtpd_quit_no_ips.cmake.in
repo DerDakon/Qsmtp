@@ -1,0 +1,7 @@
+set(ENV{TCP6LOCALIP} "")
+set(ENV{TCP6REMOTEIP} "")
+set(ENV{TCPLOCALIP} "")
+set(ENV{TCPREMOTEIP} "")
+set(ENV{TCPLOCALPORT} "25")
+execute_process(COMMAND "${CMAKE_COMMAND}" -P "@CMAKE_CURRENT_SOURCE_DIR@/quit.cmake"
+		COMMAND "@CMAKE_BINARY_DIR@/qsmtpd/Qsmtpd")
