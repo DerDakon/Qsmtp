@@ -322,8 +322,8 @@ setup(void)
 			return errno;
 		}
 		rcpthsize = st.st_size;
-		if (rcpthsize < 5) {
-			/* minimum length of domain name: xx.yy = 5 bytes */
+		if (rcpthsize < 4) {
+			/* minimum length of domain name: x.yy = 4 bytes */
 			log_write(LOG_ERR, "control/rcpthosts too short");
 			return 1;
 		}
