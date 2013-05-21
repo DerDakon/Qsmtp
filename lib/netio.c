@@ -292,14 +292,14 @@ net_read(void)
 	do {
 		datain = readinput(linein + readoffset, sizeof(linein) - readoffset);
 		/* now the first readoffset characters of linein are filled with the stuff from the last buffer (if any),
-		* the next datain characters are filled with the data just read, then there is a '\0' */
+		 * the next datain characters are filled with the data just read, then there is a '\0' */
 
 		if (datain == (size_t) -1)
 			return -1;
 
 		/* RfC 2821, section 2.3.7:
-		* "Conforming implementations MUST NOT recognize or generate any other
-		* character or character sequence [than <CRLF>] as a line terminator" */
+		 * "Conforming implementations MUST NOT recognize or generate any other
+		 * character or character sequence [than <CRLF>] as a line terminator" */
 
 		readoffset += datain;
 
