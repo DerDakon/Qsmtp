@@ -37,7 +37,9 @@ unsigned int smtpext;	/**< the SMTP extensions supported by the remote server */
 char *rhost;		/**< the DNS name (if present) and IP address of the remote server to be used in log messages */
 size_t rhostlen;	/**< valid length of rhost */
 char *partner_fqdn;	/**< the DNS name of the remote server, or NULL if no reverse lookup exists */
-size_t chunksize;
+#ifdef CHUNKING
+size_t chunksize;	/**< the maximum allowed size for an outgoing send buffer in BDAT mode */
+#endif
 struct in6_addr outip;
 
 static void
@@ -147,6 +149,7 @@ setup(void)
 	}
 	timeout = chunk;
 
+#ifdef CHUNKING
 	if ( (j = loadintfd(open("control/chunksizeremote", O_RDONLY), &chunk, 32768)) < 0) {
 		err_conf("parse error in control/chunksizeremote");
 	} else {
@@ -155,6 +158,7 @@ setup(void)
 		}
 		chunksize = chunk & 0xffffffff;
 	}
+#endif
 
 	if ( (j = loadoneliner("control/outgoingip", &ipbuf, 1) ) >= 0 ) {
 		int r = inet_pton(AF_INET6, ipbuf, &outip);

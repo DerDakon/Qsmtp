@@ -18,7 +18,9 @@ extern size_t rhostlen;
 extern char *partner_fqdn;
 extern unsigned int smtpext;
 extern string heloname;
+#ifdef CHUNKING
 extern size_t chunksize;
+#endif
 
 struct ips *smtproute(const char *, const size_t, unsigned int *);
 
