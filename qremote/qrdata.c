@@ -98,47 +98,46 @@ send_plain(const char *buf, const off_t len)
 				break;
 			}
 			switch (buf[off + chunk]) {
-				case '\r': {
-						int last = (off + (off_t) ++chunk == len);
+			case '\r': {
+					int last = (off + (off_t) ++chunk == len);
 
-						llen = 0;
-						if (!last && (buf[off + chunk] == '\n')) {
-							chunk++;
-						} else {
-							memcpy(sendbuf + idx, buf + off, chunk);
-							off += chunk;
-							idx += chunk;
-							sendbuf[idx++] = '\n';
-							chunk = 0;
-						}
-						break;
-					}
-				case '\n': {
-						/* bare '\n' */
-						memcpy(sendbuf + idx, buf + off, chunk);
-						off += chunk + 1;
-						idx += chunk;
-						sendbuf[idx++] = '\r';
-						sendbuf[idx++] = '\n';
-						chunk = 0;
-						llen = 0;
-						break;
-					}
-				case '.':
-					if (!llen) {
+					llen = 0;
+					if (!last && (buf[off + chunk] == '\n')) {
 						chunk++;
+					} else {
 						memcpy(sendbuf + idx, buf + off, chunk);
 						off += chunk;
 						idx += chunk;
-						sendbuf[idx++] = '.';
+						sendbuf[idx++] = '\n';
 						chunk = 0;
-						llen = 1;
-						break;
 					}
-					/* fallthrough */
-				default:
+					break;
+				}
+			case '\n':
+				/* bare '\n' */
+				memcpy(sendbuf + idx, buf + off, chunk);
+				off += chunk + 1;
+				idx += chunk;
+				sendbuf[idx++] = '\r';
+				sendbuf[idx++] = '\n';
+				chunk = 0;
+				llen = 0;
+				break;
+			case '.':
+				if (!llen) {
 					chunk++;
+					memcpy(sendbuf + idx, buf + off, chunk);
+					off += chunk;
+					idx += chunk;
+					sendbuf[idx++] = '.';
+					chunk = 0;
 					llen = 1;
+					break;
+				}
+				/* fallthrough */
+			default:
+				chunk++;
+				llen = 1;
 			}
 		}
 		if (chunk) {
@@ -333,52 +332,56 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 	/* first: find the newline between header and body */
 	while (!header && (off < len)) {
 		switch (buf[off]) {
-			case '\r':	off++;
-					if ((off < len) && (buf[off] == '\n'))
-						off++;
-					if (off == len)
-						break;
-					if ((buf[off] == '\r') || (buf[off] == '\n')) {
-						header = off;
+		case '\r':
+			off++;
+			if ((off < len) && (buf[off] == '\n'))
+				off++;
+			if (off == len)
+				break;
+			if ((buf[off] == '\r') || (buf[off] == '\n')) {
+				header = off;
+			}
+			break;
+		case '\n':
+			off++;
+			if (off == len)
+				break;
+			if ((buf[off] == '\r') || (buf[off] == '\n')) {
+				header = off;
+			}
+			break;
+		case 'c':
+		case 'C':
+			{
+				off_t rest = len - off;
+
+				if ((rest >= 12) && !strncasecmp(buf + off + 1, "ontent-Type:", 11)) {
+					const char *cr = buf + off;
+
+					ctype.len = getfieldlen(cr, len - off);
+					if (ctype.len) {
+						ctype.s = cr;
+						off += ctype.len - 2;
 					}
 					break;
-			case '\n':	off++;
-					if (off == len)
-						break;
-					if ((buf[off] == '\r') || (buf[off] == '\n')) {
-						header = off;
+				} else if ((rest >= 25) &&
+						!strncasecmp(buf + off + 1, "ontent-Transfer-Encoding:", 25)) {
+					const char *cr = buf + off;
+
+					cenc.len = getfieldlen(cr, len - off);
+					if (cenc.len) {
+						cenc.s = cr;
+						off += cenc.len - 2;
 					}
 					break;
-			case 'c':
-			case 'C':	{
-						off_t rest = len - off;
-
-						if ((rest >= 12) && !strncasecmp(buf + off + 1, "ontent-Type:", 11)) {
-							const char *cr = buf + off;
-
-							ctype.len = getfieldlen(cr, len - off);
-							if (ctype.len) {
-								ctype.s = cr;
-								off += ctype.len - 2;
-							}
-							break;
-						} else if ((rest >= 25) &&
-								!strncasecmp(buf + off + 1, "ontent-Transfer-Encoding:", 25)) {
-							const char *cr = buf + off;
-
-							cenc.len = getfieldlen(cr, len - off);
-							if (cenc.len) {
-								cenc.s = cr;
-								off += cenc.len - 2;
-							}
-							break;
-						}
-						/* fallthrough */
-					}
-			default:	off++;
-					while ((off < len) && (buf[off] != '\r') && (buf[off] != '\n')) {
-						off++;
-					}
+				}
+				/* fallthrough */
+			}
+		default:
+			off++;
+			while ((off < len) && (buf[off] != '\r') && (buf[off] != '\n')) {
+				off++;
+			}
 		}
 	}
 

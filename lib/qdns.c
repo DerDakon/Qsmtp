@@ -90,14 +90,14 @@ ask_dnsmx(const char *name, struct ips **result)
 		return 0;
 	}
 	switch (errno) {
-		case ETIMEDOUT:
-		case EAGAIN:	return 2;
-		case ENFILE:
-		case EMFILE:
-		case ENOBUFS:	errno = ENOMEM;
-		case ENOMEM:	return -1;
-		case ENOENT:	return 1;
-		default:	return 3;
+	case ETIMEDOUT:
+	case EAGAIN:	return 2;
+	case ENFILE:
+	case EMFILE:
+	case ENOBUFS:	errno = ENOMEM;
+	case ENOMEM:	return -1;
+	case ENOENT:	return 1;
+	default:	return 3;
 	}
 }
 
@@ -148,14 +148,14 @@ ask_dnsaaaa(const char *name, struct ips **result)
 	}
 	free(r);
 	switch (errno) {
-		case ETIMEDOUT:
-		case EAGAIN:	return 2;
-		case ENFILE:
-		case EMFILE:
-		case ENOBUFS:	errno = ENOMEM;
-		case ENOMEM:	return -1;
-		case ENOENT:	return 1;
-		default:	return 3;
+	case ETIMEDOUT:
+	case EAGAIN:	return 2;
+	case ENFILE:
+	case EMFILE:
+	case ENOBUFS:	errno = ENOMEM;
+	case ENOMEM:	return -1;
+	case ENOENT:	return 1;
+	default:	return 3;
 	}
 }
 
@@ -210,14 +210,14 @@ ask_dnsa(const char *name, struct ips **result)
 		return l ? 0 : 1;
 	}
 	switch (errno) {
-		case ETIMEDOUT:
-		case EAGAIN:	return 2;
-		case ENFILE:
-		case EMFILE:
-		case ENOBUFS:	errno = ENOMEM;
-		case ENOMEM:	return -1;
-		case ENOENT:	return 1;
-		default:	return 3;
+	case ETIMEDOUT:
+	case EAGAIN:	return 2;
+	case ENFILE:
+	case EMFILE:
+	case ENOBUFS:	errno = ENOMEM;
+	case ENOMEM:	return -1;
+	case ENOENT:	return 1;
+	default:	return 3;
 	}
 }
 
@@ -241,19 +241,19 @@ ask_dnsname(const struct in6_addr *ip, char **result)
 	if (!r)
 		return *result ? 1 : 0;
 	switch (errno) {
-		case ETIMEDOUT:
-		case EAGAIN:
-			return -2;
-		case ENFILE:
-		case EMFILE:
-		case ENOBUFS:
-			errno = ENOMEM;
-			/* fallthrough */
-		case ENOMEM:
-			return -1;
-		case ENOENT:
-			return 0;
-		default:
-			return -3;
+	case ETIMEDOUT:
+	case EAGAIN:
+		return -2;
+	case ENFILE:
+	case EMFILE:
+	case ENOBUFS:
+		errno = ENOMEM;
+		/* fallthrough */
+	case ENOMEM:
+		return -1;
+	case ENOENT:
+		return 0;
+	default:
+		return -3;
 	}
 }

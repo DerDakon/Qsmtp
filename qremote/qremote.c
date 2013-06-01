@@ -250,16 +250,19 @@ netget(void)
 
 	if (net_read()) {
 		switch (errno) {
-			case ENOMEM:	err_mem(1);
-			case EINVAL:
-			case E2BIG:	goto syntax;
-			default:	{
-						char *tmp = strerror(errno);
+		case ENOMEM:
+			err_mem(1);
+		case EINVAL:
+		case E2BIG:
+			goto syntax;
+		default:
+			{
+				char *tmp = strerror(errno);
 
-						write(1, "Z", 1);
-						write(1, tmp, strlen(tmp) + 1);
-						quit();
-					}
+				write(1, "Z", 1);
+				write(1, tmp, strlen(tmp) + 1);
+				quit();
+			}
 		}
 	}
 	if (linelen < 3)

@@ -441,20 +441,20 @@ editwrite(const int type)
 		}
 
 		switch (type) {
-			case 0:
-			case 1:
-			case 2:	for (struct addrlist *thisad = editbuffer.buf.lhead.tqh_first;
-							thisad; thisad = thisad->entries.tqe_next) {
-					if (fprintf(fcfd, "%s\n", thisad->address) < 0)
-						goto err;
-				}
-				break;
-			case 3:
-			case 4:	for (unsigned int i = 0; i < editbuffer.buf.map.len; i++) {
-					if (fprintf(fcfd, "%c", editbuffer.buf.map.mem[i]) != 1)
-						goto err;
-				}
-				break;
+		case 0:
+		case 1:
+		case 2:	for (struct addrlist *thisad = editbuffer.buf.lhead.tqh_first;
+						thisad; thisad = thisad->entries.tqe_next) {
+				if (fprintf(fcfd, "%s\n", thisad->address) < 0)
+					goto err;
+			}
+			break;
+		case 3:
+		case 4:	for (unsigned int i = 0; i < editbuffer.buf.map.len; i++) {
+				if (fprintf(fcfd, "%c", editbuffer.buf.map.mem[i]) != 1)
+					goto err;
+			}
+			break;
 		}
 
 		if (fclose(fcfd))
@@ -501,121 +501,121 @@ editadd(const int type)
 	}
 
 	switch (type) {
-		case 0:
-		case 1:
-		case 2:	{
-				struct addrlist *newad = malloc(sizeof(*newad));
-				unsigned int len = strlen(linein + 4);
-				linein[3 + len--] = '\0';
+	case 0:
+	case 1:
+	case 2:	{
+			struct addrlist *newad = malloc(sizeof(*newad));
+			unsigned int len = strlen(linein + 4);
+			linein[3 + len--] = '\0';
 
 #warning FIXME: some error handling for parameter is missing here
-				switch (type) {
-					case 2:	if (!strchr(linein + 4, '.'))
-							goto parse;
-					case 1:	if (strchr(linein + 4, '@'))
-							goto parse;
-					case 0:	{
-							char *tmp;
+			switch (type) {
+			case 2:	if (!strchr(linein + 4, '.'))
+					goto parse;
+			case 1:	if (strchr(linein + 4, '@'))
+					goto parse;
+			case 0:	{
+					char *tmp;
 
-							/* this is allowed neither in domain nor in localpart
-							 * even if a single '.' is allowed in both */
-							if (strstr(linein + 4, ".."))
-								goto parse;
-							tmp = strchr(linein + 4, '@');
-							if (tmp) {
+					/* this is allowed neither in domain nor in localpart
+					 * even if a single '.' is allowed in both */
+					if (strstr(linein + 4, ".."))
+						goto parse;
+					tmp = strchr(linein + 4, '@');
+					if (tmp) {
 /* check localpart */
-								char *l = linein + 4;
+						char *l = linein + 4;
 
-								while (l < tmp) {
-									if ((*l < 32) || (*l >= 127))
-										goto parse;
-									l++;
-								}
-								tmp++;
-							} else {
-								tmp = linein + 4;
-							}
-/* check domain */
-							while (*tmp) {
-								if ((*tmp < 46) || (*tmp == '/') || ((*tmp >= 58) && (*tmp <= 64)) ||
-										((*tmp >= 91) && (*tmp <= 96)) || (*tmp > 'z'))
-									goto parse;
-								tmp++;
-							}
+						while (l < tmp) {
+							if ((*l < 32) || (*l >= 127))
+								goto parse;
+							l++;
 						}
+						tmp++;
+					} else {
+						tmp = linein + 4;
+					}
+/* check domain */
+					while (*tmp) {
+						if ((*tmp < 46) || (*tmp == '/') || ((*tmp >= 58) && (*tmp <= 64)) ||
+								((*tmp >= 91) && (*tmp <= 96)) || (*tmp > 'z'))
+							goto parse;
+						tmp++;
+					}
 				}
-				if (!newad)
-					goto nomem;
-				newad->address = malloc(len);
-				if (!newad->address) {
-					free(newad);
-					goto nomem;
-				}
-				memcpy(newad->address, linein + 4, len);
-				TAILQ_INSERT_TAIL(&editbuffer.buf.lhead, newad, entries);
 			}
-			break;
-		case 3: {
-				char *newbuf;
-				char *net;
-				struct in_addr ip;
-				unsigned char netlen;
+			if (!newad)
+				goto nomem;
+			newad->address = malloc(len);
+			if (!newad->address) {
+				free(newad);
+				goto nomem;
+			}
+			memcpy(newad->address, linein + 4, len);
+			TAILQ_INSERT_TAIL(&editbuffer.buf.lhead, newad, entries);
+		}
+		break;
+	case 3: {
+			char *newbuf;
+			char *net;
+			struct in_addr ip;
+			unsigned char netlen;
 
-				net = strchr(linein + 4, '/');
-				if (net) {
-					unsigned int ui;
+			net = strchr(linein + 4, '/');
+			if (net) {
+				unsigned int ui;
 
-					*net++ = '\0';
-					ui = strtoul(net, &net, 10);
-					if ((*net != '\n') || (ui < 8) || (ui > 32))
-						goto parse;
-					netlen = (ui & 0xff);
-				} else {
-					*(strchr(linein + 4, '\n')) = '\0';
-					netlen = 0;
-				}
-				if (!inet_pton(AF_INET, linein + 4, &ip))
+				*net++ = '\0';
+				ui = strtoul(net, &net, 10);
+				if ((*net != '\n') || (ui < 8) || (ui > 32))
 					goto parse;
-
-				newbuf  = realloc(editbuffer.buf.map.mem, editbuffer.buf.map.len + 5);
-				if (!newbuf)
-					goto nomem;
-				editbuffer.buf.map.mem = newbuf;
-				memcpy(newbuf + editbuffer.buf.map.len, &ip, 4);
-				memcpy(newbuf + editbuffer.buf.map.len + 4, &netlen, 1);
-				editbuffer.buf.map.len += 5;
+				netlen = (ui & 0xff);
+			} else {
+				*(strchr(linein + 4, '\n')) = '\0';
+				netlen = 0;
 			}
-			break;
-		case 4: {
-				char *newbuf;
-				char *net;
-				struct in6_addr ip;
-				unsigned char netlen;
+			if (!inet_pton(AF_INET, linein + 4, &ip))
+				goto parse;
 
-				net = strchr(linein + 4, '/');
-				if (net) {
-					unsigned int ui;
+			newbuf  = realloc(editbuffer.buf.map.mem, editbuffer.buf.map.len + 5);
+			if (!newbuf)
+				goto nomem;
+			editbuffer.buf.map.mem = newbuf;
+			memcpy(newbuf + editbuffer.buf.map.len, &ip, 4);
+			memcpy(newbuf + editbuffer.buf.map.len + 4, &netlen, 1);
+			editbuffer.buf.map.len += 5;
+		}
+		break;
+	case 4: {
+			char *newbuf;
+			char *net;
+			struct in6_addr ip;
+			unsigned char netlen;
 
-					*net++ = '\0';
-					ui = strtoul(net, &net, 10);
-					if ((*net != '\n') || (ui < 8) || (ui > 128))
-						goto parse;
-					netlen = (ui & 0xff);
-				} else {
-					netlen = 0;
-				}
-				if (!inet_pton(AF_INET6, linein + 4, &ip))
+			net = strchr(linein + 4, '/');
+			if (net) {
+				unsigned int ui;
+
+				*net++ = '\0';
+				ui = strtoul(net, &net, 10);
+				if ((*net != '\n') || (ui < 8) || (ui > 128))
 					goto parse;
-
-				newbuf  = realloc(editbuffer.buf.map.mem, editbuffer.buf.map.len + 17);
-				if (!newbuf)
-					goto nomem;
-				editbuffer.buf.map.mem = newbuf;
-				memcpy(newbuf + editbuffer.buf.map.len, &ip, 16);
-				memcpy(newbuf + editbuffer.buf.map.len + 16, &netlen, 1);
-				editbuffer.buf.map.len += 17;
+				netlen = (ui & 0xff);
+			} else {
+				netlen = 0;
 			}
-			break;
+			if (!inet_pton(AF_INET6, linein + 4, &ip))
+				goto parse;
+
+			newbuf  = realloc(editbuffer.buf.map.mem, editbuffer.buf.map.len + 17);
+			if (!newbuf)
+				goto nomem;
+			editbuffer.buf.map.mem = newbuf;
+			memcpy(newbuf + editbuffer.buf.map.len, &ip, 16);
+			memcpy(newbuf + editbuffer.buf.map.len + 16, &netlen, 1);
+			editbuffer.buf.map.len += 17;
+		}
+		break;
 	}
 	return;
 nomem:

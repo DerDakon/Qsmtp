@@ -194,16 +194,17 @@ netget(void)
 
 	if (net_read()) {
 		switch (errno) {
-			case ENOMEM:	err_mem(1);
-			case EINVAL:
-			case E2BIG:	goto syntax;
-			default:	{
-						char *tmp = strerror(errno);
+		case ENOMEM:	err_mem(1);
+		case EINVAL:
+		case E2BIG:	goto syntax;
+		default:
+			{
+				char *tmp = strerror(errno);
 
-						write(1, "Z", 1);
-						write(1, tmp, strlen(tmp) + 1);
-						quit();
-					}
+				write(1, "Z", 1);
+				write(1, tmp, strlen(tmp) + 1);
+				quit();
+			}
 		}
 	}
 	if (linelen < 3)
@@ -396,12 +397,12 @@ void
 dieerror(int error)
 {
 	switch (error) {
-		case ETIMEDOUT:	write(1, "Zconnection to remote server died\n", 35);
-				log_write(LOG_WARNING, "connection timed out");
-				break;
-		case ECONNRESET:write(1, "Zconnection to remote timed out\n", 33);
-				log_write(LOG_WARNING, "connection died");
-				break;
+	case ETIMEDOUT:	write(1, "Zconnection to remote server died\n", 35);
+			log_write(LOG_WARNING, "connection timed out");
+			break;
+	case ECONNRESET:write(1, "Zconnection to remote timed out\n", 33);
+			log_write(LOG_WARNING, "connection died");
+			break;
 	}
 	_exit(0);
 }
@@ -458,10 +459,10 @@ main(int argc, char *argv[])
 			exit(0);
 
 		switch (fork()) {
-			case -1:	i = errno;
-					write(2, "unable to fork\n", 15);
-					exit(i);
-			case 0:		goto work;
+		case -1:	i = errno;
+				write(2, "unable to fork\n", 15);
+				exit(i);
+		case 0:		goto work;
 		}
 
 		mx = mx->next;

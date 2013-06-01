@@ -160,8 +160,12 @@ dieerror(int error)
 	const char *logmsg[] = {"connection from [", xmitstat.remoteip, NULL, NULL};
 
 	switch (error) {
-		case ETIMEDOUT:	logmsg[2] = "] timed out"; break;
-		case ECONNRESET:logmsg[2] = "] died"; break;
+	case ETIMEDOUT:
+		logmsg[2] = "] timed out";
+		break;
+	case ECONNRESET:
+		logmsg[2] = "] died";
+		break;
 	}
 	log_writen(LOG_WARNING, logmsg);
 	_exit(error);
@@ -1273,20 +1277,24 @@ userdenied:
 	if (i > 0)
 		tarpit();
 	switch (i) {
-		case -1:j = 1; break;
-		case 2:	if ( (j = netwrite("550 5.7.1 mail denied for policy reasons\r\n")) )
-				e = errno;
-			break;
-		case 3:	{
-				const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
+	case -1:
+		j = 1;
+		break;
+	case 2:
+		if ( (j = netwrite("550 5.7.1 mail denied for policy reasons\r\n")) )
+			e = errno;
+		break;
+	case 3:	{
+			const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
 
-				if ( (j = net_writen(rcptmsg)) )
-					e = errno;
-			}
-			break;
-		case 4:	if ( (j = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
+			if ( (j = net_writen(rcptmsg)) )
 				e = errno;
-			break;
+		}
+		break;
+	case 4:
+		if ( (j = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
+			e = errno;
+		break;
 	}
 	return j ? e : 0;
 }
@@ -1397,22 +1405,26 @@ smtp_from(void)
 		int e;
 
 		switch (e = errno) {
-			case EINTR:	break;
-			case ENOMEM:	return e;
-			case ENOENT:	/* uncritical: only means that qmail-send is not running */
-			case ENOSYS:
-			/* will happen in most cases because program runs not in group qmail */
-			case EACCES:	log_write(LOG_WARNING, "warning: can not get free queue disk space");
-					goto next;
-/*			case ELOOP:
-			case ENAMETOOLONG:
-			case ENOTDIR:
-			case EOVERFLOW:
-			case EIO:*/
-			/* the other errors not named above should really never happen so
-			 * just use default to get better code */
-			default:	log_write(LOG_ERR, "critical: can not get free queue disk space");
-					return e;
+		case EINTR:
+			break;
+		case ENOMEM:
+			return e;
+		case ENOENT:	/* uncritical: only means that qmail-send is not running */
+		case ENOSYS:
+		/* will happen in most cases because program runs not in group qmail */
+		case EACCES:
+			log_write(LOG_WARNING, "warning: can not get free queue disk space");
+			goto next;
+/*		case ELOOP:
+		case ENAMETOOLONG:
+		case ENOTDIR:
+		case EOVERFLOW:
+		case EIO:*/
+		/* the other errors not named above should really never happen so
+			* just use default to get better code */
+		default:
+			log_write(LOG_ERR, "critical: can not get free queue disk space");
+			return e;
 		}
 	}
 next:
@@ -1634,54 +1646,54 @@ smtploop(void)
 			 * occured during error handling. This is a very bad sign: either
 			 * we are very short of resources or the client is really really broken */
 			switch (flagbogus) {
-				case EBADRQC:	tarpit();
-						log_write(LOG_INFO, "bad SMTP command parameter");
-						flagbogus = netwrite("501 5.5.2 unrecognized command parameter\r\n") ? errno : 0;
-						break;
-				case EINVAL:	tarpit();
-						log_write(LOG_INFO, "bad SMTP command syntax");
-						flagbogus = netwrite("500 5.5.2 command syntax error\r\n") ? errno : 0;
-						break;
-				case E2BIG:	tarpit();
-						log_write(LOG_INFO, "too long SMTP line");
-						flagbogus = netwrite("500-5.5.2 line too long\r\n500-This is usually a bug in your mail client\r\n500 Try to use a different encoding like quoted-printable for this mail.\r\n") ? errno : 0;
-						break;
-				case ENOMEM:	/* ignore errors for the first 2 messages: if the third
-						 * one succeeds everything is ok */
-						netwrite("452-4.3.0 out of memory\r\n");
-						sleep(30);
-						netwrite("452-4.3.0 give me some time to recover\r\n");
-						sleep(30);
-						badcmds = 0;
-						log_write(LOG_ERR, "out of memory");
-						flagbogus = netwrite("452 4.3.0 please try again later\r\n") ? errno : 0;
-						break;
-				case EIO:	badcmds = 0;
-						log_write(LOG_ERR, "IO error");
-						flagbogus = netwrite("451 4.3.0 IO error, please try again later\r\n") ? errno : 0;
-						break;
-				case EMSGSIZE:	badcmds = 0;
-						flagbogus = netwrite("552 4.3.1 Too much mail data\r\n") ? errno : 0;
-						break;
-				case EPROTO:	flagbogus = netwrite("550 5.7.5 data encryption error\r\n") ? errno : 0;
-						break;
-				case EROFS:	log_write(LOG_ERR, "HELP! queue filesystem looks read only!");
-						badcmds = 0;
-						flagbogus = netwrite("452 4.3.5 cannot write to queue\r\n") ? errno : 0;
-						break;
-				case 1:		tarpit();
-						flagbogus = netwrite("503 5.5.1 Bad sequence of commands\r\n") ? errno : 0;
-						break;
-				case EDONE:	badcmds = 0;	/* fallthrough */
-				case EBOGUS:	flagbogus = 0;
-						break;
-				case EINTR:	log_write(LOG_WARNING, "interrupted by signal");
-						_exit(EINTR);
-				case ECONNRESET:dieerror(flagbogus);
-				default:	log_write(LOG_ERR, "writer error. kick me.");
-						log_write(LOG_ERR, strerror(flagbogus));
-						badcmds = 0;
-						flagbogus = netwrite("500 5.3.0 unknown error\r\n") ? errno : 0;
+			case EBADRQC:	tarpit();
+					log_write(LOG_INFO, "bad SMTP command parameter");
+					flagbogus = netwrite("501 5.5.2 unrecognized command parameter\r\n") ? errno : 0;
+					break;
+			case EINVAL:	tarpit();
+					log_write(LOG_INFO, "bad SMTP command syntax");
+					flagbogus = netwrite("500 5.5.2 command syntax error\r\n") ? errno : 0;
+					break;
+			case E2BIG:	tarpit();
+					log_write(LOG_INFO, "too long SMTP line");
+					flagbogus = netwrite("500-5.5.2 line too long\r\n500-This is usually a bug in your mail client\r\n500 Try to use a different encoding like quoted-printable for this mail.\r\n") ? errno : 0;
+					break;
+			case ENOMEM:	/* ignore errors for the first 2 messages: if the third
+						* one succeeds everything is ok */
+					netwrite("452-4.3.0 out of memory\r\n");
+					sleep(30);
+					netwrite("452-4.3.0 give me some time to recover\r\n");
+					sleep(30);
+					badcmds = 0;
+					log_write(LOG_ERR, "out of memory");
+					flagbogus = netwrite("452 4.3.0 please try again later\r\n") ? errno : 0;
+					break;
+			case EIO:	badcmds = 0;
+					log_write(LOG_ERR, "IO error");
+					flagbogus = netwrite("451 4.3.0 IO error, please try again later\r\n") ? errno : 0;
+					break;
+			case EMSGSIZE:	badcmds = 0;
+					flagbogus = netwrite("552 4.3.1 Too much mail data\r\n") ? errno : 0;
+					break;
+			case EPROTO:	flagbogus = netwrite("550 5.7.5 data encryption error\r\n") ? errno : 0;
+					break;
+			case EROFS:	log_write(LOG_ERR, "HELP! queue filesystem looks read only!");
+					badcmds = 0;
+					flagbogus = netwrite("452 4.3.5 cannot write to queue\r\n") ? errno : 0;
+					break;
+			case 1:		tarpit();
+					flagbogus = netwrite("503 5.5.1 Bad sequence of commands\r\n") ? errno : 0;
+					break;
+			case EDONE:	badcmds = 0;	/* fallthrough */
+			case EBOGUS:	flagbogus = 0;
+					break;
+			case EINTR:	log_write(LOG_WARNING, "interrupted by signal");
+					_exit(EINTR);
+			case ECONNRESET:dieerror(flagbogus);
+			default:	log_write(LOG_ERR, "writer error. kick me.");
+					log_write(LOG_ERR, strerror(flagbogus));
+					badcmds = 0;
+					flagbogus = netwrite("500 5.3.0 unknown error\r\n") ? errno : 0;
 			}
 			/* do not work on the command now: it was either not read or was bogus.
 			 * Start again and try to read one new to see if it get's better */

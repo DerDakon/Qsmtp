@@ -737,28 +737,32 @@ spf_makro(const char *token, const char *domain, int ex, char **result)
 			int z;
 
 			switch (*++p) {
-				case '-':	APPEND(3, "%20");
-						p++;
-						break;
-				case '_':	APPEND(1, " ");
-						p++;
-						break;
-				case '%':	APPEND(1, "%");
-						p++;
-						break;
-				case '{':	z = spf_makroletter(++p, domain, ex, &res, &l);
-						if (z == -1) {
-							return z;
-						} else if (z == -SPF_FAIL_MALF) {
-							return SPF_FAIL_MALF;
-						} else if (!z || (*(p + z) != '}')) {
-							PARSEERR;
-						}
-						p += z + 1;
-						break;
-				default:
-					free(res);
+			case '-':
+				APPEND(3, "%20");
+				p++;
+				break;
+			case '_':
+				APPEND(1, " ");
+				p++;
+				break;
+			case '%':
+				APPEND(1, "%");
+				p++;
+				break;
+			case '{':
+				z = spf_makroletter(++p, domain, ex, &res, &l);
+				if (z == -1) {
+					return z;
+				} else if (z == -SPF_FAIL_MALF) {
 					return SPF_FAIL_MALF;
+				} else if (!z || (*(p + z) != '}')) {
+					PARSEERR;
+				}
+				p += z + 1;
+				break;
+			default:
+				free(res);
+				return SPF_FAIL_MALF;
 			}
 			if (*p != '%') {
 				const char *oldp = p;
@@ -1079,10 +1083,14 @@ spfmx(const char *domain, const char *token)
 		i = ask_dnsmx(domain, &mx);
 	}
 	switch (i) {
-		case 1: return SPF_NONE;
-		case 2: return SPF_TEMP_ERROR;
-		case 3:	return SPF_HARD_ERROR;
-		case -1:return -1;
+	case 1:
+		return SPF_NONE;
+	case 2:
+		return SPF_TEMP_ERROR;
+	case 3:
+		return SPF_HARD_ERROR;
+	case -1:
+		return -1;
 	}
 	if (!mx) {
 		return SPF_NONE;
@@ -1213,15 +1221,20 @@ spfexists(const char *domain, const char *token)
 	free(domainspec);
 
 	switch (i) {
-		case 0:	r = SPF_PASS;
-			break;
-		case 1:	r = SPF_NONE;
-			break;
-		case 2:	r = SPF_TEMP_ERROR;
-			break;
-		case -1:	r = -1;
-			break;
-		default:r = SPF_HARD_ERROR;
+	case 0:
+		r = SPF_PASS;
+		break;
+	case 1:
+		r = SPF_NONE;
+		break;
+	case 2:
+		r = SPF_TEMP_ERROR;
+		break;
+	case -1:
+		r = -1;
+		break;
+	default:
+		r = SPF_HARD_ERROR;
 	}
 	return r;
 }
@@ -1590,14 +1603,18 @@ spflookup(const char *domain, const int rec)
 
 	if (i) {
 		switch (errno) {
-			case ENOENT:	return SPF_NONE;
-			case ETIMEDOUT:
-			case EIO:
-			case ECONNREFUSED:
-			case EAGAIN:	return SPF_TEMP_ERROR;
-			case EINVAL:	return SPF_HARD_ERROR;
-			case ENOMEM:
-			default:	return -1;
+		case ENOENT:
+			return SPF_NONE;
+		case ETIMEDOUT:
+		case EIO:
+		case ECONNREFUSED:
+		case EAGAIN:
+			return SPF_TEMP_ERROR;
+		case EINVAL:
+			return SPF_HARD_ERROR;
+		case ENOMEM:
+		default:
+			return -1;
 		}
 	}
 	if (!txt)
@@ -1626,17 +1643,26 @@ spflookup(const char *domain, const int rec)
 			break;
 		}
 		switch(*token) {
-			case '-':	token++; prefix = SPF_FAIL_PERM; break;
-			case '~':	token++; prefix = SPF_SOFTFAIL; break;
-			case '+':	token++; prefix = SPF_PASS; break;
-			case '?':	token++; prefix = SPF_NEUTRAL; break;
-			default:	if (((*token >= 'a') && (*token <= 'z')) ||
-								((*token >= 'A') && (*token <= 'Z'))) {
-						prefix = SPF_PASS;
-					} else {
-						free(txt);
-						return SPF_FAIL_MALF;
-					}
+		case '-':
+			token++; prefix = SPF_FAIL_PERM;
+			break;
+		case '~':
+			token++; prefix = SPF_SOFTFAIL;
+			break;
+		case '+':
+			token++; prefix = SPF_PASS;
+			break;
+		case '?':
+			token++; prefix = SPF_NEUTRAL;
+			break;
+		default:
+			if (((*token >= 'a') && (*token <= 'z')) ||
+					((*token >= 'A') && (*token <= 'Z'))) {
+				prefix = SPF_PASS;
+			} else {
+				free(txt);
+				return SPF_FAIL_MALF;
+			}
 		}
 		if ( (mechlen = match_mechanism(token, "mx", ":/")) != 0) {
 			token += mechlen;
