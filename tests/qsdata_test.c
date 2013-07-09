@@ -71,7 +71,7 @@ spfreceived(int fd, const int spf)
 
 	r = write(fd, buf, strlen(buf));
 
-	if ((r == strlen(buf)) && (r > 0))
+	if ((r == (ssize_t)strlen(buf)) && (r > 0))
 		return 0;
 	else
 		return -1;
@@ -256,7 +256,7 @@ check_queueheader(void)
 			break;
 		}
 
-		while (off < sizeof(outbuf) - 1) {
+		while (off < (ssize_t)sizeof(outbuf) - 1) {
 			ssize_t r = read(fd0[0], outbuf + off, 1);
 			if (r < 0) {
 				if (errno != EAGAIN) {
