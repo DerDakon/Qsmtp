@@ -508,8 +508,15 @@ main(int argc, char *argv[])
 	}
 
 	getmxlist(argv[1], &mx);
-	if (targetport == 25)
+	if (targetport == 25) {
 		mx = filter_my_ips(mx);
+		if (mx == NULL) {
+			write(1, "Z4.4.3 all mail exchangers for ", 31);
+			write(1, argv[1], strlen(argv[1]));
+			write_status(" point back to me\n");
+			net_conn_shutdown(shutdown_abort);
+		}
+	}
 	sortmx(&mx);
 
 	/* this shouldn't fail normally: qmail-rspawn did it before successfully */
