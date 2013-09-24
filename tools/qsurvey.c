@@ -35,6 +35,19 @@ size_t rhostlen;
 char *partner_fqdn;
 static int logfd;
 
+/**
+ * @brief write status message to stdout
+ * @param str the string to write
+ *
+ * This will include the trailing 0-byte in the output as qmail-rspawn awaits
+ * that as separator between the output fields.
+ */
+ssize_t
+write_status(const char *str)
+{
+	return write(1, str, strlen(str) + 1);
+}
+
 static void quitmsg(void);
 
 void
@@ -43,7 +56,7 @@ err_mem(const int doquit)
 	if (doquit)
 		quitmsg();
 /* write text including 0 byte */
-	write(1, "Z4.3.0 Out of memory.\n", 23);
+	write_status("Z4.3.0 Out of memory.\n");
 	_exit(0);
 }
 
@@ -53,7 +66,7 @@ err_confn(const char **errmsg, void *freebuf)
 	log_writen(LOG_ERR, errmsg);
 	free(freebuf);
 	/* write text including 0 byte */
-	write(1, "Z4.3.0 Configuration error.\n", 29);
+	write_status("Z4.3.0 Configuration error.\n");
 	_exit(0);
 }
 
@@ -202,7 +215,7 @@ netget(void)
 				char *tmp = strerror(errno);
 
 				write(1, "Z", 1);
-				write(1, tmp, strlen(tmp) + 1);
+				write_status(tmp);
 				quit();
 			}
 		}
@@ -230,7 +243,7 @@ netget(void)
 	return r * 10 + q;
 syntax:
 	/* if this fails we're already in bad trouble */
-	(void) write(1, "Zsyntax error in server reply\n", 31);
+	(void) write_status("Zsyntax error in server reply\n");
 	quit();
 }
 
@@ -397,12 +410,14 @@ void
 dieerror(int error)
 {
 	switch (error) {
-	case ETIMEDOUT:	write(1, "Zconnection to remote server died\n", 35);
-			log_write(LOG_WARNING, "connection timed out");
-			break;
-	case ECONNRESET:write(1, "Zconnection to remote timed out\n", 33);
-			log_write(LOG_WARNING, "connection died");
-			break;
+	case ETIMEDOUT:
+		write_status("Zconnection to remote server died\n");
+		log_write(LOG_WARNING, "connection timed out");
+		break;
+	case ECONNRESET:
+		write_status("Zconnection to remote timed out\n");
+		log_write(LOG_WARNING, "connection died");
+		break;
 	}
 	_exit(0);
 }

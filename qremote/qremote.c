@@ -42,6 +42,19 @@ size_t chunksize;	/**< the maximum allowed size for an outgoing send buffer in B
 #endif
 struct in6_addr outip;
 
+/**
+ * @brief write status message to stdout
+ * @param str the string to write
+ *
+ * This will include the trailing 0-byte in the output as qmail-rspawn awaits
+ * that as separator between the output fields.
+ */
+ssize_t
+write_status(const char *str)
+{
+	return write(1, str, strlen(str) + 1);
+}
+
 static void
 quitmsg(void)
 {
@@ -84,8 +97,7 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 void
 err_mem(const int doquit)
 {
-/* write text including 0 byte */
-	write(1, "Z4.3.0 Out of memory.\n", 23);
+	write_status("Z4.3.0 Out of memory.\n");
 
 	net_conn_shutdown(doquit ? shutdown_clean : shutdown_abort);
 }
@@ -110,8 +122,8 @@ err_confn(const char **errmsg, void *freebuf)
 {
 	log_writen(LOG_ERR, errmsg);
 	free(freebuf);
-	/* write text including 0 byte */
-	write(1, "Z4.3.0 Configuration error.\n", 29);
+
+	write_status("Z4.3.0 Configuration error.\n");
 	net_conn_shutdown(shutdown_clean);
 }
 
@@ -260,7 +272,7 @@ netget(void)
 				char *tmp = strerror(errno);
 
 				write(1, "Z", 1);
-				write(1, tmp, strlen(tmp) + 1);
+				write_status(tmp);
 				quit();
 			}
 		}
@@ -282,7 +294,7 @@ netget(void)
 	return r * 10 + q;
 syntax:
 	/* if this fails we're already in bad trouble */
-	(void) write(1, "Zsyntax error in server reply\n", 31);
+	(void) write_status("Zsyntax error in server reply\n");
 	quit();
 }
 
@@ -459,12 +471,12 @@ dieerror(int error)
 
 	switch (error) {
 	case ETIMEDOUT:
-		write(1, "Zconnection to remote timed out\n", 33);
+		write_status("Zconnection to remote timed out\n");
 		logmsg[2] = " timed out";
 		log_writen(LOG_WARNING, logmsg);
 		break;
 	case ECONNRESET:
-		write(1, "Zconnection to remote server died\n", 35);
+		write_status("Zconnection to remote server died\n");
 		logmsg[2] = " died";
 		log_writen(LOG_WARNING, logmsg);
 		break;
@@ -491,7 +503,7 @@ main(int argc, char *argv[])
 
 	if (rcptcount <= 0) {
 		log_write(LOG_CRIT, "too few arguments");
-		write(1, "Zinternal error: Qremote called with invalid arguments\n", 56);
+		write_status("Zinternal error: Qremote called with invalid arguments\n");
 		net_conn_shutdown(shutdown_abort);
 	}
 
@@ -506,7 +518,7 @@ main(int argc, char *argv[])
 		if (errno == ENOMEM)
 			err_mem(0);
 		log_write(LOG_CRIT, "can't fstat() input");
-		write(1, "Zinternal error: can't fstat() input\n", 38);
+		write_status("Zinternal error: can't fstat() input\n");
 		freeips(mx);
 		net_conn_shutdown(shutdown_abort);
 	}
@@ -515,7 +527,7 @@ main(int argc, char *argv[])
 
 	if (msgdata == MAP_FAILED) {
 		log_write(LOG_CRIT, "can't mmap() input");
-		write(1, "Zinternal error: can't mmap() input\n", 37);
+		write_status("Zinternal error: can't mmap() input\n");
 		freeips(mx);
 		net_conn_shutdown(shutdown_abort);
 	}
@@ -530,7 +542,7 @@ main(int argc, char *argv[])
 			if (errno == ENOMEM)
 				err_mem(1);
 			log_write(LOG_ERR, "error parsing EHLO response");
-			write(1, "Zinternal error: can't parse EHLO response\n", 33);
+			write_status("Zinternal error: can't parse EHLO response\n");
 			return 0;
 		}
 */
@@ -550,7 +562,7 @@ main(int argc, char *argv[])
 					err_mem(1);
 			case EINVAL:
 			case E2BIG:
-					(void) write(1, "Zsyntax error in server reply\n", 31);
+					(void) write_status("Zsyntax error in server reply\n");
 					quitmsg();
 					break;
 			default:
@@ -558,7 +570,7 @@ main(int argc, char *argv[])
 					const char *tmp = strerror(errno);
 
 					write(1, "Z", 1);
-					write(1, tmp, strlen(tmp) + 1);
+					write_status(tmp);
 					quitmsg();
 				}
 			}
@@ -583,7 +595,7 @@ main(int argc, char *argv[])
 	if (smtpext & SMTPEXT_STARTTLS) {
 		if (tls_init()) {
 			if (greeting()) {
-				write(1, "ZEHLO failed after STARTTLS\n", 29);
+				write_status("ZEHLO failed after STARTTLS\n");
 				quit();
 			}
 			successmsg[4] = " encrypted";
@@ -640,7 +652,7 @@ main(int argc, char *argv[])
 /* RCPT TO: replies */
 		for (i = rcptcount; i > 0; i--) {
 			if (checkreply(" sh", NULL, 0) < 300) {
-				write(1, "r", 2);
+				write_status("r");
 				rcptstat = 0;
 			}
 		}
@@ -662,7 +674,7 @@ main(int argc, char *argv[])
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
 			if (checkreply(" sh", NULL, 0) < 300) {
-				write(1, "r", 2);
+				write_status("r");
 				rcptstat = 0;
 			}
 		}

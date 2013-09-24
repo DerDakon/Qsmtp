@@ -12,6 +12,7 @@ extern void err_confn(const char **, void *) __attribute__ ((noreturn)) __attrib
 extern void quit(void) __attribute__ ((noreturn));
 extern int netget(void);
 extern int checkreply(const char *, const char **, const int);
+extern ssize_t write_status(const char *str) __attribute__ ((nonnull (1)));
 
 extern char *rhost;
 extern size_t rhostlen;
