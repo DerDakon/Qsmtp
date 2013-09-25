@@ -354,7 +354,7 @@ setup(void)
 		log_write(LOG_ERR, "can't figure out local IP (parse error)");
 		return 1;
 	}
-	memcpy(xmitstat.localip, tmp + 7, strlen(tmp + 7));
+	memcpy(xmitstat.localip, tmp, strlen(tmp));
 
 	tmp = getenv("TCPREMOTEIP");
 	if (!tmp || !*tmp) {
