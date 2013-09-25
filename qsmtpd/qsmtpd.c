@@ -102,7 +102,8 @@ string liphost;				/**< replacement domain if TO address is <foo@[ip]> */
 int socketd = 1;			/**< the descriptor where messages to network are written to */
 long comstate = 0x001;			/**< status of the command state machine, initialized to noop */
 int authhide;				/**< hide source of authenticated mail */
-int submission_mode;		/**< if we should act as message submission agent */
+int submission_mode;			/**< if we should act as message submission agent */
+char certfilename[24 + INET6_ADDRSTRLEN] = "control/servercert.pem";		/**< path to SSL certificate filename */
 
 struct recip *thisrecip;
 
@@ -704,7 +705,17 @@ smtp_ehlo(void)
 	}
 /* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
 	if (!ssl && ((localport == NULL) || (strcmp("LOCALPORT", "465") != 0))) {
-		int fd = open("control/servercert.pem", O_RDONLY);
+		const size_t oldlen = strlen(certfilename);
+		int fd;
+
+		certfilename[oldlen] = '.';
+		strncpy(certfilename + oldlen + 1, xmitstat.localip,
+				sizeof(certfilename) - oldlen - 1);
+		fd = open(certfilename, O_RDONLY);
+		if (fd < 0) {
+			certfilename[oldlen] = '\0';
+			fd = open(certfilename, O_RDONLY);
+		}
 
 		if (fd >= 0) {
 			while (close(fd) && (errno == EINTR));

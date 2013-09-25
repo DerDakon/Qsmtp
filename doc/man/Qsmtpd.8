@@ -211,10 +211,16 @@ If this 512 RSA key is provided,
 will use it for TLS sessions instead of generaring one on-the-fly.
 
 .TP 4
+.I servercert.pem.a.a.a.a
+SSL certificate specific to the IP the server is listening on. See 
+.IR servercert.pem .
+
+.TP 4
 .I servercert.pem
 SSL certificate to be presented to clients in
 TLS-encrypted sessions. Certifying Authority
 (CA) and intermediate certificates can be added at the end of the file.
+Only loaded if no IP-specific certificate file exists.
 
 .TP 4
 .I timeoutsmtpd

@@ -71,6 +71,7 @@ extern int relayclient;			/**< flag if this client is allowed to relay by IP: 0 
 extern long comstate;			/**< status of the command state machine */
 extern int authhide;			/**< hide source of authenticated mail */
 extern int submission_mode;		/**< if we should act as message submission agent */
+extern char certfilename[];		/**< path to SSL certificate filename */
 
 extern int err_control(const char *);
 extern void freedata(void);

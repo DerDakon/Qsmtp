@@ -76,7 +76,6 @@ tls_err(const char *s)
 
 #define CLIENTCA "control/clientca.pem"
 #define CLIENTCRL "control/clientcrl.pem"
-#define SERVERCERT "control/servercert.pem"
 
 #if 0
 /**
@@ -209,7 +208,7 @@ tls_init()
 		return EDONE;
 	}
 
-	if (!SSL_CTX_use_certificate_chain_file(ctx, SERVERCERT)) {
+	if (!SSL_CTX_use_certificate_chain_file(ctx, certfilename)) {
 		SSL_CTX_free(ctx);
 		tls_err("missing certificate");
 		return EDONE;
@@ -237,7 +236,7 @@ tls_init()
 	}
 
 	/* this will also check whether public and private keys match */
-	if (!SSL_use_RSAPrivateKey_file(myssl, SERVERCERT, SSL_FILETYPE_PEM)) {
+	if (!SSL_use_RSAPrivateKey_file(myssl, certfilename, SSL_FILETYPE_PEM)) {
 		SSL_free(myssl);
 		tls_err("no valid RSA private key");
 		return EDONE;
