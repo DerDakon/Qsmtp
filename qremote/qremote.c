@@ -37,9 +37,6 @@ unsigned int smtpext;	/**< the SMTP extensions supported by the remote server */
 char *rhost;		/**< the DNS name (if present) and IP address of the remote server to be used in log messages */
 size_t rhostlen;	/**< valid length of rhost */
 char *partner_fqdn;	/**< the DNS name of the remote server, or NULL if no reverse lookup exists */
-#ifdef CHUNKING
-size_t chunksize;	/**< the maximum allowed size for an outgoing send buffer in BDAT mode */
-#endif
 struct in6_addr outip;
 
 /**
