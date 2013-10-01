@@ -26,6 +26,7 @@ send_bdat(unsigned int recodeflag)
 	if (chunkbuf == MAP_FAILED) {
 		log_write(LOG_WARNING, "cannot mmap() buffer for chunked transfer, fallback to normal transfer\n");
 		send_data(recodeflag);
+		return;
 	}
 
 	successmsg[2] = "chunked ";
