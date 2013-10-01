@@ -1,4 +1,3 @@
-#include <sys/mman.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
@@ -21,10 +20,10 @@ send_bdat(unsigned int recodeflag)
 	size_t lenlen;			/* "reserved" length for "BDAT <len> (LAST)?" */
 	int i;
 
-	chunkbuf = mmap(NULL, chunksize, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+	chunkbuf = malloc(chunksize);
 
-	if (chunkbuf == MAP_FAILED) {
-		log_write(LOG_WARNING, "cannot mmap() buffer for chunked transfer, fallback to normal transfer\n");
+	if (chunkbuf == NULL) {
+		log_write(LOG_WARNING, "cannot allocate buffer for chunked transfer, fallback to normal transfer\n");
 		send_data(recodeflag);
 		return;
 	}
@@ -124,13 +123,13 @@ send_bdat(unsigned int recodeflag)
 		netnwrite(chunkbuf + hl, len - hl);
 		if (off != msgsize)
 			if (checkreply(" ZD", NULL, 0) != 250) {
-				munmap(chunkbuf, chunksize);
+				free(chunkbuf);
 				quit();
 			}
 	}
 #ifdef DEBUG_IO
 	in_data = 0;
 #endif
-	munmap(chunkbuf, chunksize);
+	free(chunkbuf);
 	checkreply("KZD", successmsg, 1);
 }
