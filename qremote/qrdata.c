@@ -93,7 +93,7 @@ send_plain(const char *buf, const off_t len)
 		return;
 
 	while (off < len) {
-		while (idx + (off_t) chunk < sizeof(sendbuf) - 5) {
+		while (idx + chunk < sizeof(sendbuf) - 5) {
 			if (off + (off_t) chunk == len) {
 				break;
 			}
@@ -440,7 +440,7 @@ recode_qp(const char *buf, off_t len)
 		return;
 
 	while (off < len) {
-		while (idx + (off_t) chunk < sizeof(sendbuf) - 11) {
+		while (idx + chunk < sizeof(sendbuf) - 11) {
 			if (off + (off_t) chunk == len) {
 				break;
 			}

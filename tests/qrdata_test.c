@@ -716,7 +716,7 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 		off_t opos;
 		off_t epos = 0;
 
-		for (opos = 0; opos < outpos; opos++) {
+		for (opos = 0; opos < (off_t)outpos; opos++) {
 			if (outbuf[opos] == '\r') {
 				assert(outbuf[++opos] == '\n');
 				if (msg_expect[epos++] != '\n') {
@@ -736,7 +736,7 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 		}
 
 		if (ret == 0) {
-			if ((opos != outpos) || (epos != msg_expect_len)) {
+			if ((opos != (off_t)outpos) || (epos != msg_expect_len)) {
 				fprintf(stderr, "message did not have the expected length\n");
 				ret = EINVAL;
 			}

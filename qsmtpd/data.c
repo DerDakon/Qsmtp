@@ -848,8 +848,8 @@ smtp_bdat(void)
 				bdaterr = errno;
 			}
 		} else if (chunk) {
-			int o;
-			int offs = 0;
+			size_t o;
+			size_t offs = 0;
 
 			chunksize -= chunk;
 			msgsize += chunk;

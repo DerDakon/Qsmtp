@@ -82,7 +82,7 @@ main(void)
 		return 6;
 	}
 
-	if (len != cmplen) {
+	if (len != (off_t)cmplen) {
 		fprintf(stderr, "mmap_fd() should return length %zi, but returned %li\n", cmplen, (long)len);
 		return 7;
 	}
@@ -101,7 +101,7 @@ main(void)
 		return 9;
 	}
 
-	if (len != cmplen) {
+	if (len != (off_t)cmplen) {
 		fprintf(stderr, "mmap_name() should return length %zi, but returned %li\n", cmplen, (long)len);
 		return 10;
 	}
