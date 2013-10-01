@@ -21,6 +21,7 @@ send_bdat(unsigned int recodeflag)
 	char *chunkbuf;
 	size_t lenlen;			/* "reserved" length for "BDAT <len> (LAST)?" */
 	int i;
+	int bare_cr_warning = 0;
 
 	chunkbuf = malloc(chunksize);
 
@@ -90,8 +91,9 @@ send_bdat(unsigned int recodeflag)
 				chunkbuf[len++] = '\n';
 				if ((off < msgsize - 1) && (msgdata[off] == '\n')) {
 					off++;
-				} else {
+				} else if (bare_cr_warning == 0) {
 					log_write(LOG_WARNING, "found bare CR in message\n");
+					bare_cr_warning = 1;
 				}
 			}
 		}
