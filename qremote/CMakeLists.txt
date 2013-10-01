@@ -19,6 +19,12 @@ SET(QREMOTE_HDRS
 	../include/starttlsr.h
 )
 
+IF(CHUNKING)
+	LIST(APPEND QREMOTE_SRCS
+			qrbdat.c
+	)
+ENDIF()
+
 ADD_EXECUTABLE(Qremote
 	${QREMOTE_SRCS}
 	${QREMOTE_HDRS}
