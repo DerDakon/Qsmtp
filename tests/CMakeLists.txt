@@ -193,6 +193,20 @@ ADD_TEST(NAME QrData-DATA-5xx-error COMMAND testcase_qrdata data_reply_500 perma
 SET_TESTS_PROPERTIES(QrData-DATA-5xx-error PROPERTIES
 		PASS_REGULAR_EXPRESSION "^(.*\n)?D5\\.3\\.0 .*permanent error")
 
+ADD_EXECUTABLE(testcase_qrbdat
+		qrbdat_test.c
+		${CMAKE_SOURCE_DIR}/qremote/qrbdat.c
+)
+
+TARGET_LINK_LIBRARIES(testcase_qrbdat
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "QrBDAT"
+		COMMAND testcase_qrbdat)
+
 ADD_EXECUTABLE(testcase_fmt
 		fmt_test.c)
 TARGET_LINK_LIBRARIES(testcase_fmt
