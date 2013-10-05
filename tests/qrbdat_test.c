@@ -1,4 +1,8 @@
 #define _ISOC99_SOURCE
+#ifndef CHUNKING
+#define CHUNKING
+#endif /* CHUNKING */
+
 #include "netio.h"
 #include "qrdata.h"
 #include "qremote.h"
