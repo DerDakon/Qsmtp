@@ -36,11 +36,25 @@ quit(void)
 	exit(EFAULT);
 }
 
+static const char **checkreply_msgs;
+static unsigned int checkreply_index;
+
 int
-checkreply(const char *status __attribute__ ((unused)), const char **pre __attribute__ ((unused)), const int mask __attribute__ ((unused)))
+checkreply(const char *status, const char **pre __attribute__ ((unused)), const int mask __attribute__ ((unused)))
 {
-	fprintf(stderr, "%s was called but should not\n", __FUNCTION__);
-	exit(EFAULT);
+	if ((checkreply_msgs == NULL) || (checkreply_msgs[checkreply_index] == NULL)) {
+		fprintf(stderr, "%s was called but should not, status '%s'\n", __FUNCTION__, status);
+		exit(EFAULT);
+	}
+
+	if (strcmp(status, checkreply_msgs[checkreply_index]) != 0) {
+		fprintf(stderr, "expected message at index %u not received, got '%s', expected '%s'\n",
+			checkreply_index, status, checkreply_msgs[checkreply_index]);
+		exit(EINVAL);
+	}
+	
+	checkreply_index++;
+	return 0;
 }
 
 static unsigned int was_send_data_called;
@@ -82,6 +96,7 @@ test_bad_malloc(void)
 {
 	may_log_count = 1;
 	chunksize = (size_t)-1;
+	checkreply_msgs = NULL;
 
 	testcase_setup_log_write(test_log_write);
 
@@ -108,11 +123,75 @@ test_bad_malloc(void)
 	return 0;
 }
 
-int main(void)
+static const char **write_msgs;
+static unsigned int write_msg_index;
+
+int
+test_netnwrite(const char *s, const size_t l)
+{
+	if ((write_msgs == NULL) || (write_msgs[write_msg_index] == NULL)) {
+		fprintf(stderr, "unexpected message with index %u: len %zu, '%s'\n",
+				write_msg_index, l, s);
+		exit(EINVAL);
+	}
+
+	if (strlen(write_msgs[write_msg_index]) != l) {
+		fprintf(stderr, "got message with length %zu at index %u, but expected length %zu\n",
+				l, write_msg_index, strlen(write_msgs[write_msg_index]));
+		exit(EINVAL);
+	}
+
+	if (strncmp(s, write_msgs[write_msg_index], l) != 0) {
+		fprintf(stderr, "expected message at index %u not received\n",
+				write_msg_index);
+		exit(EINVAL);
+	}
+
+	write_msg_index++;
+
+	return 0;
+}
+
+static int
+test_single_byte(void)
+{
+	const char *netmsgs[] = {
+		"BDAT 1 LAST\r\na",
+		NULL
+	};
+	const char *chrmsgs[] = {
+		"KZD",
+		NULL
+	};
+
+	msgdata = "a";
+	msgsize = strlen(msgdata);
+	may_log_count = 0;
+	chunksize = 1024;
+	write_msg_index = 0;
+	write_msgs = netmsgs;
+	checkreply_index = 0;
+	checkreply_msgs = chrmsgs;
+
+	testcase_setup_netnwrite(test_netnwrite);
+
+	send_bdat(0);
+
+	if (strcmp(successmsg[2], "chunked ") != 0) {
+		fprintf(stderr, "successmsg[2] should have been 'chunked ', but is '%s'\n", successmsg[2]);
+		return 1;
+	}
+	
+	return 0;
+}
+
+int
+main(void)
 {
 	int ret = 0;
 
 	ret += test_bad_malloc();
+	ret += test_single_byte();
 
 	return ret;
 }
