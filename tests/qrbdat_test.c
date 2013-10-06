@@ -36,25 +36,27 @@ quit(void)
 	exit(EFAULT);
 }
 
-static const char **checkreply_msgs;
+static struct checkreply_data {
+	const char *status;
+	int result;
+} const *checkreply_msgs;
 static unsigned int checkreply_index;
 
 int
 checkreply(const char *status, const char **pre __attribute__ ((unused)), const int mask __attribute__ ((unused)))
 {
-	if ((checkreply_msgs == NULL) || (checkreply_msgs[checkreply_index] == NULL)) {
+	if ((checkreply_msgs == NULL) || (checkreply_msgs[checkreply_index].status == NULL)) {
 		fprintf(stderr, "%s was called but should not, status '%s'\n", __FUNCTION__, status);
 		exit(EFAULT);
 	}
 
-	if (strcmp(status, checkreply_msgs[checkreply_index]) != 0) {
+	if (strcmp(status, checkreply_msgs[checkreply_index].status) != 0) {
 		fprintf(stderr, "expected message at index %u not received, got '%s', expected '%s'\n",
-			checkreply_index, status, checkreply_msgs[checkreply_index]);
+			checkreply_index, status, checkreply_msgs[checkreply_index].status);
 		exit(EINVAL);
 	}
 
-	checkreply_index++;
-	return 250;
+	return checkreply_msgs[checkreply_index++].result;
 }
 
 static unsigned int was_send_data_called;
@@ -159,9 +161,9 @@ test_single_byte(void)
 		"BDAT 1 LAST\r\na",
 		NULL
 	};
-	const char *chrmsgs[] = {
-		"KZD",
-		NULL
+	const struct checkreply_data chrmsgs[] = {
+		{ "KZD", 250 },
+		{ NULL, 0 }
 	};
 
 	msgdata = "a";
@@ -195,11 +197,11 @@ test_wrap_single_line(void)
 		"BDAT 2 LAST\r\ngh",
 		NULL
 	};
-	const char *chrmsgs[] = {
-		" ZD",
-		" ZD",
-		"KZD",
-		NULL
+	const struct checkreply_data chrmsgs[] = {
+		{ " ZD", 250 },
+		{ " ZD", 250 },
+		{ "KZD", 250 },
+		{ NULL, 0 }
 	};
 
 	msgdata = "abcdefgh";
