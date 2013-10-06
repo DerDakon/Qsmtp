@@ -29,18 +29,40 @@ size_t outpos;
 int in_data;
 #endif /* DEBUG_IO */
 
-void
-quit(void)
-{
-	fprintf(stderr, "%s() called unexpected\n", __FUNCTION__);
-	exit(EFAULT);
-}
-
+static unsigned int expect_quit;
+static const char **write_msgs;
+static unsigned int write_msg_index;
 static struct checkreply_data {
 	const char *status;
 	int result;
 } const *checkreply_msgs;
 static unsigned int checkreply_index;
+
+void
+quit(void)
+{
+	if (expect_quit) {
+		if (may_log_count != 0) {
+			fprintf(stderr, "%u expected log messages were not sent\n", may_log_count);
+			exit(EINVAL);
+		}
+
+		if ((checkreply_msgs != NULL) && (checkreply_msgs[checkreply_index].status != NULL)) {
+			fprintf(stderr, "not all calls to checkreply() were done\n");
+			exit(EINVAL);
+		}
+
+		if ((write_msgs != NULL) && (write_msgs[write_msg_index] != NULL)) {
+			fprintf(stderr, "not all calls to netnwrite() were done\n");
+			exit(EINVAL);
+		}
+
+		exit(0);
+	}
+
+	fprintf(stderr, "%s() called unexpected\n", __FUNCTION__);
+	exit(EFAULT);
+}
 
 int
 checkreply(const char *status, const char **pre __attribute__ ((unused)), const int mask __attribute__ ((unused)))
@@ -92,9 +114,6 @@ test_net_conn_shutdown(const enum conn_shutdown_type sdtype __attribute__((unuse
 }
 
 const char *successmsg[] = {"1", "2", "3", "4", "5", "6", "7", NULL};
-
-static const char **write_msgs;
-static unsigned int write_msg_index;
 
 int
 test_netnwrite(const char *s, const size_t l)
@@ -269,6 +288,38 @@ test_newline_crlf_errors(void)
 	return 0;
 }
 
+static int
+test_wrap_fail(void)
+{
+	const char *netmsgs[] = {
+		"BDAT 3\r\nabc",
+		"BDAT 3\r\ndef",
+		NULL
+	};
+	const struct checkreply_data chrmsgs[] = {
+		{ " ZD", 250 },
+		{ " ZD", 550 },
+		{ NULL, 0 }
+	};
+
+	msgdata = "abcdefgh";
+	msgsize = strlen(msgdata);
+	may_log_count = 0;
+	chunksize = 18;
+	write_msg_index = 0;
+	write_msgs = netmsgs;
+	checkreply_index = 0;
+	checkreply_msgs = chrmsgs;
+	successmsg[2] = "3";
+	expect_quit = 1;
+
+	testcase_setup_netnwrite(test_netnwrite);
+
+	send_bdat(0);
+
+	fprintf(stderr, "end of %s reached, send_bdat() should not have returned\n", __FUNCTION__);
+	return 1;
+}
 
 int
 main(void)
@@ -280,5 +331,10 @@ main(void)
 	ret += test_wrap_single_line();
 	ret += test_newline_crlf_errors();
 
-	return ret;
+	if (ret != 0) {
+		fprintf(stderr, "%i errors before calling final test\n", ret);
+		return ret;
+	}
+
+	return test_wrap_fail();
 }
