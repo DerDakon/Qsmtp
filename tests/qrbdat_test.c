@@ -226,6 +226,50 @@ test_wrap_single_line(void)
 	return 0;
 }
 
+static int
+test_newline_crlf_errors(void)
+{
+	const char *netmsgs[] = {
+		"BDAT 4\r\n\r\n\r\n",
+		"BDAT 4\r\n\r\n\r\n",
+		"BDAT 2 LAST\r\n\r\n",
+		NULL
+	};
+	const struct checkreply_data chrmsgs[] = {
+		{ " ZD", 250 },
+		{ " ZD", 250 },
+		{ "KZD", 250 },
+		{ NULL, 0 }
+	};
+
+	msgdata = "\r\n\n\n\r\n\r";
+	msgsize = strlen(msgdata);
+	may_log_count = 1;
+	chunksize = 18;
+	write_msg_index = 0;
+	write_msgs = netmsgs;
+	checkreply_index = 0;
+	checkreply_msgs = chrmsgs;
+	successmsg[2] = "3";
+
+	testcase_setup_netnwrite(test_netnwrite);
+
+	send_bdat(0);
+
+	if (strcmp(successmsg[2], "chunked ") != 0) {
+		fprintf(stderr, "successmsg[2] should have been 'chunked ', but is '%s'\n", successmsg[2]);
+		return 1;
+	}
+
+	if (may_log_count != 0) {
+		fprintf(stderr, "may_log_count is %i but should be 0\n", may_log_count);
+		return 1;
+	}
+
+	return 0;
+}
+
+
 int
 main(void)
 {
@@ -234,6 +278,7 @@ main(void)
 	ret += test_bad_malloc();
 	ret += test_single_byte();
 	ret += test_wrap_single_line();
+	ret += test_newline_crlf_errors();
 
 	return ret;
 }
