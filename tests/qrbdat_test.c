@@ -52,9 +52,9 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 			checkreply_index, status, checkreply_msgs[checkreply_index]);
 		exit(EINVAL);
 	}
-	
+
 	checkreply_index++;
-	return 0;
+	return 250;
 }
 
 static unsigned int was_send_data_called;
@@ -91,38 +91,6 @@ test_net_conn_shutdown(const enum conn_shutdown_type sdtype __attribute__((unuse
 
 const char *successmsg[] = {"1", "2", "3", "4", "5", "6", "7", NULL};
 
-static int
-test_bad_malloc(void)
-{
-	may_log_count = 1;
-	chunksize = (size_t)-1;
-	checkreply_msgs = NULL;
-
-	testcase_setup_log_write(test_log_write);
-
-	msgdata = "1234\r\n.\r\n";
-	msgsize = strchr(msgdata, '\n') - msgdata + 1;
-
-	send_bdat(42);
-
-	if (may_log_count != 0) {
-		fprintf(stderr, "may_log_count is %i but should be 0\n", may_log_count);
-		return 1;
-	}
-
-	if (was_send_data_called != 1) {
-		fprintf(stderr, "send_data() should have been called once, but was called %u times\n", was_send_data_called);
-		return 1;
-	}
-
-	if (strcmp(successmsg[2], "3") != 0) {
-		fprintf(stderr, "successmsg[2] should have been '3', but is '%s'\n", successmsg[2]);
-		return 1;
-	}
-
-	return 0;
-}
-
 static const char **write_msgs;
 static unsigned int write_msg_index;
 
@@ -151,6 +119,38 @@ test_netnwrite(const char *s, const size_t l)
 
 	return 0;
 }
+static int
+test_bad_malloc(void)
+{
+	may_log_count = 1;
+	chunksize = (size_t)-1;
+	checkreply_msgs = NULL;
+	successmsg[2] = "3";
+
+	testcase_setup_log_write(test_log_write);
+
+	msgdata = "1234\r\n.\r\n";
+	msgsize = strchr(msgdata, '\n') - msgdata + 1;
+
+	send_bdat(42);
+
+	if (may_log_count != 0) {
+		fprintf(stderr, "may_log_count is %i but should be 0\n", may_log_count);
+		return 1;
+	}
+
+	if (was_send_data_called != 1) {
+		fprintf(stderr, "send_data() should have been called once, but was called %u times\n", was_send_data_called);
+		return 1;
+	}
+
+	if (strcmp(successmsg[2], "3") != 0) {
+		fprintf(stderr, "successmsg[2] should have been '3', but is '%s'\n", successmsg[2]);
+		return 1;
+	}
+
+	return 0;
+}
 
 static int
 test_single_byte(void)
@@ -172,6 +172,7 @@ test_single_byte(void)
 	write_msgs = netmsgs;
 	checkreply_index = 0;
 	checkreply_msgs = chrmsgs;
+	successmsg[2] = "3";
 
 	testcase_setup_netnwrite(test_netnwrite);
 
@@ -181,7 +182,45 @@ test_single_byte(void)
 		fprintf(stderr, "successmsg[2] should have been 'chunked ', but is '%s'\n", successmsg[2]);
 		return 1;
 	}
-	
+
+	return 0;
+}
+
+static int
+test_wrap_single_line(void)
+{
+	const char *netmsgs[] = {
+		"BDAT 3\r\nabc",
+		"BDAT 3\r\ndef",
+		"BDAT 2 LAST\r\ngh",
+		NULL
+	};
+	const char *chrmsgs[] = {
+		" ZD",
+		" ZD",
+		"KZD",
+		NULL
+	};
+
+	msgdata = "abcdefgh";
+	msgsize = strlen(msgdata);
+	may_log_count = 0;
+	chunksize = 18;
+	write_msg_index = 0;
+	write_msgs = netmsgs;
+	checkreply_index = 0;
+	checkreply_msgs = chrmsgs;
+	successmsg[2] = "3";
+
+	testcase_setup_netnwrite(test_netnwrite);
+
+	send_bdat(0);
+
+	if (strcmp(successmsg[2], "chunked ") != 0) {
+		fprintf(stderr, "successmsg[2] should have been 'chunked ', but is '%s'\n", successmsg[2]);
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -192,6 +231,7 @@ main(void)
 
 	ret += test_bad_malloc();
 	ret += test_single_byte();
+	ret += test_wrap_single_line();
 
 	return ret;
 }
