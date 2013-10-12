@@ -60,6 +60,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			do {
 				i = close(fd);
 			} while ((i == -1) && (errno == EINTR));
+			*buf = NULL;
 			errno = ENOLCK;	/* not the right error code, but good enough */
 			return -1;
 		}
@@ -70,6 +71,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		do {
 			i = close(fd);
 		} while ((i == -1) && (errno == EINTR));
+		*buf = NULL;
 		errno = err;
 		return -1;
 	}
