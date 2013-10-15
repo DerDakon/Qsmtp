@@ -227,26 +227,11 @@ tls_init()
 	/* set the callback here; SSL_set_verify didn't work before 0.9.6c */
 	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 
-	/* a new SSL object, with the rest added to it directly to avoid copying */
-	myssl = SSL_new(ctx);
-	SSL_CTX_free(ctx);
-	if (!myssl) {
-		tls_err("unable to initialize ssl");
-		return EDONE;
-	}
-
-	/* this will also check whether public and private keys match */
-	if (!SSL_use_RSAPrivateKey_file(myssl, certfilename, SSL_FILETYPE_PEM)) {
-		SSL_free(myssl);
-		tls_err("no valid RSA private key");
-		return EDONE;
-	}
-
 	saciphers.len = lloadfilefd(open(ciphfn, O_RDONLY), &(saciphers.s), 1);
 	if (saciphers.len == (size_t)-1) {
 		if (errno != ENOENT) {
 			int e = errno;
-			SSL_free(myssl);
+			SSL_CTX_free(ctx);
 			err_control(ciphfn);
 			errno = e;
 			return -1;
@@ -259,6 +244,25 @@ tls_init()
 			if (!saciphers.s[i])
 				saciphers.s[i] = ':';
 		ciphers = saciphers.s;
+
+		SSL_CTX_set_options(ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+	}
+
+	/* a new SSL object, with the rest added to it directly to avoid copying */
+	myssl = SSL_new(ctx);
+	SSL_CTX_free(ctx);
+	if (!myssl) {
+		tls_err("unable to initialize ssl");
+		free(saciphers.s);
+		return EDONE;
+	}
+
+	/* this will also check whether public and private keys match */
+	if (!SSL_use_RSAPrivateKey_file(myssl, certfilename, SSL_FILETYPE_PEM)) {
+		SSL_free(myssl);
+		tls_err("no valid RSA private key");
+		free(saciphers.s);
+		return EDONE;
 	}
 
 	SSL_set_cipher_list(myssl, ciphers);
