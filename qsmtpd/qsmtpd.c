@@ -964,7 +964,7 @@ user_exists(const string *localpart, struct userconf *ds)
  * addrparse - check an email address for syntax errors and/or existence
  *
  * @param in input to parse
- * @param flags \arc \c bit 1: rcpt to checks (e.g. source route is allowed) \arg \c bit 0: mail from checks
+ * @param flags \arg \c bit 1: rcpt to checks (e.g. source route is allowed) \arg \c bit 0: mail from checks
  * @param addr struct string to contain the address (memory will be malloced)
  * @param more here starts the data behind the first '>' behind the first '<' (or NULL if none)
  * @param ds store the userconf of the user here
