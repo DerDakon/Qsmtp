@@ -211,6 +211,7 @@ int dnsmx(char **out, size_t *len, const char *host)
 
 		return 0;
 	} else if (strcmp(host, timeouthost) == 0) {
+		*len = 0;
 		errno = ETIMEDOUT;
 		return -1;
 	} else if (strcmp(host, timeoutmx) == 0) {
