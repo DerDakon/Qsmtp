@@ -91,7 +91,7 @@ findip(const char *name, struct in6_addr *addr, int start)
 	return -1;
 }
 
-int dnsip4(char **out, unsigned int *len, const char *host)
+int dnsip4(char **out, size_t *len, const char *host)
 {
 	int r;
 	struct in6_addr addr;
@@ -140,7 +140,7 @@ int dnsip4(char **out, unsigned int *len, const char *host)
 	return 0;
 }
 
-int dnsip6(char **out, unsigned int *len, const char *host)
+int dnsip6(char **out, size_t *len, const char *host)
 {
 	int r;
 	struct in6_addr addr;
@@ -192,7 +192,7 @@ int dnstxt(char **out __attribute__((unused)), const char *host __attribute__((u
 
 static const char mxname[] = "mx.example.com";
 
-int dnsmx(char **out, unsigned int *len, const char *host)
+int dnsmx(char **out, size_t *len, const char *host)
 {
 	if (strcmp(host, mxname) == 0) {
 		unsigned short *alsoout;

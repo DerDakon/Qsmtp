@@ -22,7 +22,7 @@
  * returns 0 and sa.len is 0. Make sure the memory is freed in this cases.
  */
 static int
-mangle_ip_ret(struct stralloc *sa, char **out, unsigned int *len, int r)
+mangle_ip_ret(struct stralloc *sa, char **out, size_t *len, int r)
 {
 	if ((r != 0) || (sa->len == 0)) {
 		free(sa->s);
@@ -58,7 +58,7 @@ mangle_ip_ret(struct stralloc *sa, char **out, unsigned int *len, int r)
  * @retval -1 an error occurred, errno is set
  */
 int
-dnsip6(char **out, unsigned int *len, const char *host)
+dnsip6(char **out, size_t *len, const char *host)
 {
 	/* we can't use const_stralloc_from_string() here as dns_ip6()
 	 * modifies it's second argument. */
@@ -84,7 +84,7 @@ dnsip6(char **out, unsigned int *len, const char *host)
  * @retval -1 an error occurred, errno is set
  */
 int
-dnsip4(char **out, unsigned int *len, const char *host)
+dnsip4(char **out, size_t *len, const char *host)
 {
 	const stralloc fqdn = const_stralloc_from_string(host);
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
@@ -104,7 +104,7 @@ dnsip4(char **out, unsigned int *len, const char *host)
  * @retval -1 an error occurred, errno is set
  */
 int
-dnsmx(char **out, unsigned int *len, const char *host)
+dnsmx(char **out, size_t *len, const char *host)
 {
 	const stralloc fqdn = const_stralloc_from_string(host);
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};

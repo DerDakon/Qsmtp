@@ -23,7 +23,7 @@ ask_dnsmx(const char *name, struct ips **result)
 {
 	int i;
 	char *r;
-	unsigned int l = 0;
+	size_t l;
 
 	i = dnsmx(&r, &l, name);
 
@@ -117,7 +117,7 @@ ask_dnsaaaa(const char *name, struct ips **result)
 {
 	int i;
 	char *r;
-	unsigned int l;
+	size_t l;
 
 	i = dnsip6(&r, &l, name);
 	if (!i) {
@@ -175,7 +175,7 @@ ask_dnsa(const char *name, struct ips **result)
 {
 	int i;
 	char *r;
-	unsigned int l;
+	size_t l;
 
 	i = dnsip4(&r, &l, name);
 	if (!i) {
