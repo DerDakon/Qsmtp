@@ -13,6 +13,7 @@ RfCs interesting for a mail server (and used for implementing this one):
 3463	Enhanced Mail System Status Codes
 3848	ESMTP and LMTP Transmission Types Registration
 4408	Sender Policy Framework (SPF) for Authorizing Use of Domains in E-Mail, Version 1
+4409	Message Submission for Mail
 5321	Simple Mail Transfer Protocol
 5782	DNS Blacklists and Whitelists
 6152	SMTP Service Extension for 8bit-MIMEtransport
