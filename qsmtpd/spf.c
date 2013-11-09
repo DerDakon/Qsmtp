@@ -1549,7 +1549,6 @@ record_bad_token(const char *token)
 
 	const char *tokenend = token;
 
-	tokenend = token;
 	while (!WSPACE(*(token - 1)))
 		token--;
 
