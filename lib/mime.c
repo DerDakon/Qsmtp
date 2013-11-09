@@ -180,15 +180,22 @@ is_multipart(const cstring *line, cstring *boundary)
 							continue;
 
 						/* more allowed chars, defined in RfC 2046, section 5.1.1. */
-						if (((boundary->s[j] >= '+') && (boundary->s[j] <= ':')) ||
-									((boundary->s[j] >= '\'') || (boundary->s[j] == ')')) ||
-									((boundary->s[j] >= '+') || (boundary->s[j] == ')')) ||
-									(boundary->s[j] == '_') || (boundary->s[j] == '=') ||
-									(boundary->s[j] == '_'))
+							/* +,-./0123456789: */
+						if ((boundary->s[j] >= '+') && (boundary->s[j] <= ':'))
 							continue;
 
-						write(1, "D5.6.3 boundary definition contains invalid character\n", 55);
-						net_conn_shutdown(shutdown_abort);
+						switch (boundary->s[j]) {
+						case '\'':
+						case '(':
+						case ')':
+						case '_':
+						case '=':
+						case '?':
+							continue;
+						default:
+							write(1, "D5.6.3 boundary definition contains invalid character\n", 55);
+							net_conn_shutdown(shutdown_abort);
+						}
 					}
 					/* we have a valid boundary definition, that's all what we're interested in */
 					return 1;
