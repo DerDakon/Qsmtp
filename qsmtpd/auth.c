@@ -269,7 +269,7 @@ auth_plain(void)
 	STREMPTY(slop);
 
 	if (linelen > 11) {
-		if ( (r = b64decode(linein + 11, linelen - 11, &slop) > 0))
+		if ((r = b64decode(linein + 11, linelen - 11, &slop)) > 0)
 			return err_input();
 	} else {
 		if ((r = netwrite("334 \r\n")))
