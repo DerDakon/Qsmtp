@@ -72,6 +72,7 @@ main(void)
 	buf = mmap_name(testfname, &len, &fd2);
 	if ((buf != NULL) || (errno != ENOLCK)) {
 		fputs("mmap_name() on exlusively locked file did not fail with ENOLCK\n", stderr);
+		close(fd);
 		return 17;
 	}
 	flock(fd, LOCK_UN);

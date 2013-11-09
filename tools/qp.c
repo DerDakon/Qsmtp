@@ -92,8 +92,10 @@ int main(int argc, char *argv[])
 		return errno;
 
 	i = fstat(fd, &st);
-	if (i)
+	if (i) {
+		close(fd);
 		return i;
+	}
 
 	msgsize = st.st_size;
 	msgdata = mmap(NULL, msgsize, PROT_READ, MAP_SHARED, fd, 0);

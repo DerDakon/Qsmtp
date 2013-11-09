@@ -88,6 +88,7 @@ test_cdb(void)
 		err = errno;
 		printf("ERROR: cdb_seekmm(-1, ...) returned %p and errno %i\n",
 				cdb_buf, err);
+		close(fd);
 		return 1;
 	}
 

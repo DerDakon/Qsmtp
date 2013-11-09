@@ -385,6 +385,7 @@ editread(const int type)
 		}
 		if (fstat(fd, &st)) {
 			commstat = errno;
+			close(fd);
 			return 1;
 		}
 		if (!st.st_size) {
@@ -415,6 +416,7 @@ editread(const int type)
 				free(editbuffer.buf.map.mem);
 				editbuffer.buf.map.mem = NULL;
 				err2("error reading from file ", editbuffer.name);
+				close(fd);
 				return 1;
 			}
 			len += i;
