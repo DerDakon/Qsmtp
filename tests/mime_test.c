@@ -120,9 +120,10 @@ test_multipart_bad(void)
 		"Content-Type: multipart/mixed;", /* no boundary given */
 		"Content-Type: multipart/mixed; foo=bar", /* no boundary given */
 		"Content-Type: multipart/mixed; =", /* no valid token */
+		"Content-Type: multipart/mixed; foo=\"a", /* unterminated quoted parameter */
+		"Content-Type: multipart/mixed; boundary=\"a", /* unterminated quoted boundary */
 #if 0
 		/* not tested because it terminates the program */
-		"Content-Type: multipart/mixed; boundary=\"a", /* unterminated quoted boundary */
 		"Content-Type: multipart/mixed; boundary=abcdefghijklmnopqrstuvwxyz"
 				"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
 				/* boundary exceeds 70 characters */

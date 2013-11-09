@@ -3,6 +3,7 @@
  */
 #include "mime.h"
 
+#include <assert.h>
 #include <strings.h>
 #include <string.h>
 #include <unistd.h>
@@ -138,11 +139,9 @@ is_multipart(const cstring *line, cstring *boundary)
 						quoted = 1;
 						(boundary->s)++;
 						e = memchr(ch + 10, '"', line->len - 10 - (ch - line->s));
+						/* error would have been detected in mime_param() above */
+						assert(e != NULL);
 						boundary->len = e - ch - 10;
-						if (!e) {
-							write(1, "D5.6.3 boundary definition is unterminated quoted string\n", 58);
-							net_conn_shutdown(shutdown_abort);
-						}
 						j = boundary->len;
 					} else {
 						quoted = 0;
@@ -268,9 +267,14 @@ mime_param(const char *line, const size_t len)
 			}
 		}
 
-		/* if the end of quote has been found skip over it */
-		if ((i < len) && (line[i] == '"'))
-			i++;
+		/* the end of quote has not been found */
+		if (i == len)
+			return 0;
+
+		/* skip over closing quote */
+		i++;
+
+		/* end of string */
 		if (i == len)
 			return i;
 
