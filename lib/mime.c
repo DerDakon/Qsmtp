@@ -31,14 +31,13 @@
 const char *
 skipwhitespace(const char *line, const size_t len)
 {
-	int ws = 0;	/* found at least one whitespace */
 	size_t l = len;
 	const char *c = line;
 
 	while (l != 0) {
 		int brace = 0;
+		int ws = 0;	/* found at least one whitespace */
 
-		ws = 0;
 		/* skip whitespaces */
 		if ((*c == ' ') || (*c == '\t')) {
 			while ((*c == ' ') || (*c == '\t')) {
@@ -46,10 +45,7 @@ skipwhitespace(const char *line, const size_t len)
 				if (!--l)
 					return c;
 			}
-			ws = 1;
 		}
-
-		ws = 0;
 
 		if (*c == '\r') {
 			c++;
