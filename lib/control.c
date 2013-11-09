@@ -99,14 +99,17 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			do {
 				i = close(fd);
 			} while ((i == -1) && (errno == EINTR));
+			free(inbuf);
 			errno = e;
 			return -1;
 		}
 		j += i;
 	}
 	while ( (i = close(fd)) ) {
-		if (errno != EINTR)
+		if (errno != EINTR) {
+			free(inbuf);
 			return -1;
+		}
 	}
 	inbuf[--oldlen] = '\0'; /* if file has no newline at the end */
 	if (!striptab) {
