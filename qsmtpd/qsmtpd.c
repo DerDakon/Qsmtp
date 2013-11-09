@@ -705,7 +705,7 @@ smtp_ehlo(void)
 		}
 	}
 /* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
-	if (!ssl && ((localport == NULL) || (strcmp("LOCALPORT", "465") != 0))) {
+	if (!ssl && ((localport == NULL) || (strcmp(localport, "465") != 0))) {
 		const size_t oldlen = strlen(certfilename);
 		int fd;
 
