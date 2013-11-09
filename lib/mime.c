@@ -245,13 +245,17 @@ mime_param(const char *line, const size_t len)
 				break;
 			}
 		}
-		if (i == len) {
+
+		/* if the end of quote has been found skip over it */
+		if ((i < len) && (line[i] == '"'))
+			i++;
+		if (i == len)
 			return i;
-		}
-		i++;
-		if ((line[i] != ';') && (line[i] != '(') && !WSPACE(line[i])) {
+
+		/* if no end quote has been found or something invalid follows fail */
+		if ((line[i] != ';') && (line[i] != '(') && !WSPACE(line[i]))
 			return 0;
-		}
+
 		return i;
 	} else {
 		size_t j;
