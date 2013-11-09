@@ -178,85 +178,94 @@ test_multipart_boundary()
 	unsigned int i;
 
 	for (i = 0; boundaries[i] != NULL; i++) {
-		const char *begin = "Content-Type: multipart/mixed; boundary=";
-		char linebuf[128];
-		cstring boundary;
-		cstring line;
-		int r;
+		const char *sbegin[] = {
+			"Content-Type: multipart/mixed; boundary=",
+			"Content-Type: multipart/mixed; "
+				"foo=bar; boundaryfoo=bar; boundary=",
+			NULL
+		};
+		unsigned int j;
 
-		strcpy(linebuf, begin);
-		strcat(linebuf, boundaries[i]);
+		for (j = 0; sbegin[j] != NULL; j++) {
+			const char *begin = sbegin[j];
+			char linebuf[128];
+			cstring boundary;
+			cstring line;
+			int r;
 
-		STREMPTY(line);
-		line.s = linebuf;
-		line.len = strlen(line.s);
+			strcpy(linebuf, begin);
+			strcat(linebuf, boundaries[i]);
 
-		STREMPTY(boundary);
-		r = is_multipart(&line, &boundary);
+			STREMPTY(line);
+			line.s = linebuf;
+			line.len = strlen(line.s);
 
-		if (r != 1)
-			fprintf(stderr, "unquoted boundary (end) %u not detected as multipart, return %i\n",
+			STREMPTY(boundary);
+			r = is_multipart(&line, &boundary);
+
+			if (r != 1)
+				fprintf(stderr, "unquoted boundary (end) %u not detected as multipart, return %i\n",
+						i, r);
+			else if (strlen(boundaries[i]) != boundary.len)
+				fprintf(stderr, "unquoted boundary (end) %u: found len %zi, expected %zi\n",
+						i, boundary.len, strlen(boundaries[i]));
+			else if (strncmp(boundaries[i], boundary.s, boundary.len) != 0)
+				fprintf(stderr, "unquoted boundary (end) %u: found '%.*s', expected '%s'\n",
+						i, (int)boundary.len, boundary.s, boundaries[i]);
+
+			strcat(linebuf, "; foo=bar");
+			line.len = strlen(line.s);
+
+			STREMPTY(boundary);
+			r = is_multipart(&line, &boundary);
+
+			if (r != 1)
+				fprintf(stderr, "unquoted boundary (middle) %u not detected as multipart, return %i\n",
+						i, r);
+			else if (strlen(boundaries[i]) != boundary.len)
+				fprintf(stderr, "unquoted boundary (middle) %u: found len %zi, expected %zi\n",
+						i, boundary.len, strlen(boundaries[i]));
+			else if (strncmp(boundaries[i], boundary.s, boundary.len) != 0)
+				fprintf(stderr, "unquoted boundary (middle) %u: found '%.*s', expected '%s'\n",
+						i, (int)boundary.len, boundary.s, boundaries[i]);
+
+			strcpy(linebuf, begin);
+			strcat(linebuf, "\"");
+			strcat(linebuf, boundaries[i]);
+			strcat(linebuf, "\"");
+
+			line.s = linebuf;
+			line.len = strlen(linebuf);
+			STREMPTY(boundary);
+
+			r = is_multipart(&line, &boundary);
+
+			if (r != 1)
+				fprintf(stderr, "unquoted boundary (quoted) %u not detected as multipart, return %i\n",
 					i, r);
-		else if (strlen(boundaries[i]) != boundary.len)
-			fprintf(stderr, "unquoted boundary (end) %u: found len %zi, expected %zi\n",
-					i, boundary.len, strlen(boundaries[i]));
-		else if (strncmp(boundaries[i], boundary.s, boundary.len) != 0)
-			fprintf(stderr, "unquoted boundary (end) %u: found '%.*s', expected '%s'\n",
-					i, (int)boundary.len, boundary.s, boundaries[i]);
+			else if (strlen(boundaries[i]) != boundary.len)
+				fprintf(stderr, "unquoted boundary (quoted) %u: found len %zi, expected %zi\n",
+						i, boundary.len, strlen(boundaries[i]));
+			else if (strncmp(boundaries[i], boundary.s, boundary.len) != 0)
+				fprintf(stderr, "unquoted boundary (quoted) %u: found '%.*s', expected '%s'\n",
+						i, (int)boundary.len, boundary.s, boundaries[i]);
 
-		strcat(linebuf, "; foo=bar");
-		line.len = strlen(line.s);
+			strcat(linebuf, "; foo=bar");
+			line.len = strlen(line.s);
 
-		STREMPTY(boundary);
-		r = is_multipart(&line, &boundary);
+			STREMPTY(boundary);
+			r = is_multipart(&line, &boundary);
 
-		if (r != 1)
-			fprintf(stderr, "unquoted boundary (middle) %u not detected as multipart, return %i\n",
-					i, r);
-		else if (strlen(boundaries[i]) != boundary.len)
-			fprintf(stderr, "unquoted boundary (middle) %u: found len %zi, expected %zi\n",
-					i, boundary.len, strlen(boundaries[i]));
-		else if (strncmp(boundaries[i], boundary.s, boundary.len) != 0)
-			fprintf(stderr, "unquoted boundary (middle) %u: found '%.*s', expected '%s'\n",
-					i, (int)boundary.len, boundary.s, boundaries[i]);
-
-		strcpy(linebuf, begin);
-		strcat(linebuf, "\"");
-		strcat(linebuf, boundaries[i]);
-		strcat(linebuf, "\"");
-
-		line.s = linebuf;
-		line.len = strlen(linebuf);
-		STREMPTY(boundary);
-
-		r = is_multipart(&line, &boundary);
-
-		if (r != 1)
-			fprintf(stderr, "unquoted boundary (quoted) %u not detected as multipart, return %i\n",
-				i, r);
-		else if (strlen(boundaries[i]) != boundary.len)
-			fprintf(stderr, "unquoted boundary (quoted) %u: found len %zi, expected %zi\n",
-					i, boundary.len, strlen(boundaries[i]));
-		else if (strncmp(boundaries[i], boundary.s, boundary.len) != 0)
-			fprintf(stderr, "unquoted boundary (quoted) %u: found '%.*s', expected '%s'\n",
-					i, (int)boundary.len, boundary.s, boundaries[i]);
-
-		strcat(linebuf, "; foo=bar");
-		line.len = strlen(line.s);
-
-		STREMPTY(boundary);
-		r = is_multipart(&line, &boundary);
-
-		if (r != 1)
-			fprintf(stderr, "unquoted boundary (quoted, middle) %u not detected as multipart, return %i\n",
-					i, r);
-		else if (strlen(boundaries[i]) != boundary.len)
-			fprintf(stderr, "unquoted boundary (quoted, middle) %u: found len %zi, expected %zi\n",
-					i, boundary.len, strlen(boundaries[i]));
-		else if (strncmp(boundaries[i], boundary.s, boundary.len) != 0)
-			fprintf(stderr, "unquoted boundary (quoted, middle) %u: found '%.*s', expected '%s'\n",
-					i, (int)boundary.len, boundary.s, boundaries[i]);
-
+			if (r != 1)
+				fprintf(stderr, "unquoted boundary (quoted, middle) %u not detected as multipart, return %i\n",
+						i, r);
+			else if (strlen(boundaries[i]) != boundary.len)
+				fprintf(stderr, "unquoted boundary (quoted, middle) %u: found len %zi, expected %zi\n",
+						i, boundary.len, strlen(boundaries[i]));
+			else if (strncmp(boundaries[i], boundary.s, boundary.len) != 0)
+				fprintf(stderr, "unquoted boundary (quoted, middle) %u: found '%.*s', expected '%s'\n",
+						i, (int)boundary.len, boundary.s, boundaries[i]);
+		}
 	}
 	
 	for (i = 0; qboundaries[i] != NULL; i++) {
