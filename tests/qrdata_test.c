@@ -329,6 +329,19 @@ static struct {
 		.log_count = 2
 	},
 	{
+		.name = "NoEndBoundaryShortEnd",
+		.msg = "Subject: remaining length too short for another boundary\r"
+		"Content-Type: multipart/mixed;\r"
+		" boundary=\"------------0008\"\r"
+		"\r"
+		"--------------0008\r\n"
+		"\n"
+		"\244nd\n",
+		.filters = 0,
+		.recodeflag = 1,
+		.log_count = 2
+	},
+	{
 		.name = "EndInNotFinalBoundary",
 		.msg = "Subject: end boundary is missing\r"
 		       "Content-Type: multipart/mixed;\r"

@@ -159,6 +159,7 @@ FOREACH(PATTERN
 		emptyCRheaderWith8bit
 		emptyCRLFheaderWith8bit
 		NoEndBoundary
+		NoEndBoundaryShortEnd
 		EndInNotFinalBoundary
 		EndsWithFinalBoundary
 		MultipartNoBoundary
