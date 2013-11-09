@@ -22,15 +22,13 @@ int
 getfile(const struct userconf *ds, const char *fn, int *type)
 {
 	char *filename = NULL;
-	size_t l;
 	int fd;
 	const size_t len = strlen(fn);
 
 	/* maybe there is no userpath because user only exists as .qmail-foo? */
 	if (ds->userpath.len) {
 		*type = 0;
-		l = ds->userpath.len + len;
-		filename = malloc(l + 1);
+		filename = malloc(ds->userpath.len + len + 1);
 		if (filename == NULL) {
 			return -1;
 		}
@@ -65,7 +63,7 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 		}
 		filename = t;
 	}
-	l = ds->domainpath.len + len;
+
 	memcpy(filename, ds->domainpath.s, ds->domainpath.len);
 	memcpy(filename + ds->domainpath.len, fn, len + 1);
 	fd = open(filename, O_RDONLY);
