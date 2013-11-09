@@ -1808,9 +1808,9 @@ spflookup(const char *domain, const int rec)
 					}
 					if (dlen > 0) {
 						char *exp;
-						i = txtlookup(&exp, target);
-						if (i == 0) {
-							i = spf_makro(exp, domain, 1, &xmitstat.spfexp);
+						if (txtlookup(&exp, target) == 0) {
+							/* if this fails the standard answer will be used */
+							(void)spf_makro(exp, domain, 1, &xmitstat.spfexp);
 							free(exp);
 						}
 					}

@@ -931,7 +931,6 @@ user_exists(const string *localpart, struct userconf *ds)
 
 				r = read(fd, buff, sizeof(buff) - 1);
 				if (r == -1) {
-					e = errno;
 					if (!err_control(filetmp))
 						errno = EDONE;
 					return -1;

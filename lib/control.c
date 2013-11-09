@@ -105,7 +105,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		}
 		j += i;
 	}
-	while ( (i = close(fd)) ) {
+	while (close(fd) != 0) {
 		if (errno != EINTR) {
 			free(inbuf);
 			return -1;

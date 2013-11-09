@@ -166,7 +166,7 @@ dnsname(char **out, const struct in6_addr *ip)
 		*out = NULL;
 		return r;
 	}
-	if (!(r = stralloc_0(&sa))) {
+	if (!stralloc_0(&sa)) {
 		free(sa.s);
 		return -1;
 	}

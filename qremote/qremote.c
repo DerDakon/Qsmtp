@@ -153,13 +153,13 @@ setup(void)
 	}
 	heloname.len = j;
 
-	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY), &chunk, 320)) < 0) {
+	if (loadintfd(open("control/timeoutremote", O_RDONLY), &chunk, 320) < 0) {
 		err_conf("parse error in control/timeoutremote");
 	}
 	timeout = chunk;
 
 #ifdef CHUNKING
-	if ( (j = loadintfd(open("control/chunksizeremote", O_RDONLY), &chunk, 32768)) < 0) {
+	if (loadintfd(open("control/chunksizeremote", O_RDONLY), &chunk, 32768) < 0) {
 		err_conf("parse error in control/chunksizeremote");
 	} else {
 		if (chunk >= ((unsigned long)1 << 31)) {
@@ -169,7 +169,7 @@ setup(void)
 	}
 #endif
 
-	if ( (j = loadoneliner("control/outgoingip", &ipbuf, 1) ) >= 0 ) {
+	if (((ssize_t)loadoneliner("control/outgoingip", &ipbuf, 1)) >= 0) {
 		int r = inet_pton(AF_INET6, ipbuf, &outip);
 
 		free(ipbuf);

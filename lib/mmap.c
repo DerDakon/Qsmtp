@@ -22,11 +22,10 @@
 void *
 mmap_fd(int fd, off_t *len)
 {
-	int i;
 	struct stat st;
 	void *res;
 
-	if ( (i = fstat(fd, &st)) )
+	if (fstat(fd, &st) != 0)
 		return NULL;
 
 	*len = st.st_size;

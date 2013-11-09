@@ -85,7 +85,6 @@ static struct dns_wc *dns_wildcards;
 int
 cb_wildcardns(const struct userconf *ds, const char **logmsg, int *t)
 {
-	long u;			/* contents of control setting is stored here */
 	struct dns_wc *this;
 
 	/* we can't check the from domain on a bounce message */
@@ -93,7 +92,7 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, int *t)
 		return 0;
 
 	/* if there is a syntax error in the file it's the users fault and this mail will be accepted */
-	if ( (u = getsettingglobal(ds, "block_wildcardns", t)) <= 0)
+	if (getsettingglobal(ds, "block_wildcardns", t) <= 0)
 		return 0;
 
 	if (!dns_wildcards)
