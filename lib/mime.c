@@ -144,9 +144,6 @@ is_multipart(const cstring *line, cstring *boundary)
 						if (!e) {
 							write(1, "D5.6.3 boundary definition is unterminated quoted string\n", 58);
 							net_conn_shutdown(shutdown_abort);
-						} else if (boundary->len > 68) {
-							write(1, "D5.6.3 boundary definition is too long\n", 40);
-							net_conn_shutdown(shutdown_abort);
 						}
 						j = boundary->len;
 					} else {
@@ -160,7 +157,11 @@ is_multipart(const cstring *line, cstring *boundary)
 					if (!boundary->len) {
 						write(1, "D5.6.3 boundary definition is empty\n", 37);
 						net_conn_shutdown(shutdown_abort);
+					} else if (boundary->len > 70) {
+						write(1, "D5.6.3 boundary definition is too long\n", 40);
+						net_conn_shutdown(shutdown_abort);
 					}
+
 					while (j > 0) {
 						j--;
 						if (!(((boundary->s[j] >= 'a') && (boundary->s[j] <= 'z')) ||
@@ -260,7 +261,7 @@ mime_param(const char *line, const size_t len)
 		j = mime_token(line + i, len - i);
 
 		i += j;
-		if ((line[i] == ';') || WSPACE(line[i]))
+		if ((i == len) || (line[i] == ';') || WSPACE(line[i]))
 			return i;
 		return 0;
 	}
