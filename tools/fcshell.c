@@ -163,8 +163,12 @@ writefc(void)
 			len = 1;
 		}
 	}
-	if (fclose(fcfd))
+
+	if (fclose(fcfd)) {
+		fcfd = NULL;
 		goto err;
+	}
+
 	if (!len) {
 		/* nothing in the file */
 		if (unlink(fn)) {
@@ -188,7 +192,8 @@ writefc(void)
 	return;
 err:
 	commstat = errno;
-	fclose(fcfd);
+	if (fcfd != NULL)
+		fclose(fcfd);
 	err("error writing to filterconf tempfile");
 }
 
@@ -457,8 +462,11 @@ editwrite(const int type)
 			break;
 		}
 
-		if (fclose(fcfd))
+		if (fclose(fcfd)) {
+			fcfd = NULL;
 			goto err;
+		}
+
 		if (rename(fn, editbuffer.name)) {
 			commstat = errno;
 			err2("can't rename tempfile to ", editbuffer.name);
@@ -478,7 +486,8 @@ editwrite(const int type)
 	return;
 err:
 	commstat = errno;
-	fclose(fcfd);
+	if (fcfd != NULL)
+		fclose(fcfd);
 	err2("error writing to tempfile ", fn);
 }
 
