@@ -242,9 +242,7 @@ setup(void)
 	struct sigaction sa;
 	struct stat st;
 	char *tmp;
-	struct pfixpol *pf;
 	DIR *dir;
-	struct dirent *de;
 	unsigned long tl;
 	char **tmpconf;
 
@@ -440,8 +438,11 @@ setup(void)
 	dir = opendir(PFIXPOLDIR);
 	TAILQ_INIT(&pfixhead);
 	if (dir) {
+		struct dirent *de;
+
 		/* read all entries in the directory. End on EOVERFLOW or end of list */
 		while ( (de = readdir(dir)) ) {
+			struct pfixpol *pf;
 			if (de->d_name[0] == '.')
 				continue;
 			if (strlen(de->d_name) > 88) {

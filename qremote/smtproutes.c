@@ -45,11 +45,10 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 	struct ips *mx = NULL;
 
 	if (!loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutbuf, &smtproutes, hascolon) && smtproutbuf) {
-		char *target;
 		unsigned int k = 0;
 
 		while (smtproutes[k]) {
-			target = strchr(smtproutes[k], ':');
+			char *target = strchr(smtproutes[k], ':');
 			*target++ = '\0';
 
 			if (!*(smtproutes[k]) || matchdomain(remhost, reml, smtproutes[k])) {

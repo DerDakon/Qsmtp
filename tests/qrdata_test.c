@@ -836,8 +836,6 @@ test_net_conn_shutdown(const enum conn_shutdown_type sdtype __attribute__((unuse
 int main(int argc, char **argv)
 {
 	unsigned int ascii;
-	int fd;
-	char fname[PATH_MAX];
 
 	testcase_setup_log_write(test_log_write);
 	testcase_setup_netnwrite(test_netnwrite);
@@ -874,6 +872,9 @@ int main(int argc, char **argv)
 		linelen = strlen(linein);
 		ascii = 0;
 	} else {
+		int fd;
+		char fname[PATH_MAX];
+
 		for (usepattern = 0; testpatterns[usepattern].name != NULL; usepattern++) {
 			if (strcmp(testpatterns[usepattern].name, argv[1]) == 0)
 				break;

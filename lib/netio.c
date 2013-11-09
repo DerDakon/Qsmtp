@@ -258,7 +258,6 @@ loop_long(int has_cr)
 int
 net_read(void)
 {
-	size_t datain;
 	size_t readoffset = 0;
 	const char *p;
 	int valid;
@@ -290,7 +289,7 @@ net_read(void)
 	}
 
 	do {
-		datain = readinput(linein + readoffset, sizeof(linein) - readoffset);
+		size_t datain = readinput(linein + readoffset, sizeof(linein) - readoffset);
 		/* now the first readoffset characters of linein are filled with the stuff from the last buffer (if any),
 		 * the next datain characters are filled with the data just read, then there is a '\0' */
 

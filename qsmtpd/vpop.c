@@ -36,8 +36,6 @@
 int vget_dir(const char *domain, string *domaindir, char **realdomain)
 {
 	int fd;
-	int i = 0;
-
 	char *cdb_key;
 	size_t cdbkeylen;
 	const char *cdb_buf;
@@ -105,6 +103,8 @@ int vget_dir(const char *domain, string *domaindir, char **realdomain)
 
 	/* get the domain directory */
 	if (domaindir) {
+		int i;
+
 		len = strlen(cdb_buf);
 		while (*(cdb_buf + len - 1) == '/')
 			--len;

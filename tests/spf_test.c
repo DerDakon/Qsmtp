@@ -443,14 +443,14 @@ check_received(int spfstatus, int log)
 	}
 
 	while (tmp != buf + strlen(buf)) {
-		const char *spfkey[] = { "client-ip", "envelope-from", "helo",
-				"problem", "receiver", "identity", "mechanism", NULL };
 
 		if (strncmp(tmp, "x-", 2) == 0) {
 			tmp += 2;
 			while ((*tmp != '\n') && (*tmp != '='))
 				tmp++;
 		} else {
+			const char *spfkey[] = { "client-ip", "envelope-from", "helo",
+					"problem", "receiver", "identity", "mechanism", NULL };
 			unsigned int i = 0;
 
 			while (spfkey[i] != NULL) {

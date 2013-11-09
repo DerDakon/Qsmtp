@@ -411,7 +411,6 @@ test_listload()
 	char ch;	/* dummy */
 	char *buf;
 	char **bufa;
-	int fd;
 	int res;
 	int err = 0;
 	const char fname[] = "control_list";
@@ -451,7 +450,7 @@ test_listload()
 	callbacks[3] = NULL;
 
 	for (i = 0; i <= 3; i++) {
-		fd = open(fname, O_RDONLY);
+		int fd = open(fname, O_RDONLY);
 		if (fd == -1) {
 			fputs("cannot open control test file for reading\n", stderr);
 			unlink(fname);

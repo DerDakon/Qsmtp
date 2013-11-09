@@ -195,8 +195,6 @@ main(int argc, char **argv)
 		snprintf(userpath, sizeof(userpath), "%s/%i/session", argv[1], i);
 		j = open(userpath, O_RDONLY);
 		if (j >= 0) {
-			int k;
-
 			if (loadlistfd(j, &a, &b, NULL)) {
 				fprintf(stderr, "cannot open %s\n", userpath);
 				return 1;
@@ -205,6 +203,8 @@ main(int argc, char **argv)
 			if (a == NULL) {
 				assert(b == NULL);
 			} else {
+				int k;
+
 				assert(b != NULL);
 
 				for (k = 0; b[k] != NULL; k++) {

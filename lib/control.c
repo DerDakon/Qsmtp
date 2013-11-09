@@ -445,9 +445,9 @@ finddomainmm(const char *map, const off_t size, const char *domain)
 	cur = map;
 	do {
 		char *cure = memchr(cur, '\n', size - pos);
-		size_t len;
 
 		if (*cur != '#') {
+			size_t len;
 			if (cure) {
 				len = cure - cur;
 			} else {

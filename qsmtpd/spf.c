@@ -199,11 +199,12 @@ urlencode(const char *token, char **result)
 
 	while (*token) {
 		char *tmp;
-		unsigned int newlen;
-		char n;
 
 		if (!(((*token >= 'a') && (*token <= 'z')) || ((*token >= 'A') && (*token <= 'Z')) ||
 						((*token >= '0') && (*token <= '9')))) {
+			unsigned int newlen;
+			char n;
+
 			switch (*token) {
 			case '-':
 			case '_':
@@ -1586,7 +1587,6 @@ spflookup(const char *domain, const int rec)
 	char *txt, *token, *valid = NULL, *redirect = NULL;
 	int i, result = SPF_NONE, prefix;
 	const char *mechanism = NULL;
-	size_t mechlen;
 
 	if (rec >= 20)
 		return SPF_FAIL_MALF;
@@ -1635,6 +1635,8 @@ spflookup(const char *domain, const int rec)
 	}
 	token = valid;
 	while (*token && (result != SPF_PASS)) {
+		size_t mechlen;
+
 		while (WSPACE(*token)) {
 			token++;
 		}

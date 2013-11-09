@@ -73,11 +73,11 @@ static string pass;
 static string resp;
 
 static int
-authgetl(void) {
-	int i;
-
+authgetl(void)
+{
 	STREMPTY(authin);
 	do {
+		int i;
 		char *s;
 
 		/* to avoid calling realloc for every byte we alloc and
