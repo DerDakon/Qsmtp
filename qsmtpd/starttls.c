@@ -26,7 +26,8 @@ tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 		if (in) {
 			RSA *rsa = PEM_read_RSAPrivateKey(in, NULL, NULL, NULL);
 
-			while (fclose(in) && (errno == EINTR));
+			fclose(in);
+
 			if (rsa)
 				return rsa;
 		}
@@ -49,7 +50,8 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 	if (in) {
 		DH *dh = PEM_read_DHparams(in, NULL, NULL, NULL);
 
-		while (fclose(in) && (errno == EINTR));
+		fclose(in);
+
 		if (dh)
 			return dh;
 	}
