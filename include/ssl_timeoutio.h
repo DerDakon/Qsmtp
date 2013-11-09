@@ -7,11 +7,6 @@
 #include <openssl/ssl.h>
 #include <time.h>
 
-/* the version is like this: 0xMNNFFPPS: major minor fix patch status */
-#if OPENSSL_VERSION_NUMBER < 0x00906030L
-# error "Need OpenSSL version at least 0.9.6c"
-#endif
-
 extern int ssl_timeoutconn(time_t);
 extern int ssl_timeoutaccept(time_t);
 extern int ssl_timeoutrehandshake(time_t);

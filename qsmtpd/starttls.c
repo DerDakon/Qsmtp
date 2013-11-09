@@ -217,14 +217,12 @@ tls_init()
 	}
 	SSL_CTX_load_verify_locations(ctx, CLIENTCA, NULL);
 
-#if OPENSSL_VERSION_NUMBER >= 0x00907000L
 	/* crl checking */
 	store = SSL_CTX_get_cert_store(ctx);
 	if ((lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file())) &&
 				(X509_load_crl_file(lookup, CLIENTCRL, X509_FILETYPE_PEM) == 1))
 		X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK |
 						X509_V_FLAG_CRL_CHECK_ALL);
-#endif
 
 	/* set the callback here; SSL_set_verify didn't work before 0.9.6c */
 	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
