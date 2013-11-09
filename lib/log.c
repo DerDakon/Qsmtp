@@ -43,6 +43,8 @@ log_writen(int priority, const char **s)
 	}
 #ifdef USESYSLOG
 	syslog(priority, "%s", buf);
+#else
+	(void)priority;
 #endif
 #ifndef NOSTDERR
 	write(2, buf, i);
