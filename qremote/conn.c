@@ -122,21 +122,21 @@ getmxlist(char *remhost, struct ips **mx)
 	if (remhost[0] == '[') {
 		if (remhost[reml - 1] == ']') {
 			*mx = malloc(sizeof(**mx));
-			if (!*mx) {
+			if (!*mx)
 				err_mem(0);
-			}
+
+			memset(*mx, 0, sizeof(**mx));
 
 			remhost[reml - 1] = '\0';
 			if (inet_pton(AF_INET6, remhost + 1, &((*mx)->addr)) > 0) {
-				(*mx)->priority = 0;
-				(*mx)->next = NULL;
+				remhost[reml - 1] = ']';
 				return;
 			} else if (inet_pton(AF_INET, remhost + 1, &((*mx)->addr.s6_addr32[3])) > 0) {
-				memset((*mx)->addr.s6_addr32, 0, 12);
-				(*mx)->priority = 0;
-				(*mx)->next = NULL;
+				(*mx)->addr.s6_addr32[2] = ntohl(0xffff);
+				remhost[reml - 1] = ']';
 				return;
 			}
+			remhost[reml - 1] = ']';
 		}
 		log_write(LOG_ERR, "parse error in first argument");
 		write_status("Z4.3.0 parse error in first argument\n");

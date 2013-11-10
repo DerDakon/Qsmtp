@@ -371,6 +371,31 @@ FOREACH (ROUTETEST nomatch complete_match with_port port_0 port_100k port_char n
 	ENDIF ()
 ENDFOREACH (ROUTETEST)
 
+ADD_EXECUTABLE(testcase_getmxlist
+		getmxlist_test.c
+		${CMAKE_SOURCE_DIR}/qremote/conn.c)
+
+TARGET_LINK_LIBRARIES(testcase_getmxlist
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
+
+ADD_TEST(NAME "getmxlist"
+		COMMAND testcase_getmxlist)
+
+ADD_EXECUTABLE(testcase_getmxlistv4only
+		getmxlist_test.c
+		${CMAKE_SOURCE_DIR}/qremote/conn.c)
+
+TARGET_LINK_LIBRARIES(testcase_getmxlistv4only
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
+
+SET_TARGET_PROPERTIES(testcase_getmxlistv4only PROPERTIES
+		COMPILE_DEFINITIONS IPV4ONLY)
+
+ADD_TEST(NAME "getmxlist_IPv4_only"
+		COMMAND testcase_getmxlistv4only)
+
 # This is a brute force test just to get some "real" coverage on the file.
 # It will always fail, either because ${AUTOQMAIL} doesn't exist or doesn't
 # have the proper configuration files or simply because we do not pass it
@@ -382,14 +407,28 @@ ADD_TEST(NAME "Qremote_noinput_noargs"
 # Since the destination address should really not exists this will still fail.
 ADD_TEST(NAME "Qremote_to_invalid"
 		COMMAND Qremote invalid.invalid from@invalid.invalid to@invalid.invalid)
+ADD_TEST(NAME "Qremote_to_localhost"
+		COMMAND Qremote "[127.0.0.1]" "from@invalid.invalid" "to@[127.0.0.1]")
+ADD_TEST(NAME "Qremote_to_localhost6"
+		COMMAND Qremote "[::1]" "from@invalid.invalid" "to@[::1]")
+ADD_TEST(NAME "Qremote_to_bad_expression"
+		COMMAND Qremote "[127.0" "from@invalid.invalid" "to@localhost")
 
 IF (AUTOQMAIL_FROM_TESTSUITE)
 	SET_TESTS_PROPERTIES(Qremote_noinput_noargs PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Zinternal error: Qremote called with invalid arguments\n")
 	SET_TESTS_PROPERTIES(Qremote_to_invalid PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z4\\.4\\.3 cannot find a mail exchanger for invalid\\.invalid\n")
+	SET_TESTS_PROPERTIES(Qremote_to_localhost PROPERTIES
+			PASS_REGULAR_EXPRESSION "^Z4\\.4\\.3 all mail exchangers for \\[127\\.0\\.0\\.1\\] point back to me\n")
+	SET_TESTS_PROPERTIES(Qremote_to_localhost6 PROPERTIES
+			PASS_REGULAR_EXPRESSION "^Z4\\.4\\.3 all mail exchangers for \\[::1\\] point back to me\n")
+	SET_TESTS_PROPERTIES(Qremote_to_bad_expression PROPERTIES
+			PASS_REGULAR_EXPRESSION "^Z4\\.3\\.0 parse error in first argument\n")
 ELSE ()
 	SET_TESTS_PROPERTIES(Qremote_noinput_noargs Qremote_to_invalid
+			Qremote_to_localhost Qremote_to_localhost6
+			Qremote_to_bad_expression
 			PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z")
 ENDIF ()
