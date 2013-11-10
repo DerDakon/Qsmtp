@@ -161,6 +161,7 @@ getmxlist(char *remhost, struct ips **mx)
 				return;
 			}
 			remhost[reml - 1] = ']';
+			free(*mx);
 		}
 
 		log_writen(LOG_ERR, logmsg);
