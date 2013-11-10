@@ -65,8 +65,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			return -1;
 		}
 	}
-	i = fstat(fd, &st);
-	if (i != 0) {
+	if (fstat(fd, &st) != 0) {
 		int err = errno;
 		do {
 			i = close(fd);
@@ -93,7 +92,8 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	}
 	j = 0;
 	while (j < oldlen - 1) {
-		if ( ((i = read(fd, inbuf + j, oldlen - 1 - j)) == -1) && (errno != EINTR) ) {
+		const ssize_t k = read(fd, inbuf + j, oldlen - 1 - j);
+		if ((k == -1) && (errno != EINTR)) {
 			int e = errno;
 
 			do {
@@ -103,7 +103,8 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			errno = e;
 			return -1;
 		}
-		j += i;
+		if (k > 0)
+			j += k;
 	}
 	while (close(fd) != 0) {
 		if (errno != EINTR) {
