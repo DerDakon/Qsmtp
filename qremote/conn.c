@@ -161,7 +161,7 @@ getmxlist(char *remhost, struct ips **mx)
 		}
 		log_write(LOG_ERR, "parse error in first argument");
 		write_status("Z4.3.0 parse error in first argument\n");
-		exit(0);
+		net_conn_shutdown(shutdown_abort);
 	}
 
 	*mx = smtproute(remhost, reml, &targetport);
