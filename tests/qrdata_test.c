@@ -375,7 +375,7 @@ static struct {
 		       "Content-Type: multipart/mixed;\r"
 		       " boundary=\"------------0008\"\r"
 		       "\r"
-		       "--------------0008\r"
+		       "--------------0008 \r"
 		       "Content-Type: text/plain; charset=iso-8859-15\n"
 		       "Content-Transfer-Encoding: 8bit\n"
 		       "\n"
