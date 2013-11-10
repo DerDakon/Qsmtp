@@ -140,6 +140,9 @@ getmxlist(char *remhost, struct ips **mx)
 	size_t reml = strlen(remhost);
 
 	if (remhost[0] == '[') {
+		const char *logmsg[] = {"parse error in first argument \"",
+					remhost, "\"", NULL};
+
 		if (remhost[reml - 1] == ']') {
 			*mx = malloc(sizeof(**mx));
 			if (!*mx)
@@ -159,7 +162,8 @@ getmxlist(char *remhost, struct ips **mx)
 			}
 			remhost[reml - 1] = ']';
 		}
-		log_write(LOG_ERR, "parse error in first argument");
+
+		log_writen(LOG_ERR, logmsg);
 		write_status("Z4.3.0 parse error in first argument\n");
 		net_conn_shutdown(shutdown_abort);
 	}
