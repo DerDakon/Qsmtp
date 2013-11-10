@@ -88,6 +88,7 @@ main(void)
 			fprintf(stderr, "addr %u returned multiple IPs\n",
 					i);
 			ret++;
+			freeips(mx);
 			continue;
 		}
 
@@ -95,11 +96,19 @@ main(void)
 			fprintf(stderr, "addr %u was not parsed to correct result\n",
 					i);
 			ret++;
+			freeips(mx);
 			continue;
 		}
 
 		if (patterns[i].prio != mx->priority) {
+			fprintf(stderr, "addr %u: found priority %u, expected %u\n",
+					i, mx->priority, patterns[i].prio);
+			ret++;
+			freeips(mx);
+			continue;
 		}
+
+		freeips(mx);
 	}
 
 	return ret;

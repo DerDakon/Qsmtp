@@ -377,6 +377,7 @@ ADD_EXECUTABLE(testcase_getmxlist
 
 TARGET_LINK_LIBRARIES(testcase_getmxlist
 		testcase_io_lib
+		qsmtp_lib
 		${MEMCHECK_LIBRARIES})
 
 ADD_TEST(NAME "getmxlist"
@@ -388,6 +389,7 @@ ADD_EXECUTABLE(testcase_getmxlistv4only
 
 TARGET_LINK_LIBRARIES(testcase_getmxlistv4only
 		testcase_io_lib
+		qsmtp_lib
 		${MEMCHECK_LIBRARIES})
 
 SET_TARGET_PROPERTIES(testcase_getmxlistv4only PROPERTIES
