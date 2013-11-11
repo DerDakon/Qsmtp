@@ -24,7 +24,7 @@ cb_boolean(const struct userconf *ds, const char **logmsg, int *t)
 	 * We offer it for paranoid users but don't use getsettingglobal here so
 	 * it can't be turned on for everyone by accident (or stupid postmaster) */
 	if (!ssl && (getsetting(ds, "forcestarttls", t) > 0)) {
-		rc = net_write("501 5.7.1 recipient requires encrypted message transmission");
+		rc = netwrite("501 5.7.1 recipient requires encrypted message transmission\r\n");
 		*logmsg = "TLS required";
 		return rc ? rc : 1;
 	}

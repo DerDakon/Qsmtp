@@ -19,13 +19,6 @@ extern size_t net_readbin(size_t, char *) __attribute__ ((nonnull (2)));
 extern size_t net_readline(size_t, char *) __attribute__ ((nonnull (2)));
 extern int data_pending(void);
 
-static inline int __attribute__ ((nonnull (1)))
-net_write(const char *s)
-{
-	const char *msg[] = {s, "\r\n", NULL};
-	return net_writen(msg);
-}
-
 extern time_t timeout;
 extern int socketd;
 
