@@ -125,11 +125,18 @@ send_bdat(unsigned int recodeflag)
 			chunkbuf[lenlen - 1] = '\n';
 		}
 		netnwrite(chunkbuf + hl, len - hl);
-		if (off != msgsize)
+		if (off != msgsize) {
+#ifdef DEBUG_IO
+			in_data = 0;
+#endif
 			if (checkreply(" ZD", NULL, 0) != 250) {
 				free(chunkbuf);
 				quit();
 			}
+#ifdef DEBUG_IO
+			in_data = 1;
+#endif
+		}
 	}
 #ifdef DEBUG_IO
 	in_data = 0;
