@@ -116,6 +116,40 @@ test_net_conn_shutdown(const enum conn_shutdown_type sdtype __attribute__((unuse
 const char *successmsg[] = {"1", "2", "3", "4", "5", "6", "7", NULL};
 
 int
+test_netnwrite_bdatlen(const char *s, const size_t l)
+{
+	unsigned long lp;
+	size_t extralen;
+	char *endptr;
+
+	if (strncmp(s, "BDAT ", 5) != 0) {
+		fprintf(stderr, "message %u does not start with BDAT command\n",
+				write_msg_index);
+		exit(EINVAL);
+	}
+
+	lp = strtoul(s + 5, &endptr, 10);
+
+	if (strncmp(endptr, "\r\n", 2) == 0) {
+		extralen = 2 + (endptr - s);
+	} else if (strncmp(endptr, " LAST\r\n", 7) == 0) {
+		extralen = 7 + (endptr - s);
+	} else {
+		fprintf(stderr, "can't parse message size declaration in message %u\n",
+				write_msg_index);
+		exit(EINVAL);
+	}
+
+	if (lp != l - extralen) {
+		fprintf(stderr, "message %u announced %zu byte of data, but sent %zu\n",
+				write_msg_index, lp, l - extralen);
+		exit(EINVAL);
+	}
+
+	return 0;
+}
+
+int
 test_netnwrite(const char *s, const size_t l)
 {
 	if ((write_msgs == NULL) || (write_msgs[write_msg_index] == NULL)) {
@@ -136,6 +170,7 @@ test_netnwrite(const char *s, const size_t l)
 		exit(EINVAL);
 	}
 
+	test_netnwrite_bdatlen(s, l);
 	write_msg_index++;
 
 	return 0;
@@ -246,6 +281,42 @@ test_wrap_single_line(void)
 }
 
 static int
+test_wrap_multi_lines(void)
+{
+	const char *netmsgs[] = {
+		"BDAT 7\r\nab\r\ncde",
+		"BDAT 7 LAST\r\n\r\nfgh\r\n",
+		NULL
+	};
+	const struct checkreply_data chrmsgs[] = {
+		{ " ZD", 250 },
+		{ "KZD", 250 },
+		{ NULL, 0 }
+	};
+
+	msgdata = "ab\r\ncde\r\nfgh\r\n";
+	msgsize = strlen(msgdata);
+	may_log_count = 0;
+	chunksize = 22;
+	write_msg_index = 0;
+	write_msgs = netmsgs;
+	checkreply_index = 0;
+	checkreply_msgs = chrmsgs;
+	successmsg[2] = "3";
+
+	testcase_setup_netnwrite(test_netnwrite);
+
+	send_bdat(0);
+
+	if (strcmp(successmsg[2], "chunked ") != 0) {
+		fprintf(stderr, "successmsg[2] should have been 'chunked ', but is '%s'\n", successmsg[2]);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int
 test_newline_crlf_errors(void)
 {
 	const char *netmsgs[] = {
@@ -329,6 +400,7 @@ main(void)
 	ret += test_bad_malloc();
 	ret += test_single_byte();
 	ret += test_wrap_single_line();
+	ret += test_wrap_multi_lines();
 	ret += test_newline_crlf_errors();
 
 	if (ret != 0) {
