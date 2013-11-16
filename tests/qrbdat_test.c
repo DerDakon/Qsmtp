@@ -141,7 +141,7 @@ test_netnwrite_bdatlen(const char *s, const size_t l)
 	}
 
 	if (lp != l - extralen) {
-		fprintf(stderr, "message %u announced %zu byte of data, but sent %zu\n",
+		fprintf(stderr, "message %u announced %lu byte of data, but sent %zu\n",
 				write_msg_index, lp, l - extralen);
 		exit(EINVAL);
 	}
