@@ -491,11 +491,10 @@ CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRE
 ADD_TEST(NAME "Qsmtpd_cmd_args"
 		COMMAND "${CMAKE_COMMAND}"
 				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_cmd_args.cmake")
-
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
 SET_TESTS_PROPERTIES(Qsmtpd_cmd_args PROPERTIES
-		PASS_REGULAR_EXPRESSION "^220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n501 5\\.5\\.2 unrecognized command parameter\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n250 2\\.1\\.5 sender <> is syntactically correct\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n221 2\\.0\\.0 [^\n ]* service closing transmission channel\n$")
+		PASS_REGULAR_EXPRESSION "^220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n250 [^\n ]*\n500 5\\.5\\.2 command syntax error\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n501 5\\.5\\.2 unrecognized command parameter\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n250 2\\.1\\.5 sender <> is syntactically correct\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n221 2\\.0\\.0 [^\n ]* service closing transmission channel\n$")
 
 ADD_TEST(NAME "Qsmtpd_data"
 		COMMAND testcase_qsdata)
