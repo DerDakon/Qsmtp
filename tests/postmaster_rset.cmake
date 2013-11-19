@@ -9,8 +9,6 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E echo "rSET\r")
 execute_process(COMMAND sleep 1)
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "EHLO nonsense.example.org\r")
 execute_process(COMMAND sleep 1)
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> foo=bar nonsense\r")
-execute_process(COMMAND sleep 1)
 # pipelining
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<>\r\nrcpt to:<postmaster>\r\nRset\r")
 execute_process(COMMAND sleep 1)
