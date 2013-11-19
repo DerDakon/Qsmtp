@@ -475,6 +475,17 @@ ADD_TEST(NAME "Qsmtpd_postmaster_rset"
 SET_TESTS_PROPERTIES(Qsmtpd_postmaster_rset PROPERTIES
 		PASS_REGULAR_EXPRESSION "^220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n250 [^\n ]*\n250 2\\.0\\.0 ok\n250 2\\.0\\.0 ok\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n250 2\\.0\\.0 ok\n503 5\\.5\\.1 Bad sequence of commands\n221 2\\.0\\.0 [^\n ]* service closing transmission channel\n$")
 
+SET(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/bounce_multi_rcpt.cmake")
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit_postmaster.cmake" @ONLY)
+ADD_TEST(NAME "Qsmtpd_bad_bounce"
+		COMMAND "${CMAKE_COMMAND}"
+				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit_postmaster.cmake")
+
+# Do not add \r here, looks like CMake automatically strips it, so just
+# assume we are doing it right.
+SET_TESTS_PROPERTIES(Qsmtpd_bad_bounce PROPERTIES
+		PASS_REGULAR_EXPRESSION "^220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n550 5.5.3 bounce messages must not have more than one recipient\n221 2\\.0\\.0 [^\n ]* service closing transmission channel\n$")
+
 ADD_TEST(NAME "Qsmtpd_data"
 		COMMAND testcase_qsdata)
 
