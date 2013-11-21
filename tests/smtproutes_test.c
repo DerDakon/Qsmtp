@@ -95,8 +95,13 @@ int main(void)
 
 	mx = smtproute("foo.example.net", strlen("foo.example.net"), &targetport);
 
-	if ((mx == NULL) && (ipe_len == (size_t) -1))
-		return 0;
+	if (mx == NULL) {
+		if (ipe_len == (size_t) -1)
+			return 0;
+
+		fprintf(stderr, "no matching entry found for foo.example.net\n");
+		return 1;
+	}
 
 	if (targetport != expectedport) {
 		fprintf(stderr, "expected port %lu, but got port %u\n", expectedport, targetport);

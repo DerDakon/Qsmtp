@@ -1,5 +1,5 @@
 .\"TOPICS "Topics:"
-.TH Qremote 8 "December 2008" "Qremote Version @QSMTP_VERSION_MAJOR@.@QSMTP_VERSION_MINOR@@QSMTP_VERSION_EXTRAVERSION@" "Qremote"
+.TH Qremote 8 "November 2013" "Qremote Version @QSMTP_VERSION_MAJOR@.@QSMTP_VERSION_MINOR@@QSMTP_VERSION_EXTRAVERSION@" "Qremote"
 .SH NAME
 Qremote \- send mail via (E)SMTP
 .SH SYNOPSIS
@@ -161,17 +161,6 @@ normal SMTP port, 25:
    foo.example.com:mx2.example.com:24
 .EE
 
-Also username and password for SMTP authentication may be
-added behind port name. They are currently ignored, 
-.B Qremote
-does not support authentication yet. In this case
-.I smtproutes
-should be set to user qmailr and mode 0400.
-
-.EX
-   bar.example.com:relay.example.com:24:myuser:secret
-.EE
-
 .I relay
 may be empty;
 this tells
@@ -204,6 +193,62 @@ However,
 you are always safe using
 .I smtproutes
 if you do not accept mail from the network.
+.TP 5
+.I smtproutes.d
+Artificial SMTP routes.
+
+A file can be created for each domain to specify a
+specific routing. Wildcard routings may be created using
+a file beginning with a single
+.I *
+as subdomain, e. g.
+
+.EX
+  *.example.net
+.EE
+
+Each file contains
+.I key=value
+pairs defining the mapping. Currently the following keys are supported:
+
+.I host
+The hostname of the target machine.
+
+.I port
+The port on the remote machine to connect to.
+
+These files allow easier addition of new fields without making the file
+unreadable. Otherwise they behave the same as the single smtproutes file.
+
+Given the domain
+.I foo.example.net
+the following lookups will be performed:
+
+.EX
+ smtproutes.d/foo.example.net
+ smtproutes.d/*.example.net
+ smtproutes.d/*.net
+ smtproutes.d/default
+ smtproutes
+.EE
+
+The search is terminated on the first match.
+Please note that a wildcards subdomain does not match mails
+with the absolute destination of the remainder, e. g.
+.I *.example.net
+does not match for a mail sent to
+.I foo@example.net
+.
+
+The following example would route mails to port 24 on
+.I baz.example.org
+:
+
+.EX
+   host=baz.example.org
+   port=24
+.EE
+
 .TP 5
 .I timeoutconnect
 Number of seconds

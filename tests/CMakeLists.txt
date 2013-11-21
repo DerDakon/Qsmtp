@@ -360,7 +360,9 @@ TARGET_LINK_LIBRARIES(testcase_smtproutes
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES})
 
-FOREACH (ROUTETEST nomatch complete_match with_port port_0 port_100k port_char no_colon unresolved)
+FOREACH (ROUTETEST nomatch complete_match with_port port_0 port_100k port_char no_colon unresolved
+		complete_match_dir with_port_dir port_0_dir port_100k_dir port_char_dir
+		unresolved_dir duplicate_host_dir invalid_entry_dir)
 	ADD_TEST(NAME "SMTProutes-${ROUTETEST}"
 			COMMAND testcase_smtproutes
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}")

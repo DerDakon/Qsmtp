@@ -1,0 +1,2 @@
+input file contains invalid entry 'foo=bar'
+LOG: cannot find IP address for static route "mail.example.com" given as target for "foo.example.net"
