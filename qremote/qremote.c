@@ -15,6 +15,7 @@
 #include <syslog.h>
 #include <string.h>
 #include <fcntl.h>
+#include "greeting.h"
 #include "netio.h"
 #include "qdns.h"
 #include "control.h"
@@ -389,16 +390,11 @@ greeting(void)
 		unsigned int len;	/* strlen(name) */
 		int (*func)(void);	/* used to handle arguments to this extension, NULL if no arguments allowed */
 	} extensions[] = {
-#define SMTPEXT_SIZE 0x01
 		{ .name = "SIZE",	.len = 4,	.func = cb_size	}, /* 0x01 */
-#define SMTPEXT_PIPELINING 0x02
 		{ .name = "PIPELINING",	.len = 10,	.func = NULL	}, /* 0x02 */
-#define SMTPEXT_STARTTLS 0x04
 		{ .name = "STARTTLS",	.len = 8,	.func = NULL	}, /* 0x04 */
-#define SMTPEXT_8BITMIME 0x08
 		{ .name = "8BITMIME",	.len = 8,	.func = NULL	}, /* 0x08 */
 #ifdef CHUNKING
-#define SMTPEXT_CHUNKING 0x10
 		{ .name = "CHUNKING",	.len = 8,	.func = NULL	}, /* 0x10 */
 #endif
 		{ .name = NULL }
@@ -596,7 +592,7 @@ main(int argc, char *argv[])
 	freeips(mx);
 	mailerrmsg[1] = rhost;
 
-	if (smtpext & SMTPEXT_STARTTLS) {
+	if (smtpext & esmtp_starttls) {
 		if (tls_init()) {
 			if (greeting()) {
 				write_status("ZEHLO failed after STARTTLS\n");
@@ -613,7 +609,7 @@ main(int argc, char *argv[])
 	netmsg[1] = argv[2];
 	lastmsg = 2;
 /* ESMTP SIZE extension */
-	if (smtpext & SMTPEXT_SIZE) {
+	if (smtpext & esmtp_size) {
 		netmsg[lastmsg++] = "> SIZE=";
 		ultostr(msgsize, sizebuf);
 		netmsg[lastmsg++] = sizebuf;
@@ -621,10 +617,10 @@ main(int argc, char *argv[])
 		netmsg[lastmsg++] = ">";
 	}
 /* ESMTP 8BITMIME extension */
-	if (smtpext & SMTPEXT_8BITMIME) {
+	if (smtpext & esmtp_8bitmime) {
 		netmsg[lastmsg++] = (recodeflag & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
 	}
-	if (smtpext & SMTPEXT_PIPELINING) {
+	if (smtpext & esmtp_pipelining) {
 /* server allows PIPELINING: first send all the messages, then check the replies.
  * This allows to hide network latency. */
 		/* batch the first recipient with the from */
@@ -687,7 +683,7 @@ main(int argc, char *argv[])
 	}
 	successmsg[0] = rhost;
 #ifdef CHUNKING
-	if (smtpext & SMTPEXT_CHUNKING) {
+	if (smtpext & esmtp_chunking) {
 		send_bdat(recodeflag);
 	} else {
 #else
