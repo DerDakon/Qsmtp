@@ -184,6 +184,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 							target, "\" given as target for \"",
 							remhost, "\"", NULL};
 	
+					freeips(mx);
 					free(array);
 					/* smtproutbuf not freed here as "port" still references it */
 					err_confn(logmsg, buf);
