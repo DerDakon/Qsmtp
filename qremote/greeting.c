@@ -8,6 +8,8 @@
 #include <string.h>
 
 unsigned long remotesize;
+const char *auth_mechs;
+char auth_mechs_copy[996];	/**< copy of the AUTH mechanisms supported by the remote host, to avoid malloc() */
 
 static int
 cb_size(const char *more)
@@ -19,6 +21,38 @@ cb_size(const char *more)
 	
 	remotesize = strtoul(more, &s, 10);
 	return *s;
+}
+
+static int
+cb_auth(const char *more)
+{
+	while (*more == ' ')
+		more++;
+
+	if (*more != '\0') {
+		/* detect any 8bit or unprintable character here */
+		const char *cur = more;
+		size_t len;
+		while (*cur) {
+			if ((*cur < 32) || (*cur >= 127))
+				return -1;
+			cur++;
+		}
+
+		/* Add a space at the beginning and the end. This allows lookups
+		 * of any item as strstr(auth_mechs, " item ") without special
+		 * cases. */
+		auth_mechs_copy[0] = ' ';
+		strncpy(auth_mechs_copy + 1, more, sizeof(auth_mechs_copy) - 3);
+		auth_mechs_copy[sizeof(auth_mechs_copy) - 3] = '\0';
+		len = strlen(auth_mechs_copy);
+		auth_mechs_copy[len++] = ' ';
+		auth_mechs_copy[len] = '\0';
+
+		auth_mechs = auth_mechs_copy;
+	}
+
+	return 0;
 }
 
 int
@@ -33,6 +67,7 @@ esmtp_check_extension(const char *input)
 		{ .name = "PIPELINING",	.len = 10,	.func = NULL	}, /* 0x02 */
 		{ .name = "STARTTLS",	.len = 8,	.func = NULL	}, /* 0x04 */
 		{ .name = "8BITMIME",	.len = 8,	.func = NULL	}, /* 0x08 */
+		{ .name = "AUTH",	.len = 4,	.func = cb_auth	}, /* 0x10 */
 #ifdef CHUNKING
 		{ .name = "CHUNKING",	.len = 8,	.func = NULL	}, /* 0x20 */
 #endif

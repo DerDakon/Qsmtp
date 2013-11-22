@@ -10,12 +10,13 @@ enum ehlo_extensions {
 	esmtp_pipelining = 0x2,	/**< PIPELINING (RfC 2920) */
 	esmtp_starttls = 0x4,	/**< STARTTLS (RfC 3207) */
 	esmtp_8bitmime = 0x8,	/**< 8BITMIME (RfC 6152) */
-	esmtp_chunking = 0x10,	/**< CHUNKING (RfC 3030) */
-	esmtp_auth = 0x20,	/**< AUTH (RfC 2554) */
+	esmtp_auth = 0x10,	/**< AUTH (RfC 2554) */
+	esmtp_chunking = 0x20,	/**< CHUNKING (RfC 3030) */
 	esmtp_x_final = esmtp_auth/**< end delimiter */
 };
 
 extern unsigned long remotesize;	/**< the maximum size allow by the remote host or 0 if unlimited or unknown */
+extern const char *auth_mechs;	/**< the AUTH mechanisms supported by the remote host */
 
 /**
  * @brief check if the line contains a known ESMTP extension

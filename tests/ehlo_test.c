@@ -1,5 +1,6 @@
 #include "greeting.h"
 #include <stdio.h>
+#include <string.h>
 
 /**
  * @brief pass EHLO lines that should be ignored because they are unknown
@@ -163,6 +164,58 @@ testcase_invalid(void)
 	return ret;
 }
 
+static int
+testcase_auth(void)
+{
+	struct {
+		const char *line;
+		const char *mechs;
+	} lines[] = {
+		{
+			.line = "AUTH ",
+			.mechs = NULL
+		},
+		{
+			.line = "AUTH LOGIN PLAIN",
+			.mechs = " LOGIN PLAIN "
+		},
+		{
+			.line = "AUTH  LOGIN PLAIN",
+			.mechs = " LOGIN PLAIN "
+		},
+		{
+			.line = NULL
+		}
+	};
+	int ret = 0;
+	unsigned int i;
+
+	for (i = 0; lines[i].line != NULL; i++) {
+		remotesize = 42;
+
+		if (esmtp_check_extension(lines[i].line) != esmtp_auth) {
+			fprintf(stderr, "line '%s' not detected as correct AUTH line\n",
+				lines[i].line);
+			ret++;
+			continue;
+		}
+
+		if ((lines[i].mechs == NULL) && (auth_mechs == NULL))
+			/* fine, go on. */
+			continue;
+
+		if ((lines[i].mechs != NULL) && (auth_mechs != NULL) &&
+				(strcmp(lines[i].mechs, auth_mechs) == 0))
+			continue;
+			
+		fprintf(stderr, "line '%s' parsed mechanisms '%s', but expected '%s'\n",
+				lines[i].line, auth_mechs, lines[i].mechs);
+		ret++;
+	}
+
+	return ret;
+}
+
 int
 main(void)
 {
@@ -172,6 +225,7 @@ main(void)
 	ret += testcase_no_args();
 	ret += testcase_size();
 	ret += testcase_invalid();
+	ret += testcase_auth();
 
 	return ret;
 }
