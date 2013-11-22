@@ -149,6 +149,7 @@ testcase_invalid(void)
 #ifdef CHUNKING
 		"CHUNKING X", /* CHUNKING does not accept arguments */
 #endif /* CHUNKING */
+		"AUTH \tPLAIN", /* unprintable character */
 		NULL
 	};
 	int ret = 0;
