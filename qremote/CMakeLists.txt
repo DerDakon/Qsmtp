@@ -5,6 +5,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/statuscodes.h.tmpl ${CMAKE_CURRENT_BI
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(QREMOTE_SRCS
+	greeting.c
 	qremote.c
 	conn.c
 	starttlsr.c
@@ -14,6 +15,7 @@ SET(QREMOTE_SRCS
 
 SET(QREMOTE_HDRS
 	../include/conn.h
+	../include/greeting.h
 	../include/qrdata.h
 	../include/qremote.h
 	../include/starttlsr.h

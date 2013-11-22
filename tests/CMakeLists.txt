@@ -510,3 +510,13 @@ TARGET_LINK_LIBRARIES(testcase_ipme
 )
 ADD_TEST(NAME "IPme"
 		COMMAND testcase_ipme)
+
+ADD_EXECUTABLE(testcase_ehlo_parsing
+		ehlo_test.c
+		${CMAKE_SOURCE_DIR}/qremote/greeting.c
+)
+TARGET_LINK_LIBRARIES(testcase_ehlo_parsing
+		${MEMCHECK_LIBRARIES}
+)
+ADD_TEST(NAME "EHLO_parsing"
+		COMMAND testcase_ehlo_parsing)

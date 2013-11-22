@@ -363,20 +363,6 @@ checkreply(const char *status, const char **pre, const int mask)
 	return res;
 }
 
-static unsigned long remotesize;
-
-static int
-cb_size(void)
-{
-	char *s;
-
-	if (!linein[8])
-		return 0;
-
-	remotesize = strtoul(linein + 8, &s, 10);
-	return *s;
-}
-
 /**
  * greet the server, try ehlo and fall back to helo if needed
  *
@@ -385,20 +371,6 @@ cb_size(void)
 static int
 greeting(void)
 {
-	struct smtpexts {
-		const char *name;
-		unsigned int len;	/* strlen(name) */
-		int (*func)(void);	/* used to handle arguments to this extension, NULL if no arguments allowed */
-	} extensions[] = {
-		{ .name = "SIZE",	.len = 4,	.func = cb_size	}, /* 0x01 */
-		{ .name = "PIPELINING",	.len = 10,	.func = NULL	}, /* 0x02 */
-		{ .name = "STARTTLS",	.len = 8,	.func = NULL	}, /* 0x04 */
-		{ .name = "8BITMIME",	.len = 8,	.func = NULL	}, /* 0x08 */
-#ifdef CHUNKING
-		{ .name = "CHUNKING",	.len = 8,	.func = NULL	}, /* 0x10 */
-#endif
-		{ .name = NULL }
-	};
 	const char *cmd[3];
 	int s;			/* SMTP status */
 
@@ -409,34 +381,15 @@ greeting(void)
 	do {
 		s = netget();
 		if (s == 250) {
-			int j = 0;
+			int ext = esmtp_check_extension(linein + 4);
 
-			while (extensions[j].name) {
-				if (!strncasecmp(linein + 4, extensions[j].name, extensions[j].len)) {
-					if (extensions[j].func) {
-						int r;
+			if (ext < 0) {
+				const char *logmsg[4] = {"syntax error in EHLO response \"",
+						linein + 4, "\"", NULL};
 
-						r = extensions[j].func();
-						if (!r) {
-							smtpext |= (1 << j);
-							break;
-/*						} else if (r < 0) {
-							return r;
-*/						} else {
-							const char *logmsg[4] = {"syntax error in EHLO response \"",
-									    extensions[j].name,
-									    "\"", NULL};
-
-							log_writen(LOG_WARNING, logmsg);
-						}
-					} else {
-						if (!*(linein + 4 + extensions[j].len)) {
-							smtpext |= (1 << j);
-							break;
-						}
-					}
-				}
-				j++;
+				log_writen(LOG_WARNING, logmsg);
+			} else {
+				smtpext |= ext;
 			}
 		}
 	} while (linein[3] == '-');

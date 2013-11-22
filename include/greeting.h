@@ -15,4 +15,16 @@ enum ehlo_extensions {
 	esmtp_x_final = esmtp_auth/**< end delimiter */
 };
 
+extern unsigned long remotesize;	/**< the maximum size allow by the remote host or 0 if unlimited or unknown */
+
+/**
+ * @brief check if the line contains a known ESMTP extension
+ *
+ * @param input the line as sent by the server (ommitting the leading "250 " or "250-")
+ * @return the extension code detected
+ * @retval 0 no known extension code was found
+ * @retval -1 a valid extension code was found, but the line had a parse error
+ */
+int esmtp_check_extension(const char *input) __attribute__ ((nonnull (1)));
+
 #endif /* GREETING_H */
