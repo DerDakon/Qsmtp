@@ -1,2 +1,2 @@
-input file contains invalid entry 'host=mail.example.com'
+input file contains invalid entry 'relay=mail.example.com'
 LOG: cannot find IP address for static route "mail.example.com" given as target for "foo.example.net"

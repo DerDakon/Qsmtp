@@ -1,2 +1,2 @@
 port=0
-host=mail.example.net
+relay=mail.example.net

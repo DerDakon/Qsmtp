@@ -1,2 +1,2 @@
-host=mail.example.com
-host=mail.example.com
+relay=mail.example.com
+relay=mail.example.com

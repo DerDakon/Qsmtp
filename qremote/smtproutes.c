@@ -18,7 +18,7 @@
 #include <mmap.h>
 
 static const char *tags[] = {
-	"host",
+	"relay",
 	"port",
 	NULL
 };
