@@ -136,32 +136,34 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			tagmask = 0;
 
 			/* no error, and host must be present */
-			if ((loadlistfd(fd, &buf, &array, validroute) != 0) || ((tagmask & 1) == 0)) {
+			if (loadlistfd(fd, &buf, &array, validroute) != 0) {
 				const char *errmsg[] = {
 						"error opening smtproute file for domain ",
 						remhost, NULL};
 				err_confn(errmsg, NULL);
 			}
 
-			/* find host */
-			while (strncmp(array[i], tags[0], strlen(tags[0])) != 0)
-				i++;
+			if (tagmask & 1) {
+				/* find host */
+				while (strncmp(array[i], tags[0], strlen(tags[0])) != 0)
+					i++;
 
-			val = array[i] + strlen(tags[0]) + 1;
+				val = array[i] + strlen(tags[0]) + 1;
 
-			target = val;
-			if (ask_dnsaaaa(val, &mx)) {
-				const char *logmsg[] = {"cannot find IP address for static route \"",
-						target, "\" given as target for \"",
-						remhost, "\"", NULL};
+				target = val;
+				if (ask_dnsaaaa(val, &mx)) {
+					const char *logmsg[] = {"cannot find IP address for static route \"",
+							target, "\" given as target for \"",
+							remhost, "\"", NULL};
 
-				free(array);
-				err_confn(logmsg, buf);
-			} else {
-				struct ips *m = mx;
-				while (m) {
-					m->priority = 0;
-					m = m->next;
+					free(array);
+					err_confn(logmsg, buf);
+				} else {
+					struct ips *m = mx;
+					while (m) {
+						m->priority = 0;
+						m = m->next;
+					}
 				}
 			}
 
