@@ -24,6 +24,8 @@ first argument,
 .B Qremote
 sends the message to
 .IR host ,
+using the routing algorihm described below.
+
 or to a mail exchanger for
 .I host
 listed in the Domain Name System,
@@ -103,8 +105,9 @@ Message report: permanent failure.
 .PP
 After this letter comes a human-readable description of
 what happened. No human readable description is printed
-after 'r' status report (qmail-rspawn would get confused
-otherwise).
+after 'r' status report (
+.B qmail-rspawn
+would get confused otherwise).
 
 The recipient reports will always be printed in the same order as
 .BR Qremote 's
@@ -119,6 +122,10 @@ arguments.
 .B Qremote
 always exits zero.
 .SH "CONTROL FILES"
+The files listed in this section are looked up in the subdirectory
+.I control/
+of the qmail directory. All files are optional.
+
 .TP 5
 .I clientcert.pem
 SSL certificate that is used to authenticate with the remote server
@@ -135,67 +142,51 @@ otherwise
 refuses to run.
 .TP 5
 .I smtproutes
-Artificial SMTP routes.
+Artificial SMTP routes. See below for a detailed description of mail routing.
+
+The format of this file is the same as used by
+.B qmail-remote .
+
 Each route has the form
-.IR domain\fB:\fIrelay ,
-without any extra spaces.
-If
-.I domain
-matches
-.IR host ,
-.B Qremote
-will connect to
-.IR relay ,
-as if
-.I host
-had
-.I relay
-as its only MX.
-(It will also avoid doing any CNAME lookups on
-.IR recip .)
-.I host
-may include a colon and a port number to use instead of the
-normal SMTP port, 25:
+.IR hostpattern\fB:\fIrelay\fB[:\fIport\fB]\fI ,
+without any extra spaces. The
+.I port
+specification is optional. The following 2 lines have the same effect:
 
 .EX
-   foo.example.com:mx2.example.com:24
+   foo.example.com:mx2.example.com
+   foo.example.com:mx2.example.com:25
 .EE
+
+The first matching entry will be used.
+
+.I hostpattern
+may start with a dot, matching all subdomains of the given domain,
+but not domain itself.
 
 .I relay
-may be empty;
-this tells
-.B Qremote
-to look up MX records as usual.
-.I smtproutes
-may include wildcards:
+may be empty, causing the default routing mechanisms to be applied,
+this can be used to either only specify a different destination port
+or to route one domain using the default mechanism that would otherwise
+be matched by a later rule. The following example will route
+foo.example.com using the default mechanism, but any other subdomain of
+example.com to mail.example.net. example.com is also routed using the
+default mechanism as it is not matched by any rule:
 
 .EX
-   .example.org:
-   :baz.example.org:24
+   foo.example.com:
+   .example.com:mail.example.net
 .EE
 
-Here
-any address ending with
-.B .example.org
-(but not
-.B example.org
-itself)
-is routed by its MX records;
-any other address is artificially routed to
-.BR foo.example.org
-port 24.
-
-The
-.B qmail
-system does not protect you if you create an artificial
-mail loop between machines.
-However,
-you are always safe using
-.I smtproutes
-if you do not accept mail from the network.
 .TP 5
 .I smtproutes.d
-Artificial SMTP routes.
+
+.RS
+Artificial SMTP routes. This is a more extensible format than the plain
+.I smtproutes
+file, allowing easier addition of other properties for the target host
+while keeping the files readable. See below for a detailed description of
+mail routing.
 
 A file can be created for each domain to specify a
 specific routing. Wildcard routings may be created using
@@ -207,18 +198,19 @@ as subdomain, e. g.
   *.example.net
 .EE
 
+Make sure to escape the * character when accessing these files from a
+shell as the shell will use this character as glob extension.
+
 Each file contains
 .I key=value
 pairs defining the mapping. Currently the following keys are supported:
 
-.I host
+.RS
+.IP host 0.8i
 The hostname of the target machine.
-
-.I port
+.IP port
 The port on the remote machine to connect to.
-
-These files allow easier addition of new fields without making the file
-unreadable. Otherwise they behave the same as the single smtproutes file.
+.RE
 
 Given the domain
 .I foo.example.net
@@ -229,7 +221,6 @@ the following lookups will be performed:
  smtproutes.d/*.example.net
  smtproutes.d/*.net
  smtproutes.d/default
- smtproutes
 .EE
 
 The search is terminated on the first match.
@@ -248,6 +239,7 @@ The following example would route mails to port 24 on
    host=baz.example.org
    port=24
 .EE
+.RE
 
 .TP 5
 .I timeoutconnect
@@ -281,6 +273,70 @@ attributes have to match.
 
 .B WARNING:
 this option may cause mail to be delayed, bounced, doublebounced, or lost.
+
+.SH "MAIL ROUTING"
+
+.RS
+By default
+.B Qremote
+will look up the host given as it's first argument in the DNS system, looking
+for MX entries. If none such entry is found it will look for AAAA or A records
+for this hostname and use them. If neither is found, a temporary error will
+be announced, causing the mail to remain in the queue or eventually being
+bounced if it has stayed there for too long.
+
+The routing may be influenced using the
+.I smtproutes
+control file or the files in the
+.I smtproutes.d
+directory. See above for a description of the syntax rules that apply to these
+files.
+
+.RS
+.nr step 1 1
+The routing algorihm is as follows:
+.IP \n[step] 4
+search for a matching entry in
+.I smtproutes.d
+.IP \n+[step]
+search for a matching entry in
+.I smtproutes
+.IP \n+[step]
+search for MX entries for the target host
+.IP \n+[step]
+search for AAAA and A entries for the target host
+.RE
+
+If a match in the first 2 steps is found the
+.I relay
+specified
+.B Qremote
+will connect to
+.IR relay ,
+as if
+.I host
+had
+.I relay
+as its only MX.
+(It will also avoid doing any CNAME lookups on
+.IR recip .)
+
+If
+.I relay
+is empty this tells
+.B Qremote
+to look up DNS records as usual, but apply any other properties
+specified in the control files (e.g. different target port).
+
+The
+.B qmail
+system does not protect you if you create an artificial
+mail loop between machines.
+However,
+you are always safe using
+.I smtproutes
+if you do not accept mail from the network.
+.RE
 
 .SH "SEE ALSO"
 fstat(2),
