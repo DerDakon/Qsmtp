@@ -363,7 +363,8 @@ TARGET_LINK_LIBRARIES(testcase_smtproutes
 FOREACH (ROUTETEST nomatch complete_match with_port port_0 port_100k port_char port_char_no_relay
 		no_colon port_only unresolved
 		complete_match_dir with_port_dir port_0_dir port_100k_dir port_char_dir port_only_dir
-		port_char_no_relay_dir unresolved_dir duplicate_host_dir invalid_entry_dir)
+		port_char_no_relay_dir unresolved_dir duplicate_host_dir invalid_entry_dir
+		no_equal_dir start_equal_dir)
 	ADD_TEST(NAME "SMTProutes-${ROUTETEST}"
 			COMMAND testcase_smtproutes
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}")
