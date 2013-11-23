@@ -84,7 +84,7 @@ size_t authline(size_t num, char *buf, const char *input)
 	string stout;
 	size_t cplen;
 
-	if (b64encode(&stin, &stout) != 0)
+	if (b64encode(&stin, &stout, -1) != 0)
 		exit(3);
 
 	cplen = stout.len + 2 - lineoffs;
@@ -122,6 +122,13 @@ test_net_readline(size_t num, char *buf)
 			data = users[authtry].password;
 
 		ret = authline(num, buf, data);
+
+		data = strchr(buf, '\n');
+
+		if ((data != NULL) && (*(data + 1) != '\0')) {
+			fprintf(stderr, "AUTH buffer contains LF\n");
+			exit(2);
+		}
 
 		lineoffs += ret;
 
@@ -201,7 +208,7 @@ main(int argc, char **argv)
 			};
 			string stout;
 
-			if (b64encode(&stin, &stout) != 0)
+			if (b64encode(&stin, &stout, -1) != 0)
 				exit(3);
 
 			strcat(linein, " ");

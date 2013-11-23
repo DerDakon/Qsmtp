@@ -10,6 +10,39 @@
 #include <string.h>
 
 static int
+check_line_limit(const string *bdata, const unsigned int maxlinelen)
+{
+	const char *lstart, *lend;
+
+	/* verify that the lines are wrapped at the given limit */
+	lend = bdata->s;
+	do {
+		lstart = lend;
+		lend = strstr(lstart, "\r\n");
+		
+		if (lend == NULL) {
+			const size_t foundlen = bdata->s + bdata->len - lstart;
+			if (foundlen > maxlinelen) {
+				fprintf(stderr, "last part has a len of %zu, but a maximum of %u was expected\n",
+					foundlen, maxlinelen);
+				return 1;
+			}
+			break;
+		} else {
+			if (lend - lstart > maxlinelen) {
+				fprintf(stderr, "part at offset %zu has a len of %zu, but a maximum of %u was expected\n",
+					lstart - bdata->s, lend - lstart, maxlinelen);
+				return 1;
+			}
+			
+			lend += 2;
+		}
+	} while ((lend < bdata->s + bdata->len) && (*lend != '\0'));
+
+	return 0;
+}
+
+static int
 inout_test(void)
 {
 	string indata;	/**< input pattern */
@@ -26,6 +59,8 @@ inout_test(void)
 	}
 
 	for (pattern = 0; pattern <= 1; pattern++) {
+		unsigned int maxlinelen = (1 + pattern) * 40;
+
 		switch (pattern) {
 		case 0:
 			for (l = 0; l < indata.len; l++) {
@@ -44,10 +79,13 @@ inout_test(void)
 			return 2;
 		}
 
-		if (b64encode(&indata, &bdata) != 0) {
+		if (b64encode(&indata, &bdata, maxlinelen) != 0) {
 			puts("Error: encoding failed");
 			return 1;
 		}
+
+		if (check_line_limit(&bdata, maxlinelen))
+			return 1;
 
 		if (b64decode(bdata.s, bdata.len, &outdata) != 0) {
 			puts("Error: decoding failed");
@@ -100,40 +138,46 @@ padding_test(void)
 	}
 
 	for (l = 511; l >= 1; l--) {
-		size_t k;
+		unsigned int maxlinelen;
+		for (maxlinelen = 70; maxlinelen <= 80; maxlinelen++) {
+			size_t k;
 
-		indata.s[l] = '\0';
-		indata.len = l;
+			indata.s[l] = '\0';
+			indata.len = l;
 
-		if (b64encode(&indata, &bdata) != 0) {
-			puts("Error: encoding failed");
-			return 1;
-		}
-
-		if (b64decode(bdata.s, bdata.len, &outdata) != 0) {
-			puts("Error: decoding failed");
-			return 1;
-		}
-
-		/* a trayling '\0' may be lost in the encoding due to padding bytes */
-		if ((indata.s[indata.len - 1] == '\0') && (outdata.len == indata.len - 1)) {
-			indata.len --;
-		}
-
-		if (outdata.len != indata.len) {
-			puts("Error: outdata and indata have different length");
-			return 1;
-		}
-
-		for (k = 0; k < outdata.len; k++) {
-			if (indata.s[k] != outdata.s[k]) {
-				puts("Error: input and output do not match");
+			if (b64encode(&indata, &bdata, maxlinelen) != 0) {
+				puts("Error: encoding failed");
 				return 1;
 			}
-		}
 
-		free(outdata.s);
-		free(bdata.s);
+			if (check_line_limit(&bdata, maxlinelen))
+				return 1;
+
+			if (b64decode(bdata.s, bdata.len, &outdata) != 0) {
+				printf("Error: decoding failed, maxlinelen = %u, l = %zu\n", maxlinelen, l);
+				return 1;
+			}
+
+			/* a trayling '\0' may be lost in the encoding due to padding bytes */
+			if ((indata.s[indata.len - 1] == '\0') && (outdata.len == indata.len - 1)) {
+				indata.len --;
+			}
+
+			if (outdata.len != indata.len) {
+				puts("Error: outdata and indata have different length");
+				return 1;
+			}
+
+			for (k = 0; k < outdata.len; k++) {
+				if (indata.s[k] != outdata.s[k]) {
+					puts("Error: input and output do not match");
+					return 1;
+				}
+			}
+
+			free(outdata.s);
+			free(bdata.s);
+		}
 	}
 
 	free(indata.s);
@@ -171,7 +215,7 @@ iface_test(void)
 
 	STREMPTY(indata);
 
-	if (b64encode(&indata, &outdata) != 0) {
+	if (b64encode(&indata, &outdata, 42) != 0) {
 		puts("Error: encoding empty string failed");
 		err++;
 	}

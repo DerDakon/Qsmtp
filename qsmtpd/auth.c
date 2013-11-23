@@ -353,7 +353,7 @@ auth_cram(void)
 	memcpy(pass.s + 1 + k, auth_host, m);
 	pass.s[1 + k + m] = '>';
 	pass.s[1 + k + m + 1] = '\0';
-	if (b64encode(&pass, &slop) < 0)
+	if (b64encode(&pass, &slop, -1) < 0)
 		goto err;
 
 	netmsg[1] = slop.s;

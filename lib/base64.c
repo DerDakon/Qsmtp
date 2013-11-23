@@ -45,23 +45,23 @@ b64decode(const char *in, size_t l, string *out)
 
 	for (i = 0; i < l; i += 4) {
 		for (j = 0; j < 4; j++) {
+			if (in[i + j] == '\r') {
+				if (i + j + 1 == l)
+					return 1;
+				i++;
+				if (in[i + j] != '\n')
+					return 1;
+				i++;
+			}
+
 			if (((i + j) < l) && (in[i + j] != B64PAD)) {
 				char *c;
 
-				if (in[i + j] == '\r') {
-					if (i + j + 1 == l)
-						return 1;
-					i++;
-					if (in[i + j] != '\n')
-						return 1;
-					i++;
-				}
-
 				c = strchr(b64alpha, in[i + j]);
 
-				if (!c) {
+				if (!c)
 					return 1;
-				}
+
 				a[j] = c - b64alpha;
 			} else {
 				a[j] = 0;
@@ -94,11 +94,12 @@ b64decode(const char *in, size_t l, string *out)
  *
  * @param in plain text string
  * @param out string to store Base64 string (memory will be malloced)
+ * @param wraplimit the number of characters after which a CRLF pair should be inserted
  * @retval 0 on success
  * @retval -1 on error
  */
 int
-b64encode(const string *in, string *out)
+b64encode(const string *in, string *out, const unsigned int wraplimit)
 {
 	size_t i;
 	char *s;
@@ -111,8 +112,9 @@ b64encode(const string *in, string *out)
 
 	/* how many output characters we need for the input stream */
 	i = in->len / 3 * 4;
-	/* add one CRLF every 76 characters and some space at the end for padding */
-	out->s = malloc(i + (i / 76) * 2 + 5);
+	/* add one CRLF every wraplimit characters and some space at the end for padding,
+	 * a CRLF in padding and \0 */
+	out->s = malloc(i + (i / wraplimit) * 2 + 7);
 	if (!out->s) {
 		return -1;
 	}
@@ -127,24 +129,32 @@ b64encode(const string *in, string *out)
 		*s++ = b64alpha[((a & 3 ) << 4) | (b >> 4)];
 		oline += 2;
 
-		if (i + 1 >= in->len) {
+		if (i + 1 >= in->len)
 			*s++ = B64PAD;
-		} else {
+		else
 			*s++ = b64alpha[((b & 15) << 2) | (c >> 6)];
-			oline++;
-		}
+		oline++;
 
-		if (i + 2 >= in->len) {
+		if (i + 2 >= in->len)
 			*s++ = B64PAD;
-		} else {
+		else
 			*s++ = b64alpha[c & 63];
-			if (oline >= 76) {
-				*s++ = '\r';
-				*s++ = '\n';
-				oline = 0;
-			} else {
-				oline++;
-			}
+
+		if (++oline >= wraplimit) {
+			const unsigned int shift = oline - wraplimit + 1;
+			char movebuf[4];
+
+			assert(sizeof(movebuf) >= shift);
+
+			memcpy(movebuf, s - shift, shift);
+			s -= shift;
+
+			*s++ = '\r';
+			*s++ = '\n';
+
+			memcpy(s, movebuf, shift);
+			s += shift;
+			oline = shift;
 		}
 	}
 	out->len = s - out->s;
