@@ -1,1 +1,1 @@
-invalid port number 'a' given for "mail.example.net" given as target for "foo.example.net"
+input file contains invalid entry 'foo.example.net:mail.example.net:a'

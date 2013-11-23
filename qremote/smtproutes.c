@@ -23,6 +23,10 @@ static const char *tags[] = {
 	NULL
 };
 
+/**
+ * @brief check smtproutes entries for basic syntax errors
+ * @return 0 if the line is valid, i.e. it contains exactly 1 or 2 colons
+ */
 static int
 hascolon(const char *s)
 {
@@ -30,7 +34,20 @@ hascolon(const char *s)
 
 	if (!colon)
 		return 1;
-	return (*(colon + 1) == ':');
+
+	colon = strchr(colon + 1, ':');
+	if (colon == NULL)
+		return 0;
+
+	colon++;
+
+	while (*colon != '\0') {
+		if ((*colon < '0') || (*colon > '9'))
+			return 1;
+		colon++;
+	}
+
+	return 0;
 }
 
 static unsigned int tagmask;
@@ -106,7 +123,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			int fd = open(fn, O_RDONLY);
 			unsigned int i = 0;
 			const char *val;
-			const char *target;
+			const char *target = NULL;
 
 			if (fd < 0) {
 				if (errno != ENOENT) {
@@ -135,7 +152,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 
 			tagmask = 0;
 
-			/* no error, and host must be present */
+			/* no error */
 			if (loadlistfd(fd, &buf, &array, validroute) != 0) {
 				const char *errmsg[] = {
 						"error opening smtproute file for domain ",
@@ -178,14 +195,14 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 				char *more;
 				
 				/* overwrite the colon ending the hostname so the code
-				* below will not take this as part of the host name */
+				 * below will not take this as part of the host name */
 				*targetport = strtoul(val, &more, 10);
 				if ((*more != '\0') || (*targetport >= 65536) || (*targetport == 0)) {
 					const char *logmsg[] = {"invalid port number '", val,
 							"' given for \"",
-							target, "\" given as target for \"",
-							remhost, "\"", NULL};
-	
+							target ? target : "",
+							"\" given as target for \"", remhost, "\"", NULL};
+
 					freeips(mx);
 					free(array);
 					/* smtproutbuf not freed here as "port" still references it */
@@ -215,13 +232,11 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 
 				port = strchr(target, ':');
 				if (port) {
-					char *more;
-
 					/* overwrite the colon ending the hostname so the code
 					 * below will not take this as part of the host name */
 					*port++ = '\0';
-					*targetport = strtoul(port, &more, 10);
-					if (*more || (*targetport >= 65536) || (*targetport == 0)) {
+					*targetport = strtoul(port, NULL, 10);
+					if ((*targetport >= 65536) || (*targetport == 0)) {
 						const char *logmsg[] = {"invalid port number '", port,
 									"' given for \"",
 									target, "\" given as target for \"",
@@ -234,7 +249,10 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 				} else {
 					*targetport = 25;
 				}
-				if (ask_dnsaaaa(target, &mx)) {
+
+				if (!*target) {
+					/* do nothing, let the normal DNS search happen */
+				} else if (ask_dnsaaaa(target, &mx)) {
 					const char *logmsg[] = {"cannot find IP address for static route \"",
 									target, "\" given as target for \"",
 									remhost, "\"", NULL};
