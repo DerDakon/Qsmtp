@@ -43,7 +43,7 @@ check_max_bad_commands(void)
 }
 
 /**
- * \brief so the SMTP command loop but only accept QUIT
+ * \brief run the SMTP command loop but only accept QUIT
  *
  * This will reject all commands but quit with "bad sequence of commands",
  * possibly closing the connection if seeing too many of them.
