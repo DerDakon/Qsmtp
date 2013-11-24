@@ -21,7 +21,7 @@ SSL *ssl = NULL;
 unsigned long sslauth = 0;
 char linein[1002];
 size_t linelen;
-const char *auth_host = "foo.example.com";
+const char *auth_host;
 const char *auth_check;
 const char **auth_sub;
 
@@ -168,7 +168,14 @@ main(int argc, char **argv)
 		return EINVAL;
 	}
 
+	/* call smtp_auth() before doing the AUTH setup, this should always fail. */
+	if (smtp_auth() != 1) {
+		fprintf(stderr, "smtp_auth() without auth_host set did not cause an error\n");
+		return 1;
+	}
+
 	auth_check = argv[1];
+	auth_host = "foo.example.com";
 	auth_sub = malloc(sizeof(*auth_sub) * 2);
 	auth_sub[0] = autharg;
 	auth_sub[1] = NULL;
@@ -236,6 +243,13 @@ main(int argc, char **argv)
 			} else if (strcmp(xmitstat.authname.s, users[authtry].username) != 0) {
 				fprintf(stderr, "authenticated user name %s does not match expected %s\n",
 						xmitstat.authname.s, users[authtry].username);
+				errcnt++;
+			}
+
+			/* Call smtp_auth() again. Since a user is already authenticated this
+			 * must result in an error. */
+			if (smtp_auth() != 1) {
+				fprintf(stderr, "duplicate authentication did not return an error\n");
 				errcnt++;
 			}
 		} else {
