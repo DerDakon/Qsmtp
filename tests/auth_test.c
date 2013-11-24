@@ -177,11 +177,46 @@ send_data_login(void)
 	}
 }
 
+static void
+send_data_plain(void)
+{
+	char buffer[512];
+	string pin, pout;
+
+	strcpy(linein, "AUTH PLAIN ");
+
+	/* this should be ignored, test it with and without that data */
+	memset(buffer, 'x', authtry);
+	pin.len = authtry;
+	buffer[pin.len++] = '\0';
+	strcpy(buffer + pin.len, users[authtry].username);
+	pin.len += strlen(users[authtry].username) + 1;
+	if (correct) {
+		strcpy(buffer + pin.len, users[authtry].password);
+		pin.len += strlen(users[authtry].password);
+	} else {
+		/* send something random */
+		strcpy(buffer + pin.len, "42");
+		pin.len += 2;
+	}
+	pin.s = buffer;
+
+	if (b64encode(&pin, &pout, -1) != 0)
+		exit(3);
+
+	memcpy(linein + strlen(linein), pout.s, pout.len);
+	free(pout.s);
+
+	smtpstate = SMTP_PASSWORD;
+	authstate = 4;
+}
+
 int
 main(int argc, char **argv)
 {
 	enum auth_mech {
-		mech_login
+		mech_login,
+		mech_plain
 	};
 
 	enum auth_mech mech;
@@ -213,6 +248,8 @@ main(int argc, char **argv)
 
 	if (strcmp(argv[3], "LOGIN") == 0) {
 		mech = mech_login;
+	} else if (strcmp(argv[3], "PLAIN") == 0) {
+		mech = mech_plain;
 	} else {
 		fprintf(stderr, "unrecognized mechanism argument, must be a supported SASL mechanism\n");
 		return EINVAL;
@@ -245,6 +282,9 @@ main(int argc, char **argv)
 		switch (mech) {
 		case mech_login:
 			send_data_login();
+			break;
+		case mech_plain:
+			send_data_plain();
 			break;
 		}
 
