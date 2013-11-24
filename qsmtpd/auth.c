@@ -305,14 +305,13 @@ auth_plain(void)
 		}
 		user.len--;
 	}
-	free(slop.s);
 	if (!user.len || !pass.len) {
 		memset(pass.s, 0, pass.len);
 		free(pass.s);
-		free(user.s);
 		err_input();
 		goto err;
 	}
+	free(slop.s);
 
 	return authenticate();
 err:
