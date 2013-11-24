@@ -84,12 +84,12 @@ ADD_EXECUTABLE(auth_dummy auth_dummy.c)
 FOREACH (AUTHTEST short email long)
 	FOREACH (AUTHFLAG correct wrong)
 		ADD_TEST(NAME "AUTH-LOGIN-${AUTHTEST}-${AUTHFLAG}"
-				COMMAND testcase_auth "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy" ${AUTHTEST} ${AUTHFLAG})
+				COMMAND testcase_auth "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy" ${AUTHTEST} LOGIN ${AUTHFLAG})
 	ENDFOREACH (AUTHFLAG)
 ENDFOREACH (AUTHTEST)
 
 ADD_TEST(NAME "AUTH-LOGIN-errors"
-		COMMAND testcase_auth "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy" errors wrong)
+		COMMAND testcase_auth "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy" errors LOGIN wrong)
 
 ADD_EXECUTABLE(testcase_matchnet
 		matchnet_test.c

@@ -152,19 +152,47 @@ test_net_readline(size_t num, char *buf)
 	}
 }
 
+static void
+send_data_login(void)
+{
+	strcpy(linein, "AUTH LOGIN");
+
+	if (authtry == 2) {
+		const string stin = {
+			.s = (char *) users[authtry].username,
+			.len = strlen(users[authtry].username)
+		};
+		string stout;
+
+		if (b64encode(&stin, &stout, -1) != 0)
+			exit(3);
+
+		strcat(linein, " ");
+		strncat(linein, stout.s, stout.len);
+
+		free(stout.s);
+
+		smtpstate = SMTP_USERNAME;
+		authstate = 2;
+	}
+}
+
 int
 main(int argc, char **argv)
 {
+	enum auth_mech {
+		mech_login
+	};
+
+	enum auth_mech mech;
+
 	testcase_setup_netwrite(test_netwrite);
 	testcase_setup_net_readline(test_net_readline);
 	testcase_ignore_log_write();
+	
 
-	if (argc < 2) {
-		fputs("required argument missing: name of auth dummy program\n", stderr);
-		return EINVAL;
-	}
-	if (argc != 4) {
-		fprintf(stderr, "usage: %s auth_dummy testname [correct|wrong]\n", argv[0]);
+	if (argc != 5) {
+		fprintf(stderr, "usage: %s auth_dummy testname mechanism [correct|wrong]\n", argv[0]);
 		return EINVAL;
 	}
 
@@ -172,6 +200,22 @@ main(int argc, char **argv)
 	if (smtp_auth() != 1) {
 		fprintf(stderr, "smtp_auth() without auth_host set did not cause an error\n");
 		return 1;
+	}
+
+	if (strcmp(argv[4], "correct") == 0) {
+		correct = 1;
+	} else if (strcmp(argv[4], "wrong") == 0) {
+		correct = 0;
+	} else {
+		fprintf(stderr, "unrecognized last argument, must be 'wrong' or 'correct'\n");
+		return EINVAL;
+	}
+
+	if (strcmp(argv[3], "LOGIN") == 0) {
+		mech = mech_login;
+	} else {
+		fprintf(stderr, "unrecognized mechanism argument, must be a supported SASL mechanism\n");
+		return EINVAL;
 	}
 
 	auth_check = argv[1];
@@ -189,42 +233,19 @@ main(int argc, char **argv)
 			continue;
 		}
 
-		if (strcmp(argv[3], "correct") == 0) {
-			correct = 1;
-		} else if (strcmp(argv[3], "wrong") == 0) {
-			correct = 0;
-		} else {
-			fprintf(stderr, "unrecognized last argument, must be 'wrong' or 'correct'\n");
-			return EINVAL;
-		}
-
 		memset(&xmitstat, 0, sizeof(xmitstat));
 		memset(linein, 0, sizeof(linein));
 
-		printf("testing user \"%s\" with %s password\n", users[authtry].username, argv[3]);
+		printf("testing mechanism %s, user \"%s\" with %s password\n",
+				argv[3], users[authtry].username, argv[4]);
 
 		smtpstate = SMTP_AUTH;
 		authstate = 0;
 
-		strcpy(linein, "AUTH LOGIN");
-
-		if (authtry == 2) {
-			const string stin = {
-				.s = (char *) users[authtry].username,
-				.len = strlen(users[authtry].username)
-			};
-			string stout;
-
-			if (b64encode(&stin, &stout, -1) != 0)
-				exit(3);
-
-			strcat(linein, " ");
-			strncat(linein, stout.s, stout.len);
-
-			free(stout.s);
-
-			smtpstate = SMTP_USERNAME;
-			authstate = 2;
+		switch (mech) {
+		case mech_login:
+			send_data_login();
+			break;
 		}
 
 		linelen = strlen(linein);
