@@ -123,9 +123,9 @@ test_net_readline(size_t num, char *buf)
 
 		ret = authline(num, buf, data);
 
-		data = strchr(buf, '\n');
+		data = memchr(buf, '\n', ret);
 
-		if ((data != NULL) && (*(data + 1) != '\0')) {
+		if ((data != NULL) && (data < buf + ret - 1)) {
 			fprintf(stderr, "AUTH buffer contains LF\n");
 			exit(2);
 		}
