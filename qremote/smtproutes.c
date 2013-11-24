@@ -128,7 +128,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			if (fd < 0) {
 				if (errno != ENOENT) {
 					const char *errmsg[] = {
-							"error opening smtproute file for domain ",
+							"error opening smtproute.d file for domain ",
 							remhost, NULL};
 					err_confn(errmsg, NULL);
 				}
@@ -155,7 +155,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			/* no error */
 			if (loadlistfd(fd, &buf, &array, validroute) != 0) {
 				const char *errmsg[] = {
-						"error opening smtproute file for domain ",
+						"error loading smtproute.d file for domain ",
 						remhost, NULL};
 				err_confn(errmsg, NULL);
 			}
