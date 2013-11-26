@@ -57,7 +57,9 @@ static int err_write(void)
 
 static int err_authabrt(void)
 {
-	return netwrite("501 5.0.0 auth exchange cancelled\r\n") ? errno : EDONE;
+	if (!netwrite("501 5.0.0 auth exchange cancelled\r\n"))
+		errno = EDONE;
+	return -1;
 }
 
 static int err_input(void)
@@ -105,8 +107,7 @@ authgetl(void)
 
 		if ((authin.len == 1) && (*authin.s == '*')) {
 			free(authin.s);
-			errno = err_authabrt();
-			return -1;
+			return err_authabrt();
 		}
 		authin.s[authin.len] = '\0';
 	}
