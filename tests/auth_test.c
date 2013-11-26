@@ -30,10 +30,17 @@ enum smtp_state {
 	SMTP_USERNAME,
 	SMTP_PASSWORD,
 	SMTP_ACCEPT,
+	SMTP_USERPASS,
 	SMTP_REJECT
 };
 
+enum auth_mech {
+	mech_login,
+	mech_plain
+};
+
 static enum smtp_state smtpstate;
+static enum auth_mech mech;
 static unsigned int authstate;
 static unsigned int authtry;
 static int correct;
@@ -67,6 +74,13 @@ static int test_netwrite(const char *s)
 			exit(1);
 		}
 		return 0;
+	case SMTP_USERPASS:
+		if (strcmp("334 \r\n", s) != 0) {
+			fprintf(stderr, "wrong SMTP message, awaited '334 ': %s", s);
+			exit(1);
+		}
+		smtpstate = SMTP_PASSWORD;
+		return 0;
 	default:
 		exit(2);
 	}
@@ -74,18 +88,16 @@ static int test_netwrite(const char *s)
 
 static size_t lineoffs;
 
-static
-size_t authline(size_t num, char *buf, const char *input)
+static size_t
+copy_chunk(const string *stin, size_t num, char *buf)
 {
-	const string stin = {
-		.s = (char *)input,
-		.len = strlen(input)
-	};
 	string stout;
 	size_t cplen;
 
-	if (b64encode(&stin, &stout, -1) != 0)
+	if (b64encode(stin, &stout, -1) != 0) {
+		fprintf(stderr, "base64 encoding failed\n");
 		exit(3);
+	}
 
 	cplen = stout.len + 2 - lineoffs;
 
@@ -103,6 +115,42 @@ size_t authline(size_t num, char *buf, const char *input)
 }
 
 static size_t
+encode_auth_login(size_t num, char *buf, const char *input)
+{
+	const string stin = {
+		.s = (char *)input,
+		.len = strlen(input)
+	};
+
+	return copy_chunk(&stin, num, buf);
+}
+
+static size_t
+encode_auth_plain(size_t num, char *buf)
+{
+	char buffer[512];
+	string stin;
+
+	/* this should be ignored, test it with and without that data */
+	memset(buffer, 'x', authtry);
+	stin.len = authtry;
+	buffer[stin.len++] = '\0';
+	strcpy(buffer + stin.len, users[authtry].username);
+	stin.len += strlen(users[authtry].username) + 1;
+	if (correct) {
+		strcpy(buffer + stin.len, users[authtry].password);
+		stin.len += strlen(users[authtry].password);
+	} else {
+		/* send something random */
+		strcpy(buffer + stin.len, "42");
+		stin.len += 2;
+	}
+	stin.s = buffer;
+
+	return copy_chunk(&stin, num, buf);
+}
+
+static size_t
 test_net_readline(size_t num, char *buf)
 {
 	switch (authstate) {
@@ -116,12 +164,21 @@ test_net_readline(size_t num, char *buf)
 		if ((authstate & 1) == 0)
 			lineoffs = 0;
 
-		if (!correct || (authstate <= 1))
-			data = users[authtry].username;
-		else
-			data = users[authtry].password;
+		switch (mech) {
+		case mech_login:
+			if (!correct || (authstate <= 1))
+				data = users[authtry].username;
+			else
+				data = users[authtry].password;
 
-		ret = authline(num, buf, data);
+			ret = encode_auth_login(num, buf, data);
+
+			break;
+		case mech_plain:
+			ret = encode_auth_plain(num, buf);
+
+			break;
+		}
 
 		data = memchr(buf, '\n', ret);
 
@@ -158,19 +215,8 @@ send_data_login(void)
 	strcpy(linein, "AUTH LOGIN");
 
 	if (authtry == 2) {
-		const string stin = {
-			.s = (char *) users[authtry].username,
-			.len = strlen(users[authtry].username)
-		};
-		string stout;
-
-		if (b64encode(&stin, &stout, -1) != 0)
-			exit(3);
-
 		strcat(linein, " ");
-		strncat(linein, stout.s, stout.len);
-
-		free(stout.s);
+		encode_auth_login(sizeof(linein) - strlen(linein), linein + strlen(linein), users[authtry].username);
 
 		smtpstate = SMTP_USERNAME;
 		authstate = 2;
@@ -180,47 +226,23 @@ send_data_login(void)
 static void
 send_data_plain(void)
 {
-	char buffer[512];
-	string pin, pout;
+	strcpy(linein, "AUTH PLAIN");
 
-	strcpy(linein, "AUTH PLAIN ");
+	if (authtry == 2) {
+		strcat(linein, " ");
+		encode_auth_plain(sizeof(linein) - strlen(linein), linein + strlen(linein));
 
-	/* this should be ignored, test it with and without that data */
-	memset(buffer, 'x', authtry);
-	pin.len = authtry;
-	buffer[pin.len++] = '\0';
-	strcpy(buffer + pin.len, users[authtry].username);
-	pin.len += strlen(users[authtry].username) + 1;
-	if (correct) {
-		strcpy(buffer + pin.len, users[authtry].password);
-		pin.len += strlen(users[authtry].password);
+		smtpstate = SMTP_PASSWORD;
+		authstate = 5;
 	} else {
-		/* send something random */
-		strcpy(buffer + pin.len, "42");
-		pin.len += 2;
+		smtpstate = SMTP_USERPASS;
+		authstate = 0;
 	}
-	pin.s = buffer;
-
-	if (b64encode(&pin, &pout, -1) != 0)
-		exit(3);
-
-	memcpy(linein + strlen(linein), pout.s, pout.len);
-	free(pout.s);
-
-	smtpstate = SMTP_PASSWORD;
-	authstate = 4;
 }
 
 int
 main(int argc, char **argv)
 {
-	enum auth_mech {
-		mech_login,
-		mech_plain
-	};
-
-	enum auth_mech mech;
-
 	testcase_setup_netwrite(test_netwrite);
 	testcase_setup_net_readline(test_net_readline);
 	testcase_ignore_log_write();
