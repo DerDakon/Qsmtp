@@ -246,7 +246,6 @@ main(int argc, char **argv)
 	testcase_setup_netwrite(test_netwrite);
 	testcase_setup_net_readline(test_net_readline);
 	testcase_ignore_log_write();
-	
 
 	if (argc != 5) {
 		fprintf(stderr, "usage: %s auth_dummy testname mechanism [correct|wrong]\n", argv[0]);

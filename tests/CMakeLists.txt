@@ -70,6 +70,18 @@ TARGET_LINK_LIBRARIES(testcase_authsetup
 ADD_TEST(NAME "AUTH_Setup"
 		COMMAND testcase_authsetup "${CMAKE_CURRENT_SOURCE_DIR}/authsetup")
 
+ADD_EXECUTABLE(testcase_auth_errors
+		auth_errors_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/auth.c)
+
+TARGET_LINK_LIBRARIES(testcase_auth_errors
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
+
+ADD_TEST(NAME "AUTH_errors"
+		COMMAND testcase_auth_errors)
+
 ADD_EXECUTABLE(testcase_auth
 		auth_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/auth.c)
