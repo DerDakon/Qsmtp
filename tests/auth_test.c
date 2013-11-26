@@ -1,5 +1,5 @@
-/** \file authsetup_test.c
- \brief Authentication setup testcases
+/** \file auth_test.c
+ \brief Authentication testcases
  */
 
 #include "base64.h"
