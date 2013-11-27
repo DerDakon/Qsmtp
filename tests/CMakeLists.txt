@@ -502,7 +502,7 @@ ADD_TEST(NAME "Qsmtpd_bad_bounce"
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
 SET_TESTS_PROPERTIES(Qsmtpd_bad_bounce PROPERTIES
-		PASS_REGULAR_EXPRESSION "^220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n550 5\\.5\\.3 bounce messages must not have more than one recipient\n221 2\\.0\\.0 [^\n ]* service closing transmission channel\n$")
+		PASS_REGULAR_EXPRESSION "^220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n550 5\\.5\\.3 bounce messages must not have more than one recipient\n554 5\\.1\\.1 no valid recipients\n221 2\\.0\\.0 [^\n ]* service closing transmission channel\n$")
 
 SET(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmd_args.cmake")
 CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_cmd_args.cmake" @ONLY)
