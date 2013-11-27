@@ -236,6 +236,7 @@ errdetect_test(void)
 	unsigned char i;
 	static const char badchars[] = "\"'\r\n,.-;:_#!$%&()";
 	string odata;
+	int r;
 
 	for (i = 'A'; i <= 'Z'; i++)
 		testpattern[pos++] = i;
@@ -255,22 +256,26 @@ errdetect_test(void)
 		STREMPTY(odata);
 		memcpy(testdata, testpattern, sizeof(testpattern));
 		testdata[i] += 128;
-		if (b64decode(testdata, sizeof(testdata) - 1, &odata) <= 0) {
+		r = b64decode(testdata, sizeof(testdata) - 1, &odata);
+		if (r == 0)
+			free(odata.s);
+		if (r <= 0) {
 			puts("Error: invalid input stream is not rejected");
 			return 1;
 		}
-		free(odata.s);
 	}
 
 	for (i = 0; i < strlen(badchars); i++) {
 		STREMPTY(odata);
 		memcpy(testdata, testpattern, sizeof(testpattern));
 		testdata[42] = badchars[i];
-		if (b64decode(testdata, sizeof(testdata) - 1, &odata) <= 0) {
+		b64decode(testdata, sizeof(testdata) - 1, &odata);
+		if (r == 0)
+			free(odata.s);
+		if (r <= 0) {
 			puts("Error: invalid input stream is not rejected");
 			return 1;
 		}
-		free(odata.s);
 	}
 
 	STREMPTY(odata);
@@ -279,11 +284,13 @@ errdetect_test(void)
 	testdata[17] = '\r';
 	testdata[18] = '\0';
 
-	if (b64decode(testdata, 18, &odata) <= 0) {
+	r = b64decode(testdata, 18, &odata);
+	if (r == 0)
+		free(odata.s);
+	if (r <= 0) {
 		puts("Error: invalid input stream ending in CR is not rejected");
 		return 1;
 	}
-	free(odata.s);
 
 	return 0;
 }

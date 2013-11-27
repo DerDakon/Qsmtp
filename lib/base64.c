@@ -21,6 +21,10 @@ static const char *b64alpha =
  * @retval -1 on error (errno will be set)
  * @retval 0 on success
  * @retval 1 on parse error
+ *
+ * The contents of out are undefined as long as something else than 0 is
+ * returned, i.e. the memory is freed but the freed pointer may still be
+ * recorded in out.
  */
 int
 b64decode(const char *in, size_t l, string *out)
@@ -46,11 +50,15 @@ b64decode(const char *in, size_t l, string *out)
 	for (i = 0; i < l; i += 4) {
 		for (j = 0; j < 4; j++) {
 			if (in[i + j] == '\r') {
-				if (i + j + 1 == l)
+				if (i + j + 1 == l) {
+					free(out->s);
 					return 1;
+				}
 				i++;
-				if (in[i + j] != '\n')
+				if (in[i + j] != '\n') {
+					free(out->s);
 					return 1;
+				}
 				i++;
 			}
 
@@ -59,8 +67,10 @@ b64decode(const char *in, size_t l, string *out)
 
 				c = strchr(b64alpha, in[i + j]);
 
-				if (!c)
+				if (!c) {
+					free(out->s);
 					return 1;
+				}
 
 				a[j] = c - b64alpha;
 			} else {

@@ -219,8 +219,7 @@ auth_login(void)
 	int r;
 
 	if (linelen > 11) {
-		if ( (r = b64decode(linein + 11, linelen - 11, &user)) > 0)
-			return err_input();
+		r = b64decode(linein + 11, linelen - 11, &user);
 	} else {
 		if (netwrite("334 VXNlcm5hbWU6\r\n")) /* Username: */
 			return -1;
@@ -228,10 +227,10 @@ auth_login(void)
 			return -1;
 		r = b64decode(authin.s, authin.len, &user);
 		free(authin.s);
-		if (r > 0)
-			goto err_input;
 	}
-	if (r < 0)
+	if (r > 0)
+		return err_input();
+	else if (r < 0)
 		return r;
 
 	if (netwrite("334 UGFzc3dvcmQ6\r\n")) /* Password: */
@@ -243,20 +242,20 @@ auth_login(void)
 	memset(authin.s, 0, authin.len);
 	free(authin.s);
 	if (r > 0) {
-		goto err_input;
+		err_input();
+		goto err;
 	} else if (r < 0) {
 		goto err;
 	}
 
-	if (!user.len || !pass.len)
+	if (!user.len || !pass.len) {
+		memset(pass.s, 0, pass.len);
+		free(pass.s);
 		goto err;
+	}
 	return authenticate();
-err_input:
-	err_input();
 err:
 	free(user.s);
-	memset(pass.s, 0, pass.len);
-	free(pass.s);
 	return -1;
 }
 
@@ -270,8 +269,7 @@ auth_plain(void)
 	STREMPTY(slop);
 
 	if (linelen > 11) {
-		if ((r = b64decode(linein + 11, linelen - 11, &slop)) > 0)
-			return err_input();
+		r = b64decode(linein + 11, linelen - 11, &slop);
 	} else {
 		if ((r = netwrite("334 \r\n")))
 			return r;
@@ -279,12 +277,12 @@ auth_plain(void)
 			return r;
 		r = b64decode(authin.s, authin.len, &slop);
 		free(authin.s);
-		if (r > 0)
-			return err_input();
 	}
-	if (r < 0) {
+	if (r > 0) 
+		return err_input();
+	else if (r < 0)
 		return r;
-	}
+
 	while (slop.s[id])
 		id++; /* ignore authorize-id */
 
