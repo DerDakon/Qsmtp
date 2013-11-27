@@ -20,6 +20,15 @@ int
 ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigned char mask)
 {
 	struct in_addr m;
+	struct in_addr ip4;
+	struct in_addr net4;
+
+	/* this needs to happen using memcpy() and no direct assignment as the alignment
+	 * of the pointers passed in may be arbitrary and this will break on architectures
+	 * with strict alignment (i.e. Sparc). Hopefully the compiler is clever enough to
+	 * optimize this away on other platforms. */
+	memcpy(&ip4.s_addr, ip->s6_addr32 + 3, sizeof(ip4.s_addr));
+	memcpy(&net4.s_addr, &net->s_addr, sizeof(net4.s_addr));
 
 	/* do this explicitely here so we don't rely on how the compiler handles
 	 * the shift overflow below. */
@@ -32,7 +41,7 @@ ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigne
 	 * to host order. It's ugly, isn't it? */
 	m.s_addr = htonl(-1 - ((1 << (32 - mask)) - 1));
 
-	return ((ip->s6_addr32[3] & m.s_addr) == (net->s_addr & m.s_addr));
+	return ((ip4.s_addr & m.s_addr) == (net4.s_addr & m.s_addr));
 }
 
 /**
