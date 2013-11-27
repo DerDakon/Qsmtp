@@ -92,6 +92,28 @@ test_log_write(int priority, const char *s)
 	expected_log = NULL;
 }
 
+static void
+check_all_msgs(void)
+{
+	if (expected_log != NULL) {
+		fprintf(stderr, "expected log message '%s' was not received\n",
+				expected_log);
+		err++;
+	}
+
+	if (expected_net_write1 != NULL) {
+		fprintf(stderr, "expected message '%s' was not received\n",
+				expected_net_write1);
+		err++;
+	}
+
+	if (expected_net_write2 != NULL) {
+		fprintf(stderr, "expected message '%s' was not received\n",
+				expected_net_write2);
+		err++;
+	}
+}
+
 int
 main(void)
 {
@@ -116,6 +138,8 @@ main(void)
 		err++;
 	}
 
+	check_all_msgs();
+
 	/* invalid base64 message */
 	strcpy(linein, "AUTH PLAIN #");
 	linelen = strlen(linein);
@@ -126,6 +150,8 @@ main(void)
 		fprintf(stderr, "AUTH PLAIN with invalid base64 did not fail as expected\n");
 		err++;
 	}
+
+	check_all_msgs();
 
 	/* auth aborted */
 	extra_read = "*\r\n";
@@ -140,6 +166,8 @@ main(void)
 		err++;
 	}
 
+	check_all_msgs();
+
 	/* empty line as AUTH data */
 	extra_read = "\r\n";
 	strcpy(linein, "AUTH PLAIN");
@@ -152,6 +180,8 @@ main(void)
 		fprintf(stderr, "AUTH PLAIN with empty line did not fail as expected\n");
 		err++;
 	}
+
+	check_all_msgs();
 
 	/* invalid base64 as AUTH data */
 	extra_read = "#\r\n";
@@ -166,6 +196,8 @@ main(void)
 		err++;
 	}
 
+	check_all_msgs();
+
 	/* missing password */
 	strcpy(linein, "AUTH PLAIN AGZvbwA=");
 	linelen = strlen(linein);
@@ -176,6 +208,8 @@ main(void)
 		fprintf(stderr, "AUTH PLAIN without password did not fail as expected\n");
 		err++;
 	}
+
+	check_all_msgs();
 
 	/* invalid base64 message */
 	strcpy(linein, "AUTH LOGIN #");
@@ -188,6 +222,8 @@ main(void)
 		err++;
 	}
 
+	check_all_msgs();
+
 	/* syntactically valid, but will cause a fork error */
 	strcpy(linein, "AUTH PLAIN AGEAYg==");
 	linelen = strlen(linein);
@@ -199,6 +235,83 @@ main(void)
 		fprintf(stderr, "AUTH PLAIN did not catch fork error as expected\n");
 		err++;
 	}
+
+	check_all_msgs();
+
+	/* invalid base64 message as username */
+	strcpy(linein, "AUTH LOGIN");
+	linelen = strlen(linein);
+
+	expected_net_write1 = "334 VXNlcm5hbWU6\r\n";
+	expected_net_write2 = invalid_msg;
+	extra_read = "#\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH LOGIN with invalid username base64 line did not fail as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
+
+	/* invalid base64 message as password */
+	strcpy(linein, "AUTH LOGIN YQ==");
+	linelen = strlen(linein);
+
+	expected_net_write1 = "334 UGFzc3dvcmQ6\r\n";
+	expected_net_write2 = invalid_msg;
+	extra_read = "#\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH LOGIN with invalid password base64 line did not fail as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
+
+	/* empty line as username */
+	strcpy(linein, "AUTH LOGIN");
+	linelen = strlen(linein);
+
+	expected_net_write1 = "334 VXNlcm5hbWU6\r\n";
+	expected_net_write2 = invalid_msg;
+	extra_read = "\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH LOGIN with empty username base64 line did not fail as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
+
+	/* empty line as password */
+	strcpy(linein, "AUTH LOGIN YQ==");
+	linelen = strlen(linein);
+
+	expected_net_write1 = "334 UGFzc3dvcmQ6\r\n";
+	expected_net_write2 = invalid_msg;
+	extra_read = "\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH LOGIN with empty password base64 line did not fail as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
+
+	/* empty line as password */
+	strcpy(linein, "AUTH LOGIN YQ==");
+	linelen = strlen(linein);
+
+	expected_net_write1 = "334 UGFzc3dvcmQ6\r\n";
+	expected_net_write2 = invalid_msg;
+	extra_read = "===\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH LOGIN with empty password base64 line did not fail as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
 
 	return err;
 }

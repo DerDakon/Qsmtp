@@ -250,6 +250,7 @@ auth_login(void)
 	if (!user.len || !pass.len) {
 		memset(pass.s, 0, pass.len);
 		free(pass.s);
+		err_input();
 		goto err;
 	}
 	return authenticate();
