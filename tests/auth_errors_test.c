@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <syslog.h>
 #include <unistd.h>
 #include <openssl/ssl.h>
 
@@ -65,6 +66,32 @@ test_net_readline(size_t num, char *buf)
 	return len < num ? len : num;
 }
 
+static const char *expected_log;
+
+static void
+test_log_write(int priority, const char *s)
+{
+	if (expected_log == NULL) {
+		fprintf(stderr, "no log message expected, but received '%s'\n", s);
+		err++;
+		return;
+	}
+
+	if (strcmp(s, expected_log) != 0) {
+		fprintf(stderr, "expected log message '%s', but received '%s'\n", expected_log, s);
+		err++;
+		return;
+	}
+
+	if (priority != LOG_ERR) {
+		fprintf(stderr, "log priority LOG_ERR (%i) expected, but got %i\n", LOG_ERR, priority);
+		err++;
+		return;
+	}
+
+	expected_log = NULL;
+}
+
 int
 main(void)
 {
@@ -73,7 +100,7 @@ main(void)
 
 	testcase_setup_netwrite(test_netwrite);
 	testcase_setup_net_readline(test_net_readline);
-	testcase_ignore_log_write();
+	testcase_setup_log_write(test_log_write);
 
 	auth_check = "/bin/false";
 	auth_host = "foo.example.com";
@@ -161,12 +188,23 @@ main(void)
 		err++;
 	}
 
+	/* syntactically valid, but will cause a fork error */
+	strcpy(linein, "AUTH PLAIN AGEAYg==");
+	linelen = strlen(linein);
+
+	expected_net_write1 = "454 4.3.0 AUTH temporaryly not available\r\n";
+	expected_log = "cannot fork auth";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH PLAIN did not catch fork error as expected\n");
+		err++;
+	}
+
 	return err;
 }
 
 
 pid_t fork_clean(void)
 {
-	exit(1);
 	return -1;
 }

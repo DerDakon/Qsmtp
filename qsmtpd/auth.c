@@ -136,11 +136,10 @@ authenticate(void)
 	}
 	switch(child = fork_clean()) {
 	case -1:
-		memset(pass.s, 0, pass.len);
-		free(pass.s);
-		free(user.s);
-		free(resp.s);
-		return err_fork();
+		while ((close(pi[0]) < 0) && (errno == EINTR)) {}
+		while ((close(pi[1]) < 0) && (errno == EINTR)) {}
+		fun = err_fork;
+		goto out;
 	case 0:
 		while (close(pi[1])) {
 			if (errno != EINTR)
