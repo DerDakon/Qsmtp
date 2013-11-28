@@ -1,6 +1,8 @@
 /** \file auth.c
  \brief functions for SMTP AUTH
  */
+#include "qsauth.h"
+
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <syslog.h>
@@ -12,6 +14,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include "fmt.h"
 #include "qsmtpd.h"
 #include "sstring.h"
 #include "netio.h"
@@ -19,7 +22,6 @@
 #include "log.h"
 #include "tls.h"
 #include "control.h"
-#include "qsauth.h"
 
 static const char tempnoauth[] = "454 4.3.0 AUTH temporaryly not available\r\n";
 
