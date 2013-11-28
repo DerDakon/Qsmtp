@@ -47,10 +47,10 @@ struct in6_addr outip;
  * This will include the trailing 0-byte in the output as qmail-rspawn awaits
  * that as separator between the output fields.
  */
-ssize_t
+void
 write_status(const char *str)
 {
-	return write(1, str, strlen(str) + 1);
+	(void) write(1, str, strlen(str) + 1);
 }
 
 static void
@@ -292,7 +292,7 @@ netget(void)
 	return r * 10 + q;
 syntax:
 	/* if this fails we're already in bad trouble */
-	(void) write_status("Zsyntax error in server reply\n");
+	write_status("Zsyntax error in server reply\n");
 	quit();
 }
 
@@ -515,7 +515,7 @@ main(int argc, char *argv[])
 					err_mem(1);
 			case EINVAL:
 			case E2BIG:
-					(void) write_status("Zsyntax error in server reply\n");
+					write_status("Zsyntax error in server reply\n");
 					quitmsg();
 					break;
 			default:

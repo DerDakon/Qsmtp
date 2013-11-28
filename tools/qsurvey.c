@@ -42,10 +42,10 @@ static int logfd;
  * This will include the trailing 0-byte in the output as qmail-rspawn awaits
  * that as separator between the output fields.
  */
-ssize_t
+void
 write_status(const char *str)
 {
-	return write(1, str, strlen(str) + 1);
+	(void) write(1, str, strlen(str) + 1);
 }
 
 static void quitmsg(void);

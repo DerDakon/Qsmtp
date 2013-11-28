@@ -16,10 +16,10 @@ smtproute(const char *a, const size_t b, unsigned int *c)
 	return NULL;
 }
 
-ssize_t
+void
 write_status(const char *str)
 {
-	return write(1, str, strlen(str) + 1);
+	(void) write(1, str, strlen(str) + 1);
 
 	exit(EFAULT);
 }
