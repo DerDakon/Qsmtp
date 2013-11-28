@@ -71,54 +71,53 @@ static int err_input(void)
 	return -1;
 }
 
-static string authin;
 static string user;
 static string pass;
 static string resp;
 
 static int
-authgetl(void)
+authgetl(string *authin)
 {
-	STREMPTY(authin);
+	STREMPTY(*authin);
 	do {
 		int i;
 		char *s;
 
 		/* to avoid calling realloc for every byte we alloc and
 		 * read in chunks of 64 byte */
-		s = realloc(authin.s, authin.len + 64);
+		s = realloc(authin->s, authin->len + 64);
 
 		if (!s) {
-			free(authin.s);
+			free(authin->s);
 			return -1;
 		}
-		authin.s = s;
+		authin->s = s;
 
 		/* read the next 64 bytes */
-		i = net_readline(64, authin.s + authin.len);
+		i = net_readline(64, authin->s + authin->len);
 		if (i < 0) {
-			free(authin.s);
+			free(authin->s);
 			return -1;
 		}
-		authin.len += i;
-	} while (authin.s[authin.len - 1] != '\n');
+		authin->len += i;
+	} while (authin->s[authin->len - 1] != '\n');
 
-	if (--authin.len) {
-		if (authin.s[authin.len - 1] == '\r')
-			--authin.len;
+	if (--authin->len) {
+		if (authin->s[authin->len - 1] == '\r')
+			--authin->len;
 
-		if ((authin.len == 1) && (*authin.s == '*')) {
-			free(authin.s);
+		if ((authin->len == 1) && (*authin->s == '*')) {
+			free(authin->s);
 			return err_authabrt();
 		}
-		authin.s[authin.len] = '\0';
+		authin->s[authin->len] = '\0';
 	}
 
-	if (authin.len == 0) {
-		free(authin.s);
+	if (authin->len == 0) {
+		free(authin->s);
 		return err_input();
 	}
-	return authin.len;
+	return authin->len;
 }
 
 #define WRITE(a,b) if (write(pi[1], (a), (b)) < 0) { fun = err_write; goto out; }
@@ -217,6 +216,7 @@ out:
 static int
 auth_login(void)
 {
+	string authin;
 	int r;
 
 	if (linelen > 11) {
@@ -224,7 +224,7 @@ auth_login(void)
 	} else {
 		if (netwrite("334 VXNlcm5hbWU6\r\n")) /* Username: */
 			return -1;
-		if (authgetl() < 0)
+		if (authgetl(&authin) < 0)
 			return -1;
 		r = b64decode(authin.s, authin.len, &user);
 		free(authin.s);
@@ -237,7 +237,7 @@ auth_login(void)
 	if (netwrite("334 UGFzc3dvcmQ6\r\n")) /* Password: */
 		goto err;
 
-	if (authgetl() < 0)
+	if (authgetl(&authin) < 0)
 		goto err;
 	r = b64decode(authin.s, authin.len, &pass);
 	memset(authin.s, 0, authin.len);
@@ -273,9 +273,11 @@ auth_plain(void)
 	if (linelen > 11) {
 		r = b64decode(linein + 11, linelen - 11, &slop);
 	} else {
+		string authin;
+
 		if ((r = netwrite("334 \r\n")))
 			return r;
-		if ((r = authgetl()) < 0)
+		if ((r = authgetl(&authin)) < 0)
 			return r;
 		r = b64decode(authin.s, authin.len, &slop);
 		free(authin.s);
@@ -329,7 +331,7 @@ auth_cram(void)
 	unsigned int k, l, m;
 	char *s, t[ULSTRLEN];
 	const char *netmsg[] = { "334 ", NULL, NULL };
-	string slop;
+	string authin, slop;
 	char unique[83];
 
 	ultostr(getpid(), t);
@@ -364,7 +366,7 @@ auth_cram(void)
 	free(slop.s);
 	STREMPTY(slop);
 
-	if (authgetl() < 0)
+	if (authgetl(&authin) < 0)
 		goto err;
 	r = b64decode(authin.s, authin.len, &slop);
 	free(authin.s);
