@@ -14,6 +14,7 @@
 #include <time.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include "antispam.h"
 #include "fmt.h"
 #include "qsmtpd.h"
 #include "sstring.h"
@@ -66,6 +67,7 @@ static int err_authabrt(void)
 
 static int err_input(void)
 {
+	tarpit();
 	if (!netwrite("501 5.5.4 malformed auth input\r\n"))
 		errno = EDONE;
 	return -1;

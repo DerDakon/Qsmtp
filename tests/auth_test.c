@@ -357,3 +357,8 @@ pid_t fork_clean(void)
 {
 	return fork();
 }
+
+void
+tarpit(void)
+{
+}
