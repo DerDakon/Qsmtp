@@ -175,6 +175,7 @@ dieerror(int error)
 static void
 freeppol(void)
 {
+#ifdef PFIXPOLDIR
 	while (pfixhead.tqh_first != NULL) {
 		struct pfixpol *l = pfixhead.tqh_first;
 
@@ -192,6 +193,7 @@ freeppol(void)
 		free(l->name);
 		free(l);
 	}
+#endif
 }
 
 /**
@@ -242,9 +244,11 @@ setup(void)
 	struct sigaction sa;
 	struct stat st;
 	char *tmp;
-	DIR *dir;
 	unsigned long tl;
 	char **tmpconf;
+#ifdef PFIXPOLDIR
+	DIR *dir;
+#endif
 
 #ifdef USESYSLOG
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
@@ -435,6 +439,7 @@ setup(void)
 		return e;
 	}
 
+#ifdef PFIXPOLDIR
 	dir = opendir(PFIXPOLDIR);
 	TAILQ_INIT(&pfixhead);
 	if (dir) {
@@ -472,6 +477,7 @@ setup(void)
 		closedir(dir);
 	} else if (errno != ENOENT) {
 	}
+#endif
 
 	/* block sigpipe. If we don't we can't handle the errors in smtp_data() correctly and remote host
 	 * will see a connection drop on error (which is bad and violates RfC) */

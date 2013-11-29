@@ -48,6 +48,7 @@ extern void logwhitelisted(const char *, const int, const int);
 
 #define THISRCPT (thisrecip->to.s)
 
+#if 0
 TAILQ_HEAD(pftailhead, pfixpol) pfixhead;
 
 /*! \struct pfixpol
@@ -62,5 +63,6 @@ struct pfixpol {
 
 #define PFIXPOLDIR	"/var/qmail/control/postfixpol"
 #define PFIXSPOOLDIR	"/var/spool/Qsmtp"
+#endif
 
 #endif
