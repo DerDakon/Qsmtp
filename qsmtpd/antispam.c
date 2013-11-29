@@ -267,7 +267,6 @@ lookupipbl(int fd)
 	}
 
 	map = mmap_fd(fd, &flen);
-	i = errno;
 	if (map == NULL) {
 		i = errno;
 		do {

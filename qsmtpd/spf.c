@@ -824,7 +824,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 			switch (i) {
 			case SPF_MAKRO_NONE:
 				if (*t == '%') {
-					i = SPF_MAKRO_PERCENT;
+					// never used: i = SPF_MAKRO_PERCENT;
 					t++;
 					/* fallthrough */
 				} else {
@@ -842,12 +842,12 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 					t++;
 					continue;
 				case '{':
-					i = SPF_MAKRO_BRACE;
+					// never used: i = SPF_MAKRO_BRACE;
+					t++;
 					break;
 				default:
 					return SPF_FAIL_MALF;
 				}
-				t++;
 				/* fallthrough */
 			case SPF_MAKRO_BRACE:
 				/* expecting spf-makro-letter now */
@@ -863,7 +863,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 				case 'R':
 				case 'T':
 				case 'V':
-					i = SPF_MAKRO_LETTER;
+					// never used: i = SPF_MAKRO_LETTER;
 					t++;
 					break;
 				default:
@@ -1359,7 +1359,6 @@ spfip4(const char *domain)
 		u = strtoul(sl + 1, &q, 10);
 		if ((u < 8) || (u > 32) || (!WSPACE(*q) && (*q != '\0')))
 			return SPF_FAIL_MALF;
-		sl = q;
 	} else if (WSPACE(*sl) || !*sl) {
 		u = 32;
 	} else {
@@ -1400,7 +1399,6 @@ spfip6(const char *domain)
 		u = strtoul(sl + 1, &endp, 10);
 		if ((u < 8) || (u > 128) || (!WSPACE(*endp) && (*endp != '\0')))
 			return SPF_FAIL_MALF;
-		sl = endp;
 	} else if (WSPACE(*sl) || !*sl) {
 		u = 128;
 	} else {

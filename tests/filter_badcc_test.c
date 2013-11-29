@@ -88,7 +88,6 @@ setup_recip_order(unsigned int valid, int r0, int r1, int r2, int r3, int r4)
 	}
 	assert(valid < (1 << RCPT_PATTERNS));
 
-	i = 0;
 	goodrcpt = 0;
 	TAILQ_INIT(&head);
 
