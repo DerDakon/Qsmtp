@@ -122,16 +122,13 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 
 		if (q != 0) {
 			return r;
-		} else if (q == 0) {
+		} else {
 			cur = ip6addr;
 			while (cur->next != NULL)
 				cur = cur->next;
 			cur->next = *ips;
 			*ips = cur;
 			return 0;
-		} else {
-			*ips = ip6addr;
-			return q;
 		}
 	}
 
