@@ -458,6 +458,7 @@ setup(void)
 			if (!pf || !pf->name) {
 				closedir(dir);
 				freeppol();
+				free(pf);
 				return ENOMEM;
 			}
 
