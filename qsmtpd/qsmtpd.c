@@ -1265,8 +1265,6 @@ smtp_rcpt(void)
 			}
 			logmess[1] = r->to.s;
 			log_writen(LOG_INFO, logmess);
-			free(ds.userpath.s);
-			free(ds.domainpath.s);
 			goodrcpt = 0;
 			rcptcount = 0;
 			return EBOGUS;
