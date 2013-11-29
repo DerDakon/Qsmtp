@@ -448,6 +448,8 @@ net_writen(const char *const *s)
 	 *   conveyed through multiple-line replies. */
 	char msg[512];
 
+	assert(sizeof(msg) > strlen(s[0]) - 2);
+
 	for (i = 0; s[i]; i++) {
 		size_t off = 0;
 		const size_t l = strlen(s[i]);
@@ -521,8 +523,13 @@ net_write_multiline(const char *const *s)
 	for (i = 0; s[i]; i++)
 		len += strlen(s[i]);
 
+	assert(i > 0);
+	assert(len > 2);
+
 	buf = malloc(len + 1);
 	if (buf == NULL) {
+		/* Combining into one buffer failed, just send everything on it's
+		 * own. This is less efficient, but will give the same result. */
 		for (i = 0; s[i]; i++) {
 			int j = netwrite(s[i]);
 			if (j != 0)
