@@ -123,11 +123,11 @@ ask_dnsaaaa(const char *name, struct ips **result)
 	if (!i) {
 		char *s = r;
 		struct ips **q = result;
+		*result = NULL;
 
-		if (!l) {
-			*result = NULL;
+		if (!l)
 			return 1;
-		}
+
 		while (r + l > s) {
 			struct ips *p = malloc(sizeof(*p));
 
