@@ -49,7 +49,7 @@ testcase_no_args(void)
 {
 	struct {
 		const char *line;
-		unsigned int extension;
+		int extension;
 	} lines[] = {
 		{
 			.line = "STARTTLS",
