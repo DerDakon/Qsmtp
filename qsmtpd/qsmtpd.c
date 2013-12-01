@@ -1256,7 +1256,7 @@ smtp_rcpt(void)
 
 	if (comstate != 0x20) {
 		if (!xmitstat.mailfrom.len) {
-			const char *logmess[] = {"rejected message to <", NULL, "> from IP [", xmitstat.remoteip,
+			const char *logmess[] = {"rejected message to <> from <", NULL, "> from IP [", xmitstat.remoteip,
 							"] {bad bounce}", NULL};
 			if (err_badbounce() < 0)
 				return errno;
