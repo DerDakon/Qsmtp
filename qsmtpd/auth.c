@@ -203,8 +203,10 @@ authenticate(void)
 	} /* no */
 out:
 	/* make sure not to leak password */
-	memset(pass.s, 0, pass.len);
-	free(pass.s);
+	if (pass.s != NULL) {
+		memset(pass.s, 0, pass.len);
+		free(pass.s);
+	}
 	free(resp.s);
 	if (fun) {
 		/* only free user.s here, it will be copied to
