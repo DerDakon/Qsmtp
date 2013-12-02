@@ -908,11 +908,11 @@ user_exists(const string *localpart, struct userconf *ds)
 						return -1;
 					}
 				} else {
+					free(dotqm.s);
 					while (close(fd)) {
 						if (errno != EINTR)
 							return -1;
 					}
-					free(dotqm.s);
 					return 4;
 				}
 				p = strchr(p + 1, '-');
@@ -1063,6 +1063,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 /* now the userpath : userpatth.s = domainpath.s + [localpart of RCPT TO] + '/' */
 	if (newstr(&(ds->userpath), ds->domainpath.len + 2 + localpart.len)) {
 		result = errno;
+		free(localpart.s);
 		goto free_and_out;
 	}
 	memcpy(ds->userpath.s, ds->domainpath.s, ds->domainpath.len);
