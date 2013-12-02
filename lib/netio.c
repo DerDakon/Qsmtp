@@ -364,22 +364,6 @@ net_read(void)
  * write one line to the network
  *
  * @param s line to be written (nothing else it written so it should contain CRLF)
- * @retval 0 on success
- * @retval -1 on error (errno is set)
- *
- * -does not return on timeout, programm will be cancelled
- * -same as net_write but expects that line is <= 512 characters and includes CRLF
- */
-int
-netwrite(const char *s)
-{
-	return netnwrite(s, strlen(s));
-}
-
-/**
- * write one line to the network
- *
- * @param s line to be written (nothing else it written so it should contain CRLF)
  * @param l length of s
  * @retval 0 on success
  * @retval -1 on error (errno is set)

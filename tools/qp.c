@@ -56,10 +56,6 @@ int netget(void)
 	return 354;
 }
 
-int netwrite(const char *s) {
-	return netnwrite(s, strlen(s));
-}
-
 void ultostr(const unsigned long u, char *res)
 {
 	snprintf(res, ULSTRLEN, "%lu", u);

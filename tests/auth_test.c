@@ -45,7 +45,7 @@ static unsigned int authstate;
 static unsigned int authtry;
 static int correct;
 
-static int test_netwrite(const char *s)
+static int test_netnwrite(const char *s, const size_t len __attribute__((unused)))
 {
 	switch (smtpstate) {
 	case SMTP_AUTH:
@@ -243,7 +243,7 @@ send_data_plain(void)
 int
 main(int argc, char **argv)
 {
-	testcase_setup_netwrite(test_netwrite);
+	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_net_readline(test_net_readline);
 	testcase_ignore_log_write();
 

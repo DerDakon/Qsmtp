@@ -14,7 +14,6 @@
 
 TC_SETUP(net_read);
 TC_SETUP(net_writen);
-TC_SETUP(netwrite);
 TC_SETUP(netnwrite);
 TC_SETUP(net_readbin);
 TC_SETUP(net_readline);

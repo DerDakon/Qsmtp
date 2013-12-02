@@ -33,7 +33,7 @@ const char *expected_net_write1, *expected_net_write2;
 
 static int err;
 
-static int test_netwrite(const char *s)
+static int test_netnwrite(const char *s, const size_t len __attribute__((unused)))
 {
 	if (expected_net_write1 == NULL) {
 		fprintf(stderr, "no message expected, but received '%s'\n", s);
@@ -120,7 +120,7 @@ main(void)
 	const char *invalid_msg = "501 5.5.4 malformed auth input\r\n";
 	const char *cancel_msg = "501 5.0.0 auth exchange cancelled\r\n";
 
-	testcase_setup_netwrite(test_netwrite);
+	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_net_readline(test_net_readline);
 	testcase_setup_log_write(test_log_write);
 

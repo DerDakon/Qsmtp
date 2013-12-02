@@ -627,18 +627,18 @@ send_qp(const char *buf, const off_t len)
 		if (!nextoff) {
 			/* huh? message declared as multipart, but without any boundary? */
 			/* add boundary */
-			netnwrite("\r\n--", 4);
+			netwrite("\r\n--");
 			netnwrite(boundary.s, boundary.len);
-			netnwrite("\r\n", 2);
+			netwrite("\r\n");
 			/* add Content-Transfer-Encoding header and extra newline */
 			recodeheader();
-			netnwrite("\r\n", 2);
+			netwrite("\r\n");
 			/* recode body */
 			recode_qp(buf + off, len - off);
 			/* add end boundary */
-			netnwrite("\r\n--", 4);
+			netwrite("\r\n--");
 			netnwrite(boundary.s, boundary.len);
-			netnwrite("--\r\n", 4);
+			netwrite("--\r\n");
 			lastlf = 1;
 			return;
 		}
@@ -646,7 +646,7 @@ send_qp(const char *buf, const off_t len)
 		/* check and send or discard MIME preamble */
 		if ( (nr = need_recode(buf + off, nextoff)) ) {
 			log_write(LOG_ERR, "discarding invalid MIME preamble");
-			netnwrite("\r\ninvalid MIME preamble was dicarded.\r\n\r\n--", 43);
+			netwrite("\r\ninvalid MIME preamble was dicarded.\r\n\r\n--");
 			netnwrite(boundary.s, boundary.len);
 			off += nextoff;
 		} else {
@@ -658,15 +658,15 @@ send_qp(const char *buf, const off_t len)
 			/* wow: end-boundary as first boundary. What next? Flying cows? */
 
 			/* first: add normal boundary to make this a more or less usefull MIME message, then add an end boundary */
-			netnwrite("\r\n\r\n--", 6);
+			netwrite("\r\n\r\n--");
 			netnwrite(boundary.s, boundary.len);
-			netnwrite("--", 2);
+			netwrite("--");
 			islast = 1;
 			off += 2;
 		}
 
 		off += skip_tpad(buf + off, len - off);
-		netnwrite("\r\n", 2);
+		netwrite("\r\n");
 
 		while ((off < len) && !islast && (nextoff = find_boundary(buf + off, len - off, &boundary))) {
 			off_t partlen = nextoff - boundary.len - 2;
@@ -677,23 +677,23 @@ send_qp(const char *buf, const off_t len)
 			} else {
 				send_plain(buf + off, partlen);
 			}
-			netnwrite("--", 2);
+			netwrite("--");
 			netnwrite(boundary.s, boundary.len);
 			off += nextoff;
 			if ((off < len) && (buf[off] == '-')) {
 				/* this is end boundary */
-				netnwrite("--", 2);
+				netwrite("--");
 				off += 2;
 				islast = 1;
 			}
 			off += skip_tpad(buf + off, len - off);
 
 			if ((off == len) && !islast) {
-				netnwrite("--\r\n", 4);
+				netwrite("--\r\n");
 				lastlf = 1;
 				return;
 			}
-			netnwrite("\r\n", 2);
+			netwrite("\r\n");
 			if (off == len)
 				return;
 		}
@@ -701,15 +701,15 @@ send_qp(const char *buf, const off_t len)
 		/* Look if we have seen the final MIME boundary yet. If not, add it. */
 		if (!islast) {
 			send_qp(buf + off, len - off);
-			netnwrite("\r\n--", 4);
+			netwrite("\r\n--");
 			netnwrite(boundary.s, boundary.len);
-			netnwrite("--\r\n", 4);
+			netwrite("--\r\n");
 		} else if (need_recode(buf + off, len - off)) {
 			/* All normal MIME parts are processed now, what follow is the epilogue.
 			 * Check if it needs recode. If it does, it is broken and can simply be
 			 * discarded */
 			log_write(LOG_ERR, "discarding invalid MIME epilogue");
-			netnwrite("\r\ninvalid MIME epilogue has been discarded.\r\n", 45);
+			netwrite("\r\ninvalid MIME epilogue has been discarded.\r\n");
 			lastlf = 1;
 		} else {
 			send_plain(buf + off, len - off);
@@ -746,9 +746,9 @@ send_data(unsigned int recodeflag)
 		send_plain(msgdata, msgsize);
 	}
 	if (lastlf) {
-		netnwrite(".\r\n", 3);
+		netwrite(".\r\n");
 	} else {
-		netnwrite("\r\n.\r\n", 5);
+		netwrite("\r\n.\r\n");
 	}
 
 #ifdef DEBUG_IO

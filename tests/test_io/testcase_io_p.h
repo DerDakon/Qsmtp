@@ -9,7 +9,6 @@
 
 DECLARE_TC_PTR(net_read);
 DECLARE_TC_PTR(net_writen);
-DECLARE_TC_PTR(netwrite);
 DECLARE_TC_PTR(netnwrite);
 DECLARE_TC_PTR(net_readbin);
 DECLARE_TC_PTR(net_readline);

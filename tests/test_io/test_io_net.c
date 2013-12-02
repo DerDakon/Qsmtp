@@ -38,15 +38,6 @@ tc_ignore_net_writen(const char *const *a __attribute__((unused)))
 }
 
 int
-netwrite(const char *a)
-{
-	if (testcase_netwrite != NULL)
-		return testcase_netwrite(a);
-	else
-		return netnwrite(a, strlen(a));
-}
-
-int
 tc_ignore_netwrite(const char *a __attribute__((unused)))
 {
 	return 0;

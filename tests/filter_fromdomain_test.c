@@ -33,9 +33,9 @@ test_net_writen(const char * const * msg)
 }
 
 static int
-test_netwrite(const char *msg)
+test_netnwrite(const char *msg, const size_t len)
 {
-	printf("%s", msg);
+	write(1, msg, len);
 	return 0;
 }
 
@@ -90,7 +90,7 @@ int main()
 	struct ips frommx;
 
 	testcase_setup_net_writen(test_net_writen);
-	testcase_setup_netwrite(test_netwrite);
+	testcase_setup_netnwrite(test_netnwrite);
 
 	memset(&ds, 0, sizeof(ds));
 	globalconf = NULL;
