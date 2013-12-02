@@ -89,7 +89,9 @@ send_plain(const char *buf, const off_t len)
 	off_t off = 0;
 	int llen = 0;		/* flag if start of line */
 
-	if (!len)
+	assert(len >= 0);
+
+	if (len <= 0)
 		return;
 
 	while (off < len) {
@@ -436,7 +438,9 @@ recode_qp(const char *buf, off_t len)
 	off_t off = 0;
 	int llen = 0;		/* length of this line, needed for qp line break */
 
-	if (len == 0)
+	assert(len >= 0);
+
+	if (len <= 0)
 		return;
 
 	while (off < len) {
