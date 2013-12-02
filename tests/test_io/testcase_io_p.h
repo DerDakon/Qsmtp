@@ -3,6 +3,10 @@
 
 #include "testcase_io.h"
 
+#include <qs_backtrace.h>
+
+#include <assert.h>
+
 #define DECLARE_TC_PTR(a) \
 	extern func_##a *testcase_##a; \
 	extern func_##a tc_ignore_##a
@@ -28,5 +32,12 @@ DECLARE_TC_PTR(ask_dnsmx);
 DECLARE_TC_PTR(ask_dnsaaaa);
 DECLARE_TC_PTR(ask_dnsa);
 DECLARE_TC_PTR(ask_dnsname);
+
+#define ASSERT_CALLBACK(a) \
+	do { \
+		if (a == NULL) \
+			qs_backtrace(); \
+		assert(a != NULL); \
+	} while (0)
 
 #endif /* _TESTCASE_IO_P_H */

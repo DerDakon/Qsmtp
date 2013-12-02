@@ -1,6 +1,8 @@
 #include "testcase_io.h"
 #include "testcase_io_p.h"
 
+#include <qs_backtrace.h>
+
 #define TC_SETUP(a) \
 	func_##a *testcase_##a; \
 	void testcase_setup_##a(func_##a *f) \
@@ -33,3 +35,15 @@ TC_SETUP(ask_dnsmx);
 TC_SETUP(ask_dnsaaaa);
 TC_SETUP(ask_dnsa);
 TC_SETUP(ask_dnsname);
+
+void
+qs_backtrace(void)
+{
+#if Backtrace_FOUND
+	char buffer[4096];
+	void *btbuf = buffer;
+	int size = backtrace(&btbuf, (int)sizeof(buffer));
+
+	backtrace_symbols_fd(&btbuf, size, 2);
+#endif
+}

@@ -3,7 +3,6 @@
 
 #include <netio.h>
 
-#include <assert.h>
 #include <string.h>
 
 char linein[1002];
@@ -12,7 +11,7 @@ size_t linelen;
 int
 net_read(void)
 {
-	assert(testcase_net_read != NULL);
+	ASSERT_CALLBACK(testcase_net_read);
 
 	return testcase_net_read();
 }
@@ -26,7 +25,7 @@ tc_ignore_net_read(void)
 int
 net_writen(const char *const *a)
 {
-	assert(testcase_net_writen != NULL);
+	ASSERT_CALLBACK(testcase_net_writen);
 
 	return testcase_net_writen(a);
 }
@@ -46,7 +45,7 @@ tc_ignore_netwrite(const char *a __attribute__((unused)))
 int
 netnwrite(const char *a, const size_t len)
 {
-	assert(testcase_netnwrite != NULL);
+	ASSERT_CALLBACK(testcase_netnwrite);
 
 	return testcase_netnwrite(a, len);
 }
@@ -60,7 +59,7 @@ tc_ignore_netnwrite(const char *a __attribute__((unused)), const size_t len __at
 size_t
 net_readbin(size_t a, char *b)
 {
-	assert(testcase_net_readbin != NULL);
+	ASSERT_CALLBACK(testcase_net_readbin);
 
 	return testcase_net_readbin(a, b);
 }
@@ -74,7 +73,7 @@ tc_ignore_net_readbin(size_t a __attribute__((unused)), char *b __attribute__((u
 size_t
 net_readline(size_t a, char *b)
 {
-	assert(testcase_net_readline != NULL);
+	ASSERT_CALLBACK(testcase_net_readline);
 
 	return testcase_net_readline(a, b);
 }
@@ -88,7 +87,7 @@ tc_ignore_net_readline(size_t a __attribute__((unused)), char *b __attribute__((
 int
 data_pending(void)
 {
-	assert(testcase_data_pending != NULL);
+	ASSERT_CALLBACK(testcase_data_pending);
 
 	return testcase_data_pending();
 }

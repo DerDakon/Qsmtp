@@ -3,7 +3,6 @@
 
 #include <tls.h>
 
-#include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -12,7 +11,7 @@ SSL *ssl;
 void
 ssl_free(SSL *myssl)
 {
-	assert(testcase_ssl_free != NULL);
+	ASSERT_CALLBACK(testcase_ssl_free);
 
 	testcase_ssl_free(myssl);
 }
@@ -27,7 +26,7 @@ tc_ignore_ssl_free(SSL *myssl __attribute__((unused)))
 void
 ssl_exit(int status)
 {
-	assert(testcase_ssl_exit != NULL);
+	ASSERT_CALLBACK(testcase_ssl_exit);
 
 	testcase_ssl_exit(status);
 
@@ -42,7 +41,7 @@ tc_ignore_ssl_exit(int status __attribute__((unused)))
 const char *
 ssl_error(void)
 {
-	assert(testcase_ssl_error != NULL);
+	ASSERT_CALLBACK(testcase_ssl_error);
 
 	return testcase_ssl_error();
 }
@@ -56,7 +55,7 @@ tc_ignore_ssl_error(void)
 const char *
 ssl_strerror(void)
 {
-	assert(testcase_ssl_strerror != NULL);
+	ASSERT_CALLBACK(testcase_ssl_strerror);
 
 	return testcase_ssl_strerror();
 }

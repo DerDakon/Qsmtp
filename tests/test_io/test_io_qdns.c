@@ -3,14 +3,13 @@
 
 #include <qdns.h>
 
-#include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
 
 int
 ask_dnsmx(const char *a, struct ips **b)
 {
-	assert(testcase_ask_dnsmx != NULL);
+	ASSERT_CALLBACK(testcase_ask_dnsmx);
 
 	return testcase_ask_dnsmx(a, b);
 }
@@ -24,7 +23,7 @@ tc_ignore_ask_dnsmx(const char *a __attribute__ ((unused)), struct ips **b __att
 int
 ask_dnsaaaa(const char *a, struct ips **b)
 {
-	assert(testcase_ask_dnsaaaa != NULL);
+	ASSERT_CALLBACK(testcase_ask_dnsaaaa);
 
 	return testcase_ask_dnsaaaa(a, b);
 }
@@ -38,7 +37,7 @@ tc_ignore_ask_dnsaaaa(const char *a __attribute__ ((unused)), struct ips **b __a
 int
 ask_dnsa(const char *a, struct ips **b)
 {
-	assert(testcase_ask_dnsa != NULL);
+	ASSERT_CALLBACK(testcase_ask_dnsa);
 
 	return testcase_ask_dnsa(a, b);
 }
@@ -52,7 +51,7 @@ tc_ignore_ask_dnsa(const char *a __attribute__ ((unused)), struct ips **b __attr
 int
 ask_dnsname(const struct in6_addr *a, char **b)
 {
-	assert(testcase_ask_dnsname != NULL);
+	ASSERT_CALLBACK(testcase_ask_dnsname);
 
 	return testcase_ask_dnsname(a, b);
 }

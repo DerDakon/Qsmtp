@@ -3,13 +3,12 @@
 
 #include <log.h>
 
-#include <assert.h>
 #include <stdlib.h>
 
 void
 log_writen(int priority, const char **s)
 {
-	assert(testcase_log_writen != NULL);
+	ASSERT_CALLBACK(testcase_log_writen);
 
 	testcase_log_writen(priority, s);
 }
@@ -22,7 +21,7 @@ tc_ignore_log_writen(int priority __attribute__((unused)), const char **s __attr
 void
 log_write(int priority, const char *s)
 {
-	assert(testcase_log_write != NULL);
+	ASSERT_CALLBACK(testcase_log_write);
 
 	testcase_log_write(priority, s);
 }
@@ -35,7 +34,7 @@ tc_ignore_log_write(int priority __attribute__((unused)), const char *s __attrib
 void
 dieerror(int error)
 {
-	assert(testcase_dieerror != NULL);
+	ASSERT_CALLBACK(testcase_dieerror);
 
 	testcase_dieerror(error);
 	exit(error);
