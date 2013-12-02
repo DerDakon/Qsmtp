@@ -632,7 +632,7 @@ main(void)
 	}
 
 	/* already closed fd, should give lock error */
-	if ((finddomainfd(fd, present[i], 0) != -1) || (errno != ENOLCK)) {
+	if ((finddomainfd(fd, present[0], 0) != -1) || (errno != ENOLCK)) {
 		fputs("Trying to lock an already closed fd must fail\n", stderr);
 		error++;
 	}
