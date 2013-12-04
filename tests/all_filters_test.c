@@ -270,29 +270,33 @@ main(int argc, char **argv)
 
 		for (j = 0; (rcpt_cbs[j] != NULL) && (r == 0); j++) {
 			int bt = 0;
+			fmsg = NULL;
 			r = rcpt_cbs[j](&uc, &fmsg, &bt);
 		}
 
 		if ((r != 0) && (failmsg == NULL)) {
-			fprintf(stderr, "filter %i returned %i, message %s\n", j, r, fmsg);
+			fprintf(stderr, "configuration %i: filter %i returned %i, message %s\n",
+					i, j, r, fmsg);
 			err++;
 		} else if ((r == 0) && (failmsg != NULL)) {
-			fprintf(stderr, "no filter matched, but error should have been '%s'\n", failmsg);
+			fprintf(stderr, "configuration %i: no filter matched, but error should have been '%s'\n",
+					i, failmsg);
 			err++;
 		} else if (failmsg != NULL) {
 			if (fmsg == NULL) {
-				fprintf(stderr, "filter %i matched, but the expected message '%s' was not set\n",
-						j, failmsg);
+				fprintf(stderr, "configuration %i: filter %i matched with code %i, but the expected message '%s' was not set\n",
+						i, j, r, failmsg);
 				err++;
 			} else if (!errormsg_matches(fmsg, failmsg)) {
-				fprintf(stderr, "filter %i matched, but the expected message '%s' was not set, but '%s'\n",
-						j, failmsg, fmsg);
+				fprintf(stderr, "configuration %i: filter %i matched with code %i, but the expected message '%s' was not set, but '%s'\n",
+						i, j, r, failmsg, fmsg);
 				err++;
 			}
 		}
 
 		if (log_count != exp_log_count) {
-			fprintf(stderr, "expected %u log messages, got %u\n", exp_log_count, log_count);
+			fprintf(stderr, "configuration %i: expected %u log messages, got %u\n",
+					i, exp_log_count, log_count);
 			err++;
 		}
 
