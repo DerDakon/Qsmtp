@@ -54,7 +54,7 @@ mmap_name(const char *fname, off_t *len, int *fd)
 {
 	void *buf;
 
-	*fd = open(fname, O_RDONLY);
+	*fd = open(fname, O_RDONLY | O_CLOEXEC);
 
 	if (*fd < 0)
 		return NULL;

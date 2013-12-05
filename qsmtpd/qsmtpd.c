@@ -789,7 +789,9 @@ qmexists(const string *dirtempl, const char *suff1, const unsigned int len, cons
 	}
 	filetmp[l] = 0;
 
-	fd = open(filetmp, O_RDONLY);
+	/* these files should not be open long enough to reach a close, but
+	 * make sure it is not accidentially leaked. */
+	fd = open(filetmp, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		if ((errno == ENOMEM) || (errno == ENFILE) || (errno == EMFILE)) {
 			errno = ENOMEM;
