@@ -45,11 +45,12 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 			free(filename);
 			return fd;
 		}
-	} else {
-		if (!ds->domainpath.len) {
-			errno = ENOENT;
-			return -1;
-		}
+	}
+
+	if (!ds->domainpath.len) {
+		free(filename);
+		errno = ENOENT;
+		return -1;
 	}
 
 	*type = 1;
