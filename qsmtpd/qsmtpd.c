@@ -83,7 +83,6 @@ static unsigned int rcptcount;		/**< number of recipients in lists including rej
 static char *gcbuf;			/**< buffer for globalconf array (see below) */
 
 int relayclient;			/**< flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
-static int rcpthfd;			/**< file descriptor of control/rcpthosts */
 static char *rcpthosts;			/**< memory mapping of control/rcpthosts */
 static off_t rcpthsize;			/**< sizeof("control/rcpthosts") */
 unsigned long sslauth;			/**< if SMTP AUTH is only allowed after STARTTLS */
@@ -226,7 +225,7 @@ is_authenticated(void)
 				const char *logmess[] = {"parse error in ", fn, NULL};
 
 				/* reject everything on parse error, else this
-					* would turn into an open relay by accident */
+				 * would turn into an open relay by accident */
 				log_writen(LOG_ERR, logmess);
 			} else if (ipbl) {
 				relayclient = 1;
@@ -246,6 +245,7 @@ setup(void)
 	char *tmp;
 	unsigned long tl;
 	char **tmpconf;
+	int rcpthfd;		/* file descriptor of control/rcpthosts */
 #ifdef PFIXPOLDIR
 	DIR *dir;
 #endif
@@ -315,34 +315,36 @@ setup(void)
 			log_write(LOG_ERR, "control/rcpthosts not found");
 			return errno;
 		}
-		rcpthsize = 0;
-		rcpthosts = NULL;
 	} else {
+		int e;
 		while (flock(rcpthfd, LOCK_SH | LOCK_NB)) {
 			if (errno != EINTR) {
+				while (close(rcpthfd) && (errno == EINTR));
 				log_write(LOG_WARNING, "cannot lock control/rcpthosts");
 				return ENOLCK; /* not the right error code, but good enough */
 			}
 		}
 		if (fstat(rcpthfd, &st)) {
+			while (close(rcpthfd) && (errno == EINTR));
 			log_write(LOG_ERR, "cannot fstat() control/rcpthosts");
 			return errno;
 		}
-		rcpthsize = st.st_size;
-		if (rcpthsize < 4) {
+		if (st.st_size < 4) {
+			while (close(rcpthfd) && (errno == EINTR));
 			/* minimum length of domain name: x.yy = 4 bytes */
 			log_write(LOG_ERR, "control/rcpthosts too short");
 			return 1;
 		}
-		rcpthosts = mmap(NULL, rcpthsize, PROT_READ, MAP_SHARED, rcpthfd, 0);
+		rcpthosts = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, rcpthfd, 0);
+		e = errno;
+		while (close(rcpthfd) && (errno == EINTR));
 		if (rcpthosts == MAP_FAILED) {
-			int e = errno;
-
 			log_write(LOG_ERR, "cannot mmap() control/rcpthosts");
-			while (close(rcpthfd) && (errno == EINTR));
 			errno = e;
+			rcpthosts = NULL;
 			return -1;
 		}
+		rcpthsize = st.st_size;
 	}
 
 #ifdef IPV4ONLY
@@ -557,10 +559,6 @@ fork_clean()
 		return ret;
 
 	munmap(rcpthosts, rcpthsize);
-	while (close(rcpthfd)) {
-		if (errno != EINTR)
-			_exit(120);
-	}
 
 	return 0;
 }
