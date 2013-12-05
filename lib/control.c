@@ -1,6 +1,8 @@
 /** \file control.c
  \brief functions to load data from configuration files
  */
+#include "control.h"
+
 #include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -11,9 +13,9 @@
 #include <syslog.h>
 #include <string.h>
 #include <strings.h>
+#include "fmt.h"
 #include "log.h"
 #include "qdns.h"
-#include "control.h"
 #include "mmap.h"
 
 /**
@@ -56,7 +58,12 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	}
 	while (flock(fd, LOCK_SH | LOCK_NB)) {
 		if (errno != EINTR) {
-			log_write(LOG_WARNING, "cannot lock input file");
+			char errcode[ULSTRLEN];
+			const char *logmsg[] = { "cannot lock input file, error code ",
+					errcode, NULL };
+
+			ultostr(errno, errcode);
+			log_writen(LOG_WARNING, logmsg);
 			do {
 				i = close(fd);
 			} while ((i == -1) && (errno == EINTR));

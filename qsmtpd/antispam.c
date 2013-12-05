@@ -1,6 +1,8 @@
 /** \file antispam.c
  \brief several helper functions for spam filters
  */
+#include "antispam.h"
+
 #include <openssl/ssl.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -12,7 +14,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include "antispam.h"
+#include "fmt.h"
 #include "log.h"
 #include "libowfatconn.h"
 #include "qsmtpd.h"
@@ -260,7 +262,15 @@ lookupipbl(int fd)
 
 	while (flock(fd, LOCK_SH | LOCK_NB)) {
 		if (errno != EINTR) {
-			log_write(LOG_WARNING, "cannot lock input file");
+			char errcode[ULSTRLEN];
+			const char *logmsg[] = { "cannot lock input file, error code ",
+					errcode, NULL };
+
+			ultostr(errno, errcode);
+			log_writen(LOG_WARNING, logmsg);
+			do {
+				i = close(fd);
+			} while ((i == -1) && (errno == EINTR));
 			errno = ENOLCK;	/* not the right error code, but good enough */
 			return -1;
 		}

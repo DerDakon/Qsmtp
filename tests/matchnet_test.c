@@ -329,7 +329,7 @@ int main(void)
 
 	/* Now ignore the log calls. Until now they were an error,
 	 * now lookupipbl() should complain about not being able to lock. */
-	testcase_ignore_log_write();
+	testcase_ignore_log_writen();
 	if (lookupipbl(-1) != -1) {
 		fprintf(stderr, "lookupipbl(-1) should return an error\n");
 		errcnt++;
