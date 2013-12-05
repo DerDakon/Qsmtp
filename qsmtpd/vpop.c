@@ -31,7 +31,8 @@
  * @retval 1 domain was found
  *
  * Function will return 1 on success, memory for domaindir will be malloced.
- * The directory name will always end with a single '/'. If the domain does not exist 0 is returned, -1 on error;
+ * The directory name will always end with a single '/' and be 0-terminated.
+ * If the domain does not exist 0 is returned, -1 on error;
  */
 int vget_dir(const char *domain, string *domaindir, char **realdomain)
 {

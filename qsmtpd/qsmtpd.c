@@ -817,7 +817,6 @@ qmexists(const string *dirtempl, const char *suff1, const unsigned int len, cons
 static int
 user_exists(const string *localpart, struct userconf *ds)
 {
-	char filetmp[PATH_MAX];
 	DIR *dirp;
 
 	/* '/' is a valid character for localparts but we don't want it because
@@ -825,16 +824,17 @@ user_exists(const string *localpart, struct userconf *ds)
 	if (strchr(localpart->s, '/'))
 		return 0;
 
-	memcpy(filetmp, ds->userpath.s, ds->userpath.len);
-	filetmp[ds->userpath.len] = '\0';
-
 	/* does directory (ds->domainpath.s)+'/'+localpart exist? */
-	dirp = opendir(filetmp);
+	dirp = opendir(ds->userpath.s);
 	if (dirp == NULL) {
+		char filetmp[PATH_MAX];
 		int e = errno;
 		int fd;
 		string dotqm;
 		size_t i;
+
+		/* userpath is already 0-terminated */
+		memcpy(filetmp, ds->userpath.s, ds->userpath.len + 1);
 
 		free(ds->userpath.s);
 		STREMPTY(ds->userpath);
