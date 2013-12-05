@@ -70,8 +70,10 @@ int vget_dir(const char *domain, string *domaindir, char **realdomain)
 	if (!st.st_size) {
 		err = 0;
 		while (close(fd) < 0) {
-			if (errno != EINTR)
+			if (errno != EINTR) {
 				err = -errno;
+				break;
+			}
 		}
 		free(cdb_key);
 		return err;
