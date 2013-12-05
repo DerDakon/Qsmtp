@@ -932,18 +932,28 @@ user_exists(const string *localpart, struct userconf *ds)
 				}
 			} else if (vpopbounce) {
 				char buff[2*strlen(vpopbounce)+1];
-				int r;
+				ssize_t r;
+				int err = 0;
 
 				r = read(fd, buff, sizeof(buff) - 1);
 				if (r == -1) {
 					if (!err_control(filetmp))
-						errno = EDONE;
-					return -1;
+						err = EDONE;
+					else
+						err = errno;
 				}
 				while (close(fd)) {
-					if (errno != EINTR)
-						return -1;
+					if (errno != EINTR) {
+						if (err == 0)
+							err = errno;
+						break;
+					}
 				}
+				if (err != 0) {
+					errno = err;
+					return -1;
+				}
+
 				buff[r] = 0;
 
 				/* mail would be bounced or catched by .qmail-default */
