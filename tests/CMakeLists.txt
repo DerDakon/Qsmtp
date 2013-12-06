@@ -359,6 +359,15 @@ TARGET_LINK_LIBRARIES(testcase_getfile
 ADD_TEST(NAME "Getfile"
 		COMMAND testcase_getfile)
 
+ADD_EXECUTABLE(testcase_getsetting
+		getsetting_test.c)
+TARGET_LINK_LIBRARIES(testcase_getsetting
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES}
+)
+ADD_TEST(NAME "Getsetting"
+		COMMAND testcase_getsetting)
+
 ADD_EXECUTABLE(testcase_netio
 		netio_test.c)
 TARGET_LINK_LIBRARIES(testcase_netio

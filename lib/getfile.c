@@ -1,13 +1,54 @@
 /** \file getfile.c
  \brief functions to get information from filterconf files
  */
+#include "control.h"
+
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <syslog.h>
 #include "userfilters.h"
-#include "control.h"
+
+/**
+ * @brief open a file in the given directory
+ * @param dirname the path of the directory
+ * @param dirlen strlen(dirname)
+ * @param fn the name of the file
+ * @return the file descriptor of the opened file
+ * @retval -1 no file descriptor could be opened (errno is set)
+ *
+ * dirname has to end in a '/'.
+ */
+static int
+open_in_dir(const char *dirname, const size_t dirlen, const char *fn)
+{
+	int fd;
+
+	char sbuf[512];		/* a static buffer, should be long enough for most cases */
+	char *dbuf = NULL;	/* in case sbuf is too short */
+	char *buf;		/* pointer to the one actually used */
+	const size_t pathlen = dirlen + strlen(fn) + 1;
+
+	if (pathlen < sizeof(sbuf)) {
+		buf = sbuf;
+	} else {
+		dbuf = malloc(pathlen);
+		if (dbuf == NULL)
+			return -1;
+		buf = dbuf;
+	}
+
+	memcpy(buf, dirname, dirlen);
+	memcpy(buf + dirlen, fn, pathlen - dirlen);
+
+	fd = open(buf, O_RDONLY |  O_CLOEXEC);
+
+	free(dbuf);
+
+	return fd;
+}
 
 /**
  * check in user and domain directory if a file with given filename exists
@@ -21,55 +62,25 @@
 int
 getfile(const struct userconf *ds, const char *fn, int *type)
 {
-	char *filename = NULL;
 	int fd;
-	const size_t len = strlen(fn);
 
-	/* maybe there is no userpath because user only exists as .qmail-foo? */
 	if (ds->userpath.len) {
 		*type = 0;
-		filename = malloc(ds->userpath.len + len + 1);
-		if (filename == NULL) {
-			return -1;
-		}
-		memcpy(filename, ds->userpath.s, ds->userpath.len);
-		memcpy(filename + ds->userpath.len, fn, len + 1);
 
-		fd = open(filename, O_RDONLY | O_CLOEXEC);
-		if (fd < 0) {
-			if (errno != ENOENT) {
-				free(filename);
-				return -1;
-			}
-		} else {
-			free(filename);
+		fd = open_in_dir(ds->userpath.s, ds->userpath.len, fn);
+
+		if ((fd >= 0) || (errno != ENOENT))
 			return fd;
-		}
 	}
 
 	if (!ds->domainpath.len) {
-		free(filename);
 		errno = ENOENT;
 		return -1;
 	}
 
 	*type = 1;
-	/* should only happen if !userpath.len */
-	if (ds->domainpath.len > ds->userpath.len) {
-		char *t = realloc(filename, ds->domainpath.len + len + 1);
 
-		if (t == NULL) {
-			free(filename);
-			return -1;
-		}
-		filename = t;
-	}
-
-	memcpy(filename, ds->domainpath.s, ds->domainpath.len);
-	memcpy(filename + ds->domainpath.len, fn, len + 1);
-	fd = open(filename, O_RDONLY | O_CLOEXEC);
-	free(filename);
-	return fd;
+	return open_in_dir(ds->domainpath.s, ds->domainpath.len, fn);
 }
 
 /**
@@ -85,26 +96,15 @@ int
 getfileglobal(const struct userconf *ds, const char *fn, int *type)
 {
 	int fd = getfile(ds, fn, type);
-	size_t len;
-	char *t;
+	static const char controldir[] = "control/";
 
 	if ((fd != -1) || (errno != ENOENT))
 		return fd;
 
-	len = strlen(fn);
 	/* neither user nor domain specified how to handle this feature
 	 * now look up the global setting */
-
 	*type = 2;
-	if (! (t = malloc(len + 9))) {
-		return -1;
-	}
-	memcpy(t, "control/", 8);
-	memcpy(t + 8, fn, len + 1);
-	fd = open(t, O_RDONLY | O_CLOEXEC);
-	free(t);
-
-	return fd;
+	return open_in_dir(controldir, strlen(controldir), fn);
 }
 
 /**

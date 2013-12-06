@@ -2,103 +2,214 @@
 
 #include "control.h"
 
+#include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/stat.h> 
+#include <sys/types.h> 
 
-const char **globalconf;
+/* keep the product of those 2 great enough to overflow the buffer in getfile.c::open_in_dir() */
+#define DIR_DEPTH 10
+#define COMPONENT_LENGTH 64
 
-static const char *dconfdata[] = {
-		"simple",
-		"one=1",
-		"two=2",
-		"twentytwo=22",
-		"twenty=20",
-		"domain=42",
-		"invalid=invalid",
-		"forcenull=-2",
-		NULL
-};
+/* name of the dummy file created */
+#define EXISTING_FILENAME "filename"
 
-static const char *uconfdata[] = {
-		"domain=-1",
-		NULL
-};
-
-static const char *gconfdata[] = {
-		"forcenull=2",
-		"global=3",
-		"globalforcenull=-3",
-		NULL
-};
-
+static char fnbuffer[(COMPONENT_LENGTH + 1) * DIR_DEPTH + 20];
 static struct userconf ds;
 
-static int
-test_flag(const char *flag, const long expect, const int expecttype)
-{
-	int t = -1;
-	long r;
+/* to satisfy the linker */
+const char **globalconf;
 
-	if (expecttype != 2) {
-		r = getsetting(&ds, flag, &t);
-		if ((r != expect) || (t != expecttype)) {
-			fprintf(stderr, "searching for '%s' with getsetting() should return "
-					"%li (type %i), but returned %li (type %i)\n",
-					flag, expect, expecttype, r, t);
-			return 1;
+static void
+create_dirs(void)
+{
+	char dirname[COMPONENT_LENGTH + 2];
+	unsigned int i;
+	int r;
+
+	for (i = 0; i < sizeof(dirname) - 2; i++)
+		dirname[i] = '0' + (i % 10);
+	dirname[sizeof(dirname) - 2] = '/';
+	dirname[sizeof(dirname) - 1] = '\0';
+
+	for (i = 0; i < DIR_DEPTH; i++) {
+		strcat(fnbuffer, dirname);
+		r = mkdir(fnbuffer, 0755);
+		if ((r != 0) && (errno != EEXIST)) {
+			fprintf(stderr, "creating directory at level %u failed with error %i\n",
+					i, errno);
+			exit(1);
 		}
 	}
 
-	r = getsettingglobal(&ds, flag, &t);
+	strcat(fnbuffer, EXISTING_FILENAME);
+	r = creat(fnbuffer, 0644);
+	if (r < 0) {
+		fprintf(stderr, "cannot create target file, error %i\n",
+				errno);
+		exit(1);
+	}
+	close(r);
+}
 
-	if ((r != expect) || (t != expecttype)) {
-		fprintf(stderr, "searching for '%s' with getsettingglobal() should return "
-				"%li (type %i), but returned %li (type %i)\n",
-				flag, expect, expecttype, r, t);
+static int
+check_open_fail(const char *range, const char *reason, const int error)
+{
+	int fd;
+	int type = -1;
+
+	fd = getfile(&ds, "something", &type);
+	if (fd != -1) {
+		fprintf(stderr, "opening for %s for test '%s' succeeded, type %i\n",
+				range, reason, type);
+		close(fd);
+		return 1;
+	}
+
+	if (errno != error) {
+		fprintf(stderr, "opening for %s for test '%s' gave error %i, but not %i\n",
+				range, reason, errno, error);
 		return 1;
 	}
 
 	return 0;
 }
 
-int main()
+static int
+test_notdir(void)
 {
-	int err = 0;
-	long r;
-	int t;
+	int r = 0;
 
-	memset(&ds, 0, sizeof(ds));
-	ds.domainconf = (char **)dconfdata;
-	ds.userconf = (char **)uconfdata;
+	ds.userpath.s = fnbuffer;
+	ds.userpath.len = strlen(fnbuffer);
+	fnbuffer[ds.userpath.len++] = '/';
+	fnbuffer[ds.userpath.len] = '\0';
 
-	err += test_flag("domain", 0, 0);
-	err += test_flag("simple", 1, 1);
-	err += test_flag("one", 1, 1);
-	err += test_flag("two", 2, 1);
-	err += test_flag("invalid", -1, 1);
-	err += test_flag("forcenull", 0, 1);
+	r += check_open_fail("user", "filename as path", ENOTDIR);
 
-	/* now without userconfig, checks other branches */
-	ds.userconf = NULL;
+	ds.domainpath.len = ds.userpath.len;
+	ds.domainpath.s = ds.userpath.s;
+	ds.userpath.len = 0;
+	ds.userpath.s = NULL;
 
-	err += test_flag("twenty", 20, 1);
-	err += test_flag("twentytwo", 22, 1);
+	r += check_open_fail("domain", "filename as path", ENOTDIR);
 
-	/* now with user and global config */
-	globalconf = gconfdata;
-	ds.userconf = (char **)uconfdata;
-	err += test_flag("forcenull", 0, 1);
-	err += test_flag("global", 3, 2);
-	err += test_flag("nonexistent", 0, 2);
-	err += test_flag("globalforcenull", 0, 2);
+	return r;
+}
 
-	t = -1;
-	r = getsetting(&ds, "nonexistent", &t);
-	if ((r != 0) || (t != 1)) {
-		fprintf(stderr, "searching for 'nonexistent' with getsetting() should return "
-				"0 (type 1), but returned %li (type %i)\n", r, t);
+static int
+test_found_internal(const char *range, int fd, int type, int expected_type)
+{
+	if (fd < 0) {
+		fprintf(stderr, "error opening existing file for %s, errno %i\n",
+				range, errno);
 		return 1;
 	}
 
-	return err;
+	close(fd);
+	if (type != expected_type) {
+		fprintf(stderr, "existing file for %s did not return type %i, but type %i\n",
+				range, expected_type, type);
+		return 1;
+	}
+
+	return 0;
+}
+
+static int
+test_found(void)
+{
+	int r = 0;
+	int fd;
+	int type = -1;
+
+	/* first: check with only user directory set */
+	ds.userpath.s = fnbuffer;
+	ds.userpath.len = strlen(fnbuffer);
+	ds.domainpath.len = 0;
+	ds.domainpath.s = NULL;
+
+	fd = getfile(&ds, EXISTING_FILENAME, &type);
+	r += test_found_internal("user", fd, type, 0);
+
+	/* set both, but user information should still be used */
+	ds.domainpath.len = ds.userpath.len;
+	ds.domainpath.s = ds.userpath.s;
+
+	fd = getfile(&ds, EXISTING_FILENAME, &type);
+	r += test_found_internal("user", fd, type, 0);
+
+	/* now only with domain information */
+	ds.userpath.len = 0;
+	ds.userpath.s = NULL;
+
+	fd = getfile(&ds, EXISTING_FILENAME, &type);
+	r += test_found_internal("domain", fd, type, 1);
+
+	return 0;
+}
+
+static int
+test_notfound(void)
+{
+	int r = 0;
+
+	/* first: check with only user directory set */
+	ds.userpath.s = fnbuffer;
+	ds.userpath.len = strlen(fnbuffer);
+	ds.domainpath.len = 0;
+	ds.domainpath.s = NULL;
+
+	r += check_open_fail("user", "nonexistent file", ENOENT);
+
+	/* set both, but user information should still be used */
+	ds.domainpath.len = ds.userpath.len;
+	ds.domainpath.s = ds.userpath.s;
+
+	r += check_open_fail("user", "nonexistent file", ENOENT);
+
+	/* now only with domain information */
+	ds.userpath.len = 0;
+	ds.userpath.s = NULL;
+
+	r += check_open_fail("domain", "nonexistent file", ENOENT);
+
+	return 0;
+}
+
+int
+main()
+{
+	int r = 0;
+	char *slash;
+
+	create_dirs();
+
+	memset(&ds, 0, sizeof(ds));
+
+	/* the buffer points to a filename, which is handled as directory */
+
+	r += test_notdir();
+
+	/* cut of the filename */
+	fnbuffer[strlen(fnbuffer) - 1] = '\0';
+	slash = strrchr(fnbuffer, '/');
+	*(slash + 1) = '\0';
+
+	r += test_found();
+
+	/* now test nonexisting */
+	while (slash != NULL) {
+		*(slash + 1) = '\0';
+
+		r += test_notfound();
+
+		fnbuffer[strlen(fnbuffer) - 1] = '\0';
+		slash = strrchr(fnbuffer, '/');
+	}
+
+	return r;
 }
