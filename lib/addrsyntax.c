@@ -1,14 +1,14 @@
 /** \file addrsyntax.c
  \brief check syntax of email addresses and SMTP helos
  */
+#include "addrparse.h"
+
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#include "sstring.h"
 #include "qdns.h"
-#include "qsmtpd.h"
 
 /**
  * check syntax correctness of local part

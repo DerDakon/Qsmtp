@@ -1,11 +1,13 @@
 /** \file badcc.c
  \brief reject multiple recipients mail if specific other recipients are given
  */
+#include "userfilters.h"
+
 #include <errno.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "userfilters.h"
+#include "addrparse.h"
 #include "control.h"
 #include "qsmtpd.h"
 

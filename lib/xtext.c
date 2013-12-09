@@ -3,7 +3,7 @@
  */
 #include "xtext.h"
 
-#include "qdns.h"
+#include "addrparse.h"
 
 #include <sys/types.h>
 #include <string.h>

@@ -4,6 +4,8 @@
  This file contains the main function and the basic commands of Qsmtpd
  SMTP server.
  */
+#include "qsmtpd.h"
+
 #include <sys/types.h>
 #include <sys/queue.h>
 #include <sys/stat.h>
@@ -25,6 +27,7 @@
 #include <dirent.h>
 #include <signal.h>
 #include <dirent.h>
+#include "addrparse.h"
 #include "antispam.h"
 #include "log.h"
 #include "netio.h"
@@ -33,7 +36,6 @@
 #include "userfilters.h"
 #include "tls.h"
 #include "sstring.h"
-#include "qsmtpd.h"
 #include "version.h"
 #include "qdns.h"
 #include "vpop.h"

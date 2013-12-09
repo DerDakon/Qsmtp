@@ -1,11 +1,13 @@
 /** \file badmailfrom.c
  \brief reject mail based on envelope from
  */
+#include "userfilters.h"
+
 #include <errno.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "userfilters.h"
+#include "addrparse.h"
 #include "control.h"
 #include "qsmtpd.h"
 #include "log.h"

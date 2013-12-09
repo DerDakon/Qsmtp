@@ -1,11 +1,10 @@
 /** \file qdns.h
- \brief headers of functions for DNS lookups and address validating
+ \brief headers of functions for DNS lookups
  */
 #ifndef QSMTP_DNS_H
 #define QSMTP_DNS_H
 
 #include <netinet/in.h>
-#include "sstring.h"
 
 /** \struct ips
  \brief list of IP addresses for a given host
@@ -35,12 +34,6 @@ extern int ask_dnsname(const struct in6_addr *, char **) __attribute__ ((nonnull
 extern void freeips(struct ips *);
 extern int domainvalid(const char * const) __attribute__ ((pure)) __attribute__ ((nonnull (1)));
 extern void sortmx(struct ips **p) __attribute__ ((nonnull (1)));
-
-/* qsmtpd/addrsyntax.c */
-
-extern int checkaddr(const char *const) __attribute__ ((pure)) __attribute__ ((nonnull (1)));
-extern int addrsyntax(char *in, const int flags, string *addr, char **more) __attribute__ ((pure)) __attribute__ ((nonnull (1)));
-extern int addrspec_valid(const char * const addr);
 
 #ifndef INET_ADDRSTRLEN
 #define INET_ADDRSTRLEN 16

@@ -5,6 +5,7 @@
 #include <sys/types.h> 
 #include <sys/socket.h> 
 #include <ifaddrs.h> 
+#include <stdlib.h>
 #include <string.h>
 
 /**
