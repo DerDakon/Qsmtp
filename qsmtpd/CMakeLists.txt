@@ -5,6 +5,7 @@ SET(QSMTPD_SRCS
 	addrsyntax.c
 	antispam.c
 	auth.c
+	getfile.c
 	qsmtpd.c
 	starttls.c
 	spf.c

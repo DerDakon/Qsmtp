@@ -308,6 +308,7 @@ ADD_EXECUTABLE(testcase_all_filters
 		all_filters_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
 )
 TARGET_LINK_LIBRARIES(testcase_all_filters
 		rcptfilters
@@ -322,6 +323,7 @@ ADD_EXECUTABLE(testcase_filter_badcc
 		filter_badcc_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/badcc.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
 )
 TARGET_LINK_LIBRARIES(testcase_filter_badcc
 		qsmtp_lib
@@ -333,6 +335,7 @@ ADD_TEST(NAME "Filter-badCC"
 
 ADD_EXECUTABLE(testcase_filter_nomail
 		filter_nomail_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/nomail.c
 )
 TARGET_LINK_LIBRARIES(testcase_filter_nomail
@@ -347,6 +350,7 @@ ADD_EXECUTABLE(testcase_filter_fromdomain
 		filter_fromdomain_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/fromdomain.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
 )
 TARGET_LINK_LIBRARIES(testcase_filter_fromdomain
 		qsmtp_lib
@@ -357,16 +361,17 @@ ADD_TEST(NAME "Filter-FromDomain"
 		COMMAND testcase_filter_fromdomain)
 
 ADD_EXECUTABLE(testcase_getfile
-		getfile_test.c)
+		getfile_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c)
 TARGET_LINK_LIBRARIES(testcase_getfile
-		qsmtp_lib
 		${MEMCHECK_LIBRARIES}
 )
 ADD_TEST(NAME "Getfile"
 		COMMAND testcase_getfile)
 
 ADD_EXECUTABLE(testcase_getsetting
-		getsetting_test.c)
+		getsetting_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c)
 TARGET_LINK_LIBRARIES(testcase_getsetting
 		qsmtp_lib
 		${MEMCHECK_LIBRARIES}

@@ -1,7 +1,7 @@
 /** \file getfile.c
  \brief functions to get information from filterconf files
  */
-#include "control.h"
+#include <control.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <syslog.h>
-#include "userfilters.h"
+#include <qsmtpd/userfilters.h>
 
 /**
  * @brief open a file in the given directory

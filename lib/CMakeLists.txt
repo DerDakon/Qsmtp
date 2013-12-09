@@ -29,7 +29,6 @@ TARGET_LINK_LIBRARIES(qsmtp_io_lib
 SET(QSMTP_LIB_SRCS
 	dns_helpers.c
 	control.c
-	getfile.c
 	base64.c
 	ipme.c
 	match.c
