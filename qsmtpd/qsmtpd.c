@@ -978,18 +978,18 @@ user_exists(const string *localpart, struct userconf *ds)
 }
 
 /**
- * addrparse - check an email address for syntax errors and/or existence
+ * @brief check an email address for syntax errors and/or existence
  *
  * @param in input to parse
- * @param flags \arg \c bit 1: rcpt to checks (e.g. source route is allowed) \arg \c bit 0: mail from checks
- * @param addr struct string to contain the address (memory will be malloced)
+ * @param flags \arg \c 1: rcpt to checks (e.g. source route is allowed) \arg \c 0: mail from checks
+ * @param addr struct string to contain the address (memory will be malloced, is set if 0 or -1 is returned)
  * @param more here starts the data behind the first '>' behind the first '<' (or NULL if none)
  * @param ds store the userconf of the user here
- *
- * \return \arg \c 0 on success
- *         \arg \c >0 on error (e.g. ENOMEM, return code is error code)
- *         \arg \c -2 if address not local (this is of course no error condition for MAIL FROM)
- *         \arg \c -1 if address local but nonexistent (expired or most probably faked) _OR_ if
+ * @return if address was validated
+ * @retval 0 address exists locally
+ * @retval >0 on error (e.g. ENOMEM, return code is error code)
+ * @retval -2 if address not local (this is of course no error condition for MAIL FROM)
+ * @retval -1 if address local but nonexistent (expired or most probably faked) _OR_ if
  *          domain of address does not exist (in both cases error is sent to network
  *          before leaving)
  */
@@ -1070,7 +1070,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	}
 	memcpy(localpart.s, addr->s, le);
 	localpart.s[--localpart.len] = '\0';
-/* now the userpath : userpatth.s = domainpath.s + [localpart of RCPT TO] + '/' */
+/* now the userpath : userpath.s = domainpath.s + [localpart of RCPT TO] + '/' */
 	if (newstr(&(ds->userpath), ds->domainpath.len + 2 + localpart.len)) {
 		result = errno;
 		free(localpart.s);
@@ -1092,12 +1092,16 @@ nouser:
 	if (!j) {
 		const char *logmsg[] = {"550 5.1.1 no such user <", addr->s, ">", NULL};
 
-		tarpit();
-		result = net_writen(logmsg) ? errno : -1;
 		free(ds->domainpath.s);
 		STREMPTY(ds->domainpath);
 		free(ds->userpath.s);
 		STREMPTY(ds->userpath);
+		tarpit();
+		result = net_writen(logmsg) ? errno : -1;
+		if (result > 0) {
+			free(addr->s);
+			STREMPTY(*addr);
+		}
 		return result;
 	}
 	return 0;
