@@ -2,9 +2,9 @@
  \brief IP address with netmask testcases
  */
 
-#include "antispam.h"
+#include <qsmtpd/antispam.h>
 #include "match.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>

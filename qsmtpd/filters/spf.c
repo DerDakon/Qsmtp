@@ -1,14 +1,15 @@
 /** \file qsmtpd/filters/spf.c
  \brief reject mail based on SPF policy
  */
+#include <qsmtpd/userfilters.h>
+
 #include <errno.h>
 #include <string.h>
 #include <syslog.h>
 #include "control.h"
-#include "antispam.h"
-#include "userfilters.h"
+#include <qsmtpd/antispam.h>
 #include "log.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 #include "netio.h"
 
 /* Values for spfpolicy:

@@ -1,9 +1,9 @@
 /** \file xtext.c
  * \brief functions for xtext parsing
  */
-#include "xtext.h"
+#include <qsmtpd/xtext.h>
 
-#include "addrparse.h"
+#include <qsmtpd/addrparse.h>
 
 #include <sys/types.h>
 #include <string.h>

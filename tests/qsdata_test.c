@@ -1,6 +1,6 @@
 #include "../qsmtpd/data.c"
 
-#include "antispam.h"
+#include <qsmtpd/antispam.h>
 
 #include <errno.h>
 #include <fcntl.h>

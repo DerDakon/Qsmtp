@@ -1,11 +1,12 @@
 /** \file smtpbugs.c
  \brief reject mail when sending SMTP engine is not standard compliant
  */
-#include "userfilters.h"
+#include <qsmtpd/userfilters.h>
+
 #include <syslog.h>
 #include "log.h"
 #include "netio.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 #include "tls.h"
 
 enum spacebug_filter {

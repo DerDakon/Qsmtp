@@ -2,7 +2,7 @@
  * \brief function to parse the EHLO greeting response
  */
 
-#include "greeting.h"
+#include <qremote/greeting.h>
 
 #include <stdlib.h>
 #include <string.h>

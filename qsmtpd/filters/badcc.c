@@ -1,15 +1,15 @@
 /** \file badcc.c
  \brief reject multiple recipients mail if specific other recipients are given
  */
-#include "userfilters.h"
+#include <qsmtpd/userfilters.h>
 
 #include <errno.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "addrparse.h"
+#include <qsmtpd/addrparse.h>
 #include "control.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 /*
  * Bad CC: check the list of recipient addresses if there is someone were no CC makes sense

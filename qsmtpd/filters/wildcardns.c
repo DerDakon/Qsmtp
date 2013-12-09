@@ -1,12 +1,13 @@
+#include <qsmtpd/userfilters.h>
+
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <syslog.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
-#include "userfilters.h"
 #include "control.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 static int __attribute__ ((pure))
 validns(const char *inp)

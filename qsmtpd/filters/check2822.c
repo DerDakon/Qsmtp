@@ -1,8 +1,8 @@
 /** \file check2822.c
  \brief check RfC2822 syntax of mail body
  */
-#include "userfilters.h"
-#include "qsmtpd.h"
+#include <qsmtpd/userfilters.h>
+#include <qsmtpd/qsmtpd.h>
 
 int
 cb_check2822(const struct userconf *ds, const char **logmsg __attribute__ ((unused)), int *t)

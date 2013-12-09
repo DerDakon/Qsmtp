@@ -14,11 +14,11 @@ SET(QREMOTE_SRCS
 )
 
 SET(QREMOTE_HDRS
-	../include/conn.h
-	../include/greeting.h
-	../include/qrdata.h
-	../include/qremote.h
-	../include/starttlsr.h
+	../include/qremote/conn.h
+	../include/qremote/greeting.h
+	../include/qremote/qrdata.h
+	../include/qremote/qremote.h
+	../include/qremote/starttlsr.h
 )
 
 IF(CHUNKING)

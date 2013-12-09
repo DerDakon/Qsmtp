@@ -1,4 +1,4 @@
-#include "addrparse.h"
+#include <qsmtpd/addrparse.h>
 #include "sstring.h"
 #include "test_io/testcase_io.h"
 

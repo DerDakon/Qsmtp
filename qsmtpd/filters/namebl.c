@@ -1,14 +1,15 @@
+#include <qsmtpd/userfilters.h>
+
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <syslog.h>
-#include "antispam.h"
-#include "userfilters.h"
+#include <qsmtpd/antispam.h>
 #include "control.h"
 #include "libowfatconn.h"
 #include "log.h"
 #include "netio.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 int
 cb_namebl(const struct userconf *ds, const char **logmsg, int *t)

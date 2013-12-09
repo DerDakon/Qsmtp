@@ -1,15 +1,15 @@
 /** \file badmailfrom.c
  \brief reject mail based on envelope from
  */
-#include "userfilters.h"
+#include <qsmtpd/userfilters.h>
 
 #include <errno.h>
 #include <string.h>
 #include <strings.h>
 #include <stdlib.h>
-#include "addrparse.h"
+#include <qsmtpd/addrparse.h>
 #include "control.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 #include "log.h"
 
 /* Bad "MAIL FROM": reject sender addresses or domains, case is ignored

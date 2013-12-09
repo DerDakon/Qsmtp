@@ -1,10 +1,11 @@
+#include <qsmtpd/userfilters.h>
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include "control.h"
 #include "netio.h"
-#include "qsmtpd.h"
-#include "userfilters.h"
+#include <qsmtpd/qsmtpd.h>
 
 /**
  * The user does not want to receive any mail

@@ -3,10 +3,11 @@
  */
 #include <stdio.h>
 #include <arpa/inet.h>
-#include <string.h>
-#include "qsmtpd.h"
-#include "antispam.h"
+#include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/antispam.h>
 #include "sstring.h"
+
+#include <string.h>
 
 struct xmitstat xmitstat;
 string heloname = {.s = "caliban.sf-tec.de", .len = 17};

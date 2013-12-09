@@ -1,9 +1,10 @@
 /** \file rcpt_filters.c
  \brief collection of all user filters for access by qsmtpd.c
  */
-#include <syslog.h>
+#include <qsmtpd/userfilters.h>
+
 #include "log.h"
-#include "userfilters.h"
+#include <syslog.h>
 
 /* add all your filters here */
 

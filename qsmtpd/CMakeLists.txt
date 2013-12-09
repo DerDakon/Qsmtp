@@ -1,24 +1,28 @@
 ADD_SUBDIRECTORY(filters)
 
 SET(QSMTPD_SRCS
-	qsmtpd.c
+	addrparse.c
+	addrsyntax.c
 	antispam.c
 	auth.c
+	qsmtpd.c
 	starttls.c
 	spf.c
 	vpop.c
 	data.c
 	syntax.c
+	xtext.c
 )
 
 SET(QSMTPD_HDRS
-	../include/antispam.h
-	../include/qsauth.h
-	../include/qsdata.h
-	../include/qsmtpd.h
-	syntax.h
-	../include/userfilters.h
-	../include/vpop.h
+	../include/qsmtpd/addrparse.h
+	../include/qsmtpd/antispam.h
+	../include/qsmtpd/qsauth.h
+	../include/qsmtpd/qsdata.h
+	../include/qsmtpd/qsmtpd.h
+	../include/qsmtpd/syntax.h
+	../include/qsmtpd/userfilters.h
+	../include/qsmtpd/vpop.h
 )
 
 ADD_EXECUTABLE(Qsmtpd

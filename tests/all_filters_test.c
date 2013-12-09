@@ -1,10 +1,10 @@
-#include "userfilters.h"
+#include <qsmtpd/userfilters.h>
 #include "test_io/testcase_io.h"
 
-#include "antispam.h"
+#include <qsmtpd/antispam.h>
 #include "control.h"
 #include "libowfatconn.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 #include <assert.h>
 #include <dirent.h>

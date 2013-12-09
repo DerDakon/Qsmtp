@@ -9,11 +9,11 @@
 #include <fcntl.h>
 #include "tls.h"
 #include "ssl_timeoutio.h"
-#include "qremote.h"
+#include <qremote/qremote.h>
 #include "control.h"
 #include "netio.h"
 #include "sstring.h"
-#include "starttlsr.h"
+#include <qremote/starttlsr.h>
 
 static void __attribute__ ((noreturn))
 tls_quit(void)

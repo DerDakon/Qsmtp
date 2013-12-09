@@ -4,8 +4,8 @@
 #include "fmt.h"
 #include "log.h"
 #include "netio.h"
-#include "qrdata.h"
-#include "qremote.h"
+#include <qremote/qrdata.h>
+#include <qremote/qremote.h>
 
 size_t chunksize;	/**< the maximum allowed size for an outgoing send buffer in BDAT mode */
 

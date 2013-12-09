@@ -2,8 +2,8 @@
  \brief Authentication setup testcases
  */
 
-#include "qsauth.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsauth.h>
+#include <qsmtpd/qsmtpd.h>
 #include "sstring.h"
 #include "netio.h"
 #include "test_io/testcase_io.h"

@@ -35,10 +35,8 @@ SET(QSMTP_LIB_SRCS
 	match.c
 	mime.c
 	cdb.c
-	xtext.c
 	mmap.c
 	fmt.c
-	addrsyntax.c
 )
 
 SET(QSMTP_LIB_HDRS
@@ -52,7 +50,6 @@ SET(QSMTP_LIB_HDRS
 	../include/mmap.h
 	../include/sstring.h
 	${CMAKE_BINARY_DIR}/version.h
-	../include/xtext.h
 )
 
 ADD_LIBRARY(qsmtp_lib ${QSMTP_LIB_SRCS} ${QSMTP_LIB_HDRS})

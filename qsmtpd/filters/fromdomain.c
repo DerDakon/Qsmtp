@@ -1,12 +1,13 @@
 #include <netinet/in.h>
 #include <syslog.h>
-#include "antispam.h"
-#include "userfilters.h"
+#include <qsmtpd/userfilters.h>
+
+#include <qsmtpd/antispam.h>
 #include "control.h"
 #include "log.h"
 #include "netio.h"
-#include "qsmtpd.h"
 #include "match.h"
+#include <qsmtpd/qsmtpd.h>
 
 char *logmess[] = {"no MX", "temporary DNS error on from domain lookup", "NXDOMAIN"};
 

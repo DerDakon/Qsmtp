@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include "qrdata.h"
+#include <qremote/qrdata.h>
 #include "netio.h"
 #include "sstring.h"
 #include "fmt.h"

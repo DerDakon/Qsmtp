@@ -1,4 +1,4 @@
-#include "greeting.h"
+#include <qremote/greeting.h>
 #include <stdio.h>
 #include <string.h>
 

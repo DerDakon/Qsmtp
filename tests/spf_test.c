@@ -1,8 +1,8 @@
 /** \file spf_test.c
  \brief SPF testcases
  */
-#include "qsmtpd.h"
-#include "antispam.h"
+#include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/antispam.h>
 #include "sstring.h"
 #include "test_io/testcase_io.h"
 

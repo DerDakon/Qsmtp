@@ -3,10 +3,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <syslog.h>
-#include "antispam.h"
-#include "userfilters.h"
+#include <qsmtpd/userfilters.h>
+
+#include <qsmtpd/antispam.h>
 #include "log.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 int
 cb_ipbl(const struct userconf *ds, const char **logmsg, int *t)

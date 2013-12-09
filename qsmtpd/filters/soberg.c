@@ -1,9 +1,10 @@
+#include <qsmtpd/userfilters.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include "userfilters.h"
 #include "netio.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 /**
  * This checks if the combination of "MAIL FROM:" and "HELO" looks like SoberG

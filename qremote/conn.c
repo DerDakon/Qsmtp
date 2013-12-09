@@ -12,10 +12,9 @@
 #include <assert.h>
 #include "qdns.h"
 #include "control.h"
-#include "match.h"
 #include "netio.h"
 #include "log.h"
-#include "qremote.h"
+#include <qremote/qremote.h>
 
 extern int socketd;
 unsigned int targetport = 25;

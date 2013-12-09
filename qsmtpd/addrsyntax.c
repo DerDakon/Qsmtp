@@ -1,7 +1,7 @@
 /** \file addrsyntax.c
  \brief check syntax of email addresses and SMTP helos
  */
-#include "addrparse.h"
+#include <qsmtpd/addrparse.h>
 
 #include <arpa/inet.h>
 #include <unistd.h>

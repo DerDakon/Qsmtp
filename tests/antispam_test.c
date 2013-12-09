@@ -1,5 +1,5 @@
-#include "antispam.h"
-#include "qsmtpd.h"
+#include <qsmtpd/antispam.h>
+#include <qsmtpd/qsmtpd.h>
 #include "test_io/testcase_io.h"
 
 #include <arpa/inet.h>

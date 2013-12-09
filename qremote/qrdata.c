@@ -14,8 +14,8 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include "netio.h"
-#include "qremote.h"
-#include "qrdata.h"
+#include <qremote/qremote.h>
+#include <qremote/qrdata.h>
 #include "version.h"
 #include "mime.h"
 #include "log.h"

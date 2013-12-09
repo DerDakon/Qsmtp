@@ -1,7 +1,7 @@
 #define _ISOC99_SOURCE
 #include "netio.h"
-#include "qrdata.h"
-#include "qremote.h"
+#include <qremote/qrdata.h>
+#include <qremote/qremote.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>

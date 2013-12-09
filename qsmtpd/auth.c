@@ -1,7 +1,7 @@
 /** \file auth.c
  \brief functions for SMTP AUTH
  */
-#include "qsauth.h"
+#include <qsmtpd/qsauth.h>
 
 #include <sys/wait.h>
 #include <sys/mman.h>
@@ -14,9 +14,9 @@
 #include <time.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include "antispam.h"
+#include <qsmtpd/antispam.h>
 #include "fmt.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 #include "sstring.h"
 #include "netio.h"
 #include "base64.h"

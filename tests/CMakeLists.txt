@@ -131,7 +131,9 @@ ADD_TEST(NAME "Hostname"
 		COMMAND testcase_hostname)
 
 ADD_EXECUTABLE(testcase_xtext
-		xtext_test.c)
+		xtext_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/xtext.c)
 
 TARGET_LINK_LIBRARIES(testcase_xtext
 		qsmtp_lib
@@ -234,7 +236,8 @@ ADD_TEST(NAME "Fmt"
 		COMMAND testcase_fmt)
 
 ADD_EXECUTABLE(testcase_addrsyntax
-		addrsyntax_test.c)
+		addrsyntax_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c)
 TARGET_LINK_LIBRARIES(testcase_addrsyntax
 		qsmtp_lib
 		testcase_io_lib
@@ -304,6 +307,7 @@ ADD_TEST(NAME "Antispam"
 ADD_EXECUTABLE(testcase_all_filters
 		all_filters_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
 )
 TARGET_LINK_LIBRARIES(testcase_all_filters
 		rcptfilters
@@ -317,6 +321,7 @@ ADD_TEST(NAME "All_Filters"
 ADD_EXECUTABLE(testcase_filter_badcc
 		filter_badcc_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/badcc.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
 )
 TARGET_LINK_LIBRARIES(testcase_filter_badcc
 		qsmtp_lib
@@ -341,6 +346,7 @@ ADD_TEST(NAME "Filter-NoMail"
 ADD_EXECUTABLE(testcase_filter_fromdomain
 		filter_fromdomain_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/fromdomain.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
 )
 TARGET_LINK_LIBRARIES(testcase_filter_fromdomain
 		qsmtp_lib

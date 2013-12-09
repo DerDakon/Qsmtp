@@ -14,7 +14,7 @@
 #include "control.h"
 #include "match.h"
 #include "log.h"
-#include "qremote.h"
+#include <qremote/qremote.h>
 #include <mmap.h>
 
 static const char *tags[] = {

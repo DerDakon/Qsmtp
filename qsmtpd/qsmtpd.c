@@ -4,7 +4,7 @@
  This file contains the main function and the basic commands of Qsmtpd
  SMTP server.
  */
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 #include <sys/types.h>
 #include <sys/queue.h>
@@ -27,24 +27,24 @@
 #include <dirent.h>
 #include <signal.h>
 #include <dirent.h>
-#include "addrparse.h"
-#include "antispam.h"
+#include <qsmtpd/addrparse.h>
+#include <qsmtpd/vpop.h>
+#include <qsmtpd/syntax.h>
+#include <qsmtpd/xtext.h>
+#include <qsmtpd/antispam.h>
 #include "log.h"
 #include "netio.h"
 #include "qdns.h"
 #include "control.h"
-#include "userfilters.h"
+#include <qsmtpd/userfilters.h>
 #include "tls.h"
 #include "sstring.h"
 #include "version.h"
 #include "qdns.h"
-#include "vpop.h"
-#include "qsauth.h"
-#include "qsdata.h"
-#include "xtext.h"
+#include <qsmtpd/qsauth.h>
+#include <qsmtpd/qsdata.h>
 #include "fmt.h"
 #include "qmaildir.h"
-#include "syntax.h"
 
 int smtp_noop(void);
 int smtp_quit(void);
@@ -80,7 +80,6 @@ struct smtpcomm commands[] = {
 
 #undef _C
 
-static char *vpopbounce;		/**< the bounce command in vpopmails .qmail-default */
 static unsigned int rcptcount;		/**< number of recipients in lists including rejected */
 static char *gcbuf;			/**< buffer for globalconf array (see below) */
 
@@ -748,374 +747,6 @@ smtp_ehlo(void)
 	return rc;
 }
 
-/* values for default
-
-  (def & 1)		append "default"
-  (def & 2)		append suff1
- */
-
-static int
-qmexists(const string *dirtempl, const char *suff1, const unsigned int len, const int def)
-{
-	char filetmp[PATH_MAX];
-	int fd;
-	unsigned int l = dirtempl->len;
-
-	errno = ENOENT;
-	if (l >= PATH_MAX)
-		return -1;
-	memcpy(filetmp, dirtempl->s, l);
-	if (def & 2) {
-		char *p;
-
-		if (l + len >= PATH_MAX)
-			return -1;
-		memcpy(filetmp + l, suff1, len);
-
-		while ( (p = strchr(filetmp + l, '.')) ) {
-			*p = ':';
-		}
-		l += len;
-		if (def & 1) {
-			if (l + 1 >= PATH_MAX)
-				return -1;
-			*(filetmp + l) = '-';
-			l++;
-		}
-	}
-	if (def & 1) {
-		if (l + 7 >= PATH_MAX)
-			return -1;
-		memcpy(filetmp + l, "default", 7);
-		l += 7;
-	}
-	filetmp[l] = 0;
-
-	/* these files should not be open long enough to reach a close, but
-	 * make sure it is not accidentially leaked. */
-	fd = open(filetmp, O_RDONLY | O_CLOEXEC);
-	if (fd == -1) {
-		if ((errno == ENOMEM) || (errno == ENFILE) || (errno == EMFILE)) {
-			errno = ENOMEM;
-		} else if ((errno != ENOENT) && (errno != EACCES)) {
-			err_control(filetmp);
-		}
-	}
-	return fd;
-}
-
-/** check if the user identified by localpart and userconf->domainpath exists
- *
- * \param localpart localpart of mail address
- * \param ds path of domain and user
- *
- * \return \arg \c 0: user doesn't exist
- *         \arg \c 1: user exists
- *         \arg \c 2: mail would be catched by .qmail-default and .qmail-default != vpopbounce
- *         \arg \c 3: domain is not filtered (use for domains not local)
- *         \arg \c 4: mail would be catched by .qmail-foo-default (i.e. mailinglist)
- *         \arg \c -1: error, errno is set.
-*/
-static int
-user_exists(const string *localpart, struct userconf *ds)
-{
-	DIR *dirp;
-
-	/* '/' is a valid character for localparts but we don't want it because
-	 * it could be abused to check the existence of files */
-	if (strchr(localpart->s, '/'))
-		return 0;
-
-	/* does directory (ds->domainpath.s)+'/'+localpart exist? */
-	dirp = opendir(ds->userpath.s);
-	if (dirp == NULL) {
-		char filetmp[PATH_MAX];
-		int e = errno;
-		int fd;
-		string dotqm;
-		size_t i;
-
-		/* userpath is already 0-terminated */
-		memcpy(filetmp, ds->userpath.s, ds->userpath.len + 1);
-
-		free(ds->userpath.s);
-		STREMPTY(ds->userpath);
-		if (e == EACCES) {
-			/* Directory is not readable. Admins fault, we accept the mail. */
-			free(ds->domainpath.s);
-			STREMPTY(ds->domainpath);
-			return 1;
-		} else if (e != ENOENT) {
-			if (!err_control(filetmp)) {
-				errno = e;
-			} else {
-				errno = EDONE;
-			}
-			return -1;
-		}
-		/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
-		i = ds->domainpath.len;
-		memcpy(filetmp, ds->domainpath.s, i);
-		memcpy(filetmp + i, ".qmail-", 7);
-		i += 7;
-		filetmp[i] = '\0';
-		if ( (fd = newstr(&dotqm, i + 1)) ) {
-			return fd;
-		}
-		memcpy(dotqm.s, filetmp, dotqm.len--);
-		fd = qmexists(&dotqm, localpart->s, localpart->len, 2);
-		/* try .qmail-user-default instead */
-		if (fd < 0) {
-			if (errno == EACCES) {
-				/* User exists */
-				free(dotqm.s);
-				return 1;
-			} else if (errno == ENOMEM) {
-				return fd;
-			} else if (errno != ENOENT) {
-				free(dotqm.s);
-				return EDONE;
-			} else {
-				fd = qmexists(&dotqm, localpart->s, localpart->len, 3);
-			}
-		}
-
-		if (fd < 0) {
-			char *p;
-
-			if (errno == EACCES) {
-				/* User exists */
-				free(dotqm.s);
-				return 1;
-			} else if (errno == ENOMEM) {
-				return fd;
-			} else if (errno != ENOENT) {
-				free(dotqm.s);
-				return EDONE;
-			}
-			/* if username contains '-' there may be
-			 .qmail-partofusername-default */
-			p = strchr(localpart->s, '-');
-			while (p) {
-				fd = qmexists(&dotqm, localpart->s, (p - localpart->s), 3);
-				if (fd < 0) {
-					if (errno == EACCES) {
-						free(dotqm.s);
-						return 1;
-					} else if (errno == ENOMEM) {
-						return fd;
-					} else if (errno != ENOENT) {
-						free(dotqm.s);
-						errno = EDONE;
-						return -1;
-					}
-				} else {
-					free(dotqm.s);
-					while (close(fd)) {
-						if (errno != EINTR)
-							return -1;
-					}
-					return 4;
-				}
-				p = strchr(p + 1, '-');
-			}
-
-			/* does USERPATH/DOMAIN/.qmail-default exist ? */
-			fd = qmexists(&dotqm, NULL, 0, 1);
-			free(dotqm.s);
-			if (fd < 0) {
-				/* no local user with that address */
-				if (errno == EACCES) {
-					return 1;
-				} else if (errno == ENOENT) {
-					return 0;
-				} else if (errno == ENOMEM) {
-					return fd;
-				} else {
-					return EDONE;
-				}
-			} else if (vpopbounce) {
-				char buff[2*strlen(vpopbounce)+1];
-				ssize_t r;
-				int err = 0;
-
-				r = read(fd, buff, sizeof(buff) - 1);
-				if (r == -1) {
-					if (!err_control(filetmp))
-						err = EDONE;
-					else
-						err = errno;
-				}
-				while (close(fd)) {
-					if (errno != EINTR) {
-						if (err == 0)
-							err = errno;
-						break;
-					}
-				}
-				if (err != 0) {
-					errno = err;
-					return -1;
-				}
-
-				buff[r] = 0;
-
-				/* mail would be bounced or catched by .qmail-default */
-				return strcmp(buff, vpopbounce) ? 2 : 0;
-			} else {
-				/* we can't tell if this is a bounce .qmail-default -> accept the mail */
-				return 2;
-			}
-		} else {
-			free(dotqm.s);
-			while (close(fd)) {
-				if (errno != EINTR)
-					return -1;
-			}
-		}
-	} else {
-		closedir(dirp);
-	}
-	return 1;
-}
-
-/**
- * @brief check an email address for syntax errors and/or existence
- *
- * @param in input to parse
- * @param flags \arg \c 1: rcpt to checks (e.g. source route is allowed) \arg \c 0: mail from checks
- * @param addr struct string to contain the address (memory will be malloced, is set if 0 or -1 is returned)
- * @param more here starts the data behind the first '>' behind the first '<' (or NULL if none)
- * @param ds store the userconf of the user here
- * @return if address was validated
- * @retval 0 address exists locally
- * @retval >0 on error (e.g. ENOMEM, return code is error code)
- * @retval -2 if address not local (this is of course no error condition for MAIL FROM)
- * @retval -1 if address local but nonexistent (expired or most probably faked) _OR_ if
- *          domain of address does not exist (in both cases error is sent to network
- *          before leaving)
- */
-static int
-addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds)
-{
-	char *at;			/* guess! ;) */
-	int result = 0;			/* return code */
-	int i, j;
-	string localpart;
-	size_t le;
-
-	STREMPTY(ds->domainpath);
-	STREMPTY(ds->userpath);
-
-	j = addrsyntax(in, flags, addr, more);
-	if ((j == 0) || ((flags != 1) && (j == 4))) {
-		return netwrite("501 5.1.3 domain of mail address is syntactically incorrect\r\n") ? errno : EBOGUS;
-	} else if (j < 0) {
-		return errno;
-	}
-
-	/* empty mail address is valid in MAIL FROM:, this is checked by addrsyntax before
-	 * if we find an empty address here it's ok */
-	if (!addr->len)
-		return 0;
-	at = strchr(addr->s, '@');
-	/* check if mail goes to global postmaster */
-	if (flags && !at)
-		return 0;
-	if (j < 4) {
-		/* at this point either @ is set or addrsyntax has already caught this */
-		i = finddomainmm(rcpthosts, rcpthsize, at + 1);
-
-		if (i < 0) {
-			if (errno == ENOMEM) {
-				result = errno;
-			} else if (err_control("control/rcpthosts")) {
-				result = errno;
-			} else {
-				result = EDONE;
-			}
-			goto free_and_out;
-		} else if (!i) {
-			return -2;
-		}
-		result = vget_dir(at + 1, &(ds->domainpath), NULL);
-	} else {
-		const size_t liplen = strlen(xmitstat.localip);
-
-		j = 0;
-		if (!strncmp(at + 2, "IPv6:", 5)) {
-			if (strncmp(at + 7, xmitstat.localip, liplen))
-				goto nouser;
-		} else {
-			if (strncmp(at + 2, xmitstat.localip, liplen))
-				goto nouser;
-		}
-		result = vget_dir(liphost.s, &(ds->domainpath), NULL);
-	}
-
-/* get the domain directory from "users/cdb" */
-	if (result < 0) {
-		if (result == -ENOENT)
-			return 0;
-		goto free_and_out;
-	} else if (!result) {
-		/* the domain is not local (or at least no vpopmail domain) so we can't say it the user exists or not:
-		 * -> accept the mail */
-		return 0;
-	}
-
-/* get the localpart out of the RCPT TO */
-	le = (at - addr->s);
-	if (newstr(&localpart, le + 1)) {
-		result = errno;
-		goto free_and_out;
-	}
-	memcpy(localpart.s, addr->s, le);
-	localpart.s[--localpart.len] = '\0';
-/* now the userpath : userpath.s = domainpath.s + [localpart of RCPT TO] + '/' */
-	if (newstr(&(ds->userpath), ds->domainpath.len + 2 + localpart.len)) {
-		result = errno;
-		free(localpart.s);
-		goto free_and_out;
-	}
-	memcpy(ds->userpath.s, ds->domainpath.s, ds->domainpath.len);
-	memcpy(ds->userpath.s + ds->domainpath.len, localpart.s, localpart.len);
-	ds->userpath.s[--ds->userpath.len] = '\0';
-	ds->userpath.s[ds->userpath.len - 1] = '/';
-
-	j = user_exists(&localpart, ds);
-	free(localpart.s);
-	if (j < 0) {
-		result = errno;
-		goto free_and_out;
-	}
-
-nouser:
-	if (!j) {
-		const char *logmsg[] = {"550 5.1.1 no such user <", addr->s, ">", NULL};
-
-		free(ds->domainpath.s);
-		STREMPTY(ds->domainpath);
-		free(ds->userpath.s);
-		STREMPTY(ds->userpath);
-		tarpit();
-		result = net_writen(logmsg) ? errno : -1;
-		if (result > 0) {
-			free(addr->s);
-			STREMPTY(*addr);
-		}
-		return result;
-	}
-	return 0;
-free_and_out:
-	free(ds->domainpath.s);
-	STREMPTY(ds->domainpath);
-	free(ds->userpath.s);
-	STREMPTY(ds->userpath);
-	free(addr->s);
-	return result;
-}
-
 int
 smtp_rcpt(void)
 {
@@ -1138,7 +769,7 @@ smtp_rcpt(void)
 		return EINVAL;
 	if (bugoffset != 0)
 		xmitstat.spacebug = 1;
-	i = addrparse(linein + 9 + bugoffset, 1, &tmp, &more, &ds);
+	i = addrparse(linein + 9 + bugoffset, 1, &tmp, &more, &ds, rcpthosts, rcpthsize);
 	if  (i > 0) {
 		return i;
 	} else if (i == -1) {
@@ -1370,7 +1001,7 @@ smtp_from(void)
 		}
 	}
 
-	i = addrparse(linein + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, &ds);
+	i = addrparse(linein + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, &ds, rcpthosts, rcpthsize);
 	xmitstat.frommx = NULL;
 	xmitstat.fromdomain = 0;
 	free(ds.userpath.s);
@@ -1543,6 +1174,7 @@ conn_cleanup(const int rc)
 	free(globalconf);
 	free(heloname.s);
 	free(msgidhost.s);
+	free(vpopbounce);
 	exit(rc);
 }
 

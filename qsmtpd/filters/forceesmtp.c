@@ -1,11 +1,12 @@
+#include <qsmtpd/userfilters.h>
+
 #include <netinet/in.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
-#include "antispam.h"
-#include "userfilters.h"
+#include <qsmtpd/antispam.h>
 #include "control.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 int
 cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)

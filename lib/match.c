@@ -1,10 +1,11 @@
 /** \file match.c
  \brief IP and domain matching functions
  */
+#include "match.h"
+
 #include <netinet/in.h>
 #include <string.h>
 #include <strings.h>
-#include "match.h"
 
 /**
  * check if an IPv4 address is in a given network

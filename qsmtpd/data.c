@@ -1,6 +1,8 @@
 /** \file data.c
  \brief receive and queue message data
  */
+#include <qsmtpd/qsdata.h>
+
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <syslog.h>
@@ -10,13 +12,12 @@
 #include <time.h>
 #include "netio.h"
 #include "log.h"
-#include "qsmtpd.h"
-#include "antispam.h"
+#include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/antispam.h>
 #include "version.h"
 #include "tls.h"
-#include "qsdata.h"
 #include "fmt.h"
-#include "syntax.h"
+#include <qsmtpd/syntax.h>
 
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
 

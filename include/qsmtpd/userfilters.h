@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <sys/queue.h>
 #include "sstring.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 struct userconf {
 	string domainpath;		/**< Path of the domain for domain settings */

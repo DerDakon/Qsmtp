@@ -1,4 +1,4 @@
-#include "userfilters.h"
+#include <qsmtpd/userfilters.h>
 
 #include "control.h"
 

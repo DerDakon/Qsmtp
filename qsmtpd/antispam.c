@@ -1,7 +1,7 @@
 /** \file antispam.c
  \brief several helper functions for spam filters
  */
-#include "antispam.h"
+#include <qsmtpd/antispam.h>
 
 #include <openssl/ssl.h>
 #include <arpa/inet.h>
@@ -17,7 +17,7 @@
 #include "fmt.h"
 #include "log.h"
 #include "libowfatconn.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 #include "control.h"
 #include "tls.h"
 #include "match.h"

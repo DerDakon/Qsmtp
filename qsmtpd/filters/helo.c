@@ -1,10 +1,11 @@
+#include <qsmtpd/userfilters.h>
+
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
 #include <syslog.h>
-#include "userfilters.h"
 #include "control.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 /* Bad HELO: reject senders with HELOs you don't like
  *

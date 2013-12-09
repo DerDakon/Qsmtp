@@ -4,11 +4,11 @@
  This file contains functions to needed to handle syntax errors in input
  commands.
  */
-#include "syntax.h"
+#include <qsmtpd/syntax.h>
 
 #include "log.h"
 #include "netio.h"
-#include "qsmtpd.h"
+#include <qsmtpd/qsmtpd.h>
 
 #include <string.h>
 #include <syslog.h>

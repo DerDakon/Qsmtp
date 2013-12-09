@@ -10,8 +10,8 @@
 #include "control.h"
 #include "qdns.h"
 #include "ssl_timeoutio.h"
-#include "qsmtpd.h"
-#include "syntax.h"
+#include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/syntax.h>
 
 int ssl_verified = 0;
 const char *ssl_verify_err = 0;

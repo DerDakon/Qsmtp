@@ -1,6 +1,6 @@
 #include "control.h"
 #include "qdns.h"
-#include "qremote.h"
+#include <qremote/qremote.h>
 #include "test_io/testcase_io.h"
 
 #include <arpa/inet.h>

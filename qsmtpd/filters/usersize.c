@@ -1,5 +1,5 @@
-#include "userfilters.h"
-#include "qsmtpd.h"
+#include <qsmtpd/userfilters.h>
+#include <qsmtpd/qsmtpd.h>
 #include "netio.h"
 
 int

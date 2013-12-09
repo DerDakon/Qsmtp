@@ -1,5 +1,5 @@
 #include "cdb.h"
-#include "vpop.h"
+#include <qsmtpd/vpop.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>
@@ -48,6 +48,14 @@ static struct {
 		.realdomain = NULL
 	}
 };
+
+int
+err_control(const char *fn)
+{
+	fprintf(stderr, "%s(%s) called unexpected\n",
+			__func__, fn);
+	exit(1);
+}
 
 static int
 test_cdb(void)

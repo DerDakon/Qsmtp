@@ -8,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "netio.h"
-#include "qrdata.h"
+#include <qremote/qrdata.h>
 #include "sstring.h"
 
 /**

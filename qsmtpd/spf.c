@@ -10,8 +10,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
-#include "qsmtpd.h"
-#include "antispam.h"
+#include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/antispam.h>
 #include "sstring.h"
 #include "libowfatconn.h"
 #include "match.h"

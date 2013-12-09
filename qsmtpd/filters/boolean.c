@@ -1,12 +1,14 @@
 /** \file boolean.c
  \brief boolean reject decisions
  */
-#include <syslog.h>
-#include "userfilters.h"
-#include "qsmtpd.h"
+#include <qsmtpd/userfilters.h>
+
+#include <qsmtpd/qsmtpd.h>
 #include "tls.h"
 #include "netio.h"
 #include "log.h"
+
+#include <syslog.h>
 
 int
 cb_boolean(const struct userconf *ds, const char **logmsg, int *t)

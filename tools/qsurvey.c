@@ -21,9 +21,9 @@
 #include "log.h"
 #include "match.h"
 #include "sstring.h"
-#include "conn.h"
-#include "starttlsr.h"
-#include "qremote.h"
+#include <qremote/conn.h>
+#include <qremote/starttlsr.h>
+#include <qremote/qremote.h>
 #include "fmt.h"
 #include "qmaildir.h"
 
