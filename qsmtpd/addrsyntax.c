@@ -232,7 +232,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 			return -1;
 
 		strncpy(addr->s, f, len);
-		addr->s[addr->len--] = '\0';
+		addr->s[--addr->len] = '\0';
 		while (len > 0) {
 			len--;
 			if ((addr->s[len] >= 'A') && (addr->s[len] <= 'Z'))
