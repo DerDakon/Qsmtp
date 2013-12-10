@@ -216,7 +216,7 @@ user_exists(const string *localpart, struct userconf *ds)
 
 	/* '/' is a valid character for localparts but we don't want it because
 	 * it could be abused to check the existence of files */
-	if (strchr(localpart->s, '/'))
+	if (memchr(localpart->s, '/', localpart->len))
 		return 0;
 
 	/* does directory (ds->domainpath.s)+'/'+localpart exist? */
@@ -288,7 +288,7 @@ user_exists(const string *localpart, struct userconf *ds)
 			}
 			/* if username contains '-' there may be
 			 .qmail-partofusername-default */
-			p = strchr(localpart->s, '-');
+			p = memchr(localpart->s, '-', localpart->len);
 			while (p) {
 				fd = qmexists(&dotqm, localpart->s, (p - localpart->s), 3);
 				if (fd < 0) {
