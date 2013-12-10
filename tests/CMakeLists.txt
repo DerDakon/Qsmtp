@@ -235,6 +235,18 @@ TARGET_LINK_LIBRARIES(testcase_fmt
 ADD_TEST(NAME "Fmt"
 		COMMAND testcase_fmt)
 
+ADD_EXECUTABLE(testcase_addrparse
+		addrparse_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/addrparse.c)
+TARGET_LINK_LIBRARIES(testcase_addrparse
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "AddrParse"
+		COMMAND testcase_addrparse)
+
 ADD_EXECUTABLE(testcase_addrsyntax
 		addrsyntax_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c)
