@@ -485,6 +485,9 @@ TARGET_LINK_LIBRARIES(testcase_qsdata
 		${MEMCHECK_LIBRARIES}
 )
 
+ADD_TEST(NAME "Qsmtpd_data"
+		COMMAND testcase_qsdata)
+
 # Another brute force test, this time for Qsmtpd
 SET(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/quit.cmake")
 CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit.cmake" @ONLY)
@@ -544,8 +547,15 @@ ADD_TEST(NAME "Qsmtpd_bad_pipelining"
 SET_TESTS_PROPERTIES(Qsmtpd_bad_pipelining PROPERTIES
 		PASS_REGULAR_EXPRESSION "^220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n250 [^\n ]*\n550 5\\.5\\.0 you must wait for my reply\n503 5\\.5\\.1 Bad sequence of commands\n503 5\\.5\\.1 Bad sequence of commands\n221 2\\.0\\.0 [^\n ]* service closing transmission channel\n$")
 
-ADD_TEST(NAME "Qsmtpd_data"
-		COMMAND testcase_qsdata)
+SET(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/no_auth_submission.cmake")
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_submission.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_no_auth_submission.cmake" @ONLY)
+ADD_TEST(NAME "Qsmtpd_no_auth_submission"
+		COMMAND "${CMAKE_COMMAND}"
+				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_no_auth_submission.cmake")
+# Do not add \r here, looks like CMake automatically strips it, so just
+# assume we are doing it right.
+SET_TESTS_PROPERTIES(Qsmtpd_no_auth_submission PROPERTIES
+		PASS_REGULAR_EXPRESSION "^220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n(250-[^\n]+\n)+250-AUTH [^\n]+\n(250-[^\n]+\n)*250 [^\n]+\n550 5.7.1 authentication required\n221 2\\.0\\.0 [^\n ]* service closing transmission channel\n$")
 
 ADD_EXECUTABLE(testcase_ipme
 		ipme_test.c)
