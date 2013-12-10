@@ -228,13 +228,11 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	}
 
 	if (addr) {
-		addr->s = malloc(len + 1);
-		if (!addr->s)
+		if (newstr(addr, len + 1))
 			return -1;
 
 		strncpy(addr->s, f, len);
-		addr->s[len] = '\0';
-		addr->len = len;
+		addr->s[addr->len--] = '\0';
 		while (len > 0) {
 			len--;
 			if ((addr->s[len] >= 'A') && (addr->s[len] <= 'Z'))
