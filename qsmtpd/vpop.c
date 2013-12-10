@@ -3,6 +3,7 @@
  */
 #include <qsmtpd/vpop.h>
 
+#include <control.h>
 #include <qsmtpd/addrparse.h>
 #include <cdb.h>
 #include <qsmtpd/qsmtpd.h>
@@ -19,7 +20,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default */
+static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default */
 
 /*
  * The function vget_dir is a modified copy of vget_assign from vpopmail. It gets the domain directory out of
@@ -369,4 +370,22 @@ user_exists(const string *localpart, struct userconf *ds)
 		closedir(dirp);
 	}
 	return 1;
+}
+
+int
+userbackend_init(void)
+{
+	if (lloadfilefd(open("control/vpopbounce", O_RDONLY), &vpopbounce, 0) == ((size_t)-1)) {
+		int e = errno;
+		err_control("control/vpopbounce");
+		return e;
+	}
+
+	return 0;
+}
+
+void
+userbackend_free(void)
+{
+	free(vpopbounce);
 }

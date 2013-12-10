@@ -8,6 +8,7 @@
 
 extern int vget_dir(const char *, string *, char **);
 
-extern char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default */
+extern int userbackend_init(void);
+extern void userbackend_free(void);
 
 #endif

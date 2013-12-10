@@ -436,11 +436,9 @@ setup(void)
 	}
 	globalconf = (const char **)tmpconf;
 
-	if ( (j = lloadfilefd(open("control/vpopbounce", O_RDONLY), &vpopbounce, 0)) < 0) {
-		int e = errno;
-		err_control("control/vpopbounce");
-		return e;
-	}
+	j = userbackend_init();
+	if (j != 0)
+		return j;
 
 #ifdef PFIXPOLDIR
 	dir = opendir(PFIXPOLDIR);
@@ -1168,13 +1166,13 @@ conn_cleanup(const int rc)
 {
 	freedata();
 	freeppol();
+	userbackend_free();
 
 	free(protocol);
 	free(gcbuf);
 	free(globalconf);
 	free(heloname.s);
 	free(msgidhost.s);
-	free(vpopbounce);
 	exit(rc);
 }
 
