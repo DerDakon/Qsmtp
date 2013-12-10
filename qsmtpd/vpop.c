@@ -7,6 +7,7 @@
 #include <qsmtpd/addrparse.h>
 #include <cdb.h>
 #include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/userconf.h>
 #include <sstring.h>
 
 #include <dirent.h>
@@ -388,4 +389,24 @@ void
 userbackend_free(void)
 {
 	free(vpopbounce);
+}
+
+void
+userconf_init(struct userconf *ds)
+{
+	STREMPTY(ds->domainpath);
+	STREMPTY(ds->userpath);
+	ds->userconf = NULL;
+	ds->domainconf = NULL;
+}
+
+void
+userconf_free(struct userconf *ds)
+{
+	free(ds->domainpath.s);
+	free(ds->userpath.s);
+	free(ds->userconf);
+	free(ds->domainconf);
+
+	userconf_init(ds);
 }

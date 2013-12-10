@@ -36,6 +36,7 @@
 #include "netio.h"
 #include "qdns.h"
 #include "control.h"
+#include <qsmtpd/userconf.h>
 #include <qsmtpd/userfilters.h>
 #include "tls.h"
 #include "sstring.h"
@@ -767,6 +768,8 @@ smtp_rcpt(void)
 		return EINVAL;
 	if (bugoffset != 0)
 		xmitstat.spacebug = 1;
+
+	userconf_init(&ds);
 	i = addrparse(linein + 9 + bugoffset, 1, &tmp, &more, &ds, rcpthosts, rcpthsize);
 	if  (i > 0) {
 		return i;
@@ -788,8 +791,7 @@ smtp_rcpt(void)
 
 			log_writen(LOG_INFO, logmess);
 			free(tmp.s);
-			free(ds.userpath.s);
-			free(ds.domainpath.s);
+			userconf_free(&ds);
 			tarpit();
 			return netwrite("551 5.7.1 relaying denied\r\n") ? errno : EBOGUS;
 		}
@@ -797,21 +799,18 @@ smtp_rcpt(void)
 	/* we do not support any ESMTP extensions adding data behind the RCPT TO (now)
 	 * so any data behind the '>' is a bug in the client */
 	if (more) {
-		free(ds.userpath.s);
-		free(ds.domainpath.s);
+		userconf_free(&ds);
 		free(tmp.s);
 		return EINVAL;
 	}
 	if (rcptcount >= MAXRCPT) {
-		free(ds.userpath.s);
-		free(ds.domainpath.s);
+		userconf_free(&ds);
 		free(tmp.s);
 		return netwrite("452 4.5.3 Too many recipients\r\n") ? errno : 0;
 	}
 	r = malloc(sizeof(*r));
 	if (!r) {
-		free(ds.userpath.s);
-		free(ds.domainpath.s);
+		userconf_free(&ds);
 		free(tmp.s);
 		return ENOMEM;
 	}
@@ -827,8 +826,7 @@ smtp_rcpt(void)
 	if (loadlistfd(getfile(&ds, "filterconf", &i), &ucbuf, &(ds.userconf), NULL)) {
 		e = errno;
 
-		free(ds.userpath.s);
-		free(ds.domainpath.s);
+		userconf_free(&ds);
 		return err_control2("user/domain filterconf for ", r->to.s) ? errno : e;
 	} else {
 		if (i) {
@@ -836,18 +834,14 @@ smtp_rcpt(void)
 			ds.userconf = NULL;
 			dcbuf = NULL;	/* no matter which buffer we use */
 		} else {
-			unsigned int l;
-
 			/* make sure this one opens the domain file: just set user path length to 0 */
-			l = ds.userpath.len;
+			const size_t l = ds.userpath.len;
 			ds.userpath.len = 0;
 			if (loadlistfd(getfile(&ds, "filterconf", &j), &dcbuf, &(ds.domainconf), NULL)) {
 				e = errno;
 
 				free(ucbuf);
-				free(ds.userconf);
-				free(ds.userpath.s);
-				free(ds.domainpath.s);
+				userconf_free(&ds);
 				return err_control2("domain filterconf for ", r->to.s) ? errno : e;
 			}
 			ds.userpath.len = l;
@@ -891,12 +885,9 @@ smtp_rcpt(void)
 	}
 	if ((i == 0) && e)
 		i = 4;
-	free(ds.userpath.s);
-	free(ds.domainpath.s);
 	free(ucbuf);
 	free(dcbuf);
-	free(ds.userconf);
-	free(ds.domainconf);
+	userconf_free(&ds);
 	if (i && (i != 5))
 		goto userdenied;
 
@@ -999,11 +990,11 @@ smtp_from(void)
 		}
 	}
 
+	userconf_init(&ds);
 	i = addrparse(linein + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, &ds, rcpthosts, rcpthsize);
 	xmitstat.frommx = NULL;
 	xmitstat.fromdomain = 0;
-	free(ds.userpath.s);
-	free(ds.domainpath.s);
+	userconf_free(&ds);
 	if (i > 0)
 		return i;
 	else if (i == -1) {

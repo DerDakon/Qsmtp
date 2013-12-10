@@ -8,12 +8,7 @@
 #include "sstring.h"
 #include <qsmtpd/qsmtpd.h>
 
-struct userconf {
-	string domainpath;		/**< Path of the domain for domain settings */
-	string userpath;		/**< Path of the user directory where the user stores it's own settings */
-	char **userconf;		/**< contents of the "filterconf" file in user directory (or NULL) */
-	char **domainconf;		/**< dito for domain directory */
-};
+struct userconf;
 
 extern const char **globalconf;
 

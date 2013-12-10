@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <syslog.h>
+#include <qsmtpd/userconf.h>
 #include <qsmtpd/userfilters.h>
 
 /**

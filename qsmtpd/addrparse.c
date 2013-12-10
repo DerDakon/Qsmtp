@@ -7,6 +7,7 @@
 #include <control.h>
 #include <netio.h>
 #include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/userconf.h>
 #include <qsmtpd/vpop.h>
 
 /**
@@ -33,12 +34,11 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	int i, j;
 	string localpart;
 	size_t le;
-
-	STREMPTY(ds->domainpath);
-	STREMPTY(ds->userpath);
+	const char *lookupdomain;	/*  the domain to lookup in user backend */
 
 	j = addrsyntax(in, flags, addr, more);
 	if ((j == 0) || ((flags != 1) && (j == 4))) {
+		tarpit();
 		return netwrite("501 5.1.3 domain of mail address is syntactically incorrect\r\n") ? errno : EBOGUS;
 	} else if (j < 0) {
 		return errno;
@@ -68,7 +68,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		} else if (!i) {
 			return -2;
 		}
-		result = vget_dir(at + 1, &(ds->domainpath), NULL);
+		lookupdomain = at + 1;
 	} else {
 		const size_t liplen = strlen(xmitstat.localip);
 
@@ -80,10 +80,11 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 			if (strncmp(at + 2, xmitstat.localip, liplen))
 				goto nouser;
 		}
-		result = vget_dir(liphost.s, &(ds->domainpath), NULL);
+		lookupdomain = liphost.s;
 	}
 
 /* get the domain directory from "users/cdb" */
+	result = vget_dir(lookupdomain, &(ds->domainpath), NULL);
 	if (result < 0) {
 		if (result == -ENOENT)
 			return 0;
@@ -124,10 +125,7 @@ nouser:
 	if (!j) {
 		const char *logmsg[] = {"550 5.1.1 no such user <", addr->s, ">", NULL};
 
-		free(ds->domainpath.s);
-		STREMPTY(ds->domainpath);
-		free(ds->userpath.s);
-		STREMPTY(ds->userpath);
+		userconf_free(ds);
 		tarpit();
 		result = net_writen(logmsg) ? errno : -1;
 		if (result > 0) {
@@ -138,10 +136,7 @@ nouser:
 	}
 	return 0;
 free_and_out:
-	free(ds->domainpath.s);
-	STREMPTY(ds->domainpath);
-	free(ds->userpath.s);
-	STREMPTY(ds->userpath);
+	userconf_free(ds);
 	free(addr->s);
 	return result;
 }

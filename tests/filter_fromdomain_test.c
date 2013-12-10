@@ -1,4 +1,5 @@
 #include <qsmtpd/userfilters.h>
+#include <qsmtpd/userconf.h>
 #include "test_io/testcase_io.h"
 
 #include <qsmtpd/qsmtpd.h>
