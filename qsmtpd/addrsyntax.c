@@ -155,7 +155,7 @@ addrspec_valid(const char * const addr)
 }
 
 /**
- * check an email address for syntax errors
+ * @brief check an email address for syntax errors
  *
  * @param in address to parse
  * @param flags 1: rcpt to checks (e.g. source route is allowed), 0: mail from checks,
@@ -163,6 +163,9 @@ addrspec_valid(const char * const addr)
  * @param addr struct string to contain the address (memory will be malloced)
  * @param more here starts the data behind the first '>' behind the first '<' (or NULL if none)
  * @return >0 on success
+ * @retval 1 address is empty (only possible if flags is 0)
+ * @retval 3 address is a full email address
+ * @retval 4 address is a full email address with IPv4 or IPv6 address literal
  * @retval 0 in is invalid
  * @retval -1 an error occured (e.g. ENOMEM)
  */
