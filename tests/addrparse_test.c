@@ -245,7 +245,12 @@ user_exists(const string *localpart, struct userconf *ds)
 	assert(strncmp(ds->domainpath.s, pathstart, strlen(pathstart)) == 0);
 	assert(strncmp(testdata[testindex].inpattern, localpart->s, localpart->len) == 0);
 
-	return testdata[testindex].userexists_result;
+	if (testdata[testindex].userexists_result < 0) {
+		errno = -testdata[testindex].userexists_result;
+		return -1;
+	} else {
+		return testdata[testindex].userexists_result;
+	}
 }
 
 int
