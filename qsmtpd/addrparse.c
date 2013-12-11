@@ -81,6 +81,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	if (result < 0) {
 		if (result == -ENOENT)
 			return 0;
+		result = -result;
 		goto free_and_out;
 	} else if (!result) {
 		/* the domain is not local (or at least no vpopmail domain) so we can't say it the user exists or not:
@@ -131,5 +132,6 @@ nouser:
 free_and_out:
 	userconf_free(ds);
 	free(addr->s);
+	STREMPTY(*addr);
 	return result;
 }

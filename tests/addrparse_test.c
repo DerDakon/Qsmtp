@@ -112,8 +112,40 @@ static struct {
 		.expect_net_writen = 1,
 		.parseresult = -1,
 		.expect_tarpit = 1,
+	},
+	/* local domain, but no /var/qmail/users/cdb file */
+	{
+		.inpattern = "existing@local.example.net>",
+		.flags = 1,
+		.syntaxresult = 3,
+		.expect_netwrite = 0,
+		.expect_net_writen = 0,
+		.parseresult = 0,
+		.expect_tarpit = 0,
+		.vgetdir_result = -ENOENT,
+	},
+	/* existing local user, but vget_dir() returns with error */
+	{
+		.inpattern = "existing@local.example.net>",
+		.flags = 1,
+		.syntaxresult = 3,
+		.expect_netwrite = 0,
+		.expect_net_writen = 0,
+		.parseresult = ENOMEM,
+		.expect_tarpit = 0,
+		.vgetdir_result = -ENOMEM,
+	},
+	/* existing local user, but user_exists() returns with error */
+	{
+		.inpattern = "existing@local.example.net>",
+		.flags = 1,
+		.syntaxresult = 3,
+		.expect_netwrite = 0,
+		.expect_net_writen = 0,
+		.parseresult = ENOMEM,
+		.expect_tarpit = 0,
 		.vgetdir_result = 1,
-		.userexists_result = 1,
+		.userexists_result = -ENOMEM
 	},
 	{
 		.inpattern = ""
@@ -332,9 +364,11 @@ main(void)
 
 		if (testdata[testindex].parseresult <= 0) {
 			if (addr.len == 0) {
-				fprintf(stderr, "index %u: expected address not returned\n",
-						testindex);
-				errcounter++;
+				if (testdata[testindex].parseresult == 0) {
+					fprintf(stderr, "index %u: expected address not returned\n",
+							testindex);
+					errcounter++;
+				}
 			} else if ((strncmp(addr.s, testdata[testindex].inpattern, addr.len) != 0) ||
 					(testdata[testindex].inpattern[addr.len] != '>')) {
 				fprintf(stderr, "index %u: got '%s' instead of expected address\n",
