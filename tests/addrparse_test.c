@@ -101,13 +101,26 @@ static struct {
 	},
 	/* existing local user, addressed with IP address */
 	{
-		.inpattern = "existing@[192.0.2.42]>",
+		.inpattern = "existing@[192.0.2.4]>",
 		.flags = 1,
 		.syntaxresult = 4,
 		.expect_netwrite = 0,
 		.expect_net_writen = 0,
 		.parseresult = 0,
 		.expect_tarpit = 0,
+		.control_err = 0,
+		.vgetdir_result = 1,
+		.userexists_result = 1,
+	},
+	/* existing local user, but wrong IP address */
+	{
+		.inpattern = "existing@[192.0.2.42]>",
+		.flags = 1,
+		.syntaxresult = 4,
+		.expect_netwrite = 0,
+		.expect_net_writen = 1,
+		.parseresult = -1,
+		.expect_tarpit = 1,
 		.control_err = 0,
 		.vgetdir_result = 1,
 		.userexists_result = 1,
@@ -320,7 +333,7 @@ main(void)
 
 	liphost.s = "liphost.example.net";
 	liphost.len = strlen(liphost.s);
-	strcpy(xmitstat.localip, "192.0.2.42");
+	strcpy(xmitstat.localip, "192.0.2.4");
 
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_net_writen(test_net_writen);

@@ -71,15 +71,17 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		lookupdomain = at + 1;
 	} else {
 		const size_t liplen = strlen(xmitstat.localip);
+		size_t intro = strlen("@[");
 
 		j = 0;
-		if (!strncmp(at + 2, "IPv6:", 5)) {
-			if (strncmp(at + 7, xmitstat.localip, liplen))
-				goto nouser;
-		} else {
-			if (strncmp(at + 2, xmitstat.localip, liplen))
-				goto nouser;
-		}
+		if (strncmp(at + intro, "IPv6:", strlen("IPv6:")) == 0)
+			intro += strlen("IPv6:");
+
+		/* FIXME: this fails if the representations of the IPv6 address don't match */
+		if ((strncmp(at + intro, xmitstat.localip, liplen) != 0) ||
+					(*(at + intro + liplen) != ']'))
+			goto nouser;
+
 		lookupdomain = liphost.s;
 	}
 
