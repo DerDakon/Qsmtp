@@ -6,7 +6,7 @@
 
 #include "sstring.h"
 
-extern int vget_dir(const char *, string *);
+extern int vget_dir(const char *, string *) __attribute__ ((nonnull (1, 2)));
 
 extern int userbackend_init(void);
 extern void userbackend_free(void);

@@ -45,7 +45,7 @@ static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default *
  */
 int vget_dir(const char *domain, string *domaindir)
 {
-	int fd;
+	int fd, i;
 	char *cdb_key;
 	size_t cdbkeylen;
 	const char *cdb_buf;
@@ -105,23 +105,19 @@ int vget_dir(const char *domain, string *domaindir)
 	while( *cdb_buf++ != '\0' );	/* skip over the gid */
 
 	/* get the domain directory */
-	if (domaindir) {
-		int i;
-
-		len = strlen(cdb_buf);
-		while (*(cdb_buf + len - 1) == '/')
-			--len;
-		i = newstr(domaindir, len + 2);
-		if (i != 0) {
-			munmap(cdb_mmap, st.st_size);
-			free(cdb_key);
-			return -ENOMEM;
-		}
-
-		memcpy(domaindir->s, cdb_buf, len);
-		domaindir->s[len] = '/';
-		domaindir->s[--domaindir->len] = '\0';
+	len = strlen(cdb_buf);
+	while (*(cdb_buf + len - 1) == '/')
+		--len;
+	i = newstr(domaindir, len + 2);
+	if (i != 0) {
+		munmap(cdb_mmap, st.st_size);
+		free(cdb_key);
+		return -ENOMEM;
 	}
+
+	memcpy(domaindir->s, cdb_buf, len);
+	domaindir->s[len] = '/';
+	domaindir->s[--domaindir->len] = '\0';
 
 	err = errno;
 	munmap(cdb_mmap, st.st_size);
