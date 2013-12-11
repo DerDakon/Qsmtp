@@ -436,7 +436,6 @@ finddomainfd(int fd, const char *domain, const int cl)
  * @param domain domain name to find
  * @retval 1 on match
  * @retval 0 if none
- * @retval -1 on error
  *
  * trailing spaces and tabs in a line are ignored, lines beginning with '#' are ignored, CR in file will cause trouble
  */

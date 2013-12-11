@@ -17,7 +17,6 @@ static struct {
 	int expect_net_writen;	/* if call to netwrite() is expected */
 	const int parseresult;	/* expected result of addrparse() */
 	int expect_tarpit;	/* how often tarpit() is expected to be called */
-	int control_err;	/* if err_control is expected to be called */
 	int vgetdir_result;	/* result to return from vget_dir() */
 	int userexists_result;	/* result to return from user_exists() */
 } testdata[] = {
@@ -28,7 +27,6 @@ static struct {
 		.expect_netwrite = 1,
 		.parseresult = EBOGUS,
 		.expect_tarpit = 1,
-		.control_err = 0,
 		.vgetdir_result = 0,
 	},
 	{
@@ -38,7 +36,6 @@ static struct {
 		.expect_netwrite = 0,
 		.parseresult = ENOMEM,
 		.expect_tarpit = 0,
-		.control_err = 0,
 		.vgetdir_result = 0,
 	},
 	{
@@ -48,7 +45,6 @@ static struct {
 		.expect_netwrite = 0,
 		.parseresult = 0,
 		.expect_tarpit = 0,
-		.control_err = 0,
 		.vgetdir_result = 0,
 	},
 	/* domain not in rcpthosts */
@@ -59,7 +55,6 @@ static struct {
 		.expect_netwrite = 0,
 		.parseresult = -2,
 		.expect_tarpit = 0,
-		.control_err = 0,
 		.vgetdir_result = 0,
 	},
 	/* domain in rcpthosts, but not local */
@@ -70,7 +65,6 @@ static struct {
 		.expect_netwrite = 0,
 		.parseresult = 0,
 		.expect_tarpit = 0,
-		.control_err = 0,
 		.vgetdir_result = 0,
 	},
 	/* local domain, but user does not exist */
@@ -82,7 +76,6 @@ static struct {
 		.expect_net_writen = 1,
 		.parseresult = -1,
 		.expect_tarpit = 1,
-		.control_err = 0,
 		.vgetdir_result = 1,
 		.userexists_result = 0,
 	},
@@ -95,7 +88,6 @@ static struct {
 		.expect_net_writen = 0,
 		.parseresult = 0,
 		.expect_tarpit = 0,
-		.control_err = 0,
 		.vgetdir_result = 1,
 		.userexists_result = 1,
 	},
@@ -108,7 +100,6 @@ static struct {
 		.expect_net_writen = 0,
 		.parseresult = 0,
 		.expect_tarpit = 0,
-		.control_err = 0,
 		.vgetdir_result = 1,
 		.userexists_result = 1,
 	},
@@ -121,7 +112,6 @@ static struct {
 		.expect_net_writen = 1,
 		.parseresult = -1,
 		.expect_tarpit = 1,
-		.control_err = 0,
 		.vgetdir_result = 1,
 		.userexists_result = 1,
 	},
@@ -224,26 +214,6 @@ user_exists(const string *localpart, struct userconf *ds)
 	assert(strncmp(testdata[testindex].inpattern, localpart->s, localpart->len) == 0);
 
 	return testdata[testindex].userexists_result;
-}
-
-static int err_control_result;
-
-int
-err_control(const char *fn)
-{
-	if (strcmp(fn, "control/rcpthosts") != 0) {
-		fprintf(stderr, "index %u: %s(%s) called, but filename was expected to be \"control/rcpthosts\"",
-				testindex, __func__, fn);
-		errcounter++;
-	}
-
-	if (testdata[testindex].control_err == 0) {
-		fprintf(stderr, "index %u: unexpected call to %s()\"",
-				testindex, __func__);
-		errcounter++;
-	}
-
-	return err_control_result;
 }
 
 int
@@ -374,14 +344,6 @@ main(void)
 		}
 
 		free(addr.s);
-
-		if ((err_control_result == 0) && (testdata[testindex].control_err != 0)) {
-			err_control_result = EDONE;
-			testindex--;
-			continue;
-		} else {
-			err_control_result = 0;
-		}
 	}
 
 	return errcounter;

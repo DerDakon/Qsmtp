@@ -56,18 +56,9 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		/* at this point either @ is set or addrsyntax has already caught this */
 		i = finddomainmm(rcpthosts, rcpthsize, at + 1);
 
-		if (i < 0) {
-			if (errno == ENOMEM) {
-				result = errno;
-			} else if (err_control("control/rcpthosts")) {
-				result = errno;
-			} else {
-				result = EDONE;
-			}
-			goto free_and_out;
-		} else if (!i) {
+		if (!i)
 			return -2;
-		}
+
 		lookupdomain = at + 1;
 	} else {
 		const size_t liplen = strlen(xmitstat.localip);
