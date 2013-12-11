@@ -20,7 +20,6 @@ static struct {
 	int control_err;	/* if err_control is expected to be called */
 	int vgetdir_result;	/* result to return from vget_dir() */
 	int userexists_result;	/* result to return from user_exists() */
-	const char *expaddr;	/* expected address string */
 } testdata[] = {
 	{
 		.inpattern = "missing@end.bracket",
@@ -31,7 +30,6 @@ static struct {
 		.expect_tarpit = 1,
 		.control_err = 0,
 		.vgetdir_result = 0,
-		.expaddr = NULL
 	},
 	{
 		.inpattern = "missing@end.bracket",
@@ -42,7 +40,6 @@ static struct {
 		.expect_tarpit = 0,
 		.control_err = 0,
 		.vgetdir_result = 0,
-		.expaddr = NULL
 	},
 	{
 		.inpattern = "postmaster>",
@@ -53,37 +50,34 @@ static struct {
 		.expect_tarpit = 0,
 		.control_err = 0,
 		.vgetdir_result = 0,
-		.expaddr = "postmaster"
 	},
 	/* domain not in rcpthosts */
 	{
 		.inpattern = "user@example.com>",
 		.flags = 1,
-		.syntaxresult = 1,
+		.syntaxresult = 3,
 		.expect_netwrite = 0,
 		.parseresult = -2,
 		.expect_tarpit = 0,
 		.control_err = 0,
 		.vgetdir_result = 0,
-		.expaddr = "user@example.com"
 	},
 	/* domain in rcpthosts, but not local */
 	{
 		.inpattern = "user@example.net>",
 		.flags = 1,
-		.syntaxresult = 1,
+		.syntaxresult = 3,
 		.expect_netwrite = 0,
 		.parseresult = 0,
 		.expect_tarpit = 0,
 		.control_err = 0,
 		.vgetdir_result = 0,
-		.expaddr = "user@example.net"
 	},
 	/* local domain, but user does not exist */
 	{
 		.inpattern = "user@local.example.net>",
 		.flags = 1,
-		.syntaxresult = 1,
+		.syntaxresult = 3,
 		.expect_netwrite = 0,
 		.expect_net_writen = 1,
 		.parseresult = -1,
@@ -91,13 +85,12 @@ static struct {
 		.control_err = 0,
 		.vgetdir_result = 1,
 		.userexists_result = 0,
-		.expaddr = "user@local.example.net"
 	},
 	/* existing local user */
 	{
 		.inpattern = "existing@local.example.net>",
 		.flags = 1,
-		.syntaxresult = 1,
+		.syntaxresult = 3,
 		.expect_netwrite = 0,
 		.expect_net_writen = 0,
 		.parseresult = 0,
@@ -105,7 +98,19 @@ static struct {
 		.control_err = 0,
 		.vgetdir_result = 1,
 		.userexists_result = 1,
-		.expaddr = "existing@local.example.net"
+	},
+	/* existing local user, addressed with IP address */
+	{
+		.inpattern = "existing@[192.0.2.42]>",
+		.flags = 1,
+		.syntaxresult = 4,
+		.expect_netwrite = 0,
+		.expect_net_writen = 0,
+		.parseresult = 0,
+		.expect_tarpit = 0,
+		.control_err = 0,
+		.vgetdir_result = 1,
+		.userexists_result = 1,
 	},
 	{
 		.inpattern = ""
@@ -262,8 +267,15 @@ test_netnwrite(const char *s, const size_t l)
 int
 test_net_writen(const char *const *msg)
 {
-	const char *netmsg[] = { "550 5.1.1 no such user <", testdata[testindex].expaddr, ">", NULL };
+	char expaddr[128];
+	const char *netmsg[] = { "550 5.1.1 no such user <", expaddr, ">", NULL };
 	unsigned int i;
+	char *bracket;
+
+	strcpy(expaddr, testdata[testindex].inpattern);
+	bracket = strchr(expaddr, '>');
+	if (bracket != NULL)
+		*bracket = '\0';
 
 	if (testdata[testindex].expect_net_writen == 0) {
 		fprintf(stderr, "index %u: unexpected call to net_writen()\n",
@@ -303,8 +315,12 @@ test_net_writen(const char *const *msg)
 int
 main(void)
 {
-	const char *rcpthosts = "example.net\nlocal.example.net";
+	const char *rcpthosts = "example.net\nlocal.example.net\nliphost.example.net";
 	const off_t rcpthsize = strlen(rcpthosts);
+
+	liphost.s = "liphost.example.net";
+	liphost.len = strlen(liphost.s);
+	strcpy(xmitstat.localip, "192.0.2.42");
 
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_net_writen(test_net_writen);
@@ -331,12 +347,13 @@ main(void)
 
 		userconf_free(&ds);
 
-		if (testdata[testindex].expaddr != NULL) {
+		if (testdata[testindex].parseresult <= 0) {
 			if (addr.len == 0) {
 				fprintf(stderr, "index %u: expected address not returned\n",
 						testindex);
 				errcounter++;
-			} else if (strcmp(addr.s, testdata[testindex].expaddr) != 0) {
+			} else if ((strncmp(addr.s, testdata[testindex].inpattern, addr.len) != 0) ||
+					(testdata[testindex].inpattern[addr.len] != '>')) {
 				fprintf(stderr, "index %u: got '%s' instead of expected address\n",
 						testindex, addr.s);
 				errcounter++;
