@@ -1,6 +1,7 @@
 #include <qsmtpd/addrparse.h>
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
+#include <qsmtpd/vpop.h>
 #include <netio.h>
 #include <sstring.h>
 #include "test_io/testcase_io.h"
@@ -227,10 +228,8 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 static const char pathstart[] = "testdirbase/";
 
 int
-vget_dir(const char *domain, string *domaindir, char **realdomain)
+vget_dir(const char *domain, string *domaindir)
 {
-	assert(realdomain == NULL);
-
 	snprintf(domaindirbuffer, sizeof(domaindirbuffer), "%s%s", pathstart, domain);
 	domaindir->s = domaindirbuffer;
 	domaindir->len = strlen(domaindir->s);

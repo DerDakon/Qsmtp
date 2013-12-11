@@ -152,11 +152,10 @@ test_vpop(void)
 	while (cdb_testvector[tvidx].value != NULL) {
 		int r;
 		string domaindir;
-		char *realdomain = NULL;
 
 		/* first test: only get the directory */
 		STREMPTY(domaindir);
-		r = vget_dir(cdb_testvector[tvidx].key, &domaindir, NULL);
+		r = vget_dir(cdb_testvector[tvidx].key, &domaindir);
 		if (r < 0) {
 			puts("ERROR: vget_dir() did not find expected directory");
 			puts(cdb_testvector[tvidx].key);
@@ -164,38 +163,6 @@ test_vpop(void)
 			tvidx++;
 			continue;
 		}
-		free(domaindir.s);
-
-		/* second test: only get the real domain */
-		r = vget_dir(cdb_testvector[tvidx].key, NULL, &realdomain);
-		assert(r > 0);
-		if (realdomain == NULL) {
-			puts("ERROR: vget_dir() did not return realdomain");
-			puts(cdb_testvector[tvidx].key);
-			errcnt++;
-			tvidx++;
-			continue;
-		} else {
-			if (strcmp(realdomain, cdb_testvector[tvidx].realdomain) != 0) {
-				puts("ERROR: vget_dir() did not return expected realdomain");
-				puts(cdb_testvector[tvidx].key);
-				puts(cdb_testvector[tvidx].realdomain);
-				puts(realdomain);
-				free(realdomain);
-				errcnt++;
-				tvidx++;
-				continue;
-			}
-		}
-		free(realdomain);
-
-		/* third test: only get botj */
-		STREMPTY(domaindir);
-		realdomain = NULL;
-		r = vget_dir(cdb_testvector[tvidx].key, &domaindir, &realdomain);
-		assert(r > 0);
-
-		free(realdomain);
 		free(domaindir.s);
 
 		tvidx++;
@@ -206,7 +173,6 @@ test_vpop(void)
 	while (cdb_testvector[tvidx].key != NULL) {
 		int r;
 		string domaindir;
-		char *realdomain;
 
 		if (cdb_testvector[tvidx].value != NULL) {
 			tvidx++;
@@ -214,17 +180,13 @@ test_vpop(void)
 		}
 
 		STREMPTY(domaindir);
-		realdomain = NULL;
-		r = vget_dir(cdb_testvector[tvidx].key, &domaindir, &realdomain);
+		r = vget_dir(cdb_testvector[tvidx].key, &domaindir);
 		if (r > 0) {
 			puts("ERROR: vget_dir() returned success on entry that should not exist");
 			puts(cdb_testvector[tvidx].key);
 			if (domaindir.s != NULL)
 				puts(domaindir.s);
-			if (realdomain != NULL)
-				puts(realdomain);
 			free(domaindir.s);
-			free(realdomain);
 			errcnt++;
 		}
 
@@ -239,7 +201,6 @@ main(int argc, char **argv)
 {
 	int err;
 	string tmp;
-	char *dummy;
 	char cdbtestdir[18];
 	int fd;
 
@@ -267,7 +228,7 @@ main(int argc, char **argv)
 		return err;
 	}
 	err = 0;
-	fd = vget_dir("example.net", &tmp, &dummy);
+	fd = vget_dir("example.net", &tmp);
 	if (fd != -ENOENT) {
 		fputs("searching for example.net in not existing users/cdb did not fail with the expected error code\n", stderr);
 		err++;
@@ -283,7 +244,7 @@ main(int argc, char **argv)
 	}
 	close(fd);
 
-	if (vget_dir("example.net", &tmp, &dummy) != 0) {
+	if (vget_dir("example.net", &tmp) != 0) {
 		fputs("searching for example.net in an empty users/cdb did work as expected\n", stderr);
 		err++;
 	}

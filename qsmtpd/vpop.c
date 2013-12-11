@@ -35,7 +35,6 @@ static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default *
  *
  * @param domain the domain to query
  * @param domaindir if not NULL the directory of this domain is stored here
- * @param realdomain if not NULL name of the real domain is stored here
  * @returns negative error code or flag if domain was found
  * @retval 0 domain is not in database
  * @retval 1 domain was found
@@ -44,7 +43,7 @@ static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default *
  * The directory name will always end with a single '/' and be 0-terminated.
  * If the domain does not exist 0 is returned, -1 on error;
  */
-int vget_dir(const char *domain, string *domaindir, char **realdomain)
+int vget_dir(const char *domain, string *domaindir)
 {
 	int fd;
 	char *cdb_key;
@@ -101,15 +100,6 @@ int vget_dir(const char *domain, string *domaindir, char **realdomain)
 	 * realdomain\0uid\0gid\0path\0
 	 */
 	len = strlen(cdb_buf);
-	if (realdomain) {
-		*realdomain = malloc(len + 1);
-		if (!*realdomain) {
-			munmap(cdb_mmap, st.st_size);
-			free(cdb_key);
-			return -ENOMEM;
-		}
-		memcpy(*realdomain, cdb_buf, len + 1);
-	}
 	cdb_buf += len + 1;	/* advance pointer past the realdomain */
 	while( *cdb_buf++ != '\0' );	/* skip over the uid */
 	while( *cdb_buf++ != '\0' );	/* skip over the gid */
@@ -125,8 +115,6 @@ int vget_dir(const char *domain, string *domaindir, char **realdomain)
 		if (i != 0) {
 			munmap(cdb_mmap, st.st_size);
 			free(cdb_key);
-			if (realdomain != NULL)
-				free(realdomain);
 			return -ENOMEM;
 		}
 

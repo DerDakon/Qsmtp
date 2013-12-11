@@ -77,7 +77,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	}
 
 /* get the domain directory from "users/cdb" */
-	result = vget_dir(lookupdomain, &(ds->domainpath), NULL);
+	result = vget_dir(lookupdomain, &(ds->domainpath));
 	if (result < 0) {
 		if (result == -ENOENT)
 			return 0;
