@@ -245,7 +245,7 @@ main(int argc, char **argv)
 	close(fd);
 
 	if (vget_dir("example.net", &tmp) != 0) {
-		fputs("searching for example.net in an empty users/cdb did work as expected\n", stderr);
+		fputs("searching for example.net in an empty users/cdb did not work as expected\n", stderr);
 		err++;
 	}
 	unlink("users/cdb");
