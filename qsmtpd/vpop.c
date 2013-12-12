@@ -46,7 +46,7 @@ static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default *
 int vget_dir(const char *domain, string *domaindir)
 {
 	int fd, i;
-	char *cdb_key;
+	char cdb_key[264];	/* maximum length of domain + 3 byte for !-\0 + padding to be sure */
 	size_t cdbkeylen;
 	const char *cdb_buf;
 	char *cdb_mmap = NULL;
@@ -55,9 +55,8 @@ int vget_dir(const char *domain, string *domaindir)
 	size_t len;
 
 	cdbkeylen = strlen(domain) + 2;
-	cdb_key = malloc(cdbkeylen + 1);
-	if (!cdb_key)
-		return -ENOMEM;
+	if (cdbkeylen + 1 >= sizeof(cdb_key))
+		return -EFAULT;
 	cdb_key[0] = '!';
 	memcpy(cdb_key + 1, domain, cdbkeylen - 2);
 	cdb_key[cdbkeylen - 1] = '-';
@@ -65,16 +64,12 @@ int vget_dir(const char *domain, string *domaindir)
 
 	/* try to open the cdb file */
 	fd = open("users/cdb", O_RDONLY);
-	if (fd < 0) {
-		err = -errno;
-		free(cdb_key);
-		return err;
-	}
+	if (fd < 0)
+		return -errno;
 
 	if (fstat(fd, &st) < 0) {
 		err = -errno;
 		while ((close(fd) < 0) && (errno == EINTR));
-		free(cdb_key);
 		return err;
 	}
 	if (!st.st_size) {
@@ -85,16 +80,13 @@ int vget_dir(const char *domain, string *domaindir)
 				break;
 			}
 		}
-		free(cdb_key);
 		return err;
 	}
 
 	/* search the cdb file for our requested domain */
 	cdb_buf = cdb_seekmm(fd, cdb_key, cdbkeylen, &cdb_mmap, &st);
-	if (cdb_buf == NULL) {
-		free(cdb_key);
+	if (cdb_buf == NULL)
 		return errno ? -errno : 0;
-	}
 
 	/* format of cdb_buf is :
 	 * realdomain\0uid\0gid\0path\0
@@ -111,7 +103,6 @@ int vget_dir(const char *domain, string *domaindir)
 	i = newstr(domaindir, len + 2);
 	if (i != 0) {
 		munmap(cdb_mmap, st.st_size);
-		free(cdb_key);
 		return -ENOMEM;
 	}
 
@@ -119,14 +110,11 @@ int vget_dir(const char *domain, string *domaindir)
 	domaindir->s[len] = '/';
 	domaindir->s[--domaindir->len] = '\0';
 
-	err = errno;
 	munmap(cdb_mmap, st.st_size);
-	free(cdb_key);
-	errno = err;
 	return 1;
 }
 
-/* values for default
+/* values for def
 
   (def & 1)		append "default"
   (def & 2)		append suff1
