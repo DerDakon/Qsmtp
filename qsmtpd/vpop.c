@@ -133,11 +133,11 @@ int vget_dir(const char *domain, string *domaindir)
  */
 
 static int
-qmexists(const string *dirtempl, const char *suff1, const unsigned int len, const int def)
+qmexists(const string *dirtempl, const char *suff1, const size_t len, const int def)
 {
 	char filetmp[PATH_MAX];
 	int fd;
-	unsigned int l = dirtempl->len;
+	size_t l = dirtempl->len;
 
 	errno = ENOENT;
 	if (l >= PATH_MAX)
