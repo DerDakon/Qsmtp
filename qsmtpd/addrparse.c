@@ -33,7 +33,6 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	int result = 0;			/* return code */
 	int i, j;
 	string localpart;
-	size_t le;
 	const char *lookupdomain;	/*  the domain to lookup in user backend */
 
 	j = addrsyntax(in, flags, addr, more);
@@ -90,17 +89,12 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	}
 
 /* get the localpart out of the RCPT TO */
-	le = (at - addr->s);
-	if (newstr(&localpart, le + 1)) {
-		result = errno;
-		goto free_and_out;
-	}
-	memcpy(localpart.s, addr->s, le);
-	localpart.s[--localpart.len] = '\0';
+	localpart.len = (at - addr->s);
+	localpart.s = addr->s;
+
 /* now the userpath : userpath.s = domainpath.s + [localpart of RCPT TO] + '/' */
 	if (newstr(&(ds->userpath), ds->domainpath.len + 2 + localpart.len)) {
 		result = errno;
-		free(localpart.s);
 		goto free_and_out;
 	}
 	memcpy(ds->userpath.s, ds->domainpath.s, ds->domainpath.len);
@@ -109,7 +103,6 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	ds->userpath.s[ds->userpath.len - 1] = '/';
 
 	j = user_exists(&localpart, ds);
-	free(localpart.s);
 	if (j < 0) {
 		result = errno;
 		goto free_and_out;
