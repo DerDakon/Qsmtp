@@ -1,5 +1,5 @@
-/** \file userconf.h
- \brief definition and functions for the userconf struct
+/** \file vpop.h
+ \brief definition of the helper functions around the user configuration
  */
 #ifndef USERCONF_H
 #define USERCONF_H
@@ -7,10 +7,10 @@
 #include <sstring.h>
 
 struct userconf {
-	string domainpath;              /**< Path of the domain for domain settings */
-	string userpath;                /**< Path of the user directory where the user stores it's own settings */
-	char **userconf;                /**< contents of the "filterconf" file in user directory (or NULL) */
-	char **domainconf;              /**< dito for domain directory */
+	string domainpath;		/**< Path of the domain for domain settings */
+	string userpath;		/**< Path of the user directory where the user stores it's own settings */
+	char **userconf;		/**< contents of the "filterconf" file in user directory (or NULL) */
+	char **domainconf;		/**< dito for domain directory */
 };
 
 /**
