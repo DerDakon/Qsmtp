@@ -240,7 +240,8 @@ vget_dir(const char *domain, string *domaindir)
 int
 user_exists(const string *localpart, struct userconf *ds)
 {
-	assert(strncmp(ds->userpath.s, pathstart, strlen(pathstart)) == 0);
+	assert(ds->userpath.s == NULL);
+	assert(ds->userpath.len == 0);
 	assert(strncmp(ds->domainpath.s, pathstart, strlen(pathstart)) == 0);
 	assert(strncmp(testdata[testindex].inpattern, localpart->s, localpart->len) == 0);
 

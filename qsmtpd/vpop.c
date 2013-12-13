@@ -1,5 +1,5 @@
 /** \file vpop.c
- \brief function to get domain directory of vpopmail virtual domain
+ * \brief function to get domain directory of vpopmail virtual domain
  */
 #include <qsmtpd/vpop.h>
 
@@ -164,28 +164,33 @@ qmexists(const string *dirtempl, const char *suff1, const size_t len, const int 
 		if ((errno == ENOMEM) || (errno == ENFILE) || (errno == EMFILE)) {
 			errno = ENOMEM;
 		} else if ((errno != ENOENT) && (errno != EACCES)) {
-			err_control(filetmp);
+			if (err_control(filetmp) == 0)
+				errno = EDONE;
 		}
 	}
 	return fd;
 }
 
-/** check if the user identified by localpart and userconf->domainpath exists
+/**
+ * @brief check if the user identified by localpart and ds->domainpath exists
+ * @param localpart localpart of mail address
+ * @param ds path of domain
  *
- * \param localpart localpart of mail address
- * \param ds path of domain and user
+ * If the user has it's own mail directory ds->userpath will be filled with
+ * the correct values.
  *
- * \return \arg \c 0: user doesn't exist
- *         \arg \c 1: user exists
- *         \arg \c 2: mail would be catched by .qmail-default and .qmail-default != vpopbounce
- *         \arg \c 3: domain is not filtered (use for domains not local)
- *         \arg \c 4: mail would be catched by .qmail-foo-default (i.e. mailinglist)
- *         \arg \c -1: error, errno is set.
+ * @retval 0 user doesn't exist
+ * @retval 1 user exists
+ * @retval 2 mail would be catched by .qmail-default and .qmail-default != vpopbounce
+ * @retval 3 domain is not filtered (use for domains not local)
+ * @retval 4 mail would be catched by .qmail-foo-default (i.e. mailinglist)
+ * @retval -1 error, errno is set.
 */
 int
 user_exists(const string *localpart, struct userconf *ds)
 {
 	DIR *dirp;
+	struct string userdirtmp;	/* temporary storage of the pointer for userdir */
 
 	/* '/' is a valid character for localparts but we don't want it because
 	 * it could be abused to check the existence of files */
@@ -193,7 +198,15 @@ user_exists(const string *localpart, struct userconf *ds)
 		return 0;
 
 	/* does directory (ds->domainpath.s)+'/'+localpart exist? */
-	dirp = opendir(ds->userpath.s);
+	if (newstr(&userdirtmp, ds->domainpath.len + 2 + localpart->len) != 0)
+		return -1;
+
+	memcpy(userdirtmp.s, ds->domainpath.s, ds->domainpath.len);
+	memcpy(userdirtmp.s + ds->domainpath.len, localpart->s, localpart->len);
+	userdirtmp.s[--userdirtmp.len] = '\0';
+	userdirtmp.s[userdirtmp.len - 1] = '/';
+
+	dirp = opendir(userdirtmp.s);
 	if (dirp == NULL) {
 		char filetmp[PATH_MAX];
 		int e = errno;
@@ -201,24 +214,24 @@ user_exists(const string *localpart, struct userconf *ds)
 		string dotqm;
 		size_t i;
 
-		/* userpath is already 0-terminated */
-		memcpy(filetmp, ds->userpath.s, ds->userpath.len + 1);
-
-		free(ds->userpath.s);
-		STREMPTY(ds->userpath);
 		if (e == EACCES) {
-			/* Directory is not readable. Admins fault, we accept the mail. */
-			free(ds->domainpath.s);
-			STREMPTY(ds->domainpath);
+			/* The directory itself is not readable. It may still be possible to 
+			 * accees specific files in it (e.g. if the mode is 0751), so keep it. */
+			ds->userpath.s = userdirtmp.s;
+			ds->userpath.len = userdirtmp.len;
 			return 1;
 		} else if (e != ENOENT) {
-			if (!err_control(filetmp)) {
+			if (err_control(userdirtmp.s) != 0) {
 				errno = e;
 			} else {
 				errno = EDONE;
 			}
+			free(userdirtmp.s);
 			return -1;
 		}
+
+		free(userdirtmp.s);
+
 		/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
 		i = ds->domainpath.len;
 		memcpy(filetmp, ds->domainpath.s, i);
@@ -240,7 +253,7 @@ user_exists(const string *localpart, struct userconf *ds)
 				return fd;
 			} else if (errno != ENOENT) {
 				free(dotqm.s);
-				return EDONE;
+				return -1;
 			} else {
 				fd = qmexists(&dotqm, localpart->s, localpart->len, 3);
 			}
@@ -257,7 +270,7 @@ user_exists(const string *localpart, struct userconf *ds)
 				return fd;
 			} else if (errno != ENOENT) {
 				free(dotqm.s);
-				return EDONE;
+				return -1;
 			}
 			/* if username contains '-' there may be
 			 .qmail-partofusername-default */
@@ -272,7 +285,6 @@ user_exists(const string *localpart, struct userconf *ds)
 						return fd;
 					} else if (errno != ENOENT) {
 						free(dotqm.s);
-						errno = EDONE;
 						return -1;
 					}
 				} else {
@@ -298,7 +310,7 @@ user_exists(const string *localpart, struct userconf *ds)
 				} else if (errno == ENOMEM) {
 					return fd;
 				} else {
-					return EDONE;
+					return -1;
 				}
 			} else if (vpopbounce) {
 				char buff[2*strlen(vpopbounce)+1];
@@ -307,7 +319,7 @@ user_exists(const string *localpart, struct userconf *ds)
 
 				r = read(fd, buff, sizeof(buff) - 1);
 				if (r == -1) {
-					if (!err_control(filetmp))
+					if (err_control(filetmp) == 0)
 						err = EDONE;
 					else
 						err = errno;
@@ -341,7 +353,10 @@ user_exists(const string *localpart, struct userconf *ds)
 		}
 	} else {
 		closedir(dirp);
+		ds->userpath.s = userdirtmp.s;
+		ds->userpath.len = userdirtmp.len;
 	}
+
 	return 1;
 }
 

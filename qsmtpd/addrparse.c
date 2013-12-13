@@ -92,16 +92,6 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	localpart.len = (at - addr->s);
 	localpart.s = addr->s;
 
-/* now the userpath : userpath.s = domainpath.s + [localpart of RCPT TO] + '/' */
-	if (newstr(&(ds->userpath), ds->domainpath.len + 2 + localpart.len)) {
-		result = errno;
-		goto free_and_out;
-	}
-	memcpy(ds->userpath.s, ds->domainpath.s, ds->domainpath.len);
-	memcpy(ds->userpath.s + ds->domainpath.len, localpart.s, localpart.len);
-	ds->userpath.s[--ds->userpath.len] = '\0';
-	ds->userpath.s[ds->userpath.len - 1] = '/';
-
 	j = user_exists(&localpart, ds);
 	if (j < 0) {
 		result = errno;
