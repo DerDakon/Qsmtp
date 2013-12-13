@@ -184,22 +184,39 @@ qmexists(const string *dirtempl, const char *suff1, const size_t len, const int 
  * @retval 2 mail would be catched by .qmail-default and .qmail-default != vpopbounce
  * @retval 3 domain is not filtered (use for domains not local)
  * @retval 4 mail would be catched by .qmail-foo-default (i.e. mailinglist)
+ * @retval 5 domain is not local
  * @retval -1 error, errno is set.
 */
 int
-user_exists(const string *localpart, struct userconf *ds)
+user_exists(const string *localpart, const char *domain, struct userconf *ds)
 {
 	DIR *dirp;
 	struct string userdirtmp;	/* temporary storage of the pointer for userdir */
+	int res;
 
 	/* '/' is a valid character for localparts but we don't want it because
 	 * it could be abused to check the existence of files */
 	if (memchr(localpart->s, '/', localpart->len))
 		return 0;
 
-	/* does directory (ds->domainpath.s)+'/'+localpart exist? */
-	if (newstr(&userdirtmp, ds->domainpath.len + 2 + localpart->len) != 0)
+/* get the domain directory from "users/cdb" */
+	res = vget_dir(domain, &(ds->domainpath));
+	if (res < 0) {
+		if (res == -ENOENT)
+			return 5;
+
+		errno = -res;
 		return -1;
+	} else if (res == 0) {
+		/* the domain is not local or at least no vpopmail domain */
+		return 5;
+	}
+
+	/* does directory (ds->domainpath.s)+'/'+localpart exist? */
+	if (newstr(&userdirtmp, ds->domainpath.len + 2 + localpart->len) != 0) {
+		userconf_free(ds);
+		return -1;
+	}
 
 	memcpy(userdirtmp.s, ds->domainpath.s, ds->domainpath.len);
 	memcpy(userdirtmp.s + ds->domainpath.len, localpart->s, localpart->len);
@@ -227,6 +244,7 @@ user_exists(const string *localpart, struct userconf *ds)
 				errno = EDONE;
 			}
 			free(userdirtmp.s);
+			userconf_free(ds);
 			return -1;
 		}
 
@@ -238,26 +256,15 @@ user_exists(const string *localpart, struct userconf *ds)
 		memcpy(filetmp + i, ".qmail-", 7);
 		i += 7;
 		filetmp[i] = '\0';
-		if ( (fd = newstr(&dotqm, i + 1)) ) {
-			return fd;
+		if (newstr(&dotqm, i + 1) != 0)  {
+			userconf_free(ds);
+			return -1;
 		}
 		memcpy(dotqm.s, filetmp, dotqm.len--);
 		fd = qmexists(&dotqm, localpart->s, localpart->len, 2);
 		/* try .qmail-user-default instead */
-		if (fd < 0) {
-			if (errno == EACCES) {
-				/* User exists */
-				free(dotqm.s);
-				return 1;
-			} else if (errno == ENOMEM) {
-				return fd;
-			} else if (errno != ENOENT) {
-				free(dotqm.s);
-				return -1;
-			} else {
-				fd = qmexists(&dotqm, localpart->s, localpart->len, 3);
-			}
-		}
+		if ((fd < 0) && (errno == ENOENT))
+			fd = qmexists(&dotqm, localpart->s, localpart->len, 3);
 
 		if (fd < 0) {
 			char *p;
@@ -267,8 +274,10 @@ user_exists(const string *localpart, struct userconf *ds)
 				free(dotqm.s);
 				return 1;
 			} else if (errno == ENOMEM) {
+				userconf_free(ds);
 				return fd;
 			} else if (errno != ENOENT) {
+				userconf_free(ds);
 				free(dotqm.s);
 				return -1;
 			}
@@ -282,9 +291,11 @@ user_exists(const string *localpart, struct userconf *ds)
 						free(dotqm.s);
 						return 1;
 					} else if (errno == ENOMEM) {
+						userconf_free(ds);
 						return fd;
 					} else if (errno != ENOENT) {
 						free(dotqm.s);
+						userconf_free(ds);
 						return -1;
 					}
 				} else {
@@ -306,10 +317,10 @@ user_exists(const string *localpart, struct userconf *ds)
 				if (errno == EACCES) {
 					return 1;
 				} else if (errno == ENOENT) {
+					userconf_free(ds);
 					return 0;
-				} else if (errno == ENOMEM) {
-					return fd;
 				} else {
+					userconf_free(ds);
 					return -1;
 				}
 			} else if (vpopbounce) {
@@ -332,6 +343,7 @@ user_exists(const string *localpart, struct userconf *ds)
 					}
 				}
 				if (err != 0) {
+					userconf_free(ds);
 					errno = err;
 					return -1;
 				}
@@ -339,7 +351,12 @@ user_exists(const string *localpart, struct userconf *ds)
 				buff[r] = 0;
 
 				/* mail would be bounced or catched by .qmail-default */
-				return strcmp(buff, vpopbounce) ? 2 : 0;
+				if (strcmp(buff, vpopbounce) != 0) {
+					userconf_free(ds);
+					return 0;
+				} else {
+					return 2;
+				}
 			} else {
 				/* we can't tell if this is a bounce .qmail-default -> accept the mail */
 				return 2;
@@ -347,8 +364,10 @@ user_exists(const string *localpart, struct userconf *ds)
 		} else {
 			free(dotqm.s);
 			while (close(fd)) {
-				if (errno != EINTR)
+				if (errno != EINTR) {
+					userconf_free(ds);
 					return -1;
+				}
 			}
 		}
 	} else {

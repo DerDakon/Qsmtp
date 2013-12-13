@@ -7,7 +7,6 @@
 #include <control.h>
 #include <netio.h>
 #include <qsmtpd/qsmtpd.h>
-#include <qsmtpd/userconf.h>
 #include <qsmtpd/vpop.h>
 
 /**
@@ -69,40 +68,28 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 
 		/* FIXME: this fails if the representations of the IPv6 address don't match */
 		if ((strncmp(at + intro, xmitstat.localip, liplen) != 0) ||
-					(*(at + intro + liplen) != ']'))
-			goto nouser;
-
-		lookupdomain = liphost.s;
-	}
-
-/* get the domain directory from "users/cdb" */
-	result = vget_dir(lookupdomain, &(ds->domainpath));
-	if (result < 0) {
-		if (result == -ENOENT)
-			return 0;
-		result = -result;
-		goto free_and_out;
-	} else if (!result) {
-		/* the domain is not local (or at least no vpopmail domain) so we can't say it the user exists or not:
-		 * -> accept the mail */
-		return 0;
+					(*(at + intro + liplen) != ']')) {
+			lookupdomain = NULL;
+			j = 0;
+		} else {
+			lookupdomain = liphost.s;
+		}
 	}
 
 /* get the localpart out of the RCPT TO */
 	localpart.len = (at - addr->s);
 	localpart.s = addr->s;
 
-	j = user_exists(&localpart, ds);
+	if (lookupdomain != NULL)
+		j = user_exists(&localpart, lookupdomain, ds);
 	if (j < 0) {
 		result = errno;
-		goto free_and_out;
-	}
-
-nouser:
-	if (!j) {
+		free(addr->s);
+		STREMPTY(*addr);
+		return result;
+	} else if (!j) {
 		const char *logmsg[] = {"550 5.1.1 no such user <", addr->s, ">", NULL};
 
-		userconf_free(ds);
 		tarpit();
 		result = net_writen(logmsg) ? errno : -1;
 		if (result > 0) {
@@ -112,9 +99,4 @@ nouser:
 		return result;
 	}
 	return 0;
-free_and_out:
-	userconf_free(ds);
-	free(addr->s);
-	STREMPTY(*addr);
-	return result;
 }

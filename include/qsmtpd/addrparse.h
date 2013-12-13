@@ -14,6 +14,6 @@ extern int addrspec_valid(const char * const addr);
 extern int addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds, const char *rcpthosts, const off_t rcpthsize);
 
 /* must be implemented by the password backend (i.e. currently vpop.c) */
-extern int user_exists(const string *localpart, struct userconf *ds);
+extern int user_exists(const string *localpart, const char *domain, struct userconf *ds);
 
 #endif

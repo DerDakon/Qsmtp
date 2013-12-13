@@ -18,7 +18,6 @@ static struct {
 	int expect_net_writen;	/* if call to netwrite() is expected */
 	const int parseresult;	/* expected result of addrparse() */
 	int expect_tarpit;	/* how often tarpit() is expected to be called */
-	int vgetdir_result;	/* result to return from vget_dir() */
 	int userexists_result;	/* result to return from user_exists() */
 } testdata[] = {
 	{
@@ -28,7 +27,6 @@ static struct {
 		.expect_netwrite = 1,
 		.parseresult = EBOGUS,
 		.expect_tarpit = 1,
-		.vgetdir_result = 0,
 	},
 	{
 		.inpattern = "missing@end.bracket",
@@ -37,7 +35,6 @@ static struct {
 		.expect_netwrite = 0,
 		.parseresult = ENOMEM,
 		.expect_tarpit = 0,
-		.vgetdir_result = 0,
 	},
 	{
 		.inpattern = "postmaster>",
@@ -46,7 +43,6 @@ static struct {
 		.expect_netwrite = 0,
 		.parseresult = 0,
 		.expect_tarpit = 0,
-		.vgetdir_result = 0,
 	},
 	/* domain not in rcpthosts */
 	{
@@ -56,7 +52,6 @@ static struct {
 		.expect_netwrite = 0,
 		.parseresult = -2,
 		.expect_tarpit = 0,
-		.vgetdir_result = 0,
 	},
 	/* domain in rcpthosts, but not local */
 	{
@@ -66,7 +61,7 @@ static struct {
 		.expect_netwrite = 0,
 		.parseresult = 0,
 		.expect_tarpit = 0,
-		.vgetdir_result = 0,
+		.userexists_result = 5,
 	},
 	/* local domain, but user does not exist */
 	{
@@ -77,7 +72,6 @@ static struct {
 		.expect_net_writen = 1,
 		.parseresult = -1,
 		.expect_tarpit = 1,
-		.vgetdir_result = 1,
 		.userexists_result = 0,
 	},
 	/* existing local user */
@@ -89,7 +83,6 @@ static struct {
 		.expect_net_writen = 0,
 		.parseresult = 0,
 		.expect_tarpit = 0,
-		.vgetdir_result = 1,
 		.userexists_result = 1,
 	},
 	/* existing local user, addressed with IP address */
@@ -101,7 +94,6 @@ static struct {
 		.expect_net_writen = 0,
 		.parseresult = 0,
 		.expect_tarpit = 0,
-		.vgetdir_result = 1,
 		.userexists_result = 1,
 	},
 	/* existing local user, but wrong IP address */
@@ -114,28 +106,6 @@ static struct {
 		.parseresult = -1,
 		.expect_tarpit = 1,
 	},
-	/* local domain, but no /var/qmail/users/cdb file */
-	{
-		.inpattern = "existing@local.example.net>",
-		.flags = 1,
-		.syntaxresult = 3,
-		.expect_netwrite = 0,
-		.expect_net_writen = 0,
-		.parseresult = 0,
-		.expect_tarpit = 0,
-		.vgetdir_result = -ENOENT,
-	},
-	/* existing local user, but vget_dir() returns with error */
-	{
-		.inpattern = "existing@local.example.net>",
-		.flags = 1,
-		.syntaxresult = 3,
-		.expect_netwrite = 0,
-		.expect_net_writen = 0,
-		.parseresult = ENOMEM,
-		.expect_tarpit = 0,
-		.vgetdir_result = -ENOMEM,
-	},
 	/* existing local user, but user_exists() returns with error */
 	{
 		.inpattern = "existing@local.example.net>",
@@ -145,7 +115,6 @@ static struct {
 		.expect_net_writen = 0,
 		.parseresult = ENOMEM,
 		.expect_tarpit = 0,
-		.vgetdir_result = 1,
 		.userexists_result = -ENOMEM
 	},
 	{
@@ -225,24 +194,38 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	return testdata[testindex].syntaxresult;
 }
 
-static const char pathstart[] = "testdirbase/";
-
 int
-vget_dir(const char *domain, string *domaindir)
-{
-	snprintf(domaindirbuffer, sizeof(domaindirbuffer), "%s%s", pathstart, domain);
-	domaindir->s = domaindirbuffer;
-	domaindir->len = strlen(domaindir->s);
-
-	return testdata[testindex].vgetdir_result;
-}
-
-int
-user_exists(const string *localpart, struct userconf *ds)
+user_exists(const string *localpart, const char *domain, struct userconf *ds)
 {
 	assert(ds->userpath.s == NULL);
 	assert(ds->userpath.len == 0);
-	assert(strncmp(ds->domainpath.s, pathstart, strlen(pathstart)) == 0);
+	assert(ds->domainpath.s == NULL);
+	assert(ds->domainpath.len == 0);
+	if (strchr(testdata[testindex].inpattern, '[') != NULL) {
+		if (strcmp(domain, liphost.s) != 0) {
+			fprintf(stderr, "index %u: domain '%s' passed to %s, but expected '%s'\n",
+					testindex, domain, __func__, liphost.s);
+			errcounter++;
+			errno = EINVAL;
+			return -1;
+		}
+	} else {
+		const char *at = strchr(testdata[testindex].inpattern, '@');
+		if (at == NULL) {
+			fprintf(stderr, "index %u: domain '%s' passed to %s, but no @ found in mail address\n",
+					testindex, domain, __func__);
+			errcounter++;
+			errno = EINVAL;
+			return -1;
+		}
+		if (strncmp(domain, at + 1, strlen(domain)) != 0) {
+			fprintf(stderr, "index %u: domain '%s' passed to %s\n",
+					testindex, domain, __func__);
+			errcounter++;
+			errno = EINVAL;
+			return -1;
+		}
+	}
 	assert(strncmp(testdata[testindex].inpattern, localpart->s, localpart->len) == 0);
 
 	if (testdata[testindex].userexists_result < 0) {
