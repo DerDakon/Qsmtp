@@ -824,7 +824,7 @@ smtp_rcpt(void)
 	e = userconf_load_configs(&ds);
 	if (e != 0) {
 		userconf_free(&ds);
-		return err_control2("user/domain filterconf for ", r->to.s) ? errno : e;
+		return err_control2("user/domain filterconf for ", r->to.s) ? errno : EDONE;
 	}
 
 	i = j = e = 0;
