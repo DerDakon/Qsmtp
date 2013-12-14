@@ -403,7 +403,9 @@ userconf_init(struct userconf *ds)
 	STREMPTY(ds->domainpath);
 	STREMPTY(ds->userpath);
 	ds->userconf = NULL;
+	ds->ucbuf = NULL;
 	ds->domainconf = NULL;
+	ds->dcbuf = NULL;
 }
 
 void
@@ -412,7 +414,38 @@ userconf_free(struct userconf *ds)
 	free(ds->domainpath.s);
 	free(ds->userpath.s);
 	free(ds->userconf);
+	free(ds->ucbuf);
 	free(ds->domainconf);
+	free(ds->dcbuf);
 
 	userconf_init(ds);
+}
+
+int
+userconf_load_configs(struct userconf *ds)
+{
+	int type, r;
+	const size_t l = ds->userpath.len;
+
+/* load user and domain "filterconf" file */
+	/* if the file is empty there is no problem, NULL is a legal value for the buffers */
+	if (loadlistfd(getfile(ds, "filterconf", &type), &(ds->ucbuf), &(ds->userconf), NULL))
+		return errno;
+
+	if (type) {
+		/* the domain buffer was loaded because there is no user buffer */
+		ds->domainconf = ds->userconf;
+		ds->userconf = NULL;
+		ds->dcbuf = ds->ucbuf;
+		ds->ucbuf = NULL;
+		return 0;
+	}
+
+	/* make sure this one opens the domain file: just set user path length to 0 */
+	ds->userpath.len = 0;
+	r = loadlistfd(getfile(ds, "filterconf", &type), &(ds->dcbuf), &(ds->domainconf), NULL);
+
+	ds->userpath.len = l;
+
+	return r ? errno : 0;
 }

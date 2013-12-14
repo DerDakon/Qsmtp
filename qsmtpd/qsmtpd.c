@@ -755,7 +755,6 @@ smtp_rcpt(void)
 	char *more = NULL;
 	struct userconf ds;
 	const char *errmsg;
-	char *ucbuf, *dcbuf;	/* buffer for user and domain "filterconf" file */
 	int bt;			/* which policy matched */
 	const char *logmsg[] = {"rejected message to <", NULL, "> from <", MAILFROM,
 					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL};
@@ -822,30 +821,10 @@ smtp_rcpt(void)
 	rcptcount++;
 
 /* load user and domain "filterconf" file */
-	/* if the file is empty there is no problem, NULL is a legal value for the buffers */
-	if (loadlistfd(getfile(&ds, "filterconf", &i), &ucbuf, &(ds.userconf), NULL)) {
-		e = errno;
-
+	e = userconf_load_configs(&ds);
+	if (e != 0) {
 		userconf_free(&ds);
 		return err_control2("user/domain filterconf for ", r->to.s) ? errno : e;
-	} else {
-		if (i) {
-			ds.domainconf = ds.userconf;
-			ds.userconf = NULL;
-			dcbuf = NULL;	/* no matter which buffer we use */
-		} else {
-			/* make sure this one opens the domain file: just set user path length to 0 */
-			const size_t l = ds.userpath.len;
-			ds.userpath.len = 0;
-			if (loadlistfd(getfile(&ds, "filterconf", &j), &dcbuf, &(ds.domainconf), NULL)) {
-				e = errno;
-
-				free(ucbuf);
-				userconf_free(&ds);
-				return err_control2("domain filterconf for ", r->to.s) ? errno : e;
-			}
-			ds.userpath.len = l;
-		}
 	}
 
 	i = j = e = 0;
@@ -883,11 +862,10 @@ smtp_rcpt(void)
 		}
 		j++;
 	}
+	userconf_free(&ds);
+
 	if ((i == 0) && e)
 		i = 4;
-	free(ucbuf);
-	free(dcbuf);
-	userconf_free(&ds);
 	if (i && (i != 5))
 		goto userdenied;
 

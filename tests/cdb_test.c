@@ -12,6 +12,9 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
+/* to satisfy the linker */
+const char **globalconf;
+
 static struct {
 	const char *key;
 	const char *value;

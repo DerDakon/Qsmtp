@@ -48,6 +48,7 @@ ADD_TEST(NAME "Base64" COMMAND testcase_base64)
 
 ADD_EXECUTABLE(testcase_cdb
 		cdb_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/vpop.c)
 TARGET_LINK_LIBRARIES(testcase_cdb
 		qsmtp_lib
