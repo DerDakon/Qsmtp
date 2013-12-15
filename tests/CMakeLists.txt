@@ -589,3 +589,17 @@ TARGET_LINK_LIBRARIES(testcase_ehlo_parsing
 )
 ADD_TEST(NAME "EHLO_parsing"
 		COMMAND testcase_ehlo_parsing)
+
+
+ADD_EXECUTABLE(testcase_vpop_user_exists
+		userexists_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/vpop.c)
+TARGET_LINK_LIBRARIES(testcase_vpop_user_exists
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
+ADD_TEST(NAME "VPop_user_exists"
+		COMMAND testcase_vpop_user_exists
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/user_exists/")
