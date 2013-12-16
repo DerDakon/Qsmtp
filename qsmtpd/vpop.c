@@ -157,7 +157,7 @@ qmexists(const string *dirtempl, const char *suff1, const size_t len, const int 
 	}
 	filetmp[l] = 0;
 
-	/* these files should not be open long enough to reach a close, but
+	/* these files should not be open long enough to reach a fork, but
 	 * make sure it is not accidentially leaked. */
 	fd = open(filetmp, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
