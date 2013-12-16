@@ -138,9 +138,14 @@ qmexists(const string *dirtempl, const char *suff1, const size_t len, const int 
 			return -1;
 		memcpy(filetmp + l, suff1, len);
 
-		while ( (p = strchr(filetmp + l, '.')) ) {
+		/* this scans the head of the username multiple times, but it's not
+		 * really worth the effort to optimize that further. memchr() is
+		 * usually a pretty good optimized function, the localpart is always
+		 * shorter than 1000 chars (usually _much_ shorter) and the file
+		 * system access later will very likely take much longer anyway. */
+		while ((p = memchr(filetmp + l, '.', len)) != NULL)
 			*p = ':';
-		}
+
 		l += len;
 		if (def & 1) {
 			if (l + 1 >= PATH_MAX)
@@ -237,7 +242,9 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 			ds->userpath.s = userdirtmp.s;
 			ds->userpath.len = userdirtmp.len;
 			return 1;
-		} else if (e != ENOENT) {
+		} else if ((e != ENOENT) && (errno != ENOTDIR)) {
+			/* if e.g. a file with the given name exists that is no error,
+			 * it just means that it is not a user directory with that name. */
 			if (err_control(userdirtmp.s) != 0) {
 				errno = e;
 			} else {

@@ -34,8 +34,16 @@ struct {
 		.result = 1,
 		.dirs = 1
 	},
+	/* catched by .qmail-baz-default */
 	{
 		.email = "baz-bar@example.org",
+		.result = 4,
+		.dirs = 1
+	},
+	/* catched by .qmail-abc-def-default, this tests the case
+	 * where it's not the first hyphen is the place to split */
+	{
+		.email = "abc-def-ghi@example.org",
 		.result = 4,
 		.dirs = 1
 	},
@@ -50,6 +58,25 @@ struct {
 	{
 		.email = "bar@example.org",
 		.result = 0
+	},
+	/* a file with the name "someone" exists, this just means that
+	 * opendir will fail, but the user still exists because
+	 * .qmail-someone exists. */
+	{
+		.email = "someone@example.org",
+		.result = 1,
+		.dirs = 1
+	},
+	/* this is rejected because of the '/'. It could be fixed for cases
+	 * where the address is catched by a .qmail*-default, but currently 
+	 * it is forbidden. */
+	{
+		.email = "baz-bar/foo@example.org",
+		.result = 0
+	},
+	{
+		.email = "bar@example.net",
+		.result = 5
 	},
 	{
 		.email = NULL
