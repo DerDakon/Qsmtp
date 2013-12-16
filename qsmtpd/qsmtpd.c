@@ -563,7 +563,7 @@ fork_clean()
 	return 0;
 }
 
-static int helovalid(const char *) __attribute__ ((nonnull (1)));
+static int helovalid(const char *helo, const size_t len) __attribute__ ((nonnull (1)));
 
 /**
  * check if the argument given to HELO/EHLO is syntactically correct
@@ -584,18 +584,17 @@ static int helovalid(const char *) __attribute__ ((nonnull (1)));
  *  6, 7: currently undefined
  */
 int
-helovalid(const char *helo)
+helovalid(const char *helo, const size_t len)
 {
 	char *s;
 	int rc;
 
 	xmitstat.helostatus = 0;
-	if (xmitstat.helostr.s)
-		free(xmitstat.helostr.s);
+	free(xmitstat.helostr.s);
 
 	/* We have the length of both strings anyway so we might be able to see
 	 * the difference without looking at every single character in them */
-	if (xmitstat.remotehost.len == strlen(helo)) {
+	if (xmitstat.remotehost.len == len) {
 		/* HELO is identical to reverse lookup: valid */
 		if (!strcasecmp(helo, xmitstat.remotehost.s)) {
 			STREMPTY(xmitstat.helostr);
@@ -603,7 +602,7 @@ helovalid(const char *helo)
 		}
 	}
 
-	if ( (rc = newstr(&xmitstat.helostr, strlen(helo) + 1)) )
+	if ( (rc = newstr(&xmitstat.helostr, len + 1)) )
 		return rc;
 	/* +5-4=+1: also copy the '\0' to the new string */
 	memcpy(xmitstat.helostr.s, helo, xmitstat.helostr.len--);
@@ -668,7 +667,7 @@ smtp_helo(void)
 	xmitstat.esmtp = 0;
 	xmitstat.spf = 0;
 	xmitstat.datatype = 0;
-	if (helovalid(linein + 5) < 0)
+	if (helovalid(linein + 5, linelen - 5) < 0)
 		return errno;
 	return net_writen(s) ? errno : 0;
 }
@@ -698,7 +697,7 @@ smtp_ehlo(void)
 		protocol = tmp;
 		memcpy(protocol, protocol_esmtp, strlen(protocol_esmtp) + 1);	/* also copy trailing '\0' */
 	}
-	if (helovalid(linein + 5) < 0)
+	if (helovalid(linein + 5, linelen - 5) < 0)
 		return errno;
 	if (auth_host && (!sslauth || (sslauth && ssl))) {
 		authtypes = smtp_authstring();
