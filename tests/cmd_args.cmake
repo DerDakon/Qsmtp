@@ -8,13 +8,17 @@ foreach(i 1 2 3 4 5 6 7)
 	set(SPACES "${SPACES}${SPACES}")
 endforeach(i)
 
-execute_process(COMMAND sleep 2)
+execute_process(COMMAND sleep 3)
+# invalid HELO, but this will be filtered later
+execute_process(COMMAND ${CMAKE_COMMAND} -E echo "HELO [foo] \r")
+execute_process(COMMAND sleep 1)
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "HELO nonsense.example.org\r")
 execute_process(COMMAND sleep 1)
 # arguments only allowed in ESMTP mode
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> size=20\r")
 execute_process(COMMAND sleep 1)
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "EHLO nonsense.example.org\r")
+# local ip as ehlo
+execute_process(COMMAND ${CMAKE_COMMAND} -E echo "EHLO [127.0.0.1]\r")
 execute_process(COMMAND sleep 1)
 # invalid arguments
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> foo=bar nonsense\r")
