@@ -282,6 +282,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 				return 1;
 			} else if (errno == ENOMEM) {
 				userconf_free(ds);
+				free(dotqm.s);
 				return fd;
 			} else if (errno != ENOENT) {
 				userconf_free(ds);
@@ -298,6 +299,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 						free(dotqm.s);
 						return 1;
 					} else if (errno == ENOMEM) {
+						free(dotqm.s);
 						userconf_free(ds);
 						return fd;
 					} else if (errno != ENOENT) {
