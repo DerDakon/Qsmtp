@@ -150,7 +150,7 @@ test_found(void)
 	fd = getfile(&ds, EXISTING_FILENAME, &type);
 	r += test_found_internal("domain", fd, type, 1);
 
-	return 0;
+	return r;
 }
 
 static int
@@ -178,11 +178,11 @@ test_notfound(void)
 
 	r += check_open_fail("domain", "nonexistent file", ENOENT);
 
-	return 0;
+	return r;
 }
 
 int
-main()
+main(void)
 {
 	int r = 0;
 	char *slash;
