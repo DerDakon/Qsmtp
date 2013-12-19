@@ -360,7 +360,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 				buff[r] = 0;
 
 				/* mail would be bounced or catched by .qmail-default */
-				if (strcmp(buff, vpopbounce) != 0) {
+				if (strcmp(buff, vpopbounce) == 0) {
 					userconf_free(ds);
 					return 0;
 				} else {
