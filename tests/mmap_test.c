@@ -80,8 +80,10 @@ main(void)
 	buf = mmap_fd(fd, &len);
 	if (buf == NULL) {
 		fprintf(stderr, "mmap_fd() failed, error %i\n", errno);
+		close(fd);
 		return 6;
 	}
+	close(fd);
 
 	if (len != (off_t)cmplen) {
 		fprintf(stderr, "mmap_fd() should return length %zi, but returned %li\n", cmplen, (long)len);
@@ -96,11 +98,18 @@ main(void)
 
 	munmap(buf, len);
 
+	fd = -1;
 	buf = mmap_name(testfname, &len, &fd);
 	if (buf == NULL) {
 		fprintf(stderr, "mmap_name() failed, error %i\n", errno);
 		return 9;
 	}
+
+	if (fd < 0) {
+		fprintf(stderr, "mmap_name() returned invalid fd\n");
+		return 10;
+	}
+	close(fd);
 
 	if (len != (off_t)cmplen) {
 		fprintf(stderr, "mmap_name() should return length %zi, but returned %li\n", cmplen, (long)len);
