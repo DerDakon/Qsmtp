@@ -147,12 +147,22 @@ main(void)
 	}
 
 	buf = mmap_fd(fd, &len);
-	close(fd);
-	unlink(testfname);
-	if (buf != NULL) {
-		fputs("mapping an empty file did not fail\n", stderr);
+	if ((buf != NULL) || (len != 0) || (errno != 0)) {
+		fprintf(stderr, "mapping an empty file by fd was expected to return (buf, len, errno) = (NULL, 0, 0), but returned (%p, %lli, %i)\n",
+				buf, (long long)len, errno);
 		return 15;
 	}
+	close(fd);
+
+	fd = -1;
+	buf = mmap_name(testfname, &len, &fd);
+	if ((buf != NULL) || (len != 0) || (errno != 0)) {
+		fprintf(stderr, "mapping an empty file by name was expected to return (buf, len, errno) = (NULL, 0, 0), but returned (%p, %lli, %i)\n",
+			buf, (long long)len, errno);
+		return 16;
+	}
+
+	unlink(testfname);
 
 	return 0;
 }
