@@ -1,2 +1,4 @@
 +example.org-:example.org:89:89:domaindir///:-::
++bounce.example.org-:example.org:89:89:bouncedomain:-::
++default.example.org-:example.org:89:89:defaultdomain:-::
 .

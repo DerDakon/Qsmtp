@@ -74,6 +74,18 @@ struct {
 		.email = "baz-bar/foo@example.org",
 		.result = 0
 	},
+	/* the .qmail-default file for this domain is equal to vpopbounce */
+	{
+		.email = "foo@bounce.example.org",
+		.result = 0
+	},
+	/* the .qmail-default file for this domain is not equal to vpopbounce */
+	{
+		.email = "foo@default.example.org",
+		.result = 2,
+		.dirs = 1
+	},
+	/* domain is not local */
 	{
 		.email = "bar@example.net",
 		.result = 5
@@ -97,6 +109,11 @@ main(void)
 	int ret = 0;
 	unsigned int i;
 
+	if (userbackend_init() != 0) {
+		fprintf(stderr, "error initializing vpopmail backend\n");
+		return 1;
+	}
+
 	for (i = 0; users[i].email != NULL; i++) {
 		struct userconf ds;
 		const struct string localpart = {
@@ -109,29 +126,35 @@ main(void)
 		const int r = user_exists(&localpart, strchr(users[i].email, '@') + 1, &ds);
 
 		if (r != users[i].result) {
-			fprintf(stderr, "index %u: got result %i, expected %i\n",
-					i, r, users[i].result);
+			fprintf(stderr, "index %u email %s: got result %i, expected %i\n",
+					i, users[i].email, r, users[i].result);
 			ret++;
 		}
 
 		if ((users[i].dirs & 1) && (ds.domainpath.len == 0)) {
-			fprintf(stderr, "index %u: no domainpath found\n", i);
+			fprintf(stderr, "index %u email %s: no domainpath found\n",
+					i, users[i].email);
 			ret++;
 		} else if (!(users[i].dirs & 1) && (ds.domainpath.len != 0)) {
-			fprintf(stderr, "index %u: domainpath found but not expected\n", i);
+			fprintf(stderr, "index %u email %s: domainpath found but not expected\n",
+					i, users[i].email);
 			ret++;
 		}
 
 		if ((users[i].dirs & 2) && (ds.userpath.len == 0)) {
-			fprintf(stderr, "index %u: no userpath found\n", i);
+			fprintf(stderr, "index %u email %s: no userpath found\n",
+					i, users[i].email);
 			ret++;
 		} else if (!(users[i].dirs & 2) && (ds.userpath.len != 0)) {
-			fprintf(stderr, "index %u: userpath found but not expected\n", i);
+			fprintf(stderr, "index %u email %s: userpath found but not expected\n",
+					i, users[i].email);
 			ret++;
 		}
 
 		userconf_free(&ds);
 	}
+
+	userbackend_free();
 
 	return ret;
 }
