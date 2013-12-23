@@ -126,7 +126,7 @@ ip4_test(void)
 {
 	const char ipstr[] ="::ffff:172.17.42.253";
 	const char s1str[] = "172.17.42.253";
-	const char s2str[] = "62.27.20.61";
+	const char s2str[] = "10.0.2.61";
 	int err = 0;
 	char fnbuf[22] = "ip4_matchnet_XXXXXX";
 	int fd;

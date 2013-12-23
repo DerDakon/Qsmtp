@@ -136,8 +136,8 @@ int main()
 
 	sprintf(configline, "fromdomain=7");
 	xmitstat.frommx = &frommx;
-	setup_ip("::ffff:62.27.20.61");
-	err += check_expect(0, "checking mail.sf-mail.de");
+	setup_ip("::ffff:8.8.8.8");
+	err += check_expect(0, "checking Google public DNS");
 
 	sprintf(configline, "fromdomain=2");
 	setup_ip("::ffff:127.4.5.6");

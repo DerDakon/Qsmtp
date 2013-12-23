@@ -296,13 +296,13 @@ static struct spftestcase spftest_redhat = {
 static struct spftestcase spftest_sfmail = {
 	.helo = "mail.sf-mail.de",
 	.from = "eike@sf-mail.de",
-	.goodip = "::ffff:62.27.20.61",
-	.badip = "::ffff:62.27.20.62",
+	.goodip = "::ffff:192.0.2.61",
+	.badip = "::ffff:192.0.2.62",
 	.dns = {
 		{
 			.type = DNSTYPE_MX,
 			.key = "sf-mail.de",
-			.value = "::ffff:62.27.20.61"
+			.value = "::ffff:192.0.2.61"
 		},
 		{
 			.type = DNSTYPE_TXT,
