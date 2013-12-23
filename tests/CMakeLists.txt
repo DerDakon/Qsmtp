@@ -468,6 +468,8 @@ ADD_TEST(NAME "Qremote_to_bad_expression"
 		COMMAND Qremote "[127.0" "from@invalid.invalid" "to@localhost")
 ADD_TEST(NAME "Qremote_to_bad_expression2"
 		COMMAND Qremote "[127.0.a.v]" "from@invalid.invalid" "to@localhost")
+ADD_TEST(NAME "Qremote_to_ip"
+		COMMAND Qremote "[192.0.2.19]" "from@invalid.invalid" "to@localhost")
 
 IF (AUTOQMAIL_FROM_TESTSUITE)
 	SET_TESTS_PROPERTIES(Qremote_noinput_noargs PROPERTIES
@@ -480,10 +482,13 @@ IF (AUTOQMAIL_FROM_TESTSUITE)
 			PASS_REGULAR_EXPRESSION "^Z4\\.4\\.3 all mail exchangers for \\[::1\\] point back to me\n")
 	SET_TESTS_PROPERTIES(Qremote_to_bad_expression Qremote_to_bad_expression2 PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z4\\.3\\.0 parse error in first argument\n")
+	SET_TESTS_PROPERTIES(Qremote_to_ip PROPERTIES
+			PASS_REGULAR_EXPRESSION "^Zinternal error: can't mmap\\(\\) input\n")
 ELSE ()
 	SET_TESTS_PROPERTIES(Qremote_noinput_noargs Qremote_to_invalid
 			Qremote_to_localhost Qremote_to_localhost6
 			Qremote_to_bad_expression Qremote_to_bad_expression2
+			Qremote_to_ip
 			PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z")
 ENDIF ()
