@@ -1,0 +1,170 @@
+diff -Naurp a/vpopmail-5.4.33/Makefile.am b/vpopmail-5.4.33/Makefile.am
+--- a/vpopmail-5.4.33/Makefile.am	2011-02-28 18:00:45.000000000 +0100
++++ b/vpopmail-5.4.33/Makefile.am	2013-12-25 11:45:43.720000000 +0100
+@@ -141,7 +141,7 @@ install-exec-am:
+ 	done
+ 
+ install-data-local:
+-	$(INSTALL) -d -g @vpopgroup@ -m 0700 -o @vpopuser@ \
++	$(INSTALL) -d -g @vpopgroup@ -m 0751 -o @vpopuser@ \
+ 	  $(DESTDIR)@vpopmaildir@/@domains_dir@
+ 
+ 	echo "-I@vpopmaildir@/include" > \
+@@ -212,7 +212,7 @@ fix-priv:
+ 	@echo "If the recursive chown is taking a long time"
+ 	@echo "go ahead and break out of it by pressing control-C"
+ 	@echo "this is the last stage of the install and can be skipped" 
+-	chmod 700 $(DESTDIR)@vpopmaildir@/@domains_dir@
++	chmod 751 $(DESTDIR)@vpopmaildir@/@domains_dir@
+ 	chown -R @vpopuser@  $(DESTDIR)@vpopmaildir@/@domains_dir@
+ 	chgrp -R @vpopgroup@ $(DESTDIR)@vpopmaildir@/@domains_dir@
+ 
+diff -Naurp a/vpopmail-5.4.33/Makefile.in b/vpopmail-5.4.33/Makefile.in
+--- a/vpopmail-5.4.33/Makefile.in	2011-02-28 18:00:45.000000000 +0100
++++ b/vpopmail-5.4.33/Makefile.in	2013-12-25 11:45:43.720000000 +0100
+@@ -1167,7 +1167,7 @@ install-exec-am:
+ 	done
+ 
+ install-data-local:
+-	$(INSTALL) -d -g @vpopgroup@ -m 0700 -o @vpopuser@ \
++	$(INSTALL) -d -g @vpopgroup@ -m 0751 -o @vpopuser@ \
+ 	  $(DESTDIR)@vpopmaildir@/@domains_dir@
+ 
+ 	echo "-I@vpopmaildir@/include" > \
+@@ -1238,7 +1238,7 @@ fix-priv:
+ 	@echo "If the recursive chown is taking a long time"
+ 	@echo "go ahead and break out of it by pressing control-C"
+ 	@echo "this is the last stage of the install and can be skipped" 
+-	chmod 700 $(DESTDIR)@vpopmaildir@/@domains_dir@
++	chmod 751 $(DESTDIR)@vpopmaildir@/@domains_dir@
+ 	chown -R @vpopuser@  $(DESTDIR)@vpopmaildir@/@domains_dir@
+ 	chgrp -R @vpopgroup@ $(DESTDIR)@vpopmaildir@/@domains_dir@
+ 
+diff -Naurp a/vpopmail-5.4.33/vpopmail.c b/vpopmail-5.4.33/vpopmail.c
+--- a/vpopmail-5.4.33/vpopmail.c	2011-02-28 18:00:45.000000000 +0100
++++ b/vpopmail-5.4.33/vpopmail.c	2013-12-25 15:25:18.124000000 +0100
+@@ -179,7 +179,7 @@ int vadddomain( char *domain, char *dir,
+   /* set our file creation mask for machines where the
+    * sysadmin has tightened default permissions
+    */
+-  umask(VPOPMAIL_UMASK);
++  umask(VPOPMAIL_UMASK & ~VPOPMAIL_PUBLIC_DIR_MODE);
+ 
+   /* store the calling directory */
+   call_dir = open(".", O_RDONLY);
+@@ -194,7 +194,7 @@ int vadddomain( char *domain, char *dir,
+   if ( chdir(DOMAINS_DIR) != 0 ) {
+ 
+     /* if it's not there, no problem, just try to create it */
+-    if ( mkdir(DOMAINS_DIR, VPOPMAIL_DIR_MODE) != 0 ) {
++    if ( mkdir(DOMAINS_DIR, VPOPMAIL_PUBLIC_DIR_MODE) != 0 ) {
+       fchdir(call_dir); close(call_dir);
+       return(VA_CAN_NOT_MAKE_DOMAINS_DIR);
+     }
+@@ -248,7 +248,8 @@ int vadddomain( char *domain, char *dir,
+     fchdir(call_dir); close(call_dir);
+     return(VA_COULD_NOT_MAKE_DOMAIN_DIR);
+   }
+-  
++  umask(VPOPMAIL_UMASK);
++
+   if ( chdir(DomainSubDir) != 0 ) {
+     /* back out of changes made so far */
+     vdelfiles(DomainSubDir);
+@@ -689,7 +690,6 @@ int vadduser( char *username, char *doma
+   if ( strlen(password) > MAX_PW_CLEAR_PASSWD ) return(VA_PASSWD_TOO_LONG);
+   if ( strlen(gecos) > MAX_PW_GECOS )    return(VA_GECOS_TOO_LONG);
+ 
+-  umask(VPOPMAIL_UMASK);
+   lowerit(username);
+   lowerit(domain);
+ 
+@@ -724,7 +724,8 @@ int vadduser( char *username, char *doma
+     if (verrori != 0 ) return(verrori);
+     else return(VA_BAD_U_DIR);
+   }
+-        
++
++  umask(VPOPMAIL_UMASK);
+   /* add the user to the auth backend */
+   /* NOTE: We really need to update this method to include the quota. */
+   if (vauth_adduser(username, domain, password, gecos, user_hash, apop )!=0) {
+@@ -2424,13 +2425,14 @@ char *make_user_dir(char *username, char
+   }
+ 
+   /* create the users dir, including all the Maildir structure */ 
+-  if ( mkdir(username, VPOPMAIL_DIR_MODE) != 0 ) {
++  if ( mkdir(username, VPOPMAIL_PUBLIC_DIR_MODE) != 0 ) {
+     /* need to add some code to remove the hashed dirs we created above... */
+     verrori = VA_EXIST_U_DIR;
+     fchdir(call_dir); close(call_dir);
+     return(NULL);
+   }
+ 
++  umask(VPOPMAIL_UMASK);
+   if ( chdir(username) != 0 ) {
+     /* back out of changes made above */
+     chdir(domain_dir); chdir(user_hash); vdelfiles(username);
+@@ -2485,13 +2487,15 @@ int r_mkdir(char *path, uid_t uid, gid_t
+  int err;
+  int i;
+  struct stat sb;
++ mode_t oldumask;
+ 
+   if (*path == '\0') return 0;
++  oldumask = umask(~VPOPMAIL_PUBLIC_DIR_MODE);
+ 
+   for(i=0; ;++i){
+     if ( (i > 0) && ((path[i] == '/') || (path[i] == '\0')) ) {
+       tmpbuf[i] = 0;
+-      err = mkdir(tmpbuf,VPOPMAIL_DIR_MODE);
++      err = mkdir(tmpbuf, VPOPMAIL_PUBLIC_DIR_MODE);
+       if (err == 0)
+         chown(tmpbuf, uid, gid);
+       else if (errno != EEXIST) {
+@@ -2500,12 +2504,14 @@ int r_mkdir(char *path, uid_t uid, gid_t
+          * directory exists and is a directory at the end of the function.
+          */
+         warn ("Unable to create directory %s: ", tmpbuf);
++        umask(oldumask);
+         return -1;
+       }
+       if (path[i] == '\0') break;
+     }
+     tmpbuf[i] = path[i];
+   }
++  umask(oldumask);
+   if (stat (path, &sb) != 0) {
+     warn ("Couldn't stat %s: ", path);
+     return -1;
+@@ -3113,9 +3119,6 @@ int vmake_maildir(char *domain, char *di
+   /* record which dir the command was launched from */
+   call_dir = open(".", O_RDONLY);
+ 
+-  /* set the mask for file creation */
+-  umask(VPOPMAIL_UMASK);
+- 
+   /* check if domain exists.
+    * if domain exists, store the dir into tmpbuf, and store uid and gid
+    */
+@@ -3145,6 +3148,9 @@ int vmake_maildir(char *domain, char *di
+    */
+   r_mkdir(tmpstr, uid, gid);
+ 
++  /* set the mask for file creation */
++  umask(VPOPMAIL_UMASK);
++
+   /* we should now be able to cd into the user's dir */
+   if ( chdir(dir) != 0 ) { fchdir(call_dir); close(call_dir); return(-1); }
+ 
+diff -Naurp a/vpopmail-5.4.33/vpopmail.h b/vpopmail-5.4.33/vpopmail.h
+--- a/vpopmail-5.4.33/vpopmail.h	2011-02-28 18:00:45.000000000 +0100
++++ b/vpopmail-5.4.33/vpopmail.h	2013-12-25 11:45:43.720000000 +0100
+@@ -54,6 +54,7 @@
+ #define VPOPMAIL_UMASK          0077
+ #define VPOPMAIL_TCPRULES_UMASK 0022
+ #define VPOPMAIL_DIR_MODE       0750
++#define VPOPMAIL_PUBLIC_DIR_MODE       0751
+ #define VPOPMAIL_QMAIL_MODE S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
+ 
+ #define USE_POP      0x00
