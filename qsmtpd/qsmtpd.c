@@ -1078,20 +1078,28 @@ next:
 		xmitstat.frommx = NULL;
 		s = HELOSTR;
 	}
-	if (!xmitstat.remotehost.len || !(i = finddomainfd(open("control/spffriends", O_RDONLY), xmitstat.remotehost.s, 1))) {
+
+	i = open(connection_is_ipv4() ? "control/spffriends" : "control/spffriends6", O_RDONLY);
+
+	if ((i < 0) && (errno != ENOENT)) {
+		return err_control(connection_is_ipv4() ? "control/spffriends" : "control/spffriends6") ?
+				errno : EDONE;
+	} else if (i >= 0) {
+		i = lookupipbl(i);
+		if (i < 0)
+			return netwrite("421 4.3.5 unable to read controls\r\n") ? errno : EDONE;
+	}
+
+	/* i is <0 if no spffriends file found and ==0 if not whitelisted */
+	if (i > 0) {
+		xmitstat.spf = SPF_IGNORE;
+	} else {
 		i = check_host(s);
 		if (i < 0)
 			return errno;
 		xmitstat.spf = (i & 0x0f);
-	} else if (i > 0) {
-		xmitstat.spf = SPF_IGNORE;
-	} else {
-		if (errno == ENOMEM) {
-			return errno;
-		} else {
-			return err_control("control/spffriends") ? errno : EDONE;
-		}
 	}
+
 	badbounce = 0;
 	goodrcpt = 0;
 	okmsg[1] = MAILFROM;

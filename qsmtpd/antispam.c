@@ -251,7 +251,11 @@ domainmatch(const char *fqdn, const size_t len, const char **list)
  * check if the remote host is listed in local IP map file given by fd
  *
  * @param fd file descriptor to file
- * @return \arg \c <0 on error \arg \c >0 on match \arg \c 0 otherwise
+ * @retval <0 on error
+ * @retval >0 on match
+ * @retval 0 no match
+ *
+ * fd will always be closed.
  */
 int
 lookupipbl(int fd)

@@ -293,8 +293,17 @@ of SPF entries.
 
 .TP 4
 .I spffriends
-List of hosts where no SPF checks will be done at all, neither there will be a \fIReceived-SPF:\fR-line. 
-Matches in this file will override \fIspfstrict\fR.
+Holds a list of IPv4 addresses where no SPF checks will be done at all, neither there will be a
+\fIReceived-SPF:\fR-line. Every address is followed by a netmask length specifying if a whole
+network is allowed to relay. Use the
+.B addipbl
+command to add new entries to this file. Matches in this file will override \fIspfstrict\fR.
+
+.TP 4
+.I spffriends6
+Works the same as
+.IR spffriends ,
+but for IPv6 addresses.
 
 .TP 4
 .I wildcardns
