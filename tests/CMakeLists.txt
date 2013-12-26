@@ -2,6 +2,8 @@
 # we are running inside the testsuite and can mess with that directory
 IF (AUTOQMAIL MATCHES "^${CMAKE_BINARY_DIR}/")
 	SET(AUTOQMAIL_FROM_TESTSUITE TRUE)
+	file(WRITE "${CMAKE_BINARY_DIR}/var/qmail/control/outgoingip" "192.0.2.61")
+	file(WRITE "${CMAKE_BINARY_DIR}/var/qmail/control/outgoingip6" "fd38:d30d:f257:35ac::42")
 ELSE ()
 	SET(AUTOQMAIL_FROM_TESTSUITE FALSE)
 ENDIF ()

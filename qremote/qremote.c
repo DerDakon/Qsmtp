@@ -37,7 +37,8 @@ unsigned int smtpext;	/**< the SMTP extensions supported by the remote server */
 char *rhost;		/**< the DNS name (if present) and IP address of the remote server to be used in log messages */
 size_t rhostlen;	/**< valid length of rhost */
 char *partner_fqdn;	/**< the DNS name of the remote server, or NULL if no reverse lookup exists */
-struct in6_addr outip;
+static struct in6_addr outip;
+static struct in6_addr outip6;
 
 /**
  * @brief write status message to stdout
@@ -172,18 +173,38 @@ setup(void)
 	if (((ssize_t)loadoneliner("control/outgoingip", &ipbuf, 1)) >= 0) {
 		int r = inet_pton(AF_INET6, ipbuf, &outip);
 
-		free(ipbuf);
 		if (r <= 0) {
+			struct in_addr a4;
+			r = inet_pton(AF_INET, ipbuf, &a4);
+			outip.s6_addr32[0] = 0;
+			outip.s6_addr32[1] = 0;
+			outip.s6_addr32[2] = htonl(0xffff);
+			outip.s6_addr32[3] = a4.s_addr;
+		}
+
+		free(ipbuf);
+		if (r <= 0)
 			err_conf("parse error in control/outgoingip");
-		}
-#ifdef IPV4ONLY
-		if (!IN6_IS_ADDR_V4MAPPED(&outip)) {
+
+		if (!IN6_IS_ADDR_V4MAPPED(&outip))
 			err_conf("compiled for IPv4 only but control/outgoingip has IPv6 address");
-		}
-#endif
 	} else {
 		outip = in6addr_any;
 	}
+
+#ifndef IPV4ONLY
+	if (((ssize_t)loadoneliner("control/outgoingip6", &ipbuf, 1)) >= 0) {
+		int r = inet_pton(AF_INET6, ipbuf, &outip6);
+
+		free(ipbuf);
+		if (r <= 0)
+			err_conf("parse error in control/outgoingip6");
+
+		if (IN6_IS_ADDR_V4MAPPED(&outip6))
+			err_conf("control/outgoingip6 has IPv4 address");
+	} else
+#endif
+		outip6 = in6addr_any;
 
 #ifdef DEBUG_IO
 	j = open("control/Qremote_debug", O_RDONLY);
@@ -498,7 +519,7 @@ main(int argc, char *argv[])
 			return 0;
 		}
 */
-		tryconn(mx, &outip);
+		tryconn(mx, &outip, &outip6);
 		dup2(socketd, 0);
 		if (netget() != 220) {
 			quitmsg();

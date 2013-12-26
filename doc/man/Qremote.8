@@ -131,9 +131,9 @@ of the qmail directory. All files are optional.
 SSL certificate that is used to authenticate with the remote server
 during a TLS session.
 .TP 5
+
 .I helohost
-Current host name,
-for use solely in saying hello to the remote SMTP server.
+Current host name, for use solely in saying hello to the remote SMTP server.
 Default:
 .IR me ,
 if that is supplied;
@@ -141,6 +141,18 @@ otherwise
 .B Qremote
 refuses to run.
 .TP 5
+
+.I outgoingip
+The local IPv4 address used when sending out mails. Use this if your machine
+has multiple addresses and you want your mail coming from a specific one.
+.TP 5
+
+.I outgoingip6
+Works the same as
+.IR outgoingip ,
+but for IPv6 addresses.
+.TP 5
+
 .I smtproutes
 Artificial SMTP routes. See below for a detailed description of mail routing.
 

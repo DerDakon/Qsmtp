@@ -78,11 +78,12 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
  * the last one tried with 65538
  */
 void
-tryconn(struct ips *mx, const struct in6_addr *outip)
+tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *outip6)
 {
-	struct ips *thisip;
-
 	while (1) {
+		struct ips *thisip;
+		const struct in6_addr *outip;
+
 		for (thisip = mx; thisip; thisip = thisip->next) {
 			if (thisip->priority == 65538)
 				thisip->priority = 65537;
@@ -94,6 +95,15 @@ tryconn(struct ips *mx, const struct in6_addr *outip)
 			write_status("Zcan't connect to any server\n");
 			exit(0);
 		}
+
+#ifndef IPV4ONLY
+		if (!IN6_IS_ADDR_V4MAPPED(&thisip->addr))
+			outip = outip6;
+		else
+#else
+		(void) outip6;
+#endif
+			outip = outip4;
 
 		if (!conn(thisip->addr, outip)) {
 			/* set priority to 65538 to allow getrhost() to find active MX */
