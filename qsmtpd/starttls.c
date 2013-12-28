@@ -10,6 +10,7 @@
 #include "control.h"
 #include "qdns.h"
 #include "ssl_timeoutio.h"
+#include <qsmtpd/addrparse.h>
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/syntax.h>
 
@@ -123,7 +124,7 @@ tls_verify(void)
 	do { /* one iteration */
 		X509 *peercert;
 		X509_NAME *subj;
-		string email = { .len = 0, .s = NULL};
+		cstring email = { .len = 0, .s = NULL };
 		int n = SSL_get_verify_result(ssl);
 
 		if (n != X509_V_OK) {
@@ -139,24 +140,25 @@ tls_verify(void)
 		if (n >= 0) {
 			const ASN1_STRING *s = X509_NAME_get_entry(subj, n)->value;
 			if (s) {
-				email.len = s->length;
-				email.s = (char *)s->data;
+				email.len = (M_ASN1_STRING_length(s) > 0) ? M_ASN1_STRING_length(s) : 0;
+				email.s = M_ASN1_STRING_data(s);
 			}
 		}
 
-		if (email.len <= 0) {
+		if (email.len == 0) {
 			ssl_verify_err = "contains no email address";
 		} else if (clientbuf) {
 			unsigned int i = 0;
+
 			while (clients[i]) {
 				if (!strcmp(email.s, clients[i]))
 					break;
 				i++;
 			}
-			if (!clients[i])
+			if (!clients[i]) {
 				ssl_verify_err = "email address not in my list of tlsclients";
-			else {
-				int l = strlen(protocol);
+			} else {
+				const size_t l = strlen(protocol);
 
 				protocol = realloc(protocol, l + 9 + email.len);
 				if (!protocol) {
