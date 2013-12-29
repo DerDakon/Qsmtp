@@ -240,8 +240,9 @@ is_authenticated(void)
 		int i = tls_verify();
 		if (i < 0)
 			return i;
-		else
-			xmitstat.tlsclient = (i & 1);
+
+		xmitstat.tlsclient = (i & 1);
+		relayclient = i ? 1 : relayclient;
 	}
 #endif
 
