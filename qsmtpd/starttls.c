@@ -61,7 +61,7 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 	return DH_generate_parameters(keylen, DH_GENERATOR_2, NULL, NULL);
 }
 
-static void
+static int
 tls_out(const char *s1, const char *s2)
 {
 	const char *msg[] = {"454 4.3.0 TLS ", s1, NULL, NULL, NULL};
@@ -70,13 +70,13 @@ tls_out(const char *s1, const char *s2)
 		msg[2] = ": ";
 		msg[3] = s2;
 	}
-	net_writen(msg);
+	return net_writen(msg);
 }
 
-static void
+static int
 tls_err(const char *s)
 {
-	tls_out(s, ssl_error());
+	return tls_out(s, ssl_error());
 }
 
 #define CLIENTCA "control/clientca.pem"
@@ -131,15 +131,13 @@ tls_verify(void)
 
 		if (SSL_set_session_id_context(ssl, VERSIONSTRING, strlen(VERSIONSTRING)) != 1) {
 			const char *err = ssl_strerror();
-			tls_out("setting session id failed", err);
-			tlsrelay = -EPROTO;
+			tlsrelay = tls_out("setting session id failed", err) ? -errno : -EPROTO;
 			break;
 		}
 
 		if (ssl_timeoutrehandshake(timeout) <= 0) {
 			const char *err = ssl_strerror();
-			tls_out("rehandshake failed", err);
-			tlsrelay = -EPROTO;
+			tlsrelay = tls_out("rehandshake failed", err) ? -errno : -EPROTO;
 			break;
 		}
 
@@ -212,14 +210,12 @@ tls_init()
 	/* a new SSL context with the bare minimum of options */
 	ctx = SSL_CTX_new(SSLv23_server_method());
 	if (!ctx) {
-		tls_err("unable to initialize ctx");
-		return EDONE;
+		return tls_err("unable to initialize ctx") ? errno : EDONE;
 	}
 
 	if (!SSL_CTX_use_certificate_chain_file(ctx, certfilename)) {
 		SSL_CTX_free(ctx);
-		tls_err("missing certificate");
-		return EDONE;
+		return tls_err("missing certificate") ? errno : EDONE;
 	}
 	SSL_CTX_load_verify_locations(ctx, CLIENTCA, NULL);
 
@@ -258,17 +254,15 @@ tls_init()
 	myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);
 	if (!myssl) {
-		tls_err("unable to initialize ssl");
 		free(saciphers.s);
-		return EDONE;
+		return tls_err("unable to initialize ssl") ? errno : EDONE;
 	}
 
 	/* this will also check whether public and private keys match */
 	if (!SSL_use_RSAPrivateKey_file(myssl, certfilename, SSL_FILETYPE_PEM)) {
 		SSL_free(myssl);
-		tls_err("no valid RSA private key");
 		free(saciphers.s);
-		return EDONE;
+		return tls_err("no valid RSA private key") ? errno : EDONE;
 	}
 
 	SSL_set_cipher_list(myssl, ciphers);
@@ -293,8 +287,7 @@ tls_init()
 
 		ssl_free(ssl);
 		ssl = NULL;
-		tls_out("connection failed", err);
-		return EDONE;
+		return tls_out("connection failed", err) ? errno : EDONE;
 	}
 
 	prot = SSL_get_cipher(myssl);
