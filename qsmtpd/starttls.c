@@ -14,9 +14,6 @@
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/syntax.h>
 
-int ssl_verified = 0;
-const char *ssl_verify_err = 0;
-
 static RSA *
 tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 {
@@ -81,6 +78,9 @@ tls_err(const char *s)
 #define CLIENTCRL "control/clientcrl.pem"
 
 #if 0
+static int ssl_verified;
+
+
 /**
  * verify is authenticated to relay by SSL certificate
  *
@@ -127,10 +127,9 @@ tls_verify(void)
 		cstring email = { .len = 0, .s = NULL };
 		int n = SSL_get_verify_result(ssl);
 
-		if (n != X509_V_OK) {
-			ssl_verify_err = X509_verify_cert_error_string(n);
+		if (n != X509_V_OK)
 			break;
-		}
+
 		peercert = SSL_get_peer_certificate(ssl);
 		if (!peercert)
 			break;
@@ -145,9 +144,7 @@ tls_verify(void)
 			}
 		}
 
-		if (email.len == 0) {
-			ssl_verify_err = "contains no email address";
-		} else if (clientbuf) {
+		if ((email.len != 0) && (clientbuf != NULL)) {
 			unsigned int i = 0;
 
 			while (clients[i]) {
@@ -155,9 +152,7 @@ tls_verify(void)
 					break;
 				i++;
 			}
-			if (!clients[i]) {
-				ssl_verify_err = "email address not in my list of tlsclients";
-			} else {
+			if (clients[i] != NULL) {
 				const size_t l = strlen(protocol);
 
 				protocol = realloc(protocol, l + 9 + email.len);
