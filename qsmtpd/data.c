@@ -223,9 +223,9 @@ queue_header(void)
 	if (xmitstat.authname.len) {
 		WRITE(fd, authstr + i, strlen(authstr) - i);
 		WRITE(fd, xmitstat.authname.s, xmitstat.authname.len);
-	} else if (xmitstat.remoteinfo) {
+	} else if (!is_authenticated_client() && (xmitstat.remoteinfo != NULL)) {
 		WRITEL(fd, ") (");
-		WRITE(fd, xmitstat.remoteinfo, strlen(xmitstat.remoteinfo));
+		WRITEL(fd, xmitstat.remoteinfo);
 	}
 	WRITEL(fd, ")\n\tby ");
 	WRITE(fd, heloname.s, heloname.len);
