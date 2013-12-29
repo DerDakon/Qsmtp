@@ -91,44 +91,48 @@ static int
 tls_verify(void)
 {
 	char *clientbuf, **clients;
-	STACK_OF(X509_NAME) *sk = SSL_load_client_CA_file(CLIENTCA);
+	STACK_OF(X509_NAME) *sk;
 	int tlsrelay = 0;
 
 	if (!ssl || xmitstat.authname.len || ssl_verified)
 		return 0;
 	ssl_verified = 1; /* don't do this twice */
 
+	sk = SSL_load_client_CA_file(CLIENTCA);
+	if (sk == NULL)
+		/* if CLIENTCA contains all the standard root certificates, a
+		 * 0.9.6b client might fail with SSL_R_EXCESSIVE_MESSAGE_SIZE;
+		 * it is probably due to 0.9.6b supporting only 8k key exchange
+		 * data while the 0.9.6c release increases that limit to 100k */
+		return 0;
+
+	/* FIXME: this leaks sk */
+
 	/* request client cert to see if it can be verified by one of our CAs
 	 * and the associated email address matches an entry in tlsclients */
 	if (loadlistfd(open("control/tlsclients", O_RDONLY), &clientbuf, &clients, checkaddr) < 0)
 		return -1;
 
-	/* if CLIENTCA contains all the standard root certificates, a
-	 * 0.9.6b client might fail with SSL_R_EXCESSIVE_MESSAGE_SIZE;
-	 * it is probably due to 0.9.6b supporting only 8k key exchange
-	 * data while the 0.9.6c release increases that limit to 100k */
-	if (sk) {
-		SSL_set_client_CA_list(ssl, sk);
-		SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULL);
-	} else {
-		free(clients);
-		free(clientbuf);
-	}
+	if (clients == NULL)
+		return 0;
 
-	if (ssl_timeoutrehandshake(timeout) <= 0) {
-		const char *err = ssl_strerror();
-		tls_out("rehandshake failed", err);
-		errno = EPROTO;
-		return -1;
-	}
+	SSL_set_client_CA_list(ssl, sk);
+	SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULL);
 
 	do { /* one iteration */
 		X509 *peercert;
 		X509_NAME *subj;
 		cstring email = { .len = 0, .s = NULL };
-		int n = SSL_get_verify_result(ssl);
+		int n;
 
-		if (n != X509_V_OK)
+		if (ssl_timeoutrehandshake(timeout) <= 0) {
+			const char *err = ssl_strerror();
+			tls_out("rehandshake failed", err);
+			tlsrelay = -EPROTO;
+			break;
+		}
+
+		if (SSL_get_verify_result(ssl) != X509_V_OK)
 			break;
 
 		peercert = SSL_get_peer_certificate(ssl);
@@ -149,7 +153,7 @@ tls_verify(void)
 			}
 		}
 
-		if ((email.len != 0) && (clientbuf != NULL)) {
+		if (email.len != 0) {
 			unsigned int i = 0;
 
 			while (clients[i]) {
@@ -158,16 +162,15 @@ tls_verify(void)
 
 					protocol = realloc(protocol, l + 9 + email.len);
 					if (!protocol) {
-						free(clients);
-						free(clientbuf);
-						return ENOMEM;
+						tlsrelay = -ENOMEM;
+					} else {
+						/* add the cert email to the protocol if it helped allow relaying */
+						memcpy(protocol + l, "\n (cert ", 7);
+						memcpy(protocol + l + 7, email.s, email.len);
+						protocol[l + 7 + email.len] = ')';
+						protocol[l + 8 + email.len] = '\0';
+						tlsrelay = 1;
 					}
-					/* add the cert email to the protocol if it helped allow relaying */
-					memcpy(protocol + l, "\n (cert ", 7);
-					memcpy(protocol + l + 7, email.s, email.len);
-					protocol[l + 7 + email.len] = ')';
-					protocol[l + 8 + email.len] = '\0';
-					tlsrelay = 1;
 					break;
 				}
 				i++;
@@ -176,14 +179,18 @@ tls_verify(void)
 
 		X509_free(peercert);
 	} while (0);
+
 	free(clients);
 	free(clientbuf);
-
-	/* we are not going to need this anymore: free the memory */
 	SSL_set_client_CA_list(ssl, NULL);
 	SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
 
-	return tlsrelay;
+	if (tlsrelay < 0) {
+		errno = -tlsrelay;
+		return -1;
+	} else {
+		return tlsrelay;
+	}
 }
 #endif
 
