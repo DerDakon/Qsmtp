@@ -29,6 +29,7 @@
 #include <dirent.h>
 #include <qsmtpd/addrparse.h>
 #include <qsmtpd/vpop.h>
+#include <qsmtpd/starttls.h>
 #include <qsmtpd/syntax.h>
 #include <qsmtpd/xtext.h>
 #include <qsmtpd/antispam.h>
@@ -56,7 +57,6 @@ int smtp_from(void);
 int smtp_rcpt(void);
 /* int smtp_data(void); is declared in qsdata.h */
 int smtp_vrfy(void);
-extern int smtp_starttls(void);
 int http_post(void);
 
 #define _C(c,l,m,f,s,o) { .name = c, .len = l, .mask = m, .func = f, .state = s, .flags = o }
@@ -235,7 +235,17 @@ is_authenticated(void)
 		}
 	}
 
-	return (relayclient & 2) ? 0 : 1;
+#if 0
+	if (!(relayclient & 1)) {
+		int i = tls_verify();
+		if (i < 0)
+			return i;
+		else
+			xmitstat.tlsclient = (i & 1);
+	}
+#endif
+
+	return (relayclient == 1) ? 1 : 0;
 }
 
 static int

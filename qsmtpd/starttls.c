@@ -1,18 +1,22 @@
 /** \file starttls.c
  \brief functions for STARTTLS SMTP command
  */
-#include <fcntl.h>
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
+#include <qsmtpd/starttls.h>
+
+#include <qsmtpd/addrparse.h>
+#include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/syntax.h>
+
 #include "tls.h"
 #include "netio.h"
 #include "control.h"
 #include "qdns.h"
 #include "ssl_timeoutio.h"
-#include <qsmtpd/addrparse.h>
-#include <qsmtpd/qsmtpd.h>
-#include <qsmtpd/syntax.h>
+
+#include <fcntl.h>
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
 
 static RSA *
 tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
@@ -87,7 +91,7 @@ static int ssl_verified;
  * @retval 0 if client is not authenticated
  * @retval >0 if client is authenticated
  */
-static int
+int
 tls_verify(void)
 {
 	char *clientbuf, **clients;
