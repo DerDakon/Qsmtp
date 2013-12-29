@@ -82,7 +82,7 @@ tls_err(const char *s)
 #define CLIENTCA "control/clientca.pem"
 #define CLIENTCRL "control/clientcrl.pem"
 
-#if 0
+#if 1
 static int ssl_verified;
 
 /**
@@ -177,10 +177,11 @@ tls_verify(void)
 						tlsrelay = -ENOMEM;
 					} else {
 						/* add the cert email to the protocol if it helped allow relaying */
-						memcpy(protocol + l, "\n (cert ", 8);
-						memcpy(protocol + l + 7, email.s, email.len);
-						protocol[l + 7 + email.len] = ')';
-						protocol[l + 8 + email.len] = '\0';
+						const char *certintro = "\n\t\t(cert ";
+						memcpy(protocol + l, certintro, strlen(certintro));
+						memcpy(protocol + l + strlen(certintro), email.s, email.len);
+						protocol[l + strlen(certintro) + email.len] = ')';
+						protocol[l + strlen(certintro) + 1 + email.len] = '\0';
 						tlsrelay = 1;
 					}
 					break;
