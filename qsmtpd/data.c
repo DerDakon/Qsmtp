@@ -75,7 +75,7 @@ queue_init(void)
 		return EDONE;
 	}
 
-	if ((xmitstat.authname.len != 0) || (xmitstat.tlsclient != 0))
+	if (is_authenticated_client())
 		qqbin = getenv("QMAILQUEUEAUTH");
 
 	if ((qqbin == NULL) || (strlen(qqbin) == 0))
@@ -188,7 +188,7 @@ queue_header(void)
 {
 	int fd = fd0[1];
 	int rc;
-	size_t i = (authhide && (xmitstat.authname.len || xmitstat.tlsclient)) ? 2 : 0;
+	size_t i = (authhide && is_authenticated_client()) ? 2 : 0;
 	/* do not bother that the next two messages are basically the same:
 	 * the compiler is usually clever enought to find that out, too */
 	const char afterprot[]     =  "\n\tfor <";	/* the string to be written after the protocol */
@@ -196,7 +196,7 @@ queue_header(void)
 	const char authstr[] = ") (auth=";
 
 /* write "Received-SPF: " line */
-	if (!(xmitstat.authname.len || xmitstat.tlsclient) && (relayclient != 1)) {
+	if (!is_authenticated_client() && (relayclient != 1)) {
 		if ( (rc = spfreceived(fd, xmitstat.spf)) )
 			return rc;
 	}

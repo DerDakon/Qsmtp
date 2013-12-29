@@ -207,7 +207,7 @@ freeppol(void)
 static int
 is_authenticated(void)
 {
-	if (xmitstat.authname.len || xmitstat.tlsclient)
+	if (is_authenticated_client())
 		return 1;
 
 	/* check if client is allowed to relay by IP */

@@ -16,7 +16,7 @@ cb_boolean(const struct userconf *ds, const char **logmsg, int *t)
 	int rc;
 
 	if (getsettingglobal(ds, "whitelistauth", t) > 0) {
-		if (xmitstat.authname.len || xmitstat.tlsclient)
+		if (is_authenticated_client())
 			return 5;
 	}
 

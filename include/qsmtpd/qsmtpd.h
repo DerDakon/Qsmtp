@@ -116,4 +116,10 @@ connection_is_ipv4(void)
 #endif /* IPV4ONLY */
 }
 
+static inline int
+is_authenticated_client(void)
+{
+	return (xmitstat.authname.len != 0) || (xmitstat.tlsclient != 0);
+}
+
 #endif
