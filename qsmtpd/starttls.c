@@ -98,14 +98,14 @@ tls_verify(void)
 	ssl_verified = 1; /* don't do this twice */
 
 	/* request client cert to see if it can be verified by one of our CAs
-	* and the associated email address matches an entry in tlsclients */
+	 * and the associated email address matches an entry in tlsclients */
 	if (loadlistfd(open("control/tlsclients", O_RDONLY), &clientbuf, &clients, checkaddr) < 0)
 		return -1;
 
 	/* if CLIENTCA contains all the standard root certificates, a
-	* 0.9.6b client might fail with SSL_R_EXCESSIVE_MESSAGE_SIZE;
-	* it is probably due to 0.9.6b supporting only 8k key exchange
-	* data while the 0.9.6c release increases that limit to 100k */
+	 * 0.9.6b client might fail with SSL_R_EXCESSIVE_MESSAGE_SIZE;
+	 * it is probably due to 0.9.6b supporting only 8k key exchange
+	 * data while the 0.9.6c release increases that limit to 100k */
 	if (sk) {
 		SSL_set_client_CA_list(ssl, sk);
 		SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULL);
