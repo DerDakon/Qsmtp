@@ -80,11 +80,12 @@ tls_err(const char *s)
 #if 0
 static int ssl_verified;
 
-
 /**
- * verify is authenticated to relay by SSL certificate
+ * @brief verify is authenticated to relay by SSL certificate
  *
- * @return -1 on error, 0 if client is not authenticated, >0 if client is authenticated
+ * @retval -1 on error (errno is set)
+ * @retval 0 if client is not authenticated
+ * @retval >0 if client is authenticated
  */
 static int
 tls_verify(void)
@@ -135,7 +136,11 @@ tls_verify(void)
 			break;
 
 		subj = X509_get_subject_name(peercert);
+		/* try if this is a user authenticating with a personal certificate */
 		n = X509_NAME_get_index_by_NID(subj, NID_pkcs9_emailAddress, -1);
+		if (n < 0)
+			/* seems not, maybe it is a host authenticating for relaying? */
+			n = X509_NAME_get_index_by_NID(subj, NID_commonName, -1);
 		if (n >= 0) {
 			const ASN1_STRING *s = X509_NAME_get_entry(subj, n)->value;
 			if (s) {
@@ -148,25 +153,24 @@ tls_verify(void)
 			unsigned int i = 0;
 
 			while (clients[i]) {
-				if (!strcmp(email.s, clients[i]))
-					break;
-				i++;
-			}
-			if (clients[i] != NULL) {
-				const size_t l = strlen(protocol);
+				if (strcmp(email.s, clients[i]) == 0) {
+					const size_t l = strlen(protocol);
 
-				protocol = realloc(protocol, l + 9 + email.len);
-				if (!protocol) {
-					free(clients);
-					free(clientbuf);
-					return ENOMEM;
+					protocol = realloc(protocol, l + 9 + email.len);
+					if (!protocol) {
+						free(clients);
+						free(clientbuf);
+						return ENOMEM;
+					}
+					/* add the cert email to the protocol if it helped allow relaying */
+					memcpy(protocol + l, "\n (cert ", 7);
+					memcpy(protocol + l + 7, email.s, email.len);
+					protocol[l + 7 + email.len] = ')';
+					protocol[l + 8 + email.len] = '\0';
+					tlsrelay = 1;
+					break;
 				}
-				/* add the cert email to the protocol if it helped allow relaying */
-				memcpy(protocol + l, "\n (cert ", 7);
-				memcpy(protocol + l + 7, email.s, email.len);
-				protocol[l + 7 + email.len] = ')';
-				protocol[l + 8 + email.len] = '\0';
-				tlsrelay = 1;
+				i++;
 			}
 		}
 
