@@ -83,7 +83,7 @@ static int ssl_verified;
 /**
  * @brief verify is authenticated to relay by SSL certificate
  *
- * @retval -1 on error (errno is set)
+ * @retval <1 error code
  * @retval 0 if client is not authenticated
  * @retval >0 if client is authenticated
  */
@@ -94,7 +94,7 @@ tls_verify(void)
 	STACK_OF(X509_NAME) *sk;
 	int tlsrelay = 0;
 
-	if (!ssl || xmitstat.authname.len || ssl_verified)
+	if (!ssl || ssl_verified || is_authenticated_client())
 		return 0;
 	ssl_verified = 1; /* don't do this twice */
 
@@ -111,7 +111,7 @@ tls_verify(void)
 	/* request client cert to see if it can be verified by one of our CAs
 	 * and the associated email address matches an entry in tlsclients */
 	if (loadlistfd(open("control/tlsclients", O_RDONLY), &clientbuf, &clients, checkaddr) < 0)
-		return -1;
+		return -errno;
 
 	if (clients == NULL)
 		return 0;
@@ -185,12 +185,7 @@ tls_verify(void)
 	SSL_set_client_CA_list(ssl, NULL);
 	SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
 
-	if (tlsrelay < 0) {
-		errno = -tlsrelay;
-		return -1;
-	} else {
-		return tlsrelay;
-	}
+	return tlsrelay;
 }
 #endif
 
