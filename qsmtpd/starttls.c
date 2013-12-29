@@ -12,6 +12,7 @@
 #include "control.h"
 #include "qdns.h"
 #include "ssl_timeoutio.h"
+#include <version.h>
 
 #include <fcntl.h>
 #include <errno.h>
@@ -128,6 +129,13 @@ tls_verify(void)
 		X509_NAME *subj;
 		cstring email = { .len = 0, .s = NULL };
 		int n;
+
+		if (SSL_set_session_id_context(ssl, VERSIONSTRING, strlen(VERSIONSTRING)) != 1) {
+			const char *err = ssl_strerror();
+			tls_out("setting session id failed", err);
+			tlsrelay = -EPROTO;
+			break;
+		}
 
 		if (ssl_timeoutrehandshake(timeout) <= 0) {
 			const char *err = ssl_strerror();
