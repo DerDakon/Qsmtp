@@ -193,7 +193,6 @@ queue_header(void)
 	 * the compiler is usually clever enought to find that out, too */
 	const char afterprot[]     =  "\n\tfor <";	/* the string to be written after the protocol */
 	const char afterprotauth[] = "A\n\tfor <";	/* the string to be written after the protocol for authenticated mails*/
-	const char authstr[] = ") (auth=";
 
 /* write "Received-SPF: " line */
 	if (!is_authenticated_client() && (relayclient != 1)) {
@@ -201,12 +200,13 @@ queue_header(void)
 			return rc;
 	}
 /* write the "Received: " line to mail header */
-	WRITEL(fd, "Received: from ");
+	WRITEL(fd, "Received: ");
 	if (!i) {
 		if (xmitstat.remotehost.len) {
+			WRITEL(fd, "from ");
 			WRITE(fd, xmitstat.remotehost.s, xmitstat.remotehost.len);
 		} else {
-			WRITEL(fd, "unknown");
+			WRITEL(fd, "from unknown");
 		}
 		WRITEL(fd, " ([");
 		WRITE(fd, xmitstat.remoteip, strlen(xmitstat.remoteip));
@@ -221,9 +221,14 @@ queue_header(void)
 		}
 	}
 	if (xmitstat.authname.len) {
+		const char authstr[] = ") (auth=";
 		WRITE(fd, authstr + i, strlen(authstr) - i);
 		WRITE(fd, xmitstat.authname.s, xmitstat.authname.len);
-	} else if (!is_authenticated_client() && (xmitstat.remoteinfo != NULL)) {
+	} else if (xmitstat.tlsclient != NULL) {
+		const char authstr[] = ") (cert=";
+		WRITE(fd, authstr + i, strlen(authstr) - i);
+		WRITEL(fd, xmitstat.tlsclient);
+	} else if (xmitstat.remoteinfo != NULL) {
 		WRITEL(fd, ") (");
 		WRITEL(fd, xmitstat.remoteinfo);
 	}
@@ -232,7 +237,7 @@ queue_header(void)
 	WRITEL(fd, " (" VERSIONSTRING ") with ");
 	if (chunked)
 		WRITEL(fd, "(chunked) ");
-	WRITE(fd, protocol, strlen(protocol));
+	WRITEL(fd, protocol);
 	/* add the 'A' to the end of ESMTP or ESMTPS as described in RfC 3848 */
 	if (xmitstat.authname.len != 0) {
 		WRITEL(fd, afterprotauth);

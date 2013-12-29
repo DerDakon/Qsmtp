@@ -235,16 +235,13 @@ is_authenticated(void)
 		}
 	}
 
-#if 0
 	if (!(relayclient & 1)) {
 		int i = tls_verify();
 		if (i < 0)
 			return i;
 
-		xmitstat.tlsclient = (i & 1);
 		relayclient = i ? 1 : relayclient;
 	}
-#endif
 
 	return (relayclient == 1) ? 1 : 0;
 }
@@ -542,6 +539,8 @@ freedata(void)
 	STREMPTY(xmitstat.mailfrom);
 	freeips(xmitstat.frommx);
 	xmitstat.frommx = NULL;
+	free(xmitstat.tlsclient);
+	xmitstat.tlsclient = NULL;
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
 

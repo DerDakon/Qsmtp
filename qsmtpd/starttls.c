@@ -82,7 +82,6 @@ tls_err(const char *s)
 #define CLIENTCA "control/clientca.pem"
 #define CLIENTCRL "control/clientcrl.pem"
 
-#if 1
 static int ssl_verified;
 
 /**
@@ -170,20 +169,12 @@ tls_verify(void)
 
 			while (clients[i]) {
 				if (strcmp(email.s, clients[i]) == 0) {
-					const size_t l = strlen(protocol);
+					xmitstat.tlsclient = strdup(email.s);
 
-					protocol = realloc(protocol, l + 9 + email.len);
-					if (!protocol) {
+					if (xmitstat.tlsclient == NULL)
 						tlsrelay = -ENOMEM;
-					} else {
-						/* add the cert email to the protocol if it helped allow relaying */
-						const char *certintro = "\n\t\t(cert ";
-						memcpy(protocol + l, certintro, strlen(certintro));
-						memcpy(protocol + l + strlen(certintro), email.s, email.len);
-						protocol[l + strlen(certintro) + email.len] = ')';
-						protocol[l + strlen(certintro) + 1 + email.len] = '\0';
+					else
 						tlsrelay = 1;
-					}
 					break;
 				}
 				i++;
@@ -200,7 +191,6 @@ tls_verify(void)
 
 	return tlsrelay;
 }
-#endif
 
 static int
 tls_init()

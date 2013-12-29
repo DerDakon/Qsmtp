@@ -161,7 +161,7 @@ check_queueheader(void)
 	TAILQ_INIT(&head);
 	TAILQ_INSERT_TAIL(&head, &to, entries);
 
-	for (idx = 0; idx < 8; idx++) {
+	for (idx = 0; idx < 10; idx++) {
 		char outbuf[2048];
 		ssize_t off = 0;
 		ssize_t mismatch = -1;
@@ -228,11 +228,29 @@ check_queueheader(void)
 			relayclient = 0;
 			authhide = 1;
 			xmitstat.authname.s = "authuser";
-			expect = "Received: from (auth=authuser)\n"
+			expect = "Received: (auth=authuser)\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOLA\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 7:
+			testname = "authhide + cert";
+			/* no relayclient, but since we are authenticated there must not be a SPF header */
+			relayclient = 0;
+			authhide = 1;
+			xmitstat.tlsclient = "mail@cert.example.com";
+			expect = "Received: (cert=mail@cert.example.com)\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 8:
+			testname = "minimal + cert";
+			authhide = 0;
+			xmitstat.tlsclient = "mail@cert.example.com";
+			expect = "Received: from unknown ([192.0.2.42]) (cert=mail@cert.example.com)\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 9:
 			testname = "chunked";
 			chunked = 1;
 			authhide = 0;
