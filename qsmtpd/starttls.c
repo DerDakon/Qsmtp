@@ -177,7 +177,7 @@ tls_verify(void)
 						tlsrelay = -ENOMEM;
 					} else {
 						/* add the cert email to the protocol if it helped allow relaying */
-						memcpy(protocol + l, "\n (cert ", 7);
+						memcpy(protocol + l, "\n (cert ", 8);
 						memcpy(protocol + l + 7, email.s, email.len);
 						protocol[l + 7 + email.len] = ')';
 						protocol[l + 8 + email.len] = '\0';
