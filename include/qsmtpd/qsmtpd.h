@@ -35,10 +35,10 @@ struct xmitstat {
 	unsigned int spf:4;		/**< result of the SPF lookup */
 	int fromdomain:3;		/**< result of the lookup for fromips */
 	unsigned int spacebug:1;	/**< if client sends spaces between ':' and '<' */
+	unsigned int tlsclient:1;	/**< TLS client authenticated by certificate for relaying */
 	unsigned long thisbytes;	/**< size of the message announced by the remote host */
 	string mailfrom;		/**< the current from address */
 	string authname;		/**< if SMTP AUTH is used (and successful) this is set */
-	char *tlsclient;		/**< TLS client authenticated by certificate for relaying */
 	string remotehost;		/**< the reverse lookup of the remote host */
 	char remoteip[INET6_ADDRSTRLEN];/**< ip of the remote host as set in the environment */
 	char *remoteinfo;		/**< info gathered by tcpserver like remote username */

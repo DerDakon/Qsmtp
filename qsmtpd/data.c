@@ -75,7 +75,7 @@ queue_init(void)
 		return EDONE;
 	}
 
-	if ((xmitstat.authname.len != 0) || (xmitstat.tlsclient != NULL))
+	if ((xmitstat.authname.len != 0) || (xmitstat.tlsclient != 0))
 		qqbin = getenv("QMAILQUEUEAUTH");
 
 	if ((qqbin == NULL) || (strlen(qqbin) == 0))
