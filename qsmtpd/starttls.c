@@ -135,6 +135,7 @@ tls_verify(void)
 			break;
 		}
 
+		/* renegotiate to force the client to send it's certificate */
 		if (ssl_timeoutrehandshake(timeout) <= 0) {
 			const char *err = ssl_strerror();
 			tlsrelay = tls_out("rehandshake failed", err) ? -errno : -EPROTO;
