@@ -415,9 +415,21 @@ check_received(int spfstatus, int log)
 	}
 	tmp++;
 	if (spfstatus == SPF_FAIL_MALF) {
+		const char *tbegin = tmp;
+		const char percentwarn[] = "unsafe characters may have been replaced by '%'";
+		size_t len;
 		/* skip the invalid token that is logged here */
 		while ((*tmp != '\n') && (*tmp != ' ') && (*tmp != '('))
 			tmp++;
+
+		len = tmp - tbegin;
+
+		/* If '%' is in the message, then the warning message has to be, too.
+		 * If no '%' is in the message, then no warning message should be there. */
+		if ((memchr(tbegin,  '%', len) != NULL) != (strstr(tbegin, percentwarn) != NULL)) {
+			fputs("'%' character and warning message mismatch\n", stderr);
+			return 1;
+		}
 	}
 
 	if (strstr(buf, "  ") != NULL) {
@@ -440,7 +452,6 @@ check_received(int spfstatus, int log)
 	}
 
 	while (tmp != buf + strlen(buf)) {
-
 		if (strncmp(tmp, "x-", 2) == 0) {
 			tmp += 2;
 			while ((*tmp != '\n') && (*tmp != '='))
@@ -2304,6 +2315,12 @@ test_parse()
 			.key = "marf-example-3.example.net",
 			.value = "v=spf1 mx:example.org -all ra=postmaster rp=10 rr=e"
 		},
+		/* not in test suite: invalid makro letter */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-redirect-makro3.example.net",
+			.value = "v=spf1 redirect=foo.example.%qcom/"
+		},
 		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
@@ -2347,7 +2364,8 @@ test_parse()
 		SPF_FAIL_MALF,
 		SPF_FAIL_PERM,
 		SPF_FAIL_PERM,
-		SPF_FAIL_PERM
+		SPF_FAIL_PERM,
+		SPF_FAIL_MALF
 	};
 	int err = 0;
 	unsigned int i = 0;
@@ -2381,7 +2399,7 @@ test_parse()
 		fprintf(stderr, "check_host() with invalid domain did not fail with SPF_FAIL_MALF, but %i\n", r);
 		err++;
 	}
-	err += check_received(SPF_FAIL_MALF, 0);
+	err += (check_received(SPF_FAIL_MALF, 0) ? 1 : 0);
 
 	while (parseentries[i].key != NULL) {
 		int c;

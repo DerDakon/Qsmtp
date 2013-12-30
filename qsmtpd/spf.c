@@ -1543,7 +1543,7 @@ record_bad_token(const char *token)
 	 * Received-SPF line if the user still accepts the mail. We
 	 * know there is at least one whitespace after the v=spf1
 	 * token. Then go back until the next whitespace or to the
-	 * end, replace any unsafe char by '?' */
+	 * end, replace any unsafe char by '%' */
 
 	const char *tokenend = token;
 
