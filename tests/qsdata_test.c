@@ -342,6 +342,23 @@ check_queueheader(void)
 
 	close(fd0[0]);
 	close(fd0[1]);
+
+	/* pass invalid fds in, this should cause the write() to fail */
+	fd0[0] = -1;
+	fd0[1] = -1;
+
+	relayclient = 0;
+	xmitstat.spf = SPF_PASS;
+
+	if (queue_header() != -1) {
+		fprintf(stderr, "queue_header() for fd -1 did not fail\n");
+		err = 8;
+	} else if (errno != EBADFD) {
+		fprintf(stderr, "queue_header() for fd -1 did not set errno to EBADFD, but to %i\n",
+				errno);
+		err = 9;
+	}
+
 	return err;
 }
 
