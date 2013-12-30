@@ -161,7 +161,7 @@ check_queueheader(void)
 	TAILQ_INIT(&head);
 	TAILQ_INSERT_TAIL(&head, &to, entries);
 
-	for (idx = 0; idx < 10; idx++) {
+	for (idx = 0; idx < 13; idx++) {
 		char outbuf[2048];
 		ssize_t off = 0;
 		ssize_t mismatch = -1;
@@ -243,14 +243,42 @@ check_queueheader(void)
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 8:
-			testname = "minimal + cert";
+			/* no relayclient, not authenticated, authhide should be ignored */
+			testname = "authhide + ident";
+			relayclient = 0;
+			authhide = 1;
+			xmitstat.remoteinfo = "auth=foo"; /* fake attempt */
+			xmitstat.spf = SPF_PASS;
+			expect = "Received-SPF: testcase, spf 1\n"
+					"Received: from unknown ([192.0.2.42]) (ident=auth=foo)\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 9:
+			testname = "minimal + ident";
+			relayclient = 1;
+			authhide = 0;
+			xmitstat.remoteinfo = "auth=foo"; /* fake attempt */
+			expect = "Received: from unknown ([192.0.2.42]) (ident=auth=foo)\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 10:
+			testname = "minimal + cert + ident";
+			xmitstat.remoteinfo = "something"; /* should have no effect as tlsclient is set */
+			/* fallthrough */
+		case 11:
+			if (idx == 1) {
+				testname = "minimal + cert";
+			}
+			relayclient = 0;
 			authhide = 0;
 			xmitstat.tlsclient = "mail@cert.example.com";
 			expect = "Received: from unknown ([192.0.2.42]) (cert=mail@cert.example.com)\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
-		case 9:
+		case 12:
 			testname = "chunked";
 			chunked = 1;
 			authhide = 0;

@@ -229,7 +229,7 @@ queue_header(void)
 		WRITE(fd, authstr + i, strlen(authstr) - i);
 		WRITEL(fd, xmitstat.tlsclient);
 	} else if (xmitstat.remoteinfo != NULL) {
-		WRITEL(fd, ") (");
+		WRITEL(fd, ") (ident=");
 		WRITEL(fd, xmitstat.remoteinfo);
 	}
 	WRITEL(fd, ")\n\tby ");
