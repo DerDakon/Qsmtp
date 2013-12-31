@@ -353,8 +353,8 @@ check_queueheader(void)
 	if (queue_header() != -1) {
 		fprintf(stderr, "queue_header() for fd -1 did not fail\n");
 		err = 8;
-	} else if (errno != EBADFD) {
-		fprintf(stderr, "queue_header() for fd -1 did not set errno to EBADFD, but to %i\n",
+	} else if (errno != EBADF) {
+		fprintf(stderr, "queue_header() for fd -1 did not set errno to EBADF, but to %i\n",
 				errno);
 		err = 9;
 	}
