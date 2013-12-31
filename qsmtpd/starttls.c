@@ -111,12 +111,15 @@ tls_verify(void)
 		return 0;
 
 	sk = SSL_load_client_CA_file(CLIENTCA);
-	if (sk == NULL)
+	if (sk == NULL) {
 		/* if CLIENTCA contains all the standard root certificates, a
 		 * 0.9.6b client might fail with SSL_R_EXCESSIVE_MESSAGE_SIZE;
 		 * it is probably due to 0.9.6b supporting only 8k key exchange
 		 * data while the 0.9.6c release increases that limit to 100k */
+		free(clientbuf);
+		free(clients);
 		return 0;
+	}
 
 	/* FIXME: this leaks sk */
 
