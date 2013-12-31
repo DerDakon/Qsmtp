@@ -102,6 +102,14 @@ tls_verify(void)
 		return 0;
 	ssl_verified = 1; /* don't do this twice */
 
+	/* request client cert to see if it can be verified by one of our CAs
+	 * and the associated email address matches an entry in tlsclients */
+	if (loadlistfd(open("control/tlsclients", O_RDONLY), &clientbuf, &clients, checkaddr) < 0)
+		return -errno;
+
+	if (clients == NULL)
+		return 0;
+
 	sk = SSL_load_client_CA_file(CLIENTCA);
 	if (sk == NULL)
 		/* if CLIENTCA contains all the standard root certificates, a
@@ -111,14 +119,6 @@ tls_verify(void)
 		return 0;
 
 	/* FIXME: this leaks sk */
-
-	/* request client cert to see if it can be verified by one of our CAs
-	 * and the associated email address matches an entry in tlsclients */
-	if (loadlistfd(open("control/tlsclients", O_RDONLY), &clientbuf, &clients, checkaddr) < 0)
-		return -errno;
-
-	if (clients == NULL)
-		return 0;
 
 	SSL_set_client_CA_list(ssl, sk);
 	SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULL);
