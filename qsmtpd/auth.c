@@ -465,9 +465,14 @@ smtp_auth(void)
 }
 
 /**
- * return a list of all enabled auth types
+ * @brief return a list of all enabled auth types
  *
- * @return string of enabled auth types or NULL if out of memory
+ * @return string of enabled auth types
+ * @retval NULL out of memory or AUTH currently not permitted
+ *
+ * The returned memory is allocated and has to be freed by the caller.
+ *
+ * The returned string will contain a trailing CRLF pair.
  */
 char *
 smtp_authstring(void)
@@ -476,6 +481,10 @@ smtp_authstring(void)
 	char *confbuf, *ret, *tmp;
 	unsigned int i;
 	uint8_t usedtype;	/* make sure this is big enough to hold all auth types */
+
+	/* AUTH is currently not permitted */
+	if ((auth_host == NULL) || (sslauth && (ssl == NULL)))
+		return NULL;
 
 	conflen = lloadfilefd(open("control/authtypes", O_RDONLY), &confbuf, 3);
 
@@ -489,7 +498,7 @@ smtp_authstring(void)
 		i++;
 	}
 
-	ret = malloc(slen);
+	ret = malloc(slen + 2);
 	if (ret == NULL) {
 		free(confbuf);
 		return NULL;
@@ -505,6 +514,10 @@ smtp_authstring(void)
 			wpos += strlen(authcmds[i].text);
 			i++;
 		}
+
+		ret[wpos] = '\r';
+		ret[wpos + 1] = '\n';
+		ret[wpos + 2] = '\0';
 
 		/* ret[0] is a space anyway */
 		while (wpos > 0) {
@@ -561,7 +574,11 @@ smtp_authstring(void)
 		return NULL;
 	}
 
-	tmp = realloc(ret, wpos + 1);
+	ret[wpos++] = '\r';
+	ret[wpos++] = '\n';
+	ret[wpos++] = '\0';
+
+	tmp = realloc(ret, wpos);
 	if (tmp == NULL)
 		return ret;
 	else

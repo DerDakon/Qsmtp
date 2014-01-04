@@ -709,14 +709,13 @@ smtp_ehlo(void)
 	}
 	if (helovalid(linein + 5, linelen - 5) < 0)
 		return errno;
-	if (auth_host && (!sslauth || (sslauth && ssl))) {
-		authtypes = smtp_authstring();
 
-		if (authtypes != NULL) {
-			msg[next++] = "250-AUTH";
-			msg[next++] = authtypes;
-			msg[next++] = "\r\n";
-		}
+	authtypes = smtp_authstring();
+
+	if (authtypes != NULL) {
+		msg[next++] = "250-AUTH";
+		/* authtypes already includes trailing CRLF */
+		msg[next++] = authtypes;
 	}
 /* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
 	if (!ssl && ((localport == NULL) || (strcmp(localport, "465") != 0))) {

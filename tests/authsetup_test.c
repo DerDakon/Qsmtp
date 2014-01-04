@@ -15,13 +15,13 @@
 
 struct xmitstat xmitstat;
 unsigned long sslauth = 0;
-const char *auth_host = NULL;
+const char *auth_host = "auth.example.com";
 const char *auth_check = NULL;
 const char **auth_sub = NULL;
 
-static const char loginonly[] = " LOGIN";
-static const char plainonly[] = " PLAIN";
-static const char loginplain[] = " LOGIN PLAIN";
+static const char loginonly[] = " LOGIN\r\n";
+static const char plainonly[] = " PLAIN\r\n";
+static const char loginplain[] = " LOGIN PLAIN\r\n";
 
 static int
 check_authstr(const char *auth_expect)
@@ -61,7 +61,7 @@ static int
 test_nocontrol(void)
 {
 #ifdef AUTHCRAM
-	static const char auth_expect[] = " LOGIN PLAIN CRAM-MD5";
+	static const char auth_expect[] = " LOGIN PLAIN CRAM-MD5\r\n";
 #else /* AUTHCRAM */
 	static const char *auth_expect = loginplain;
 #endif /* AUTHCRAM */
@@ -159,6 +159,34 @@ test_nonexistent(void)
 	return 0;
 }
 
+static int
+test_no_auth_yet(void)
+{
+	int ret = 0;
+	char *authstr;
+
+	auth_host = NULL;
+	authstr = smtp_authstring();
+	if (authstr != NULL) {
+		fprintf(stderr, "smtp_authstring() with auth_host == NULL returned string %s instead of NULL\n",
+				authstr);
+		free(authstr);
+		ret++;
+	}
+
+	auth_host = "auth.example.com";
+	sslauth = 1;
+	if (authstr != NULL) {
+		fprintf(stderr, "smtp_authstring() with sslauth == 1 and ssl == NULL returned string %s instead of NULL\n",
+				authstr);
+		free(authstr);
+		ret++;
+	}
+
+	sslauth = 0;
+
+	return ret;
+}
 
 int main(int argc, char **argv)
 {
@@ -186,6 +214,7 @@ int main(int argc, char **argv)
 
 	errcnt += test_controlfiles();
 	errcnt += test_nonexistent();
+	errcnt += test_no_auth_yet();
 
 	return errcnt;
 }
