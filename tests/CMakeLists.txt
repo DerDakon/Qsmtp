@@ -68,6 +68,7 @@ ADD_EXECUTABLE(testcase_authsetup
 TARGET_LINK_LIBRARIES(testcase_authsetup
 		qsmtp_lib
 		testcase_io_lib
+		Qsmtpd_auth_checkpassword
 		${MEMCHECK_LIBRARIES})
 
 ADD_TEST(NAME "AUTH_Setup"
@@ -80,6 +81,7 @@ ADD_EXECUTABLE(testcase_auth_errors
 TARGET_LINK_LIBRARIES(testcase_auth_errors
 		qsmtp_lib
 		testcase_io_lib
+		Qsmtpd_auth_checkpassword
 		${MEMCHECK_LIBRARIES})
 
 ADD_TEST(NAME "AUTH_errors"
@@ -92,6 +94,7 @@ ADD_EXECUTABLE(testcase_auth
 TARGET_LINK_LIBRARIES(testcase_auth
 		qsmtp_lib
 		testcase_io_lib
+		Qsmtpd_auth_checkpassword
 		${MEMCHECK_LIBRARIES})
 
 ADD_EXECUTABLE(auth_dummy auth_dummy.c)

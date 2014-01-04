@@ -2,21 +2,9 @@
  \brief functions for SMTP AUTH
  */
 #include <qsmtpd/qsauth.h>
+#include <qsmtpd/qsauth_backend.h>
 
-#include <sys/wait.h>
-#include <sys/mman.h>
-#include <syslog.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <signal.h>
-#include <string.h>
-#include <time.h>
-#include <fcntl.h>
-#include <ctype.h>
-#include <qsmtpd/antispam.h>
 #include "fmt.h"
-#include <qsmtpd/qsmtpd.h>
 #include "sstring.h"
 #include "netio.h"
 #include "base64.h"
@@ -24,42 +12,20 @@
 #include "tls.h"
 #include "control.h"
 
-static const char tempnoauth[] = "454 4.3.0 AUTH temporaryly not available\r\n";
+#include <ctype.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <time.h>
+#include <unistd.h>
+#include <qsmtpd/antispam.h>
+#include <qsmtpd/qsmtpd.h>
+
+const char *tempnoauth = "454 4.3.0 AUTH temporaryly not available\r\n";
 static const char *auth_host;			/**< hostname for auth */
-const char *auth_check;			/**< checkpassword or one of his friends for auth */
-const char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
-
-static int err_child(void)
-{
-	log_write(LOG_ERR, "auth child crashed");
-	if (!netwrite(tempnoauth))
-		errno = EDONE;
-	return -1;
-}
-
-static int err_fork(void)
-{
-	log_write(LOG_ERR, "cannot fork auth");
-	if (!netwrite(tempnoauth))
-		errno = EDONE;
-	return -1;
-}
-
-static int err_pipe(void)
-{
-	log_write(LOG_ERR, "cannot create pipe for authentication");
-	if (!netwrite(tempnoauth))
-		errno = EDONE;
-	return -1;
-}
-
-static int err_write(void)
-{
-	log_write(LOG_ERR, "pipe error while authenticating");
-	if (!netwrite(tempnoauth))
-		errno = EDONE;
-	return -1;
-}
 
 static int err_authabrt(void)
 {
@@ -125,101 +91,6 @@ authgetl(string *authin)
 	return authin->len;
 }
 
-#define WRITE(a,b) if (write(pi[1], (a), (b)) < 0) { fun = err_write; goto out; }
-
-static int
-authenticate(void)
-{
-	pid_t child;
-	int wstat;
-	int pi[2];
-	struct sigaction sa;
-	int (*fun)(void) = NULL;
-
-	if (pipe(pi) == -1) {
-		fun = err_pipe;
-		goto out;
-	}
-	switch(child = fork_clean()) {
-	case -1:
-		while ((close(pi[0]) < 0) && (errno == EINTR)) {}
-		while ((close(pi[1]) < 0) && (errno == EINTR)) {}
-		fun = err_fork;
-		goto out;
-	case 0:
-		while (close(pi[1])) {
-			if (errno != EINTR)
-				_exit(1);
-		}
-		if (pi[0] != 3) {
-			if (dup2(pi[0],3) < 0) {
-				_exit(1);
-			}
-		}
-
-		memset(pass.s, 0, pass.len);
-		free(pass.s);
-		free(user.s);
-		free(resp.s);
-
-		memset(&sa, 0, sizeof(sa));
-		sa.sa_handler = SIG_DFL;
-		sigemptyset(&(sa.sa_mask));
-		sigaction(SIGPIPE, &sa, NULL);
-		execlp(auth_check, auth_check, *auth_sub, NULL);
-		_exit(1);
-	}
-	while (close(pi[0])) {
-		if (errno != EINTR)
-			goto out;
-	}
-
-	WRITE(user.s, user.len + 1);
-	WRITE(pass.s, pass.len + 1);
-	/* make sure not to leak password */
-	memset(pass.s, 0, pass.len);
-	free(pass.s);
-	STREMPTY(pass);
-	WRITE(resp.s, resp.len);
-	WRITE("", 1);
-	free(resp.s);
-	STREMPTY(resp);
-	while (close(pi[1])) {
-		if (errno != EINTR)
-			goto out;
-	}
-
-	while (waitpid(child, &wstat, 0) == -1) {
-		if (errno != EINTR) {
-			fun = err_child;
-			goto out;
-		}
-	}
-	if (!WIFEXITED(wstat)) {
-		fun = err_child;
-		goto out;
-	}
-	if (WEXITSTATUS(wstat)) {
-		free(user.s);
-		sleep(5);
-		return 1;
-	} /* no */
-out:
-	/* make sure not to leak password */
-	if (pass.s != NULL) {
-		memset(pass.s, 0, pass.len);
-		free(pass.s);
-	}
-	free(resp.s);
-	if (fun) {
-		/* only free user.s here, it will be copied to
-		 * xmitstat.authname.s on success */
-		free(user.s);
-		return fun();
-	}
-	return 0; /* yes */
-}
-
 static int
 auth_login(void)
 {
@@ -262,7 +133,7 @@ auth_login(void)
 		err_input();
 		goto err;
 	}
-	return authenticate();
+	return auth_backend_execute(&user, &pass, &resp);
 err:
 	free(user.s);
 	return -1;
@@ -323,7 +194,7 @@ auth_plain(void)
 	}
 	free(slop.s);
 
-	return authenticate();
+	return auth_backend_execute(&user, &pass, &resp);
 err:
 	free(user.s);
 	free(slop.s);
@@ -608,14 +479,6 @@ auth_setup(int argc, const char **argv)
 	if (argc == 1)
 		return;
 
-	if (argc < 4) {
-		log_write(LOG_ERR, "invalid number of parameters given");
-		return;
-	}
-
-	auth_check = argv[2];
-	auth_sub = ((const char **)argv) + 3;
-
 	if (domainvalid(argv[1])) {
 		const char *msg[] = { "domainname for auth invalid: ", argv[1], NULL };
 
@@ -623,13 +486,6 @@ auth_setup(int argc, const char **argv)
 		return;
 	}
 
-	if (access(auth_check, X_OK) == 0) {
+	if (auth_backend_setup(argc, argv) == 0)
 		auth_host = argv[1];
-	} else {
-		const char *msg[] = { "checkpassword program '", auth_check,
-				"' is not executable, error was: ",
-				strerror(errno), NULL };
-
-		log_writen(LOG_WARNING, msg);
-	}
 }

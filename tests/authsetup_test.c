@@ -253,12 +253,13 @@ test_setup_errors(void)
 	int ret = 0;
 	const char *err_invalid_domain[] = { "domainname for auth invalid: ", "@",
 			NULL };
+	const char *args_invalid_count[] = { "Qsmtpd", "foo.example.com" };
 	const char *args_invalid_domain[] = { "Qsmtpd", "@", "", "" };
 
 	testcase_setup_log_write(test_log_write);
 
 	log_single_expect = "invalid number of parameters given";
-	auth_setup(2, NULL);
+	auth_setup(2, args_invalid_count);
 	log_single_expect = NULL;
 
 	testcase_setup_log_writen(test_log_writen);
