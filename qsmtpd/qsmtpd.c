@@ -93,9 +93,6 @@ unsigned int goodrcpt;			/**< number of valid recipients */
 int badbounce;				/**< bounce message with more than one recipient */
 struct xmitstat xmitstat;		/**< This contains some flags describing the transmission and it's status. */
 char *protocol;				/**< the protocol string to use (e.g. "ESMTP") */
-const char *auth_host;			/**< hostname for auth */
-const char *auth_check;			/**< checkpassword or one of his friends for auth */
-const char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
 const char **globalconf;		/**< contents of the global "filterconf" file (or NULL) */
 string heloname;			/**< the fqdn to show in helo */
 string msgidhost;			/**< the fqdn to use if a message-id is added */
@@ -1409,24 +1406,8 @@ main(int argc, char **argv)
 
 	/* Check if parameters given. If they are given assume they are for auth checking */
 	auth_host = NULL;
-	if (argc >= 4) {
-		auth_check = argv[2];
-		auth_sub = ((const char **)argv) + 3;
-		if (domainvalid(argv[1])) {
-			const char *msg[] = {"domainname for auth invalid", auth_host, NULL};
-
-			log_writen(LOG_WARNING, msg);
-		} else {
-			if (access(auth_check, X_OK) == 0) {
-				auth_host = argv[1];
-			} else {
-				const char *msg[] = {"checkpassword program '", auth_check, "' is not executable, error was '", strerror(errno), "'", NULL};
-
-				log_writen(LOG_WARNING, msg);
-			}
-		}
-	} else if (argc != 1) {
-		log_write(LOG_ERR, "invalid number of parameters given");
+	if (argc > 1) {
+		auth_setup(argc, argv);
 	}
 	if (connsetup() < 0)
 		flagbogus = errno;

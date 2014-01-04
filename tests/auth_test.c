@@ -21,9 +21,6 @@ SSL *ssl = NULL;
 unsigned long sslauth = 0;
 char linein[1002];
 size_t linelen;
-const char *auth_host;
-const char *auth_check;
-const char **auth_sub;
 
 enum smtp_state {
 	SMTP_AUTH,

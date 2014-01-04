@@ -57,9 +57,6 @@ extern struct smtpcomm commands[];	/**< all supported SMTP commands */
 
 extern struct xmitstat xmitstat;
 extern char *protocol;
-extern const char *auth_host;		/**< hostname for auth */
-extern const char *auth_check;		/**< checkpassword or one of his friends for auth */
-extern const char **auth_sub;		/**< subprogram and arguments to be invoked by auth_check (usually /bin/true) */
 extern string heloname;			/**< the fqdn to show in helo */
 extern string msgidhost;			/**< the fqdn to use if a message-id is added */
 extern string liphost;			/**< replacement domain if to address is <foo@[ip]> */

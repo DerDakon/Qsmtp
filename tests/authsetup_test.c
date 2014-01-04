@@ -15,9 +15,6 @@
 
 struct xmitstat xmitstat;
 unsigned long sslauth = 0;
-const char *auth_host = "auth.example.com";
-const char *auth_check = NULL;
-const char **auth_sub = NULL;
 
 static const char loginonly[] = " LOGIN\r\n";
 static const char plainonly[] = " PLAIN\r\n";
@@ -199,6 +196,8 @@ int main(int argc, char **argv)
 		write(2, errmsg, strlen(errmsg));
 		return EINVAL;
 	}
+
+	auth_host = "auth.example.com";
 
 	if (chdir(argv[1]) != 0) {
 		const char *errmsg = "cannot chdir() to given directory\n";
