@@ -25,7 +25,7 @@
 #include "control.h"
 
 static const char tempnoauth[] = "454 4.3.0 AUTH temporaryly not available\r\n";
-const char *auth_host;			/**< hostname for auth */
+static const char *auth_host;			/**< hostname for auth */
 const char *auth_check;			/**< checkpassword or one of his friends for auth */
 const char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
 
@@ -601,8 +601,13 @@ auth_permitted(void)
 }
 
 void
-auth_setup(int argc, char **argv)
+auth_setup(int argc, const char **argv)
 {
+	auth_host = NULL;
+
+	if (argc == 1)
+		return;
+
 	if (argc < 4) {
 		log_write(LOG_ERR, "invalid number of parameters given");
 		return;
@@ -612,18 +617,19 @@ auth_setup(int argc, char **argv)
 	auth_sub = ((const char **)argv) + 3;
 
 	if (domainvalid(argv[1])) {
-		const char *msg[] = { "domainname for auth invalid: ", auth_host, NULL };
+		const char *msg[] = { "domainname for auth invalid: ", argv[1], NULL };
 
 		log_writen(LOG_WARNING, msg);
-	} else {
-		if (access(auth_check, X_OK) == 0) {
-			auth_host = argv[1];
-		} else {
-			const char *msg[] = { "checkpassword program '", auth_check,
-					"' is not executable, error was: ",
-					strerror(errno), NULL };
+		return;
+	}
 
-			log_writen(LOG_WARNING, msg);
-		}
+	if (access(auth_check, X_OK) == 0) {
+		auth_host = argv[1];
+	} else {
+		const char *msg[] = { "checkpassword program '", auth_check,
+				"' is not executable, error was: ",
+				strerror(errno), NULL };
+
+		log_writen(LOG_WARNING, msg);
 	}
 }

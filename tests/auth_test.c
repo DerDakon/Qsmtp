@@ -240,6 +240,8 @@ send_data_plain(void)
 int
 main(int argc, char **argv)
 {
+	const char *argv_auth[] = { argv[0], "foo.example.com", argv[1], autharg };
+
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_net_readline(test_net_readline);
 	testcase_ignore_log_write();
@@ -273,11 +275,7 @@ main(int argc, char **argv)
 		return EINVAL;
 	}
 
-	auth_check = argv[1];
-	auth_host = "foo.example.com";
-	auth_sub = malloc(sizeof(*auth_sub) * 2);
-	auth_sub[0] = autharg;
-	auth_sub[1] = NULL;
+	auth_setup(4, argv_auth);
 
 	while (users[authtry].testname != NULL) {
 		int errcnt = 0;
@@ -341,7 +339,6 @@ main(int argc, char **argv)
 		}
 
 		free(xmitstat.authname.s);
-		free(auth_sub);
 
 		return errcnt;
 	}

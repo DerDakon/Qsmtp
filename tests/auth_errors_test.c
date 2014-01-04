@@ -112,17 +112,17 @@ check_all_msgs(void)
 }
 
 int
-main(void)
+main(int argc __attribute__((unused)), char **argv)
 {
 	const char *invalid_msg = "501 5.5.4 malformed auth input\r\n";
 	const char *cancel_msg = "501 5.0.0 auth exchange cancelled\r\n";
+	const char *argv_auth[] = { argv[0], "foo.example.com", "/bin/false", "" };
 
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_net_readline(test_net_readline);
 	testcase_setup_log_write(test_log_write);
 
-	auth_check = "/bin/false";
-	auth_host = "foo.example.com";
+	auth_setup(4, argv_auth);
 
 	/* invalid AUTH mechanism */
 	strcpy(linein, "AUTH BOGUS");

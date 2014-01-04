@@ -1404,11 +1404,9 @@ main(int argc, char **argv)
 
 	submission_mode = (localport != NULL) && (strcmp(localport, "587") == 0);
 
-	/* Check if parameters given. If they are given assume they are for auth checking */
-	auth_host = NULL;
-	if (argc > 1) {
-		auth_setup(argc, argv);
-	}
+	/* Assume all given parameters are for auth checking */
+	auth_setup(argc, (const char **) argv);
+
 	if (connsetup() < 0)
 		flagbogus = errno;
 	smtploop();
