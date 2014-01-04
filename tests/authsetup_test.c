@@ -177,6 +177,7 @@ test_no_auth_yet(void)
 
 	auth_setup(4, argv_auth);
 	sslauth = 1;
+	authstr = smtp_authstring();
 	if (authstr != NULL) {
 		fprintf(stderr, "smtp_authstring() with sslauth == 1 and ssl == NULL returned string %s instead of NULL\n",
 				authstr);
