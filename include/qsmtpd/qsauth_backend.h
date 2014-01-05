@@ -8,7 +8,18 @@ struct string;
 
 extern int auth_backend_setup(int argc, const char **argv);
 
-extern int auth_backend_execute(struct string *user, struct string *pass, struct string *resp);
+/**
+ * @brief authenticate a user with the given credentials
+ * @param user user id
+ * @param pass password
+ * @param resp additional response (e.g. for CRAM authentication)
+ * @retval -1 processing error (errno is set)
+ * @retval 0 user successfully authenticated
+ * @retval 1 authentication error (i.e. invalid user/pass combination)
+ *
+ * resp may be passed as NULL if no additional information has been collected
+ */
+extern int auth_backend_execute(struct string *user, struct string *pass, const struct string *resp);
 
 extern const char *tempnoauth;
 

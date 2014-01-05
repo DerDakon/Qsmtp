@@ -51,7 +51,7 @@ static int err_write(void)
 #define WRITE(a,b) if (write(pi[1], (a), (b)) < 0) { fun = err_write; goto out; }
 
 int
-auth_backend_execute(struct string *user, struct string *pass, struct string *resp)
+auth_backend_execute(struct string *user, struct string *pass, const struct string *resp)
 {
 	pid_t child;
 	int wstat;
@@ -83,7 +83,8 @@ auth_backend_execute(struct string *user, struct string *pass, struct string *re
 		memset(pass->s, 0, pass->len);
 		free(pass->s);
 		free(user->s);
-		free(resp->s);
+		if (resp != NULL)
+			free(resp->s);
 
 		memset(&sa, 0, sizeof(sa));
 		sa.sa_handler = SIG_DFL;
@@ -103,10 +104,9 @@ auth_backend_execute(struct string *user, struct string *pass, struct string *re
 	memset(pass->s, 0, pass->len);
 	free(pass->s);
 	STREMPTY(*pass);
-	WRITE(resp->s, resp->len);
+	if (resp != NULL)
+		WRITE(resp->s, resp->len);
 	WRITE("", 1);
-	free(resp->s);
-	STREMPTY(*resp);
 	while (close(pi[1])) {
 		if (errno != EINTR)
 			goto out;
@@ -133,7 +133,6 @@ out:
 		memset(pass->s, 0, pass->len);
 		free(pass->s);
 	}
-	free(resp->s);
 	if (fun) {
 		/* only free user.s here, it will be copied to
 		 * xmitstat.authname.s on success */

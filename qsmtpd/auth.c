@@ -44,7 +44,6 @@ static int err_input(void)
 
 static string user;
 static string pass;
-static string resp;
 
 static int
 authgetl(string *authin)
@@ -133,7 +132,7 @@ auth_login(void)
 		err_input();
 		goto err;
 	}
-	return auth_backend_execute(&user, &pass, &resp);
+	return auth_backend_execute(&user, &pass, NULL);
 err:
 	free(user.s);
 	return -1;
@@ -194,7 +193,7 @@ auth_plain(void)
 	}
 	free(slop.s);
 
-	return auth_backend_execute(&user, &pass, &resp);
+	return auth_backend_execute(&user, &pass, NULL);
 err:
 	free(user.s);
 	free(slop.s);
@@ -209,7 +208,7 @@ auth_cram(void)
 	unsigned int k, l, m;
 	char *s, t[ULSTRLEN];
 	const char *netmsg[] = { "334 ", NULL, NULL };
-	string authin, slop;
+	string authin, slop, resp;
 	char unique[83];
 
 	ultostr(getpid(), t);
@@ -281,7 +280,9 @@ auth_cram(void)
 		goto err;
 	}
 	free(slop.s);
-	return authenticate();
+	r = auth_backend_execute(&user, &pass, &resp);
+	free(resp.s);
+	return r;
 err:
 	memset(slop.s, 0, slop.len);
 	free(slop.s);
@@ -319,7 +320,6 @@ smtp_auth(void)
 
 	STREMPTY(user);
 	STREMPTY(pass);
-	STREMPTY(resp);
 
 	for (i = 0; authcmds[i].text; i++) {
 		if (!strncasecmp(authcmds[i].text, type, strlen(authcmds[i].text))) {
