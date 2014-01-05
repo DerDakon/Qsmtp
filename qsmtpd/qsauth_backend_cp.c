@@ -48,7 +48,12 @@ static int err_write(void)
 	return -1;
 }
 
-#define WRITE(a,b) if (write(pi[1], (a), (b)) < 0) { return err_write(); }
+#define WRITE(a,b) \
+	do { \
+		if (write(pi[1], (a), (b)) < 0) { \
+			return err_write(); \
+		} \
+	} while (0)
 
 int
 auth_backend_execute(const struct string *user, const struct string *pass, const struct string *resp)
