@@ -20,32 +20,32 @@ static int err_child(void)
 {
 	log_write(LOG_ERR, "auth child crashed");
 	if (!netwrite(tempnoauth))
-		errno = EDONE;
-	return -1;
+		return -EDONE;
+	return -errno;
 }
 
 static int err_fork(void)
 {
 	log_write(LOG_ERR, "cannot fork auth");
 	if (!netwrite(tempnoauth))
-		errno = EDONE;
-	return -1;
+		return -EDONE;
+	return -errno;
 }
 
 static int err_pipe(void)
 {
 	log_write(LOG_ERR, "cannot create pipe for authentication");
 	if (!netwrite(tempnoauth))
-		errno = EDONE;
-	return -1;
+		return -EDONE;
+	return -errno;
 }
 
 static int err_write(void)
 {
 	log_write(LOG_ERR, "pipe error while authenticating");
 	if (!netwrite(tempnoauth))
-		errno = EDONE;
-	return -1;
+		return -EDONE;
+	return -errno;
 }
 
 #define WRITE(a,b) \

@@ -134,6 +134,10 @@ auth_login(struct string *user)
 	free(pass.s);
 	if (r != 0)
 		free(user->s);
+	if (r < 0) {
+		errno = -r;
+		return -1;
+	}
 	return r;
 err:
 	free(user->s);
@@ -201,6 +205,10 @@ auth_plain(struct string *user)
 	free(pass.s);
 	if (r != 0)
 		free(user->s);
+	if (r < 0) {
+		errno = -r;
+		return -1;
+	}
 	return r;
 err:
 	free(user->s);
@@ -295,6 +303,10 @@ auth_cram(struct string *user)
 	free(resp.s);
 	if (r != 0)
 		free(user->s);
+	if (r < 0) {
+		errno = -r;
+		return -1;
+	}
 	return r;
 err:
 	memset(slop.s, 0, slop.len);
