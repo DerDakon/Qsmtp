@@ -42,8 +42,6 @@ static int err_input(void)
 	return -1;
 }
 
-static string user;
-
 static int
 authgetl(string *authin)
 {
@@ -90,19 +88,19 @@ authgetl(string *authin)
 }
 
 static int
-auth_login(void)
+auth_login(struct string *user)
 {
 	string authin, pass;
 	int r;
 
 	if (linelen > 11) {
-		r = b64decode(linein + 11, linelen - 11, &user);
+		r = b64decode(linein + 11, linelen - 11, user);
 	} else {
 		if (netwrite("334 VXNlcm5hbWU6\r\n")) /* Username: */
 			return -1;
 		if (authgetl(&authin) < 0)
 			return -1;
-		r = b64decode(authin.s, authin.len, &user);
+		r = b64decode(authin.s, authin.len, user);
 		free(authin.s);
 	}
 	if (r > 0)
@@ -125,23 +123,23 @@ auth_login(void)
 		goto err;
 	}
 
-	if (!user.len || !pass.len) {
+	if (!user->len || !pass.len) {
 		memset(pass.s, 0, pass.len);
 		free(pass.s);
 		err_input();
 		goto err;
 	}
-	r = auth_backend_execute(&user, &pass, NULL);
+	r = auth_backend_execute(user, &pass, NULL);
 	memset(pass.s, 0, pass.len);
 	free(pass.s);
 	return r;
 err:
-	free(user.s);
+	free(user->s);
 	return -1;
 }
 
 static int
-auth_plain(void)
+auth_plain(struct string *user)
 {
 	int r;
 	unsigned int id = 0;
@@ -173,12 +171,12 @@ auth_plain(void)
 	if (slop.len > id + 1) {
 		char *s = slop.s + id + 1;
 		/* one byte longer so we can also copy the trailing '\0' */
-		r = newstr(&user, strlen(s) + 1);
+		r = newstr(user, strlen(s) + 1);
 		if (r)
 			goto err;
-		memcpy(user.s, s, user.len);
-		if (slop.len > id + user.len + 1) {
-			s += user.len;
+		memcpy(user->s, s, user->len);
+		if (slop.len > id + user->len + 1) {
+			s += user->len;
 
 			r = newstr(&pass, strlen(s) + 1);
 			if (r)
@@ -186,9 +184,9 @@ auth_plain(void)
 			memcpy(pass.s, s, pass.len);
 			pass.len--;
 		}
-		user.len--;
+		user->len--;
 	}
-	if (!user.len || !pass.len) {
+	if (!user->len || !pass.len) {
 		memset(pass.s, 0, pass.len);
 		free(pass.s);
 		err_input();
@@ -196,19 +194,19 @@ auth_plain(void)
 	}
 	free(slop.s);
 
-	r = auth_backend_execute(&user, &pass, NULL);
+	r = auth_backend_execute(user, &pass, NULL);
 	memset(pass.s, 0, pass.len);
 	free(pass.s);
 	return r;
 err:
-	free(user.s);
+	free(user->s);
 	free(slop.s);
 	return -1;
 }
 
 #ifdef AUTHCRAM
 static int
-auth_cram(void)
+auth_cram(struct string *user)
 {
 	int i, r;
 	unsigned int k, l, m;
@@ -272,23 +270,23 @@ auth_cram(void)
 		s++;
 	slop.s[i] = 0;
 
-	if (newstr(&user, i))
+	if (newstr(user, i))
 		goto err;
 	k = strlen(s);
 	if (newstr(&resp, k)) {
-		free(user.s);
+		free(user->s);
 		goto err;
 	}
-	memcpy(user.s, slop.s, i + 1);
+	memcpy(user->s, slop.s, i + 1);
 	memcpy(resp.s, s, k + 1);
 
-	if (!user.len || !resp.len) {
+	if (!user->len || !resp.len) {
 		free(resp.s);
 		err_input();
 		goto err;
 	}
 	free(slop.s);
-	r = auth_backend_execute(&user, &challenge, &resp);
+	r = auth_backend_execute(user, &challenge, &resp);
 	free(challenge.s);
 	free(resp.s);
 	return r;
@@ -302,7 +300,7 @@ err:
 
 static struct authcmd {
 	char *text;
-	int (*fun)(void);
+	int (*fun)(struct string *);
 } authcmds[] = {
 	{	.text = "login",	.fun = auth_login },
 	{	.text = "plain",	.fun = auth_plain },
@@ -326,18 +324,18 @@ smtp_auth(void)
 	if (xmitstat.authname.len || !auth_permitted())
 		return 1;
 
-	STREMPTY(user);
+	STREMPTY(xmitstat.authname);
 
 	for (i = 0; authcmds[i].text; i++) {
 		if (!strncasecmp(authcmds[i].text, type, strlen(authcmds[i].text))) {
-			switch (authcmds[i].fun()) {
+			switch (authcmds[i].fun(&xmitstat.authname)) {
 			case 0:
-				xmitstat.authname.s = user.s;
-				xmitstat.authname.len = user.len;
 				return netwrite("235 2.0.0 ok, go ahead\r\n") ? errno : 0;
 			case 1:
+				STREMPTY(xmitstat.authname);
 				return netwrite("535 5.7.0 authorization failed\r\n") ? errno : EDONE;
 			case -1:
+				STREMPTY(xmitstat.authname);
 				return errno;
 			}
 		}
