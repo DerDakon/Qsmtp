@@ -13,7 +13,7 @@ extern int auth_backend_setup(int argc, const char **argv);
  * @param user user id
  * @param pass password
  * @param resp additional response (e.g. for CRAM authentication)
- * @retval -1 processing error (errno is set)
+ * @retval <0 processing error (negative error code is returned)
  * @retval 0 user successfully authenticated
  * @retval 1 authentication error (i.e. invalid user/pass combination)
  *
