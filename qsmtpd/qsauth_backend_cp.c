@@ -51,7 +51,7 @@ static int err_write(void)
 #define WRITE(a,b) if (write(pi[1], (a), (b)) < 0) { fun = err_write; goto out; }
 
 int
-auth_backend_execute(struct string *user, const struct string *pass, const struct string *resp)
+auth_backend_execute(const struct string *user, const struct string *pass, const struct string *resp)
 {
 	pid_t child;
 	int wstat;
@@ -119,17 +119,13 @@ auth_backend_execute(struct string *user, const struct string *pass, const struc
 		goto out;
 	}
 	if (WEXITSTATUS(wstat)) {
-		free(user->s);
 		sleep(5);
 		return 1;
 	} /* no */
 out:
-	if (fun) {
-		/* only free user.s here, it will be copied to
-		 * xmitstat.authname.s on success */
-		free(user->s);
+	if (fun)
 		return fun();
-	}
+
 	return 0; /* yes */
 }
 

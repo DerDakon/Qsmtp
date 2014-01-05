@@ -132,6 +132,8 @@ auth_login(struct string *user)
 	r = auth_backend_execute(user, &pass, NULL);
 	memset(pass.s, 0, pass.len);
 	free(pass.s);
+	if (r != 0)
+		free(user->s);
 	return r;
 err:
 	free(user->s);
@@ -197,6 +199,8 @@ auth_plain(struct string *user)
 	r = auth_backend_execute(user, &pass, NULL);
 	memset(pass.s, 0, pass.len);
 	free(pass.s);
+	if (r != 0)
+		free(user->s);
 	return r;
 err:
 	free(user->s);
@@ -289,6 +293,8 @@ auth_cram(struct string *user)
 	r = auth_backend_execute(user, &challenge, &resp);
 	free(challenge.s);
 	free(resp.s);
+	if (r != 0)
+		free(user->s);
 	return r;
 err:
 	memset(slop.s, 0, slop.len);
