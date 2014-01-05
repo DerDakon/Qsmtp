@@ -48,7 +48,7 @@ static int err_write(void)
 	return -1;
 }
 
-#define WRITE(a,b) if (write(pi[1], (a), (b)) < 0) { fun = err_write; goto out; }
+#define WRITE(a,b) if (write(pi[1], (a), (b)) < 0) { return err_write(); }
 
 int
 auth_backend_execute(const struct string *user, const struct string *pass, const struct string *resp)
@@ -57,18 +57,15 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 	int wstat;
 	int pi[2];
 	struct sigaction sa;
-	int (*fun)(void) = NULL;
 
-	if (pipe(pi) == -1) {
-		fun = err_pipe;
-		goto out;
-	}
+	if (pipe(pi) == -1)
+		return err_pipe();
+
 	switch(child = fork_clean()) {
 	case -1:
 		while ((close(pi[0]) < 0) && (errno == EINTR)) {}
 		while ((close(pi[1]) < 0) && (errno == EINTR)) {}
-		fun = err_fork;
-		goto out;
+		return err_fork();
 	case 0:
 		while (close(pi[1])) {
 			if (errno != EINTR)
@@ -95,7 +92,7 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 	}
 	while (close(pi[0])) {
 		if (errno != EINTR)
-			goto out;
+			return err_write();
 	}
 
 	WRITE(user->s, user->len + 1);
@@ -103,28 +100,23 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 	if (resp != NULL)
 		WRITE(resp->s, resp->len);
 	WRITE("", 1);
+
 	while (close(pi[1])) {
 		if (errno != EINTR)
-			goto out;
+			return err_write();
 	}
 
 	while (waitpid(child, &wstat, 0) == -1) {
-		if (errno != EINTR) {
-			fun = err_child;
-			goto out;
-		}
+		if (errno != EINTR)
+			return err_child();
 	}
-	if (!WIFEXITED(wstat)) {
-		fun = err_child;
-		goto out;
-	}
+	if (!WIFEXITED(wstat))
+		return err_child();
+
 	if (WEXITSTATUS(wstat)) {
 		sleep(5);
-		return 1;
-	} /* no */
-out:
-	if (fun)
-		return fun();
+		return 1; /* no */
+	}
 
 	return 0; /* yes */
 }
