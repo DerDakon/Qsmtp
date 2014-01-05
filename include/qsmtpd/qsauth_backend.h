@@ -19,7 +19,7 @@ extern int auth_backend_setup(int argc, const char **argv);
  *
  * resp may be passed as NULL if no additional information has been collected
  */
-extern int auth_backend_execute(struct string *user, struct string *pass, const struct string *resp);
+extern int auth_backend_execute(struct string *user, const struct string *pass, const struct string *resp);
 
 extern const char *tempnoauth;
 

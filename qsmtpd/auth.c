@@ -43,7 +43,6 @@ static int err_input(void)
 }
 
 static string user;
-static string pass;
 
 static int
 authgetl(string *authin)
@@ -93,7 +92,7 @@ authgetl(string *authin)
 static int
 auth_login(void)
 {
-	string authin;
+	string authin, pass;
 	int r;
 
 	if (linelen > 11) {
@@ -132,7 +131,10 @@ auth_login(void)
 		err_input();
 		goto err;
 	}
-	return auth_backend_execute(&user, &pass, NULL);
+	r = auth_backend_execute(&user, &pass, NULL);
+	memset(pass.s, 0, pass.len);
+	free(pass.s);
+	return r;
 err:
 	free(user.s);
 	return -1;
@@ -143,9 +145,10 @@ auth_plain(void)
 {
 	int r;
 	unsigned int id = 0;
-	string slop;
-
+	string slop, pass;
+	
 	STREMPTY(slop);
+	STREMPTY(pass);
 
 	if (linelen > 11) {
 		r = b64decode(linein + 11, linelen - 11, &slop);
@@ -193,7 +196,10 @@ auth_plain(void)
 	}
 	free(slop.s);
 
-	return auth_backend_execute(&user, &pass, NULL);
+	r = auth_backend_execute(&user, &pass, NULL);
+	memset(pass.s, 0, pass.len);
+	free(pass.s);
+	return r;
 err:
 	free(user.s);
 	free(slop.s);
@@ -208,7 +214,7 @@ auth_cram(void)
 	unsigned int k, l, m;
 	char *s, t[ULSTRLEN];
 	const char *netmsg[] = { "334 ", NULL, NULL };
-	string authin, slop, resp;
+	string authin, challenge, slop, resp;
 	char unique[83];
 
 	ultostr(getpid(), t);
@@ -222,19 +228,21 @@ auth_cram(void)
 	s += m;
 	*s++ = '@';
 
+	STREMPTY(challenge);
+
 	/* (s - unique) is strlen(unique) but faster (and unique is not '\0'-terminated here!) */
 	k = (s - unique);
 	m = strlen(auth_host);
 	/* '<' + unique + auth_host + '>'+ '\0' */
 	l = 1 + k + m + 1 + 1;
-	if ( (r = newstr(&pass, l)) )
+	if ( (r = newstr(&challenge, l)) )
 		return r;
-	pass.s[0] = '<';
-	memcpy(pass.s + 1, unique, k);
-	memcpy(pass.s + 1 + k, auth_host, m);
-	pass.s[1 + k + m] = '>';
-	pass.s[1 + k + m + 1] = '\0';
-	if (b64encode(&pass, &slop, -1) < 0)
+	challenge.s[0] = '<';
+	memcpy(challenge.s + 1, unique, k);
+	memcpy(challenge.s + 1 + k, auth_host, m);
+	challenge.s[1 + k + m] = '>';
+	challenge.s[1 + k + m + 1] = '\0';
+	if (b64encode(&challenge, &slop, -1) < 0)
 		goto err;
 
 	netmsg[1] = slop.s;
@@ -280,14 +288,14 @@ auth_cram(void)
 		goto err;
 	}
 	free(slop.s);
-	r = auth_backend_execute(&user, &pass, &resp);
+	r = auth_backend_execute(&user, &challenge, &resp);
+	free(challenge.s);
 	free(resp.s);
 	return r;
 err:
 	memset(slop.s, 0, slop.len);
 	free(slop.s);
-	/* don't need to memset pass here: it contains only our random challenge */
-	free(pass.s);
+	free(challenge.s);
 	return -1;
 }
 #endif
@@ -319,7 +327,6 @@ smtp_auth(void)
 		return 1;
 
 	STREMPTY(user);
-	STREMPTY(pass);
 
 	for (i = 0; authcmds[i].text; i++) {
 		if (!strncasecmp(authcmds[i].text, type, strlen(authcmds[i].text))) {
