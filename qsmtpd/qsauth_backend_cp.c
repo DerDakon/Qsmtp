@@ -118,10 +118,8 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 	if (!WIFEXITED(wstat))
 		return err_child();
 
-	if (WEXITSTATUS(wstat)) {
-		sleep(5);
+	if (WEXITSTATUS(wstat))
 		return 1; /* no */
-	}
 
 	return 0; /* yes */
 }

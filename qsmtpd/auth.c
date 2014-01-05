@@ -339,6 +339,7 @@ smtp_auth(void)
 				return netwrite("235 2.0.0 ok, go ahead\r\n") ? errno : 0;
 			case 1:
 				STREMPTY(xmitstat.authname);
+				sleep(5);
 				return netwrite("535 5.7.0 authorization failed\r\n") ? errno : EDONE;
 			case -1:
 				STREMPTY(xmitstat.authname);
