@@ -124,8 +124,10 @@ auth_login(struct string *user)
 	}
 
 	if (!user->len || !pass.len) {
-		memset(pass.s, 0, pass.len);
-		free(pass.s);
+		if (pass.s != NULL) {
+			memset(pass.s, 0, pass.len);
+			free(pass.s);
+		}
 		err_input();
 		goto err;
 	}
