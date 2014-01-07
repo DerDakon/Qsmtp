@@ -277,7 +277,7 @@ auth_cram(struct string *user)
 	}
 
 	s = strchr(slop.s, ' ');
-	if (!s) {
+	if ((s == NULL) || (s == slop.s)) {
 		err_input();
 		goto err;
 	}
@@ -286,21 +286,20 @@ auth_cram(struct string *user)
 		s++;
 	slop.s[i] = 0;
 
-	if (newstr(user, i))
+	if (newstr(user, ++i))
 		goto err;
 	k = strlen(s);
-	if (newstr(&resp, k)) {
+	if ((k == 0) || (newstr(&resp, ++k) != 0)) {
 		free(user->s);
+		if (k == 0)
+			err_input();
 		goto err;
 	}
-	memcpy(user->s, slop.s, i + 1);
-	memcpy(resp.s, s, k + 1);
+	memcpy(user->s, slop.s, i);
+	memcpy(resp.s, s, k);
+	user->len--;
+	resp.len--;
 
-	if (!user->len || !resp.len) {
-		free(resp.s);
-		err_input();
-		goto err;
-	}
 	free(slop.s);
 	r = auth_backend_execute(user, &challenge, &resp);
 	free(challenge.s);
