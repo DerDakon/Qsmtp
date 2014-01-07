@@ -66,7 +66,7 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 	if (pipe(pi) == -1)
 		return err_pipe();
 
-	switch(child = fork_clean()) {
+	switch (child = fork_clean()) {
 	case -1:
 		while ((close(pi[0]) < 0) && (errno == EINTR)) {}
 		while ((close(pi[1]) < 0) && (errno == EINTR)) {}
@@ -125,7 +125,7 @@ auth_backend_setup(int argc, const char **argv)
 		log_write(LOG_ERR, "invalid number of parameters given");
 		return -EINVAL;
 	}
-	
+
 	auth_check = argv[2];
 	auth_sub = ((const char **)argv) + 3;
 

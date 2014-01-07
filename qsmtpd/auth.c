@@ -152,7 +152,7 @@ auth_plain(struct string *user)
 	int r;
 	unsigned int id = 0;
 	string slop, pass;
-	
+
 	STREMPTY(slop);
 	STREMPTY(pass);
 
