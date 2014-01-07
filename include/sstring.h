@@ -31,6 +31,11 @@ static inline int newstr(string *, const size_t) __attribute__ ((nonnull (1)));
 static inline int
 newstr(string *s, const size_t len)
 {
+	if (len == 0) {
+		STREMPTY(*s);
+		return 0;
+	}
+
 	s->len = len;
 	s->s = malloc(len);
 	return (len && !s->s) ? -1 : 0;
