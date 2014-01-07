@@ -336,6 +336,10 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		}
 
 		tmp = malloc(v + 1);
+		if (tmp == NULL) {
+			free(news);
+			return -1;
+		}
 		dot = news;
 		nl = v;
 		dc = num - 1;
