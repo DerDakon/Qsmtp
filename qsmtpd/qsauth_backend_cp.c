@@ -82,12 +82,6 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 			}
 		}
 
-		memset((char *)pass->s, 0, pass->len);
-		free(pass->s);
-		free(user->s);
-		if (resp != NULL)
-			free(resp->s);
-
 		memset(&sa, 0, sizeof(sa));
 		sa.sa_handler = SIG_DFL;
 		sigemptyset(&(sa.sa_mask));
