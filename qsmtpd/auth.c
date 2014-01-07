@@ -394,11 +394,13 @@ smtp_authstring(void)
 	i = 0;
 	slen = 1;
 	while (authcmds[i].text != NULL) {
+		/* +1 for the leading space of every entry */
 		slen += strlen(authcmds[i].text) + 1;
 		i++;
 	}
 
-	ret = malloc(slen + 2);
+	/* +3 for trailing CRLF\0 */
+	ret = malloc(slen + 3);
 	if (ret == NULL) {
 		free(confbuf);
 		return NULL;
