@@ -18,8 +18,6 @@
 #include <unistd.h>
 #include <openssl/ssl.h>
 
-#include "auth_users.h"
-
 struct xmitstat xmitstat;
 SSL *ssl = NULL;
 unsigned long sslauth = 0;

@@ -96,7 +96,7 @@ TARGET_LINK_LIBRARIES(testcase_auth_be_cp
 		${MEMCHECK_LIBRARIES})
 
 ADD_TEST(NAME "AUTH_BE_chkpw"
-		COMMAND testcase_auth_be_cp)
+		COMMAND testcase_auth_be_cp "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy")
 
 ADD_EXECUTABLE(testcase_auth
 		auth_test.c
@@ -118,9 +118,6 @@ FOREACH (AUTHTEST short email long)
 		ENDFOREACH (AUTHMECH)
 	ENDFOREACH (AUTHFLAG)
 ENDFOREACH (AUTHTEST)
-
-ADD_TEST(NAME "AUTH-LOGIN-errors"
-		COMMAND testcase_auth "${CMAKE_CURRENT_BINARY_DIR}/auth_dummy" errors LOGIN wrong)
 
 ADD_EXECUTABLE(testcase_matchnet
 		matchnet_test.c

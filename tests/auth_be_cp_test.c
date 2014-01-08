@@ -6,6 +6,7 @@
 #include <qsmtpd/qsauth_backend.h>
 #include <sstring.h>
 
+#include "auth_users.h"
 #include "test_io/testcase_io.h"
 
 #include <stdio.h>
@@ -90,6 +91,9 @@ pid_t fork_clean(void)
 	return fork();
 }
 
+/**
+ * @brief test when fork fails
+ */
 static void
 test_fork_fail(void)
 {
@@ -110,13 +114,40 @@ test_fork_fail(void)
 	check_all_msgs();
 }
 
-int
-main(void)
+/**
+ * @brief test abort in helper
+ */
+static void
+test_chkpw_abort(void)
 {
+	struct string user = { .s = (char *)users[0].username, .len = strlen(users[0].username) };
+	struct string pass = { .s = (char *)users[0].password, .len = strlen(users[0].password) };
+
+	fork_success = 1;
+	expected_log = "auth child crashed";
+	expected_net_write = tempnoauth;
+
+	if (auth_backend_execute(&user, &pass, NULL) != -EDONE) {
+		fprintf(stderr, "auth_backend_execute() did not return -EDONE after aborted child\n");
+		err++;
+	}
+
+	check_all_msgs();
+}
+
+int
+main(int argc, char **argv)
+{
+	if (argc != 2) {
+		fprintf(stderr, "Usage: %s auth_dummy\n", argv[0]);
+		return 1;
+	}
+
 	testcase_setup_log_write(test_log_write);
 	testcase_setup_netnwrite(test_netnwrite);
 
 	test_fork_fail();
+	test_chkpw_abort();
 
 	return err;
 }
