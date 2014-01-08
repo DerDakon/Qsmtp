@@ -224,7 +224,8 @@ err:
 static int
 auth_cram(struct string *user)
 {
-	int i, r;
+	size_t i;
+	int r;
 	unsigned int k, l, m;
 	char *s, t[ULSTRLEN];
 	const char *netmsg[] = { "334 ", NULL, NULL };
@@ -292,18 +293,27 @@ auth_cram(struct string *user)
 		goto err;
 	}
 
-	if (newstr(user, i + 1))
-		goto err;
-
+	user->s = slop.s;
+	user->len = i;
 	slop.s[i] = '\0';
-	memcpy(user->s, slop.s, user->len--);
 	resp.s = s;
 
 	r = auth_backend_execute(user, &challenge, &resp);
-	free(slop.s);
 	free(challenge.s);
-	if (r != 0)
-		free(user->s);
+	if (r != 0) {
+		free(slop.s);
+	} else {
+		/* truncate the username to what is really needed */
+		char *tmp = realloc(user->s, user->len + 1);
+
+		if (tmp != NULL)
+			user->s = tmp;
+		else
+			/* if truncating failed just keep the old pointer,
+			 * this just has extra stuff at the end. Clear that. */
+			memset(resp.s, 0, resp.len);
+	}
+
 	if (r < 0) {
 		errno = -r;
 		return -1;
