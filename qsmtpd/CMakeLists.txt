@@ -5,6 +5,7 @@ ADD_LIBRARY(Qsmtpd_auth_checkpassword STATIC
 )
 
 TARGET_LINK_LIBRARIES(Qsmtpd_auth_checkpassword
+	qsmtp_io_lib
 	${MEMCHECK_LIBRARIES}
 )
 
