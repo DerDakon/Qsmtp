@@ -41,6 +41,9 @@ int main(int argc, const char **argv)
 	if (strcmp(users[0].username, user) == 0)
 		abort();
 
+	if (strlen(resp) != 0)
+		return 1;
+
 	while (users[i].username != NULL) {
 		if ((strcmp(users[i].username, user) == 0) &&
 				(strcmp(users[i].password, pass) == 0))
