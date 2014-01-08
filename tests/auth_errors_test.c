@@ -221,20 +221,6 @@ main(int argc __attribute__((unused)), char **argv)
 
 	check_all_msgs();
 
-	/* syntactically valid, but will cause a fork error */
-	strcpy(linein, "AUTH PLAIN AGEAYg==");
-	linelen = strlen(linein);
-
-	expected_net_write1 = "454 4.3.0 AUTH temporaryly not available\r\n";
-	expected_log = "cannot fork auth";
-
-	if (smtp_auth() != EDONE) {
-		fprintf(stderr, "AUTH PLAIN did not catch fork error as expected\n");
-		err++;
-	}
-
-	check_all_msgs();
-
 	/* invalid base64 message as username */
 	strcpy(linein, "AUTH LOGIN");
 	linelen = strlen(linein);

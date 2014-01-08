@@ -87,6 +87,17 @@ TARGET_LINK_LIBRARIES(testcase_auth_errors
 ADD_TEST(NAME "AUTH_errors"
 		COMMAND testcase_auth_errors)
 
+ADD_EXECUTABLE(testcase_auth_be_cp
+		auth_be_cp_test.c)
+
+TARGET_LINK_LIBRARIES(testcase_auth_be_cp
+		Qsmtpd_auth_checkpassword
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
+
+ADD_TEST(NAME "AUTH_BE_chkpw"
+		COMMAND testcase_auth_be_cp)
+
 ADD_EXECUTABLE(testcase_auth
 		auth_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/auth.c)
