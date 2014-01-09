@@ -7,6 +7,7 @@
 
 #include "base64.h"
 #include <qsmtpd/qsauth.h>
+#include <qsmtpd/qsauth_backend.h>
 #include <qsmtpd/qsmtpd.h>
 #include "sstring.h"
 
@@ -23,6 +24,20 @@ SSL *ssl = NULL;
 unsigned long sslauth = 0;
 char linein[1002];
 size_t linelen;
+
+int
+auth_backend_execute(const struct string *user __attribute__((unused)),
+		const struct string *pass __attribute__((unused)), const struct string *resp __attribute__((unused)))
+{
+	return -EDONE;
+}
+
+int
+auth_backend_setup(int argc __attribute__((unused)),
+		const char **argv __attribute__((unused)))
+{
+	return 0;
+}
 
 const char *expected_net_write1, *expected_net_write2;
 
@@ -94,18 +109,21 @@ check_all_msgs(void)
 		fprintf(stderr, "expected log message '%s' was not received\n",
 				expected_log);
 		err++;
+		expected_log = NULL;
 	}
 
 	if (expected_net_write1 != NULL) {
 		fprintf(stderr, "expected message '%s' was not received\n",
 				expected_net_write1);
 		err++;
+		expected_net_write1 = NULL;
 	}
 
 	if (expected_net_write2 != NULL) {
 		fprintf(stderr, "expected message '%s' was not received\n",
 				expected_net_write2);
 		err++;
+		expected_net_write2 = NULL;
 	}
 }
 
@@ -114,13 +132,13 @@ main(int argc __attribute__((unused)), char **argv)
 {
 	const char *invalid_msg = "501 5.5.4 malformed auth input\r\n";
 	const char *cancel_msg = "501 5.0.0 auth exchange cancelled\r\n";
-	const char *argv_auth[] = { argv[0], "foo.example.com", "/bin/false", "" };
+	const char *argv_auth[] = { argv[0], "foo.example.com" };
 
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_net_readline(test_net_readline);
 	testcase_setup_log_write(test_log_write);
 
-	auth_setup(4, argv_auth);
+	auth_setup(2, argv_auth);
 
 	/* invalid AUTH mechanism */
 	strcpy(linein, "AUTH BOGUS");
@@ -219,6 +237,17 @@ main(int argc __attribute__((unused)), char **argv)
 
 	check_all_msgs();
 
+	/* syntactically valid, but will cause a backend error */
+	strcpy(linein, "AUTH PLAIN AGEAYg==");
+	linelen = strlen(linein);
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH PLAIN did not catch backend error as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
+
 	/* invalid base64 message as username */
 	strcpy(linein, "AUTH LOGIN");
 	linelen = strlen(linein);
@@ -295,12 +324,6 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	return err;
-}
-
-
-pid_t fork_clean(void)
-{
-	return -1;
 }
 
 void

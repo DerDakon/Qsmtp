@@ -81,7 +81,6 @@ ADD_EXECUTABLE(testcase_auth_errors
 TARGET_LINK_LIBRARIES(testcase_auth_errors
 		qsmtp_lib
 		testcase_io_lib
-		Qsmtpd_auth_checkpassword
 		${MEMCHECK_LIBRARIES})
 
 ADD_TEST(NAME "AUTH_errors"
