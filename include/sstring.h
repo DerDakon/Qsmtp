@@ -28,6 +28,16 @@ typedef struct cstring {
 
 static inline int newstr(string *, const size_t) __attribute__ ((nonnull (1)));
 
+/**
+ * @brief allocate a new string buffer of the given length
+ * @param s the string container
+ * @param len the desired length of the embedded buffer
+ * @return if the allocation was successful
+ * @retval 0 buffer was allocated
+ * @retval -1 out of memory
+ *
+ * If len is 0 s->s is set to NULL and 0 is returned.
+ */
 static inline int
 newstr(string *s, const size_t len)
 {
