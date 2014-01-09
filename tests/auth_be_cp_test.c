@@ -192,6 +192,46 @@ test_chkpw_abort(void)
 }
 
 /**
+ * @brief test wrong password in authentication
+ */
+static void
+test_chkpw_wrong(void)
+{
+	struct string user = { .s = (char *)users[1].username, .len = strlen(users[1].username) };
+	struct string resp;
+
+	STREMPTY(resp);
+
+	fork_success = 1;
+
+	if (auth_backend_execute(&user, &user, &resp) != 1) {
+		fprintf(stderr, "auth_backend_execute() did not return 1 for wrong password\n");
+		err++;
+	}
+
+	check_all_msgs();
+}
+
+/**
+ * @brief test wrong password in authentication
+ */
+static void
+test_chkpw_correct(void)
+{
+	struct string user = { .s = (char *)users[1].username, .len = strlen(users[1].username) };
+	struct string pass = { .s = (char *)users[1].password, .len = strlen(users[1].password) };
+
+	fork_success = 1;
+
+	if (auth_backend_execute(&user, &pass, NULL) != 0) {
+		fprintf(stderr, "auth_backend_execute() did not return 0 for correct password\n");
+		err++;
+	}
+
+	check_all_msgs();
+}
+
+/**
  * @brief test auth_backend_setup() with invalid arguments
  */
 static void
@@ -242,6 +282,8 @@ main(int argc, char **argv)
 	}
 
 	test_chkpw_abort();
+	test_chkpw_wrong();
+	test_chkpw_correct();
 
 	return err;
 }
