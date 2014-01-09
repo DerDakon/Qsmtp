@@ -3,8 +3,10 @@
  */
 
 #include <qsmtpd/qsauth.h>
+#include <qsmtpd/qsauth_backend.h>
 #include <qsmtpd/qsmtpd.h>
 #include "sstring.h"
+#include <log.h>
 #include "netio.h"
 #include "test_io/testcase_io.h"
 
@@ -21,8 +23,29 @@ static const char loginonly[] = " LOGIN\r\n";
 static const char plainonly[] = " PLAIN\r\n";
 static const char loginplain[] = " LOGIN PLAIN\r\n";
 
-static const char *argv_auth[] = { "Qsmtpd", "auth.example.com", "/bin/true", "/bin/true" };
+static const char *argv_auth[] = { "Qsmtpd", "auth.example.com", NULL };
 static const char *argv_noauth[] = { "Qsmtpd" };
+
+int
+auth_backend_execute(const struct string *user __attribute__((unused)),
+		const struct string *pass __attribute__((unused)), const struct string *resp __attribute__((unused)))
+{
+	fprintf(stderr, "unexpected call to %s()\n", __func__);
+	exit(1);
+}
+
+static const char backend_setup_errmsg[] = "auth_backend_setup() error";
+
+int
+auth_backend_setup(int argc,
+		const char **argv __attribute__((unused)))
+{
+	if (argc == 3)
+		return 0;
+
+	log_write(LOG_ERR, backend_setup_errmsg);
+	return -EINVAL;
+}
 
 static int
 check_authstr(const char *auth_expect)
@@ -31,8 +54,8 @@ check_authstr(const char *auth_expect)
 
 	if (auth_str == NULL) {
 		if (errno == 0) {
-			const char *msg = "smtp_authstring() returned NULL but did not set an error code\n";
-			write(2, msg, strlen(msg));
+			fprintf(stderr, "smtp_authstring() returned NULL but did not set an error code, "
+					"expected message '%s'\n", auth_expect);
 			return EFAULT;
 		} else {
 			return errno;
@@ -175,7 +198,7 @@ test_no_auth_yet(void)
 		ret++;
 	}
 
-	auth_setup(4, argv_auth);
+	auth_setup(3, argv_auth);
 	sslauth = 1;
 	authstr = smtp_authstring();
 	if (authstr != NULL) {
@@ -245,6 +268,8 @@ test_log_write(int priority, const char *msg)
 				priority, msg, log_single_expect);
 		exit(1);
 	}
+
+	log_single_expect = NULL;
 }
 
 static int
@@ -253,13 +278,41 @@ test_setup_errors(void)
 	int ret = 0;
 	const char *err_invalid_domain[] = { "domainname for auth invalid: ", "@",
 			NULL };
-	const char *args_invalid_domain[] = { "Qsmtpd", "@", "", "" };
+	const char *args_invalid_domain[] = { "Qsmtpd", "@", NULL };
+
+	sslauth = 0;
+	auth_setup(3, argv_auth);
+	if (!auth_permitted()) {
+		fprintf(stderr, "auth_permitted() after correct auth_setup() returned 0\n");
+		return ++ret;
+	}
 
 	testcase_setup_log_writen(test_log_writen);
 
 	log_multi_expect = err_invalid_domain;
-	auth_setup(4, args_invalid_domain);
+	auth_setup(3, args_invalid_domain);
 	log_multi_expect = NULL;
+
+	if (auth_permitted()) {
+		fprintf(stderr, "auth_permitted() after incorrect auth_setup() returned 1\n");
+		ret++;
+	}
+
+	auth_setup(3, argv_auth);
+	if (!auth_permitted()) {
+		fprintf(stderr, "auth_permitted() after correct auth_setup() returned 0\n");
+		return ++ret;
+	}
+
+	/* this will cause auth_backend_setup() to return with failure */
+	testcase_setup_log_write(test_log_write);
+	log_single_expect = backend_setup_errmsg;
+	auth_setup(2, argv_auth);
+
+	if (auth_permitted()) {
+		fprintf(stderr, "auth_permitted() after incorrect auth_setup() returned 1\n");
+		ret++;
+	}
 
 	testcase_ignore_log_writen();
 
@@ -278,7 +331,7 @@ int main(int argc, char **argv)
 		return EINVAL;
 	}
 
-	auth_setup(4, argv_auth);
+	auth_setup(3, argv_auth);
 
 	if (chdir(argv[1]) != 0) {
 		const char *errmsg = "cannot chdir() to given directory\n";
@@ -298,11 +351,6 @@ int main(int argc, char **argv)
 	errcnt += test_setup_errors();
 
 	return errcnt;
-}
-
-pid_t fork_clean(void)
-{
-	return 1;
 }
 
 void
