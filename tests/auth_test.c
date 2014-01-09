@@ -4,6 +4,7 @@
 
 #include "base64.h"
 #include <qsmtpd/qsauth.h>
+#include <qsmtpd/qsauth_backend.h>
 #include <qsmtpd/qsmtpd.h>
 #include "sstring.h"
 
@@ -35,6 +36,34 @@ enum auth_mech {
 	mech_login,
 	mech_plain
 };
+
+int
+auth_backend_execute(const struct string *user, const struct string *pass, const struct string *resp)
+{
+	unsigned int i = 1;
+
+	if ((resp != NULL) && ((resp->len != 0) || (resp->s != NULL)))
+		return -EINVAL;
+
+	if ((user->len == 0) || (pass->len == 0))
+		return 1;
+
+	while (users[i].username != NULL) {
+		if ((strcmp(users[i].username, user->s) == 0) &&
+			(strcmp(users[i].password, pass->s) == 0))
+			return 0;
+
+		i++;
+	}
+
+	return 1;
+}
+
+int
+auth_backend_setup(int argc __attribute__((unused)), const char **argv __attribute__((unused)))
+{
+	return 0;
+}
 
 static enum smtp_state smtpstate;
 static enum auth_mech mech;
