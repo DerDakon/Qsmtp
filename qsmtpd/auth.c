@@ -184,29 +184,19 @@ auth_plain(struct string *user)
 			goto err;
 		memcpy(user->s, s, user->len);
 		if (slop.len > id + user->len + 1) {
-			s += user->len;
-
-			r = newstr(&pass, strlen(s) + 1);
-			if (r)
-				goto err;
-			memcpy(pass.s, s, pass.len);
-			pass.len--;
+			pass.s = s + user->len;
+			pass.len = strlen(pass.s);
 		}
 		user->len--;
 	}
 	if (!user->len || !pass.len) {
-		if (pass.s != NULL) {
-			memset(pass.s, 0, pass.len);
-			free(pass.s);
-		}
 		err_input();
 		goto err;
 	}
-	free(slop.s);
 
 	r = auth_backend_execute(user, &pass, NULL);
-	memset(pass.s, 0, pass.len);
-	free(pass.s);
+	memset(slop.s, 0, slop.len);
+	free(slop.s);
 	if (r != 0)
 		free(user->s);
 	if (r < 0) {
@@ -216,6 +206,7 @@ auth_plain(struct string *user)
 	return r;
 err:
 	free(user->s);
+	memset(slop.s, 0, slop.len);
 	free(slop.s);
 	return -1;
 }
