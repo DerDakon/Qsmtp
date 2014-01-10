@@ -176,18 +176,15 @@ auth_plain(struct string *user)
 	while (slop.s[id])
 		id++; /* ignore authorize-id */
 
-	if (slop.len > id + 1) {
-		char *s = slop.s + id + 1;
-		/* one byte longer so we can also copy the trailing '\0' */
-		r = newstr(user, strlen(s) + 1);
-		if (r)
-			goto err;
-		memcpy(user->s, s, user->len);
+	id++; /* skip the \0 delimiter between authorize-id and username */
+
+	if (slop.len > id) {
+		user->s = slop.s + id;
+		user->len = strlen(user->s);
 		if (slop.len > id + user->len + 1) {
-			pass.s = s + user->len;
+			pass.s = user->s + user->len + 1;
 			pass.len = strlen(pass.s);
 		}
-		user->len--;
 	}
 	if (!user->len || !pass.len) {
 		err_input();
@@ -195,17 +192,24 @@ auth_plain(struct string *user)
 	}
 
 	r = auth_backend_execute(user, &pass, NULL);
-	memset(slop.s, 0, slop.len);
-	free(slop.s);
-	if (r != 0)
-		free(user->s);
-	if (r < 0) {
-		errno = -r;
-		return -1;
+	memset(pass.s, 0, pass.len);
+	if (r != 0) {
+		free(slop.s);
+		if (r < 0) {
+			errno = -r;
+			return -1;
+		}
+	} else {
+		char *tmp;
+		memmove(slop.s, user->s, user->len + 1);
+		tmp = realloc(slop.s, user->len + 1);
+		if (tmp == NULL)
+			user->s = slop.s;
+		else
+			user->s = tmp;
 	}
 	return r;
 err:
-	free(user->s);
 	memset(slop.s, 0, slop.len);
 	free(slop.s);
 	return -1;
