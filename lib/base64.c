@@ -18,7 +18,7 @@ static const char *b64alpha =
  * @param in base64 text
  * @param l length of in
  * @param out string to store decoded string (memory will be malloced)
- * @retval -1 on error (errno will be set)
+ * @retval <0 negative error code
  * @retval 0 on success
  * @retval 1 on parse error
  *
@@ -42,9 +42,9 @@ b64decode(const char *in, size_t l, string *out)
 	assert(in != NULL);
 
 	out->s = malloc(l + 3);
-	if (!out->s) {
-		return -1;
-	}
+	if (!out->s)
+		return -ENOMEM;
+
 	s = out->s;
 
 	for (i = 0; i < l; i += 4) {
@@ -106,7 +106,7 @@ b64decode(const char *in, size_t l, string *out)
  * @param out string to store Base64 string (memory will be malloced)
  * @param wraplimit the number of characters after which a CRLF pair should be inserted
  * @retval 0 on success
- * @retval -1 on error
+ * @retval <0 negative error code
  */
 int
 b64encode(const string *in, string *out, const unsigned int wraplimit)
@@ -125,9 +125,9 @@ b64encode(const string *in, string *out, const unsigned int wraplimit)
 	/* add one CRLF every wraplimit characters and some space at the end for padding,
 	 * a CRLF in padding and \0 */
 	out->s = malloc(i + (i / wraplimit) * 2 + 7);
-	if (!out->s) {
-		return -1;
-	}
+	if (!out->s)
+		return -ENOMEM;
+
 	s = out->s;
 
 	for (i = 0; i < in->len; i += 3) {

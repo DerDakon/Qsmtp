@@ -103,10 +103,12 @@ auth_login(struct string *user)
 		r = b64decode(authin.s, authin.len, user);
 		free(authin.s);
 	}
-	if (r > 0)
+	if (r > 0) {
 		return err_input();
-	else if (r < 0)
-		return r;
+	} else if (r < 0) {
+		errno = -r;
+		return -1;
+	}
 
 	if (netwrite("334 UGFzc3dvcmQ6\r\n")) /* Password: */
 		goto err;
@@ -120,6 +122,7 @@ auth_login(struct string *user)
 		err_input();
 		goto err;
 	} else if (r < 0) {
+		errno = -r;
 		goto err;
 	}
 
@@ -168,10 +171,12 @@ auth_plain(struct string *user)
 		r = b64decode(authin.s, authin.len, &slop);
 		free(authin.s);
 	}
-	if (r > 0) 
+	if (r > 0) {
 		return err_input();
-	else if (r < 0)
-		return r;
+	} else if (r < 0) {
+		errno = -r;
+		return -1;
+	}
 
 	while (slop.s[id])
 		id++; /* ignore authorize-id */
@@ -252,8 +257,11 @@ auth_cram(struct string *user)
 	memcpy(challenge.s + 1 + k, auth_host, m);
 	challenge.s[1 + k + m] = '>';
 	challenge.s[1 + k + m + 1] = '\0';
-	if (b64encode(&challenge, &slop, -1) < 0)
+	r = b64encode(&challenge, &slop, -1);
+	if (r < 0) {
+		errno = -r;
 		goto err;
+	}
 
 	netmsg[1] = slop.s;
 	if (net_writen(netmsg))
@@ -269,6 +277,7 @@ auth_cram(struct string *user)
 		err_input();
 		goto err;
 	} else if (r < 0) {
+		errno = -r;
 		goto err;
 	}
 
