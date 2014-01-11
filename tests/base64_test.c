@@ -9,6 +9,27 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * @brief find a string in a given memory area
+ *
+ * memmem() is a GNU extension, so implement it on our own. Since this
+ * is only used to find line endings hardcode that.
+ */
+static const char *
+memcrlf(const char *start, const size_t maxlen)
+{
+	const char *res = memchr(start, '\r', maxlen - 1);
+
+	while (res != NULL) {
+		if (*(res + 1) == '\n')
+			break;
+
+		res = memchr(res + 1, '\r', maxlen - 1 - (res - start));
+	}
+
+	return res;
+}
+
 static int
 check_line_limit(const string *bdata, const unsigned int maxlinelen)
 {
@@ -18,8 +39,8 @@ check_line_limit(const string *bdata, const unsigned int maxlinelen)
 	lend = bdata->s;
 	do {
 		lstart = lend;
-		lend = strstr(lstart, "\r\n");
-		
+		lend = memcrlf(lstart, bdata->len - (lstart - bdata->s));
+
 		if (lend == NULL) {
 			const size_t foundlen = bdata->s + bdata->len - lstart;
 			if (foundlen > maxlinelen) {
@@ -127,6 +148,7 @@ padding_test(void)
 	char *base;
 	const size_t maxlen = 512;
 	size_t l;
+	int ret = 0;
 
 	puts("== Testing if encode and decode are reverse operations for different pattern lengths");
 
@@ -137,22 +159,23 @@ padding_test(void)
 
 	base = indata.s;
 
-	for (l = 0; l < indata.len; l++)
-		indata.s[l] = (unsigned char)(l & 0xff);
-
-	for (l = 0; l < maxlen; l++) {
+	for (l = 1; l < maxlen; l++) {
 		unsigned int maxlinelen;
+		size_t k;
 
 		indata.s = base + l;
 		indata.len = maxlen - l;
+		for (k = 0; k < indata.len; k++)
+			indata.s[k] = (unsigned char)((k + 1) & 0xff);
 
 		for (maxlinelen = 70; maxlinelen <= 80; maxlinelen++) {
-			size_t k;
 			char *tmp;
 
 			if (b64encode(&indata, &bdata, maxlinelen) != 0) {
-				puts("Error: encoding failed");
-				return 1;
+				printf("Error: encoding failed, length %zu, line length %u",
+						l, maxlinelen);
+				ret++;
+				continue;
 			}
 
 			if (check_line_limit(&bdata, maxlinelen))
@@ -177,25 +200,69 @@ padding_test(void)
 			}
 
 			if (outdata.len != indata.len) {
-				puts("Error: outdata and indata have different length");
-				return 1;
+				printf("Error: outdata (%zu) and indata (%zu) have different length\n",
+						outdata.len, indata.len);
+				ret++;
+				free(outdata.s);
+				continue;
 			}
 
 			for (k = 0; k < outdata.len; k++) {
 				if (indata.s[k] != outdata.s[k]) {
 					puts("Error: input and output do not match");
-					return 1;
+					return ++ret;
 				}
 			}
 
 			free(outdata.s);
-			free(bdata.s);
+
+			/* add CRLF pair to catch overrun when line endings are skipped */
+			if (bdata.s[bdata.len - 1] != '\n') {
+				tmp = realloc(bdata.s, bdata.len + 2);
+				if (tmp == NULL) {
+					puts("Error: could not add 2 byte to Base64 data\n");
+					free(bdata.s);
+					return ++ret;
+				}
+
+				bdata.s = tmp;
+				tmp[bdata.len++] = '\r';
+				tmp[bdata.len++] = '\n';
+
+				if (b64decode(bdata.s, bdata.len, &outdata) != 0) {
+					printf("Error: decoding failed, maxlinelen = %u, l = %zu\n", maxlinelen, l);
+					ret++;
+					free(bdata.s);
+					continue;
+				}
+
+				free(bdata.s);
+
+				if (outdata.len != indata.len) {
+					printf("Error: outdata (%zu) and indata (%zu) have different length with CRLF ending\n",
+							outdata.len, indata.len);
+					ret++;
+					free(outdata.s);
+					continue;
+				}
+
+				for (k = 0; k < outdata.len; k++) {
+					if (indata.s[k] != outdata.s[k]) {
+						puts("Error: input and output do not match");
+						return ++ret;
+					}
+				}
+
+				free(outdata.s);
+			} else {
+				free(bdata.s);
+			}
 		}
 	}
 
 	free(base);
 
-	return 0;
+	return ret;
 }
 
 static int

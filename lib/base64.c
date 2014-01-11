@@ -49,7 +49,7 @@ b64decode(const char *in, size_t l, string *out)
 
 	for (i = 0; i < l; i += 4) {
 		for (j = 0; j < 4; j++) {
-			if (in[i + j] == '\r') {
+			if ((i + j < l) && (in[i + j] == '\r')) {
 				if (i + j + 1 == l) {
 					free(out->s);
 					return 1;
