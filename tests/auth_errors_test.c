@@ -131,6 +131,7 @@ int
 main(int argc __attribute__((unused)), char **argv)
 {
 	const char *invalid_msg = "501 5.5.4 malformed auth input\r\n";
+	const char *invalid_base64 = "501 5.5.2 base64 decoding error\r\n";
 	const char *cancel_msg = "501 5.0.0 auth exchange cancelled\r\n";
 	const char *argv_auth[] = { argv[0], "foo.example.com" };
 
@@ -144,7 +145,7 @@ main(int argc __attribute__((unused)), char **argv)
 	strcpy(linein, "AUTH BOGUS");
 	linelen = strlen(linein);
 
-	expected_net_write1 = "504 5.5.1 Unrecognized authentication type.\r\n";
+	expected_net_write1 = "504 5.5.4 Unrecognized authentication type.\r\n";
 
 	if (smtp_auth() != EDONE) {
 		fprintf(stderr, "unrecognized AUTH mechanism was not rejected\n");
@@ -157,7 +158,7 @@ main(int argc __attribute__((unused)), char **argv)
 	strcpy(linein, "AUTH PLAIN #");
 	linelen = strlen(linein);
 
-	expected_net_write1 = invalid_msg;
+	expected_net_write1 = invalid_base64;
 
 	if (smtp_auth() != EDONE) {
 		fprintf(stderr, "AUTH PLAIN with invalid base64 did not fail as expected\n");
@@ -202,7 +203,7 @@ main(int argc __attribute__((unused)), char **argv)
 	linelen = strlen(linein);
 
 	expected_net_write1 = "334 \r\n";
-	expected_net_write2 = invalid_msg;
+	expected_net_write2 = invalid_base64;
 
 	if (smtp_auth() != EDONE) {
 		fprintf(stderr, "AUTH PLAIN with invalid base64 line did not fail as expected\n");
@@ -228,7 +229,7 @@ main(int argc __attribute__((unused)), char **argv)
 	strcpy(linein, "AUTH LOGIN #");
 	linelen = strlen(linein);
 
-	expected_net_write1 = invalid_msg;
+	expected_net_write1 = invalid_base64;
 
 	if (smtp_auth() != EDONE) {
 		fprintf(stderr, "AUTH LOGIN with invalid base64 did not fail as expected\n");
@@ -253,7 +254,7 @@ main(int argc __attribute__((unused)), char **argv)
 	linelen = strlen(linein);
 
 	expected_net_write1 = "334 VXNlcm5hbWU6\r\n";
-	expected_net_write2 = invalid_msg;
+	expected_net_write2 = invalid_base64;
 	extra_read = "#\r\n";
 
 	if (smtp_auth() != EDONE) {
@@ -268,7 +269,7 @@ main(int argc __attribute__((unused)), char **argv)
 	linelen = strlen(linein);
 
 	expected_net_write1 = "334 UGFzc3dvcmQ6\r\n";
-	expected_net_write2 = invalid_msg;
+	expected_net_write2 = invalid_base64;
 	extra_read = "#\r\n";
 
 	if (smtp_auth() != EDONE) {

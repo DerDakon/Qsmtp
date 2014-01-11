@@ -24,7 +24,7 @@
 #include <qsmtpd/antispam.h>
 #include <qsmtpd/qsmtpd.h>
 
-const char *tempnoauth = "454 4.3.0 AUTH temporaryly not available\r\n";
+const char *tempnoauth = "454 4.5.0 AUTH temporaryly not available\r\n";
 static const char *auth_host;			/**< hostname for auth */
 
 static int err_authabrt(void)
@@ -38,6 +38,14 @@ static int err_input(void)
 {
 	tarpit();
 	if (!netwrite("501 5.5.4 malformed auth input\r\n"))
+		errno = EDONE;
+	return -1;
+}
+
+static int err_base64(void)
+{
+	tarpit();
+	if (!netwrite("501 5.5.2 base64 decoding error\r\n"))
 		errno = EDONE;
 	return -1;
 }
@@ -104,7 +112,7 @@ auth_login(struct string *user)
 		free(authin.s);
 	}
 	if (r > 0) {
-		return err_input();
+		return err_base64();
 	} else if (r < 0) {
 		errno = -r;
 		return -1;
@@ -119,7 +127,7 @@ auth_login(struct string *user)
 	memset(authin.s, 0, authin.len);
 	free(authin.s);
 	if (r > 0) {
-		err_input();
+		err_base64();
 		goto err;
 	} else if (r < 0) {
 		errno = -r;
@@ -172,7 +180,7 @@ auth_plain(struct string *user)
 		free(authin.s);
 	}
 	if (r > 0) {
-		return err_input();
+		return err_base64();
 	} else if (r < 0) {
 		errno = -r;
 		return -1;
@@ -274,7 +282,7 @@ auth_cram(struct string *user)
 	r = b64decode(authin.s, authin.len, &slop);
 	free(authin.s);
 	if (r > 0) {
-		err_input();
+		err_base64();
 		goto err;
 	} else if (r < 0) {
 		errno = -r;
@@ -362,18 +370,18 @@ smtp_auth(void)
 		if (!strncasecmp(authcmds[i].text, type, strlen(authcmds[i].text))) {
 			switch (authcmds[i].fun(&xmitstat.authname)) {
 			case 0:
-				return netwrite("235 2.0.0 ok, go ahead\r\n") ? errno : 0;
+				return netwrite("235 2.7.0 ok, go ahead\r\n") ? errno : 0;
 			case 1:
 				STREMPTY(xmitstat.authname);
 				sleep(5);
-				return netwrite("535 5.7.0 authorization failed\r\n") ? errno : EDONE;
+				return netwrite("535 5.7.8 authorization failed\r\n") ? errno : EDONE;
 			case -1:
 				STREMPTY(xmitstat.authname);
 				return errno;
 			}
 		}
 	}
-	return netwrite("504 5.5.1 Unrecognized authentication type.\r\n") ? errno : EDONE;
+	return netwrite("504 5.5.4 Unrecognized authentication type.\r\n") ? errno : EDONE;
 }
 
 /**

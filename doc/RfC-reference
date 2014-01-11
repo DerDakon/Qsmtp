@@ -5,7 +5,6 @@ RfCs interesting for a mail server (and used for implementing this one):
 2034	SMTP Service Extension for Returning Enhanced Error Codes
 2045ff  Multipurpose Internet Mail Extensions (MIME)
 2505	Anti-Spam Recommendations for SMTP MTAs
-2554	SMTP Service Extension for Authentication
 2822	Internet Message Format
 2920	SMTP Service Extension for Command Pipelining
 3030	SMTP Service Extensions for Transmission of Large and Binary MIME Messages	(CHUNKING is already supported)
@@ -14,6 +13,8 @@ RfCs interesting for a mail server (and used for implementing this one):
 3848	ESMTP and LMTP Transmission Types Registration
 4408	Sender Policy Framework (SPF) for Authorizing Use of Domains in E-Mail, Version 1
 4409	Message Submission for Mail
+4954	SMTP Service Extension for Authentication
+5248	A Registry for SMTP Enhanced Mail System Status Codes
 5321	Simple Mail Transfer Protocol
 5782	DNS Blacklists and Whitelists
 6152	SMTP Service Extension for 8bit-MIMEtransport
