@@ -124,26 +124,31 @@ padding_test(void)
 	string indata;	/**< input pattern */
 	string outdata;	/**< output pattern after encoding and decoding */
 	string bdata;	/**< intermediate base64 pattern */
+	char *base;
+	const size_t maxlen = 512;
 	size_t l;
 
 	puts("== Testing if encode and decode are reverse operations for different pattern lengths");
 
-	if (newstr(&indata, 512) != 0) {
+	if (newstr(&indata, maxlen) != 0) {
 		puts("Error: not enough memory to run test");
 		return 1;
 	}
 
-	for (l = 0; l < indata.len; l++) {
-		indata.s[l] = (unsigned char)(l & 0xff);
-	}
+	base = indata.s;
 
-	for (l = 511; l >= 1; l--) {
+	for (l = 0; l < indata.len; l++)
+		indata.s[l] = (unsigned char)(l & 0xff);
+
+	for (l = 0; l < maxlen; l++) {
 		unsigned int maxlinelen;
+
+		indata.s = base + l;
+		indata.len = maxlen - l;
+
 		for (maxlinelen = 70; maxlinelen <= 80; maxlinelen++) {
 			size_t k;
-
-			indata.s[l] = '\0';
-			indata.len = l;
+			char *tmp;
 
 			if (b64encode(&indata, &bdata, maxlinelen) != 0) {
 				puts("Error: encoding failed");
@@ -152,6 +157,14 @@ padding_test(void)
 
 			if (check_line_limit(&bdata, maxlinelen))
 				return 1;
+
+			tmp = realloc(bdata.s, bdata.len);
+			if (tmp == NULL) {
+				printf("realloc() failed to truncate\n");
+				free(bdata.s);
+				return 1;
+			}
+			bdata.s = tmp;
 
 			if (b64decode(bdata.s, bdata.len, &outdata) != 0) {
 				printf("Error: decoding failed, maxlinelen = %u, l = %zu\n", maxlinelen, l);
@@ -180,7 +193,7 @@ padding_test(void)
 		}
 	}
 
-	free(indata.s);
+	free(base);
 
 	return 0;
 }
