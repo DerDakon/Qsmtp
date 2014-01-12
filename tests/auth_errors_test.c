@@ -324,6 +324,20 @@ main(int argc __attribute__((unused)), char **argv)
 
 	check_all_msgs();
 
+	/* LOGIN syntactically valid, but will cause a backend error */
+	strcpy(linein, "AUTH LOGIN YQ==");
+	linelen = strlen(linein);
+
+	expected_net_write1 = "334 UGFzc3dvcmQ6\r\n";
+	extra_read = "YQ==\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH LOGIN did not catch backend error as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
+
 #ifdef AUTHCRAM
 	/* CRAM-MD5 does not support initial client response */
 	strcpy(linein, "AUTH CRAM-MD5 YQ==");
@@ -399,7 +413,7 @@ main(int argc __attribute__((unused)), char **argv)
 	extra_read = "Zm9vIDAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm\r\n";
 
 	if (smtp_auth() != EDONE) {
-		fprintf(stderr, "AUTH CRAM-MD5 with MD5 string of invalid length did not fail as expected\n");
+		fprintf(stderr, "AUTH CRAM-MD5 did not catch backend error as expected\n");
 		err++;
 	}
 
