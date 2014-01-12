@@ -324,6 +324,73 @@ main(int argc __attribute__((unused)), char **argv)
 
 	check_all_msgs();
 
+#ifdef AUTHCRAM
+	/* CRAM-MD5 does not support initial client response */
+	strcpy(linein, "AUTH CRAM-MD5 YQ==");
+	linelen = strlen(linein);
+
+	expected_net_write1 = "501 5.7.0 authentication mechanism does not support initial response\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH CRAM-MD5 with initial respone did not fail as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
+
+	/* CRAM-MD5 with empty username */
+	strcpy(linein, "AUTH CRAM-MD5");
+	linelen = strlen(linein);
+
+	testcase_ignore_net_writen();
+	expected_net_write1 = "501 5.5.4 malformed auth input\r\n";
+	extra_read = "IDAxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTEy\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH CRAM-MD5 with empty username did not fail as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
+
+	/* CRAM-MD5 with empty MD5 response of invalid length */
+	strcpy(linein, "AUTH CRAM-MD5");
+	linelen = strlen(linein);
+
+	expected_net_write1 = "501 5.5.4 malformed auth input\r\n";
+	extra_read = "Zm9vIGFiYw==\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH CRAM-MD5 with MD5 string of invalid length did not fail as expected\n");
+		err++;
+	}
+
+	/* CRAM-MD5 with empty MD5 response of valid length, but containing invalid characters */
+	strcpy(linein, "AUTH CRAM-MD5");
+	linelen = strlen(linein);
+	
+	expected_net_write1 = "501 5.5.4 malformed auth input\r\n";
+	extra_read = "Zm9vIDAxMjN4NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm\r\n";
+	
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH CRAM-MD5 with MD5 string containing invalid characters did not fail as expected\n");
+		err++;
+	}
+
+	/* CRAM-MD5 syntactically valid, but will cause a backend error */
+	strcpy(linein, "AUTH CRAM-MD5");
+	linelen = strlen(linein);
+
+	extra_read = "Zm9vIDAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH CRAM-MD5 with MD5 string of invalid length did not fail as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
+#endif
+
 	return err;
 }
 

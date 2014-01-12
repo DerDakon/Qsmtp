@@ -229,6 +229,14 @@ err:
 }
 
 #ifdef AUTHCRAM
+static int err_no_initial(void)
+{
+	tarpit();
+	if (!netwrite("501 5.7.0 authentication mechanism does not support initial response\r\n"))
+		errno = EDONE;
+	return -1;
+}
+
 static int
 auth_cram(struct string *user)
 {
@@ -239,6 +247,9 @@ auth_cram(struct string *user)
 	const char *netmsg[] = { "334 ", NULL, NULL };
 	string authin, challenge, slop, resp;
 	char unique[83];
+
+	if (linelen != strlen("AUTH CRAM-MD5"))
+		return err_no_initial();
 
 	ultostr(getpid(), t);
 	m = strlen(t);
@@ -300,9 +311,18 @@ auth_cram(struct string *user)
 	while (*s == ' ')
 		s++;
 	resp.len = strlen(s);
-	if (resp.len == 0) {
+	if (resp.len != 32) {
 		err_input();
 		goto err;
+	}
+
+	for (r = 31; r >= 0; r--) {
+		if (!(((s[r] >= '0') && (s[r] <= '9')) ||
+				((s[r] >= 'a') && (s[r] <= 'f')) ||
+				((s[r] >= 'A') && (s[r] <= 'F')))) {
+			err_input();
+			goto err;
+		}
 	}
 
 	user->s = slop.s;
