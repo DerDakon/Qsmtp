@@ -353,6 +353,21 @@ main(int argc __attribute__((unused)), char **argv)
 
 	check_all_msgs();
 
+	/* CRAM-MD5 with invalid base64 */
+	strcpy(linein, "AUTH CRAM-MD5");
+	linelen = strlen(linein);
+
+	testcase_ignore_net_writen();
+	expected_net_write1 = "501 5.5.2 base64 decoding error\r\n";
+	extra_read = "#\r\n";
+
+	if (smtp_auth() != EDONE) {
+		fprintf(stderr, "AUTH CRAM-MD5 with invalid base64 did not fail as expected\n");
+		err++;
+	}
+
+	check_all_msgs();
+
 	/* CRAM-MD5 with empty MD5 response of invalid length */
 	strcpy(linein, "AUTH CRAM-MD5");
 	linelen = strlen(linein);

@@ -293,6 +293,7 @@ auth_cram(struct string *user)
 	r = b64decode(authin.s, authin.len, &slop);
 	free(authin.s);
 	if (r > 0) {
+		STREMPTY(slop);
 		err_base64();
 		goto err;
 	} else if (r < 0) {
