@@ -1,5 +1,6 @@
 #include "cdb.h"
 #include <qsmtpd/vpop.h>
+#include <qsmtpd/userconf.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>
@@ -154,11 +155,12 @@ test_vpop(void)
 
 	while (cdb_testvector[tvidx].value != NULL) {
 		int r;
-		string domaindir;
+		struct userconf ds;
 
+		userconf_init(&ds);
 		/* first test: only get the directory */
-		STREMPTY(domaindir);
-		r = vget_dir(cdb_testvector[tvidx].key, &domaindir);
+		r = vget_dir(cdb_testvector[tvidx].key, &ds);
+		userconf_free(&ds);
 		if (r < 0) {
 			puts("ERROR: vget_dir() did not find expected directory");
 			puts(cdb_testvector[tvidx].key);
@@ -166,7 +168,6 @@ test_vpop(void)
 			tvidx++;
 			continue;
 		}
-		free(domaindir.s);
 
 		tvidx++;
 	}
@@ -175,23 +176,24 @@ test_vpop(void)
 	tvidx = 0;
 	while (cdb_testvector[tvidx].key != NULL) {
 		int r;
-		string domaindir;
+		struct userconf ds;
 
 		if (cdb_testvector[tvidx].value != NULL) {
 			tvidx++;
 			continue;
 		}
 
-		STREMPTY(domaindir);
-		r = vget_dir(cdb_testvector[tvidx].key, &domaindir);
+		userconf_init(&ds);
+
+		r = vget_dir(cdb_testvector[tvidx].key, &ds);
 		if (r > 0) {
 			puts("ERROR: vget_dir() returned success on entry that should not exist");
 			puts(cdb_testvector[tvidx].key);
-			if (domaindir.s != NULL)
-				puts(domaindir.s);
-			free(domaindir.s);
+			if (ds.domainpath.s != NULL)
+				puts(ds.domainpath.s);
 			errcnt++;
 		}
+		userconf_free(&ds);
 
 		tvidx++;
 	}
@@ -203,10 +205,11 @@ int
 main(int argc, char **argv)
 {
 	int err;
-	string tmp;
+	struct userconf ds;
 	char cdbtestdir[18];
 	int fd;
 
+	userconf_init(&ds);
 	if (argc != 2) {
 		puts("ERROR: parameter needs to be the name of the fake control directory");
 		return EINVAL;
@@ -231,7 +234,7 @@ main(int argc, char **argv)
 		return err;
 	}
 	err = 0;
-	fd = vget_dir("example.net", &tmp);
+	fd = vget_dir("example.net", &ds);
 	if (fd != -ENOENT) {
 		fputs("searching for example.net in not existing users/cdb did not fail with the expected error code\n", stderr);
 		err++;
@@ -247,7 +250,7 @@ main(int argc, char **argv)
 	}
 	close(fd);
 
-	if (vget_dir("example.net", &tmp) != 0) {
+	if (vget_dir("example.net", &ds) != 0) {
 		fputs("searching for example.net in an empty users/cdb did not work as expected\n", stderr);
 		err++;
 	}

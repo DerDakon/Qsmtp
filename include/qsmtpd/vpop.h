@@ -4,9 +4,9 @@
 #ifndef VPOP_H
 #define VPOP_H
 
-#include "sstring.h"
+struct userconf;
 
-extern int vget_dir(const char *, string *) __attribute__ ((nonnull (1, 2)));
+extern int vget_dir(const char *, struct userconf *) __attribute__ ((nonnull (1, 2)));
 
 extern int userbackend_init(void);
 extern void userbackend_free(void);

@@ -43,7 +43,7 @@ static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default *
  * The directory name will always end with a single '/' and be 0-terminated.
  * If the domain does not exist 0 is returned, -1 on error;
  */
-int vget_dir(const char *domain, string *domaindir)
+int vget_dir(const char *domain, struct userconf *ds)
 {
 	int fd, i;
 	char cdb_key[264];	/* maximum length of domain + 3 byte for !-\0 + padding to be sure */
@@ -100,15 +100,15 @@ int vget_dir(const char *domain, string *domaindir)
 	len = strlen(cdb_buf);
 	while (*(cdb_buf + len - 1) == '/')
 		--len;
-	i = newstr(domaindir, len + 2);
+	i = newstr(&(ds->domainpath), len + 2);
 	if (i != 0) {
 		munmap(cdb_mmap, st.st_size);
 		return -ENOMEM;
 	}
 
-	memcpy(domaindir->s, cdb_buf, len);
-	domaindir->s[len] = '/';
-	domaindir->s[--domaindir->len] = '\0';
+	memcpy(ds->domainpath.s, cdb_buf, len);
+	ds->domainpath.s[len] = '/';
+	ds->domainpath.s[--ds->domainpath.len] = '\0';
 
 	munmap(cdb_mmap, st.st_size);
 	return 1;
@@ -205,7 +205,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 		return 0;
 
 /* get the domain directory from "users/cdb" */
-	res = vget_dir(domain, &(ds->domainpath));
+	res = vget_dir(domain, ds);
 	if (res < 0) {
 		if (res == -ENOENT)
 			return 5;
