@@ -465,7 +465,7 @@ setup(void)
 
 			pf = malloc(sizeof(*pf));
 			if (pf)
-				pf->name = malloc(strlen(de->d_name) + 1);
+				pf->name = strdup(de->d_name);
 
 			if (!pf || !pf->name) {
 				closedir(dir);
@@ -473,9 +473,6 @@ setup(void)
 				free(pf);
 				return ENOMEM;
 			}
-
-			memcpy(pf->name, de->d_name, strlen(de->d_name));
-			pf->name[strlen(de->d_name)] = '\0';
 
 			log_write(LOG_DEBUG, pf->name);
 			pf->pid = 0;
