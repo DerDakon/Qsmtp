@@ -8,6 +8,7 @@
 #include <cdb.h>
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
+#include <qsmtpd/userfilters.h>
 #include <sstring.h>
 
 #include <errno.h>
@@ -175,22 +176,6 @@ qmexists(const string *dirtempl, const char *suff1, const size_t len, const int 
 	return fd;
 }
 
-/**
- * @brief check if the user identified by localpart and ds->domainpath exists
- * @param localpart localpart of mail address
- * @param ds path of domain
- *
- * If the user has it's own mail directory ds->userpath will be filled with
- * the correct values.
- *
- * @retval 0 user doesn't exist
- * @retval 1 user exists
- * @retval 2 mail would be catched by .qmail-default and .qmail-default != vpopbounce
- * @retval 3 domain is not filtered (use for domains not local)
- * @retval 4 mail would be catched by .qmail-foo-default (i.e. mailinglist)
- * @retval 5 domain is not local
- * @retval -1 error, errno is set.
-*/
 int
 user_exists(const string *localpart, const char *domain, struct userconf *ds)
 {
