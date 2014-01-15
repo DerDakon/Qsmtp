@@ -59,8 +59,15 @@ struct {
 		.email = "bar@example.org",
 		.result = 0
 	},
+	/* a file with the name "someoneelse" exists, so open for the directory
+	 * will fail, and no .qmail-someoneelse exists. */
+	{
+		.email = "someoneelse@example.org",
+		.result = 0,
+		.dirs = 0
+	},
 	/* a file with the name "someone" exists, this just means that
-	 * opendir will fail, but the user still exists because
+	 * open for the directory will fail, but the user still exists because
 	 * .qmail-someone exists. */
 	{
 		.email = "someone@example.org",

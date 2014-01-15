@@ -10,7 +10,6 @@
 #include <qsmtpd/userconf.h>
 #include <sstring.h>
 
-#include <dirent.h>
 #include <errno.h>
 #include <limits.h>
 #include <fcntl.h>
@@ -195,7 +194,7 @@ qmexists(const string *dirtempl, const char *suff1, const size_t len, const int 
 int
 user_exists(const string *localpart, const char *domain, struct userconf *ds)
 {
-	DIR *dirp;
+	int userdirfd;
 	struct string userdirtmp;	/* temporary storage of the pointer for userdir */
 	int res;
 
@@ -228,8 +227,8 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 	userdirtmp.s[--userdirtmp.len] = '\0';
 	userdirtmp.s[userdirtmp.len - 1] = '/';
 
-	dirp = opendir(userdirtmp.s);
-	if (dirp == NULL) {
+	userdirfd = open(userdirtmp.s, O_RDONLY);
+	if (userdirfd < 0) {
 		char filetmp[PATH_MAX];
 		int e = errno;
 		int fd;
@@ -380,7 +379,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 			}
 		}
 	} else {
-		closedir(dirp);
+		while ((close(userdirfd) < 0) && (errno == EINTR));
 		ds->userpath.s = userdirtmp.s;
 		ds->userpath.len = userdirtmp.len;
 	}
