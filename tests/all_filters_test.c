@@ -8,8 +8,8 @@
 #include <qsmtpd/qsmtpd.h>
 
 #include <assert.h>
-#include <dirent.h>
 #include <errno.h>
+#include <limits.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -104,7 +104,7 @@ main(int argc, char **argv)
 	struct userconf uc;
 	struct recip dummyrecip;
 	struct recip firstrecip;
-	DIR *basedir;
+	int basedirfd;
 	char confpath[PATH_MAX];
 
 	if (argc != 2) {
@@ -165,12 +165,12 @@ main(int argc, char **argv)
 
 	i = 0;
 	snprintf(confpath, sizeof(confpath), "%s/0/", argv[1]);
-	basedir = opendir(confpath);
+	basedirfd = open(confpath, O_RDONLY);
 
 	testcase_setup_log_writen(test_log_writen);
 	testcase_ignore_ask_dnsa();
 
-	while (basedir != NULL) {
+	while (basedirfd >= 0) {
 		char userpath[PATH_MAX];
 		int j;
 		char *a = NULL, **b = NULL;	/* test configuration storage */
@@ -179,7 +179,7 @@ main(int argc, char **argv)
 		const char *fmsg = NULL;	/* returned failure message */
 		unsigned int exp_log_count = 0;	/* expected log messages */
 
-		closedir(basedir);
+		close(basedirfd);
 
 		/* set default configuration */
 		default_session_config();
@@ -244,23 +244,23 @@ main(int argc, char **argv)
 		xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
 		snprintf(userpath, sizeof(userpath), "%s/%i/user/", argv[1], i);
-		basedir = opendir(userpath);
-		if (basedir == NULL) {
+		basedirfd = open(userpath, O_RDONLY);
+		if (basedirfd < 0) {
 			uc.userpath.s = NULL;
 			uc.userpath.len = 0;
 		} else {
-			closedir(basedir);
+			close(basedirfd);
 			uc.userpath.s = userpath;
 			uc.userpath.len = strlen(uc.userpath.s);
 		}
 
 		snprintf(confpath, sizeof(confpath), "%s/%i/domain/", argv[1], i);
-		basedir = opendir(confpath);
-		if (basedir == NULL) {
+		basedirfd = open(confpath, O_RDONLY);
+		if (basedirfd < 0) {
 			uc.domainpath.s = NULL;
 			uc.domainpath.len = 0;
 		} else {
-			closedir(basedir);
+			close(basedirfd);
 			uc.domainpath.s = confpath;
 			uc.domainpath.len = strlen(uc.domainpath.s);
 		}
@@ -303,7 +303,7 @@ main(int argc, char **argv)
 
 		i++;
 		snprintf(confpath, sizeof(confpath), "%s/%i/", argv[1], i);
-		basedir = opendir(confpath);
+		basedirfd = open(confpath, O_RDONLY);
 		free(a);
 		free(b);
 	}
