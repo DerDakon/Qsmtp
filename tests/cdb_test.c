@@ -239,7 +239,7 @@ main(int argc, char **argv)
 		fputs("searching for example.net in not existing users/cdb did not fail with the expected error code\n", stderr);
 		err++;
 	}
-	fd = open("users/cdb", O_WRONLY | O_CREAT | O_TRUNC, 0600);
+	fd = creat("users/cdb", 0600);
 	if (fd == -1) {
 		err = errno;
 		fputs("ERROR: can not create temporary file for CDB test\n", stderr);

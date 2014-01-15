@@ -24,7 +24,7 @@ main(void)
 	ssize_t t, u;
 
 	unlink(testfname);
-	fd = open(testfname, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+	fd = creat(testfname, 0644);
 	if (fd == -1) {
 		fprintf(stderr, "can not open %s for writing\n", testfname);
 		return 1;
@@ -132,7 +132,7 @@ main(void)
 		return 12;
 	}
 
-	fd = open(testfname, O_WRONLY | O_TRUNC | O_CREAT, 0644);
+	fd = creat(testfname, 0644);
 	if (fd == -1) {
 		fprintf(stderr, "can not open %s for writing\n", testfname);
 		return 13;

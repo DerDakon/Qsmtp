@@ -64,7 +64,7 @@ createTestFile(const char * const name, const char * const value)
 {
 	int fd;
 
-	fd = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	fd = creat(name, 0644);
 	if (fd == -1) {
 		fputs("ERROR: can not create temporary file for testcase\n", stderr);
 		exit(1);

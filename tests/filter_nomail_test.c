@@ -59,7 +59,7 @@ int main()
 	ds.userpath.len = 2;
 
 	for (i = 0; rejectmsg[i] != NULL; i++) {
-		fd = open("nomail", O_CREAT | O_WRONLY | O_TRUNC, 0600);
+		fd = creat("nomail", 0600);
 		if (fd == -1) {
 			fprintf(stderr, "cannot create file 'nomail'\n");
 			return -1;
@@ -76,7 +76,7 @@ int main()
 		}
 	}
 
-	fd = open("nomail", O_CREAT | O_WRONLY | O_TRUNC, 0600);
+	fd = creat("nomail", 0600);
 	if (fd == -1) {
 		fprintf(stderr, "cannot create file 'nomail'\n");
 		return -1;
