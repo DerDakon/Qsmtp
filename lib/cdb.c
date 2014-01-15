@@ -71,7 +71,8 @@ cdb_seekmm(int fd, const char *key, unsigned int len, char **mm, const struct st
 	*mm = mmap(NULL, st->st_size, PROT_READ, MAP_SHARED, fd, 0);
 	err = errno;
 
-	while (close(fd) && (errno == EINTR));
+	if ((*mm != MAP_FAILED) || (err != EBADF))
+		while (close(fd) && (errno == EINTR));
 
 	if (*mm == MAP_FAILED) {
 		errno = err;
