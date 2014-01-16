@@ -50,8 +50,7 @@ ADD_TEST(NAME "Base64" COMMAND testcase_base64)
 
 ADD_EXECUTABLE(testcase_cdb
 		cdb_test.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/vpop.c)
+		cdb_entries.h)
 TARGET_LINK_LIBRARIES(testcase_cdb
 		qsmtp_lib
 		testcase_io_lib
@@ -59,7 +58,8 @@ TARGET_LINK_LIBRARIES(testcase_cdb
 )
 
 ADD_TEST(NAME "CDB"
-		COMMAND testcase_cdb "${CMAKE_CURRENT_SOURCE_DIR}")
+		COMMAND testcase_cdb
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 ADD_EXECUTABLE(testcase_authsetup
 		authsetup_test.c
@@ -618,3 +618,17 @@ TARGET_LINK_LIBRARIES(testcase_vpop_user_exists
 ADD_TEST(NAME "VPop_user_exists"
 		COMMAND testcase_vpop_user_exists
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/user_exists/")
+
+ADD_EXECUTABLE(testcase_vpop_vget_dir
+		vpop_vget_dir_test.c
+		cdb_entries.h
+		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/vpop.c)
+TARGET_LINK_LIBRARIES(testcase_vpop_vget_dir
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "VPop_vget_dir"
+		COMMAND testcase_vpop_vget_dir "${CMAKE_CURRENT_SOURCE_DIR}")
