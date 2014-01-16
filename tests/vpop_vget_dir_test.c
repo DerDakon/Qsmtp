@@ -87,6 +87,10 @@ main(int argc, char **argv)
 	struct userconf ds;
 	char cdbtestdir[18];
 	int fd;
+	char too_long_domain[512];
+
+	memset(too_long_domain, 'a', sizeof(too_long_domain) - 1);
+	too_long_domain[sizeof(too_long_domain) - 1] = '\0';
 
 	userconf_init(&ds);
 	if (argc != 2) {
@@ -116,6 +120,11 @@ main(int argc, char **argv)
 	fd = vget_dir("example.net", &ds);
 	if (fd != -ENOENT) {
 		fputs("searching for example.net in not existing users/cdb did not fail with the expected error code\n", stderr);
+		err++;
+	}
+	fd = vget_dir(too_long_domain, &ds);
+	if (fd != -EFAULT) {
+		fputs("searching for too long domain name did not fail with the expected error code\n", stderr);
 		err++;
 	}
 	fd = creat("users/cdb", 0600);
