@@ -123,14 +123,16 @@ int vget_dir(const char *domain, struct userconf *ds)
 static int
 qmexists(const string *dirtempl, const char *suff1, const size_t len, const int def)
 {
+	static const char dotqm[] = ".qmail-";
 	char filetmp[PATH_MAX];
 	int fd;
-	size_t l = dirtempl->len;
+	size_t l = dirtempl->len + strlen(dotqm);
 
 	errno = ENOENT;
 	if (l >= sizeof(filetmp))
 		return -1;
-	memcpy(filetmp, dirtempl->s, l);
+	memcpy(filetmp, dirtempl->s, dirtempl->len);
+	memcpy(filetmp + dirtempl->len, dotqm, strlen(dotqm));
 	if (def & 2) {
 		char *p;
 
@@ -217,8 +219,6 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 		char filetmp[PATH_MAX];
 		int e = errno;
 		int fd;
-		string dotqm;
-		size_t i;
 
 		if (e == EACCES) {
 			/* The directory itself is not readable. It may still be possible to 
@@ -242,57 +242,40 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 		free(userdirtmp.s);
 
 		/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
-		i = ds->domainpath.len;
-		memcpy(filetmp, ds->domainpath.s, i);
-		memcpy(filetmp + i, ".qmail-", 7);
-		i += 7;
-		filetmp[i] = '\0';
-		if (newstr(&dotqm, i + 1) != 0)  {
-			userconf_free(ds);
-			return -1;
-		}
-		memcpy(dotqm.s, filetmp, dotqm.len--);
-		fd = qmexists(&dotqm, localpart->s, localpart->len, 2);
+		fd = qmexists(&ds->domainpath, localpart->s, localpart->len, 2);
 		/* try .qmail-user-default instead */
 		if ((fd < 0) && (errno == ENOENT))
-			fd = qmexists(&dotqm, localpart->s, localpart->len, 3);
+			fd = qmexists(&ds->domainpath, localpart->s, localpart->len, 3);
 
 		if (fd < 0) {
 			char *p;
 
 			if (errno == EACCES) {
 				/* User exists */
-				free(dotqm.s);
 				return 1;
 			} else if (errno == ENOMEM) {
 				userconf_free(ds);
-				free(dotqm.s);
 				return fd;
 			} else if (errno != ENOENT) {
 				userconf_free(ds);
-				free(dotqm.s);
 				return -1;
 			}
 			/* if username contains '-' there may be
 			 .qmail-partofusername-default */
 			p = memchr(localpart->s, '-', localpart->len);
 			while (p) {
-				fd = qmexists(&dotqm, localpart->s, (p - localpart->s), 3);
+				fd = qmexists(&ds->domainpath, localpart->s, (p - localpart->s), 3);
 				if (fd < 0) {
 					if (errno == EACCES) {
-						free(dotqm.s);
 						return 1;
 					} else if (errno == ENOMEM) {
-						free(dotqm.s);
 						userconf_free(ds);
 						return fd;
 					} else if (errno != ENOENT) {
-						free(dotqm.s);
 						userconf_free(ds);
 						return -1;
 					}
 				} else {
-					free(dotqm.s);
 					while (close(fd)) {
 						if (errno != EINTR)
 							return -1;
@@ -303,8 +286,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 			}
 
 			/* does USERPATH/DOMAIN/.qmail-default exist ? */
-			fd = qmexists(&dotqm, NULL, 0, 1);
-			free(dotqm.s);
+			fd = qmexists(&ds->domainpath, NULL, 0, 1);
 			if (fd < 0) {
 				/* no local user with that address */
 				if (errno == EACCES) {
@@ -355,7 +337,6 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 				return 2;
 			}
 		} else {
-			free(dotqm.s);
 			while (close(fd)) {
 				if (errno != EINTR) {
 					userconf_free(ds);
