@@ -71,6 +71,7 @@ extern int submission_mode;		/**< if we should act as message submission agent *
 extern char certfilename[];		/**< path to SSL certificate filename */
 
 extern int err_control(const char *);
+extern int err_control2(const char *, const char *);
 extern void freedata(void);
 extern pid_t fork_clean();
 void __attribute__ ((noreturn)) conn_cleanup(const int rc);

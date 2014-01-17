@@ -216,7 +216,6 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 
 	userdirfd = open(userdirtmp.s, O_RDONLY);
 	if (userdirfd < 0) {
-		char filetmp[PATH_MAX];
 		int e = errno;
 		int fd;
 
@@ -305,7 +304,8 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 
 				r = read(fd, buff, sizeof(buff) - 1);
 				if (r == -1) {
-					if (err_control(filetmp) == 0)
+					
+					if (err_control2(ds->domainpath.s, ".qmail-default") == 0)
 						err = EDONE;
 					else
 						err = errno;

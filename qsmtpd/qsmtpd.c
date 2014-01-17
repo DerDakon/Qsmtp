@@ -139,7 +139,7 @@ err_control(const char *fn)
  * @param fn name of the file that caused the error
  * @see err_control
  */
-static int
+int
 err_control2(const char *msg, const char *fn)
 {
 	const char *logmsg[] = {"error: unable to open file: ", msg, fn, "\n", NULL};

@@ -2,7 +2,6 @@
 #include <qsmtpd/userconf.h>
 #include <qsmtpd/vpop.h>
 
-#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -106,8 +105,16 @@ int
 err_control(const char *fn)
 {
 	fprintf(stderr, "unexpected call to %s(%s)\n",
-			__func__, fn);
-	assert(0);
+		__func__, fn);
+	exit(1);
+}
+
+int
+err_control2(const char *msg, const char *fn)
+{
+	fprintf(stderr, "unexpected call to %s(%s, %s)\n",
+			__func__, msg, fn);
+	exit(1);
 }
 
 int
