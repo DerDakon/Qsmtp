@@ -340,7 +340,8 @@ TARGET_LINK_LIBRARIES(testcase_all_filters
 		${MEMCHECK_LIBRARIES}
 )
 ADD_TEST(NAME "All_Filters"
-		COMMAND testcase_all_filters "${CMAKE_CURRENT_SOURCE_DIR}/all_filters")
+		COMMAND testcase_all_filters
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/all_filters")
 
 ADD_EXECUTABLE(testcase_filter_badcc
 		filter_badcc_test.c

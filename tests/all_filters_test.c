@@ -97,7 +97,7 @@ test_log_writen(int priority, const char **s)
 }
 
 int
-main(int argc, char **argv)
+main(void)
 {
 	int i;
 	int err = 0;
@@ -106,11 +106,6 @@ main(int argc, char **argv)
 	struct recip firstrecip;
 	int basedirfd;
 	char confpath[PATH_MAX];
-
-	if (argc != 2) {
-		fprintf(stderr, "Usage: %s <basedir>\n", argv[0]);
-		return EINVAL;
-	}
 
 	STREMPTY(uc.domainpath);
 	STREMPTY(uc.userpath);
@@ -164,7 +159,7 @@ main(int argc, char **argv)
 	}
 
 	i = 0;
-	snprintf(confpath, sizeof(confpath), "%s/0/", argv[1]);
+	strcat(confpath, "0/");
 	basedirfd = open(confpath, O_RDONLY);
 
 	testcase_setup_log_writen(test_log_writen);
@@ -193,7 +188,7 @@ main(int argc, char **argv)
 		TAILQ_INSERT_TAIL(&head, &firstrecip, entries);
 		TAILQ_INSERT_TAIL(&head, &dummyrecip, entries);
 
-		snprintf(userpath, sizeof(userpath), "%s/%i/session", argv[1], i);
+		snprintf(userpath, sizeof(userpath), "%i/session", i);
 		j = open(userpath, O_RDONLY);
 		if (j >= 0) {
 			if (loadlistfd(j, &a, &b, NULL)) {
@@ -243,7 +238,7 @@ main(int argc, char **argv)
 		}
 		xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
-		snprintf(userpath, sizeof(userpath), "%s/%i/user/", argv[1], i);
+		snprintf(userpath, sizeof(userpath), "%i/user/", i);
 		basedirfd = open(userpath, O_RDONLY);
 		if (basedirfd < 0) {
 			uc.userpath.s = NULL;
@@ -254,7 +249,7 @@ main(int argc, char **argv)
 			uc.userpath.len = strlen(uc.userpath.s);
 		}
 
-		snprintf(confpath, sizeof(confpath), "%s/%i/domain/", argv[1], i);
+		snprintf(confpath, sizeof(confpath), "%i/domain/", i);
 		basedirfd = open(confpath, O_RDONLY);
 		if (basedirfd < 0) {
 			uc.domainpath.s = NULL;
@@ -302,7 +297,7 @@ main(int argc, char **argv)
 		}
 
 		i++;
-		snprintf(confpath, sizeof(confpath), "%s/%i/", argv[1], i);
+		snprintf(confpath, sizeof(confpath), "%i/", i);
 		basedirfd = open(confpath, O_RDONLY);
 		free(a);
 		free(b);
