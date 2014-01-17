@@ -121,18 +121,18 @@ int vget_dir(const char *domain, struct userconf *ds)
  */
 
 static int
-qmexists(const string *dirtempl, const char *suff1, const size_t len, const int def)
+qmexists(const struct userconf *ds, const char *suff1, const size_t len, const int def)
 {
 	static const char dotqm[] = ".qmail-";
 	char filetmp[PATH_MAX];
 	int fd;
-	size_t l = dirtempl->len + strlen(dotqm);
+	size_t l = ds->domainpath.len + strlen(dotqm);
 
 	errno = ENOENT;
 	if (l >= sizeof(filetmp))
 		return -1;
-	memcpy(filetmp, dirtempl->s, dirtempl->len);
-	memcpy(filetmp + dirtempl->len, dotqm, strlen(dotqm));
+	memcpy(filetmp, ds->domainpath.s, ds->domainpath.len);
+	memcpy(filetmp + ds->domainpath.len, dotqm, strlen(dotqm));
 	if (def & 2) {
 		char *p;
 
@@ -241,10 +241,10 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 		free(userdirtmp.s);
 
 		/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
-		fd = qmexists(&ds->domainpath, localpart->s, localpart->len, 2);
+		fd = qmexists(ds, localpart->s, localpart->len, 2);
 		/* try .qmail-user-default instead */
 		if ((fd < 0) && (errno == ENOENT))
-			fd = qmexists(&ds->domainpath, localpart->s, localpart->len, 3);
+			fd = qmexists(ds, localpart->s, localpart->len, 3);
 
 		if (fd < 0) {
 			char *p;
@@ -263,7 +263,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 			 .qmail-partofusername-default */
 			p = memchr(localpart->s, '-', localpart->len);
 			while (p) {
-				fd = qmexists(&ds->domainpath, localpart->s, (p - localpart->s), 3);
+				fd = qmexists(ds, localpart->s, (p - localpart->s), 3);
 				if (fd < 0) {
 					if (errno == EACCES) {
 						return 1;
@@ -285,7 +285,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 			}
 
 			/* does USERPATH/DOMAIN/.qmail-default exist ? */
-			fd = qmexists(&ds->domainpath, NULL, 0, 1);
+			fd = qmexists(ds, NULL, 0, 1);
 			if (fd < 0) {
 				/* no local user with that address */
 				if (errno == EACCES) {
