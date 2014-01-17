@@ -128,13 +128,13 @@ qmexists(const string *dirtempl, const char *suff1, const size_t len, const int 
 	size_t l = dirtempl->len;
 
 	errno = ENOENT;
-	if (l >= PATH_MAX)
+	if (l >= sizeof(filetmp))
 		return -1;
 	memcpy(filetmp, dirtempl->s, l);
 	if (def & 2) {
 		char *p;
 
-		if (l + len >= PATH_MAX)
+		if (l + len >= sizeof(filetmp))
 			return -1;
 		memcpy(filetmp + l, suff1, len);
 
@@ -148,14 +148,14 @@ qmexists(const string *dirtempl, const char *suff1, const size_t len, const int 
 
 		l += len;
 		if (def & 1) {
-			if (l + 1 >= PATH_MAX)
+			if (l + 1 >= sizeof(filetmp))
 				return -1;
 			*(filetmp + l) = '-';
 			l++;
 		}
 	}
 	if (def & 1) {
-		if (l + 7 >= PATH_MAX)
+		if (l + 7 >= sizeof(filetmp))
 			return -1;
 		memcpy(filetmp + l, "default", 7);
 		l += 7;
