@@ -49,16 +49,13 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 			j = fd;
 			errno = 0;
 		} else {
-			char *wtxt;
-
 			if ( (rc = loadlistfd(fd, &c, domainvalid)) < 0) {
 				free(a);
 				free(txt);
 				return rc;
 			}
 
-			j = check_rbl(c, &wtxt);
-			free(wtxt);
+			j = check_rbl(c, NULL);
 		}
 		if (j >= 0) {
 			const char *logmess[] = {"not rejected message to <", THISRCPT, "> from <", MAILFROM,

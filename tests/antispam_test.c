@@ -108,6 +108,12 @@ test_rbl()
 				fprintf(stderr, "check_rbl() should have returned 4 but returned %i for ip %s\n", r, ips[ipidx]);
 				err++;
 			}
+			/* do the same test again, but this time skip the TXT lookup */
+			r = check_rbl(rbls, NULL);
+			if (r != 4) {
+				fprintf(stderr, "check_rbl(x, NULL) should have returned 4 but returned %i for ip %s\n", r, ips[ipidx]);
+				err++;
+			}
 		} else {
 			err += check_nomatch(r, "check_rbl() without matching DNS entries");
 		}

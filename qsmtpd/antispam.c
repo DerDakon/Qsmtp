@@ -82,6 +82,8 @@ reverseip4(char *buf)
  *
  * If no match was found but temporary DNS errors were encountered errno
  * is set to EAGAIN.
+ *
+ * If txt is NULL no TXT record lookup will be performed.
  */
 int
 check_rbl(char *const *rbls, char **txt)
@@ -118,7 +120,8 @@ check_rbl(char *const *rbls, char **txt)
 			} else if (!j) {
 				/* if there is any error here we just write the generic message to the client
 				 * so that's no real problem for us */
-				dnstxt(txt, lookup);
+				if (txt != NULL)
+					dnstxt(txt, lookup);
 				return i;
 			} else if (j == 2) {
 				/* This lookup failed with temporary error. We continue and check the other RBLs first, if

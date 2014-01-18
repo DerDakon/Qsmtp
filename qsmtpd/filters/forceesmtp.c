@@ -16,7 +16,6 @@ cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)
 	int rc;			/* return code */
 	int fd;			/* file descriptor of the policy file */
 	const char *fnb;	/* filename of the blacklist file */
-	char *txt = NULL;	/* TXT record of the rbl entry */
 
 	if (xmitstat.esmtp)
 		return 0;
@@ -33,9 +32,8 @@ cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)
 	if ( (rc = loadlistfd(fd, &a, domainvalid)) < 0)
 		return rc;
 
-	i = check_rbl(a, &txt);
+	i = check_rbl(a, NULL);
 	free(a);
-	free(txt);
 	if (i < 0) {
 		if (errno) {
 			if (errno == EAGAIN) {
