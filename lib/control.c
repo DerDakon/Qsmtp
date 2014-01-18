@@ -304,62 +304,67 @@ loadonelinerfd(int fd, char **buf)
  * read a list from config file and validate entries
  *
  * @param fd file descriptor to read from (is closed on exit!)
- * @param buf the buffer where the data should be stored (memory will be malloced)
  * @param bufa array to be build from buf (memory will be malloced)
  * @param cf function to check if an entry is valid or NULL if not to
  * @retval 0 on success
  * @retval -1 on error
  *
- * if the file does not exist or has no content *buf and *bufa will be set to NULL
+ * If the file does not exist or has no content *bufa will be set to NULL
+ * and 0 is returned.
  */
 int
-loadlistfd(int fd, char **buf, char ***bufa, checkfunc cf)
+loadlistfd(int fd, char ***bufa, checkfunc cf)
 {
-	size_t i, k;
-	size_t j = lloadfilefd(fd, buf, 3);
+	size_t i, k, j;
+	char *buf;
+	const size_t datalen = lloadfilefd(fd, &buf, 3);
 
-	if (j == (size_t) -1)
+	if (datalen == (size_t) -1)
 		return -1;
 
-	if (!j) {
+	if (datalen == 0) {
 		*bufa = NULL;
 		return 0;
 	}
 	/* count the lines in buf */
-	i = j - 1;
+	i = datalen - 1;
 	k = j = 0;
 	while (k < i) {
-		if (!cf || !cf(*buf + k))
+		if (!cf || !cf(buf + k))
 			j++;
 		else {
-			const char *s[] = {"input file contains invalid entry '", *buf + k, "'", NULL};
+			const char *s[] = {"input file contains invalid entry '", buf + k, "'", NULL};
 
 			log_writen(LOG_WARNING, s);
 			/* mark this entry as invalid */
-			(*buf)[k++] = '\0';
+			buf[k++] = '\0';
 		}
-		k += strlen(*buf + k) + 1;
+		k += strlen(buf + k) + 1;
 	}
 	if (!j) {
 		/* only invalid entries in file */
-		free(*buf);
+		free(buf);
 		*bufa = NULL;
-		*buf = NULL;
 		return 0;
 	}
-	*bufa = malloc((j + 1) * sizeof(char*));
+	/* the length of the pointer array */
+	i = (j + 1) * sizeof(char*);
+	*bufa = realloc(buf, i + datalen);
 	if (!*bufa) {
-		free(*buf);
+		free(buf);
 		return -1;
 	}
+	/* move the data beyond the pointer array */
+	buf = (char *)(((uintptr_t)*bufa) + i);
+	memmove(buf, *bufa, datalen);
 	i = k = 0;
 	/* store references to the beginning of each valid entry */
 	while (i < j) {
-		while (!(*buf)[k]) {
-			k += strlen(*buf + k + 1) + 2;
+		while (!buf[k]) {
+			k += strlen(buf + k + 1) + 2;
 		}
-		(*bufa)[i++] = *buf + k;
-		k += strlen(*buf + k) + 1;
+		(*bufa)[i++] = buf + k;
+		k += strlen(buf + k) + 1;
 	}
 	(*bufa)[j] = NULL;
 	return 0;

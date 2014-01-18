@@ -408,8 +408,7 @@ checkfunc_accept_b(const char *s)
 static int
 test_listload()
 {
-	char ch;	/* dummy */
-	char *buf;
+	char *ch;	/* dummy */
 	char **bufa;
 	int res;
 	int err = 0;
@@ -419,25 +418,24 @@ test_listload()
 
 	puts("== Running tests for loadlistfd()");
 
-	buf = &ch;
-	bufa = &buf;
+	bufa = &ch;
 
 	errno = ENOENT;
-	res = loadlistfd(-1, &buf, &bufa, NULL);
+	res = loadlistfd(-1, &bufa, NULL);
 	if (res != 0) {
 		fputs("loadlistfd() with a not existing file should succeed\n", stderr);
 		err++;
 	}
-	if ((buf != NULL) || (bufa != NULL)) {
+	if (bufa != NULL) {
 		fputs("loadlistfd() with a not existing file should set the pointers to NULL\n", stderr);
-		if (buf != NULL)
+		if (bufa != NULL) {
+			bufa = NULL;
 			err++;
-		if (bufa != NULL)
-			err++;
+		}
 	}
 
 	errno = EACCES;
-	res = loadlistfd(-1, &buf, &bufa, NULL);
+	res = loadlistfd(-1, &bufa, NULL);
 	if (res != -1) {
 		fputs("loadlistfd() with a read protected file should fail\n", stderr);
 		err++;
@@ -457,10 +455,8 @@ test_listload()
 			return err + 1;
 		}
 
-		buf = &ch;
-		bufa = &buf;
 		logcnt = 0;
-		res = loadlistfd(fd, &buf, &bufa, callbacks[i]);
+		res = loadlistfd(fd, &bufa, callbacks[i]);
 		if (res != 0) {
 			fprintf(stderr, "loadlistfd() returned %i\n", res);
 			err++;
@@ -471,14 +467,12 @@ test_listload()
 				fprintf(stderr, "loadlistfd() should have complained about 3 invalid entries, but logcnt is %i\n", logcnt);
 				err++;
 			}
-			if ((buf != NULL) || (bufa != NULL)) {
+			if (bufa != NULL) {
 				fputs("loadlistfd() should have set the pointers to NULL\n", stderr);
-				if (buf != NULL)
-					err++;
 				if (bufa != NULL)
 					err++;
 			}
-		} else if ((buf != NULL) && (bufa != NULL)) {
+		} else if (bufa != NULL) {
 			unsigned int end;
 			if (i == 2) {
 				if (strcmp(bufa[0], "b") != 0) {
@@ -507,13 +501,10 @@ test_listload()
 			}
 		} else {
 			fputs("loadlistfd() did not return data\n", stderr);
-			if (buf == NULL)
-				err++;
 			if (bufa == NULL)
 				err++;
 		}
 
-		free(buf);
 		free(bufa);
 	}
 

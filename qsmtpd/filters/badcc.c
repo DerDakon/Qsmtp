@@ -27,7 +27,6 @@
 int
 cb_badcc(const struct userconf *ds, const char **logmsg, int *t)
 {
-	char *b;		/* buffer to read file into */
 	char **a;		/* array of domains and/or mailaddresses to block */
 	int rc;			/* return code */
 	int fd;			/* file descriptor of the policy file */
@@ -40,10 +39,10 @@ cb_badcc(const struct userconf *ds, const char **logmsg, int *t)
 	if ( (fd = getfileglobal(ds, "badcc", t)) < 0)
 		return (errno == ENOENT) ? 0 : -1;
 
-	if ( (rc = loadlistfd(fd, &b, &a, checkaddr)) < 0)
+	if ( (rc = loadlistfd(fd, &a, checkaddr)) < 0)
 		return rc;
 
-	if (!b)
+	if (a == NULL)
 		return 0;
 
 	rc = 0;
@@ -82,7 +81,6 @@ cb_badcc(const struct userconf *ds, const char **logmsg, int *t)
 		}
 	}
 	free(a);
-	free(b);
 
 	if (rc > 0)
 		*logmsg = "bad CC";

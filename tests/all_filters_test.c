@@ -168,7 +168,7 @@ main(void)
 	while (basedirfd >= 0) {
 		char userpath[PATH_MAX];
 		int j;
-		char *a = NULL, **b = NULL;	/* test configuration storage */
+		char **b = NULL;	/* test configuration storage */
 		const char *failmsg = NULL;	/* expected failure message */
 		int r = 0;			/* filter result */
 		const char *fmsg = NULL;	/* returned failure message */
@@ -191,17 +191,13 @@ main(void)
 		snprintf(userpath, sizeof(userpath), "%i/session", i);
 		j = open(userpath, O_RDONLY);
 		if (j >= 0) {
-			if (loadlistfd(j, &a, &b, NULL)) {
+			if (loadlistfd(j, &b, NULL)) {
 				fprintf(stderr, "cannot open %s\n", userpath);
 				return 1;
 			}
 
-			if (a == NULL) {
-				assert(b == NULL);
-			} else {
+			if (b != NULL) {
 				int k;
-
-				assert(b != NULL);
 
 				for (k = 0; b[k] != NULL; k++) {
 					if (str_starts_with(b[k], "mailfrom:")) {
@@ -221,7 +217,6 @@ main(void)
 						if (*endptr != '\0') {
 							fprintf(stderr, "parse error in %s line %i: %s\n",
 									userpath, k, b[k]);
-							free(a);
 							free(b);
 							return 1;
 						}
@@ -232,7 +227,6 @@ main(void)
 
 		if (inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip) <= 0) {
 			fprintf(stderr, "bad ip address given: %s\n", xmitstat.remoteip);
-			free(a);
 			free(b);
 			return 1;
 		}
@@ -299,7 +293,6 @@ main(void)
 		i++;
 		snprintf(confpath, sizeof(confpath), "%i/", i);
 		basedirfd = open(confpath, O_RDONLY);
-		free(a);
 		free(b);
 	}
 

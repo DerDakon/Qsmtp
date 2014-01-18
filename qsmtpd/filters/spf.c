@@ -49,15 +49,15 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 /* there is no official SPF entry: go and check if someone else provided one, e.g. rspf.rhsbl.docsnyder.de. */
 	if (spfs == SPF_NONE) {
 		int fd;
-		char **a, *b;
+		char **a;
 
 		if ( (fd = getfileglobal(ds, "rspf", t)) < 0)
 			return (errno == ENOENT) ? 0 : -1;
 
-		if ( (rc = loadlistfd(fd, &b, &a, domainvalid)) < 0)
+		if ( (rc = loadlistfd(fd, &a, domainvalid)) < 0)
 			return rc;
 
-		if (b) {
+		if (a != NULL) {
 			char spfname[256];
 			int v = 0;
 			size_t fromlen;	/* strlen(fromdomain) */
@@ -80,7 +80,6 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 				v++;
 			}
 			free(a);
-			free(b);
 			if ((spfs == SPF_PASS) || (spfs < 0)) {
 				return 0;
 			}

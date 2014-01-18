@@ -63,7 +63,7 @@ tls_init(void)
 	int i = 0;
 	SSL *myssl;
 	SSL_CTX *ctx;
-	char *saciphbuf, **saciphers, *servercert = NULL;
+	char **saciphers, *servercert = NULL;
 	const char *ciphers;
 	size_t fqlen = 0;
 
@@ -118,7 +118,7 @@ tls_init(void)
 	netwrite("STARTTLS\r\n");
 
 	/* while the server is preparing a responce, do something else */
-	if (loadlistfd(open("control/tlsclientciphers", O_RDONLY), &saciphbuf, &saciphers, NULL) == -1) {
+	if (loadlistfd(open("control/tlsclientciphers", O_RDONLY), &saciphers, NULL) == -1) {
 		SSL_free(myssl);
 		err_conf("can't open tlsclientciphers");
 	}
@@ -127,13 +127,12 @@ tls_init(void)
 			saciphers[i][strlen(saciphers[i])] = ':';
 			i++;
 		}
-		ciphers = saciphbuf;
-		free(saciphers);
+		ciphers = saciphers[0];
 	} else {
-		 ciphers = "DEFAULT";
+		ciphers = "DEFAULT";
 	}
 	SSL_set_cipher_list(myssl, ciphers);
-	free(saciphbuf);
+	free(saciphers);
 
 	/* SSL_set_options(myssl, SSL_OP_NO_TLSv1); */
 	SSL_set_fd(myssl, socketd);

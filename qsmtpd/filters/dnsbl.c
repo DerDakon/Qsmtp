@@ -13,7 +13,6 @@
 int
 cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 {
-	char *b;		/* buffer to read file into */
 	char **a;		/* array of domains and/or mailaddresses to block */
 	int i;			/* counter of the array position */
 	int rc;			/* return code */
@@ -33,18 +32,17 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 	if ( (fd = getfileglobal(ds, fnb, t)) < 0)
 		return (errno == ENOENT) ? 0 : -1;
 
-	if ( (rc = loadlistfd(fd, &b, &a, domainvalid)) < 0)
+	if ( (rc = loadlistfd(fd, &a, domainvalid)) < 0)
 		return rc;
 
 	i = check_rbl(a, &txt);
 	if (i >= 0) {
 		int j, u;
-		char *d, **c;		/* same like *a and **b, just for whitelist */
+		char **c;		/* same like **a, just for whitelist */
 
 		if ( (fd = getfile(ds, fnw, &u)) < 0) {
 			if (errno != ENOENT) {
 				free(a);
-				free(b);
 				free(txt);
 				return fd;
 			}
@@ -53,9 +51,8 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 		} else {
 			char *wtxt;
 
-			if ( (rc = loadlistfd(fd, &d, &c, domainvalid)) < 0) {
+			if ( (rc = loadlistfd(fd, &c, domainvalid)) < 0) {
 				free(a);
-				free(b);
 				free(txt);
 				return rc;
 			}
@@ -104,7 +101,6 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 		}
 	}
 	free(a);
-	free(b);
 	free(txt);
 	return rc;
 }

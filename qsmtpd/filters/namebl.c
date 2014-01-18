@@ -14,7 +14,6 @@
 int
 cb_namebl(const struct userconf *ds, const char **logmsg, int *t)
 {
-	char *b;		/* buffer to read file into */
 	char **a;		/* array of blacklists to check */
 	int i = 0;		/* counter of the array position */
 	int rc;			/* return code */
@@ -34,10 +33,10 @@ cb_namebl(const struct userconf *ds, const char **logmsg, int *t)
 	if ( (fd = getfileglobal(ds, "namebl", t)) < 0)
 		return (errno == ENOENT) ? 0 : -1;
 
-	if ( (rc = loadlistfd(fd, &b, &a, domainvalid)) < 0)
+	if ( (rc = loadlistfd(fd, &a, domainvalid)) < 0)
 		return rc;
 
-	if (!b)
+	if (a == NULL)
 		return 0;
 
 	fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
@@ -93,7 +92,6 @@ cb_namebl(const struct userconf *ds, const char **logmsg, int *t)
 	}
 out:
 	free(a);
-	free(b);
 	free(txt);
 	return rc;
 }

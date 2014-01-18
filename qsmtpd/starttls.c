@@ -94,7 +94,7 @@ static int ssl_verified;
 int
 tls_verify(void)
 {
-	char *clientbuf, **clients;
+	char **clients;
 	STACK_OF(X509_NAME) *sk;
 	int tlsrelay = 0;
 
@@ -104,7 +104,7 @@ tls_verify(void)
 
 	/* request client cert to see if it can be verified by one of our CAs
 	 * and the associated email address matches an entry in tlsclients */
-	if (loadlistfd(open("control/tlsclients", O_RDONLY), &clientbuf, &clients, checkaddr) < 0)
+	if (loadlistfd(open("control/tlsclients", O_RDONLY), &clients, checkaddr) < 0)
 		return -errno;
 
 	if (clients == NULL)
@@ -116,7 +116,6 @@ tls_verify(void)
 		 * 0.9.6b client might fail with SSL_R_EXCESSIVE_MESSAGE_SIZE;
 		 * it is probably due to 0.9.6b supporting only 8k key exchange
 		 * data while the 0.9.6c release increases that limit to 100k */
-		free(clientbuf);
 		free(clients);
 		return 0;
 	}
@@ -187,7 +186,6 @@ tls_verify(void)
 	} while (0);
 
 	free(clients);
-	free(clientbuf);
 	SSL_set_client_CA_list(ssl, NULL);
 	SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
 

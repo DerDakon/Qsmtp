@@ -82,8 +82,6 @@ struct smtpcomm commands[] = {
 #undef _C
 
 static unsigned int rcptcount;		/**< number of recipients in lists including rejected */
-static char *gcbuf;			/**< buffer for globalconf array (see below) */
-
 int relayclient;			/**< flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
 static char *rcpthosts;			/**< memory mapping of control/rcpthosts */
 static off_t rcpthsize;			/**< sizeof("control/rcpthosts") */
@@ -431,9 +429,8 @@ setup(void)
 		return e;
 	}
 
-	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY), &gcbuf, &tmpconf, NULL)) ) {
-		if ((errno == ENOENT) || !gcbuf) {
-			gcbuf = NULL;
+	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY), &tmpconf, NULL)) ) {
+		if ((errno == ENOENT) || (tmpconf == NULL)) {
 			tmpconf = NULL;
 		} else {
 			log_write(LOG_ERR, "error opening control/filterconf");
@@ -1148,7 +1145,6 @@ conn_cleanup(const int rc)
 	userbackend_free();
 
 	free(protocol);
-	free(gcbuf);
 	free(globalconf);
 	free(heloname.s);
 	free(msgidhost.s);

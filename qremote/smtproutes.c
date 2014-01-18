@@ -101,7 +101,7 @@ validroute(const char *s)
 struct ips *
 smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 {
-	char **smtproutes, *smtproutbuf;
+	char **smtproutes;
 	struct ips *mx = NULL;
 	char fn[320]; /* length of domain + control/smtproutes.d */
 	const char dirname[] = "control/smtproutes.d/";
@@ -119,7 +119,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 		close(dirfd);
 
 		while (1) {
-			char *buf, **array;
+			char **array;
 			int fd = open(fn, O_RDONLY);
 			unsigned int i = 0;
 			const char *val;
@@ -153,7 +153,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			tagmask = 0;
 
 			/* no error */
-			if (loadlistfd(fd, &buf, &array, validroute) != 0) {
+			if (loadlistfd(fd, &array, validroute) != 0) {
 				const char *errmsg[] = {
 						"error loading smtproute.d file for domain ",
 						remhost, NULL};
@@ -173,8 +173,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 							target, "\" given as target for \"",
 							remhost, "\"", NULL};
 
-					free(array);
-					err_confn(logmsg, buf);
+					err_confn(logmsg, array);
 				} else {
 					struct ips *m = mx;
 					while (m) {
@@ -204,9 +203,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 							"\" given as target for \"", remhost, "\"", NULL};
 
 					freeips(mx);
-					free(array);
-					/* smtproutbuf not freed here as "port" still references it */
-					err_confn(logmsg, buf);
+					err_confn(logmsg, array);
 				}
 				
 			} else {
@@ -214,13 +211,12 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			}
 
 			free(array);
-			free(buf);
 
 			return mx;
 		}
 	}
 
-	if (!loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutbuf, &smtproutes, hascolon) && smtproutbuf) {
+	if ((loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutes, hascolon) == 0) && (smtproutes != NULL)) {
 		unsigned int k = 0;
 
 		while (smtproutes[k]) {
@@ -242,9 +238,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 									target, "\" given as target for \"",
 									remhost, "\"", NULL};
 
-						free(smtproutes);
-						/* smtproutbuf not freed here as "port" still references it */
-						err_confn(logmsg, smtproutbuf);
+						err_confn(logmsg, smtproutes);
 					}
 				} else {
 					*targetport = 25;
@@ -257,9 +251,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 									target, "\" given as target for \"",
 									remhost, "\"", NULL};
 
-					free(smtproutes);
-					/* smtproutbuf not freed here as "port" still references it */
-					err_confn(logmsg, smtproutbuf);
+					err_confn(logmsg, smtproutes);
 				} else {
 					struct ips *m = mx;
 					while (m) {
@@ -272,7 +264,6 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			k++;
 		}
 		free(smtproutes);
-		free(smtproutbuf);
 	}
 
 	errno = 0;

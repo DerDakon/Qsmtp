@@ -67,7 +67,6 @@ int
 cb_badmailfrom(const struct userconf *ds, const char **logmsg, int *t)
 {
 	int u;		/* if it is the user or domain policy */
-	char *b;	/* buffer to read file into */
 	char **a;	/* array of domains and/or mailaddresses to block */
 	int rc = 0;	/* return code */
 	int fd;		/* file descriptor of the policy file */
@@ -80,12 +79,11 @@ cb_badmailfrom(const struct userconf *ds, const char **logmsg, int *t)
 		return (errno != ENOENT) ? fd : 0;
 
 	/* don't check syntax of entries here: there might be things like ".cn" and so on that would fail the test */
-	if ( (rc = loadlistfd(fd, &b, &a, NULL)) < 0)
+	if ( (rc = loadlistfd(fd, &a, NULL)) < 0)
 		return rc;
 
 	at = strchr(xmitstat.mailfrom.s, '@');
 	rc = lookupbmf(at, a);
-	free(b);
 	if (!rc)
 		return rc;
 
@@ -94,13 +92,12 @@ cb_badmailfrom(const struct userconf *ds, const char **logmsg, int *t)
 		if (errno != ENOENT)
 			return fd;
 	} else {
-		if (loadlistfd(fd, &b, &a, checkaddr) < 0)
+		if (loadlistfd(fd, &a, checkaddr) < 0)
 			return -1;
 		if (lookupbmf(at, a)) {
 			logwhitelisted(*logmsg, *t, u);
 			rc = 0;
 		}
-		free(b);
 	}
 	return rc;
 }

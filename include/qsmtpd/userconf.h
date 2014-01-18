@@ -10,9 +10,7 @@ struct userconf {
 	string domainpath;		/**< Path of the domain for domain settings */
 	string userpath;		/**< Path of the user directory where the user stores it's own settings */
 	char **userconf;		/**< contents of the "filterconf" file in user directory (or NULL) */
-	char *ucbuf;			/**< buffer for userconf array (or NULL), should not be accessed directly */
 	char **domainconf;		/**< dito for domain directory */
-	char *dcbuf;			/**< buffer for domainconf array (or NULL), should not be accessed directly */
 };
 
 /**

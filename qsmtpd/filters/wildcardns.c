@@ -40,12 +40,12 @@ loadjokers(struct dns_wc **wcs)
 {
 	int i;
 	struct dns_wc **this = wcs;
-	char *inpbuf, **inputs;
+	char **inputs;
 
-	if (loadlistfd(open("control/wildcardns", O_RDONLY), &inpbuf, &inputs, &validns))
+	if (loadlistfd(open("control/wildcardns", O_RDONLY), &inputs, &validns))
 		return 0;
 
-	if (!inpbuf)
+	if (inputs == NULL)
 		return 0;
 
 	for (i = 0; inputs[i]; i++) {
@@ -69,14 +69,12 @@ loadjokers(struct dns_wc **wcs)
 				free(*wcs);
 				*wcs = *this;
 			}
-			free(inpbuf);
 			free(inputs);
 			return -1;
 		}
 		**this = t;
 		this = &((*this)->next);
 	}
-	free(inpbuf);
 	free(inputs);
 	return 0;
 }
