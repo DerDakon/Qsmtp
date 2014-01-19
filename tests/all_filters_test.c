@@ -159,7 +159,7 @@ main(void)
 	}
 
 	i = 0;
-	strcat(confpath, "0/");
+	strncpy(confpath, "0/", sizeof(confpath));
 	basedirfd = open(confpath, O_RDONLY);
 
 	testcase_setup_log_writen(test_log_writen);
