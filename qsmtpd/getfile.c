@@ -66,7 +66,7 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 	int fd;
 
 	if (ds->userpath.len) {
-		*type = 0;
+		*type = CONFIG_USER;
 
 		fd = open_in_dir(ds->userpath.s, ds->userpath.len, fn);
 
@@ -79,7 +79,7 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 		return -1;
 	}
 
-	*type = 1;
+	*type = CONFIG_DOMAIN;
 
 	return open_in_dir(ds->domainpath.s, ds->domainpath.len, fn);
 }
@@ -104,7 +104,7 @@ getfileglobal(const struct userconf *ds, const char *fn, int *type)
 
 	/* neither user nor domain specified how to handle this feature
 	 * now look up the global setting */
-	*type = 2;
+	*type = CONFIG_GLOBAL;
 	return open_in_dir(controldir, strlen(controldir), fn);
 }
 

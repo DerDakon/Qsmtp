@@ -13,6 +13,13 @@ struct userconf {
 	char **domainconf;		/**< dito for domain directory */
 };
 
+enum config_domain {
+	CONFIG_NONE = 0,		/**< no entry was returned */
+	CONFIG_USER = 1,		/**< the config entry was found in the user specific configuration */
+	CONFIG_DOMAIN = 2,		/**< the config entry was found in the domain specific configuration */
+	CONFIG_GLOBAL = 4		/**< the config entry was found in the global configuration */
+};
+
 /**
  * @brief initialize the struct userconf
  * @param ds the struct to initialize

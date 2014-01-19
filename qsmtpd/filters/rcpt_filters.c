@@ -56,7 +56,7 @@ rcpt_cb late_cbs[] = {
 };
 
 /** string constants for the type of blocklists */
-const char *blocktype[] = {"user", "domain", "global"};
+const char *blocktype[] = { NULL, "user", "domain", "global" };
 
 /** write message to syslog that a otherwise rejected mail has been passed because of whitelisting
  *

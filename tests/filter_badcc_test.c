@@ -162,7 +162,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "foo@example.net as first recipient with example.net following"
 				" should reject, but result is %i, t = %i\n", r, t);
 		err++;
-	} else if (t != 0) {
+	} else if (t != CONFIG_USER) {
 		fprintf(stderr, "foo@example.net should reject with user policy,"
 				" but t is %i\n", t);
 		err++;
@@ -175,7 +175,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "bar@example.net should reject foo@example.com,"
 				" but result is %i, t = %i\n", r, t);
 		err++;
-	} else if (t != 1) {
+	} else if (t != CONFIG_DOMAIN) {
 		fprintf(stderr, "bar@example.net should reject with domain policy,"
 				" but t is %i\n", t);
 		err++;
@@ -188,8 +188,8 @@ int main(int argc, char **argv)
 		fprintf(stderr, "foo@example.net should reject baz@sub.example.net,"
 				" but result is %i, t = %i\n", r, t);
 		err++;
-	} else if (t != 0) {
-		fprintf(stderr, "bar@example.net should reject with domain policy,"
+	} else if (t != CONFIG_USER) {
+		fprintf(stderr, "bar@example.net should reject with user policy,"
 				" but t is %i\n", t);
 		err++;
 	}
