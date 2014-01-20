@@ -125,8 +125,8 @@ main(int argc, char **argv)
 	}
 	err = 0;
 	fd = vget_dir("example.net", &ds);
-	if (fd != -ENOENT) {
-		fputs("searching for example.net in not existing users/cdb did not fail with the expected error code\n", stderr);
+	if (fd != 0) {
+		fprintf(stderr, "searching for example.net in not existing users/cdb did not return 0, but %i\n", fd);
 		err++;
 	}
 	fd = vget_dir(too_long_domain, &ds);

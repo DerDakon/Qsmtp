@@ -64,8 +64,14 @@ int vget_dir(const char *domain, struct userconf *ds)
 
 	/* try to open the cdb file */
 	fd = open("users/cdb", O_RDONLY);
-	if (fd < 0)
-		return -errno;
+	if (fd < 0) {
+		switch (errno) {
+		case ENOENT:
+			return 0;
+		default:
+			return -errno;
+		}
+	}
 
 	if (fstat(fd, &st) < 0) {
 		err = -errno;
@@ -193,9 +199,6 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 /* get the domain directory from "users/cdb" */
 	res = vget_dir(domain, ds);
 	if (res < 0) {
-		if (res == -ENOENT)
-			return 5;
-
 		errno = -res;
 		return -1;
 	} else if (res == 0) {
