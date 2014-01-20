@@ -70,7 +70,7 @@ int main()
 
 		t = -1;
 		r = cb_nomail(&ds, &logmsg, &t);
-		if ((r != 1) || (t != 0)) {
+		if ((r != 1) || (t != CONFIG_USER)) {
 			fprintf(stderr, "nomail filter should reject, but output was r %i t %i\n", r, t);
 			err++;
 		}
@@ -85,7 +85,7 @@ int main()
 
 	t = -1;
 	r = cb_nomail(&ds, &logmsg, &t);
-	if ((r != 2) || (t != 0)) {
+	if ((r != 2) || (t != CONFIG_USER)) {
 		fprintf(stderr, "nomail filter should reject, but output was r %i t %i\n", r, t);
 		err++;
 	}

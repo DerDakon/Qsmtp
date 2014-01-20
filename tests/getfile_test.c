@@ -134,21 +134,21 @@ test_found(void)
 	ds.domainpath.s = NULL;
 
 	fd = getfile(&ds, EXISTING_FILENAME, &type);
-	r += test_found_internal("user", fd, type, 0);
+	r += test_found_internal("user", fd, type, CONFIG_USER);
 
 	/* set both, but user information should still be used */
 	ds.domainpath.len = ds.userpath.len;
 	ds.domainpath.s = ds.userpath.s;
 
 	fd = getfile(&ds, EXISTING_FILENAME, &type);
-	r += test_found_internal("user", fd, type, 0);
+	r += test_found_internal("user", fd, type, CONFIG_USER);
 
 	/* now only with domain information */
 	ds.userpath.len = 0;
 	ds.userpath.s = NULL;
 
 	fd = getfile(&ds, EXISTING_FILENAME, &type);
-	r += test_found_internal("domain", fd, type, 1);
+	r += test_found_internal("domain", fd, type, CONFIG_DOMAIN);
 
 	return r;
 }
