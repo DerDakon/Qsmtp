@@ -38,12 +38,19 @@ static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default *
  * @returns negative error code or flag if domain was found
  * @retval 0 domain is not in database
  * @retval 1 domain was found
+ * @retval <0 negative error code
+ * @retval -EDONE the error was already handled
  *
  * Function will return 1 on success, memory for domaindir will be malloced.
  * The directory name will always end with a single '/' and be 0-terminated.
- * If the domain does not exist 0 is returned, -1 on error;
+ * If the domain does not exist 0 is returned, also if no users/cdb exists.
+ * On error a negative error code is returned.
+ *
+ * If ds already contains information about the same domain directory then
+ * the already existing information is preserved.
  */
-int vget_dir(const char *domain, struct userconf *ds)
+int
+vget_dir(const char *domain, struct userconf *ds)
 {
 	int fd, i;
 	char cdb_key[264];	/* maximum length of domain + 3 byte for !-\0 + padding to be sure */
@@ -67,9 +74,15 @@ int vget_dir(const char *domain, struct userconf *ds)
 	if (fd < 0) {
 		switch (errno) {
 		case ENOENT:
+			/* no database, no match */
 			return 0;
+		case EMFILE:
+		case ENFILE:
+		case ENOMEM:
+			return -ENOMEM;
 		default:
-			return -errno;
+			err_control("users/cdb");
+			return -EDONE;
 		}
 	}
 
@@ -91,8 +104,19 @@ int vget_dir(const char *domain, struct userconf *ds)
 
 	/* search the cdb file for our requested domain */
 	cdb_buf = cdb_seekmm(fd, cdb_key, cdbkeylen, &cdb_mmap, &st);
-	if (cdb_buf == NULL)
-		return errno ? -errno : 0;
+	if (cdb_buf == NULL) {
+		switch (errno) {
+		case 0:
+			return 0;
+		case EMFILE:
+		case ENFILE:
+		case ENOMEM:
+			return -ENOMEM;
+		default:
+			err_control("users/cdb");
+			return -EDONE;
+		}
+	}
 
 	/* format of cdb_buf is :
 	 * realdomain\0uid\0gid\0path\0
