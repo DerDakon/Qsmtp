@@ -3,13 +3,14 @@
 #include "test_io/testcase_io.h"
 
 #include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/addrparse.h>
 
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
 
 struct xmitstat xmitstat;
 unsigned int goodrcpt;
@@ -45,6 +46,9 @@ static struct recip recips[] = {
 		}
 	}
 };
+
+static const char badcc_foo[] = "nonexistent@invalid.example.net\0@example.com\0sub.example.net\0\0";
+static const char badcc_domain[] = "foo@example.com\0\0";
 
 #define RCPT_PATTERNS 5
 
@@ -108,33 +112,56 @@ int
 userconf_get_buffer(const struct userconf *uc, const char *key, char ***values, checkfunc cf, const int useglobal)
 {
 	int type;
-	int fd;
-	int r;
+	const char *res = NULL;
+	unsigned int i;
+	const char *c;
 
-	if (useglobal)
-		fd = getfileglobal(uc, key, &type);
-	else
-		fd = getfile(uc, key, &type);
-
-	if (fd < 0) {
-		if (errno == ENOENT)
-			return CONFIG_NONE;
-		else
-			return -errno;
+	if (useglobal != 1) {
+		fprintf(stderr, "%s() was called with useglobal %i\n", __func__, useglobal);
+		exit(1);
 	}
 
-	r = loadlistfd(fd, values, cf);
-	if (r < 0)
-		return -errno;
+	if (strcmp(key, "badcc") != 0) {
+		fprintf(stderr, "%s() was called with key %s set\n", __func__, key);
+		exit(1);
+	}
 
-	if (*values == NULL)
+	if (cf != checkaddr) {
+		fprintf(stderr, "%s() was called with cf %p instead of checkaddr\n", __func__, cf);
+		exit(1);
+	}
+
+	if ((uc->userpath.s != NULL) && (strcmp(uc->userpath.s, "example.net/foo/") == 0)) {
+		res = badcc_foo;
+		type = CONFIG_USER;
+	} else if ((uc->domainpath.s != NULL) && (strcmp(uc->domainpath.s, "example.net/") == 0)) {
+		res = badcc_domain;
+		type = CONFIG_DOMAIN;
+	} else {
+		*values = NULL;
 		return CONFIG_NONE;
+	}
+
+	c = res;
+	for (i = 0; *c != '\0'; i++)
+		c += strlen(c) + 1;
+
+	*values = calloc(i + 1, sizeof(*values));
+	if (*values == NULL)
+		return -ENOMEM;
+
+	c = res;
+	for (i = 0; *c != '\0'; i++) {
+		(*values)[i] = (char *)c;
+		c += strlen(c) + 1;
+	}
 
 	assert((type >= CONFIG_USER) && (type <= CONFIG_GLOBAL));
 	return type;
 }
 
-int main(int argc, char **argv)
+int
+main(void)
 {
 	char *logmsg;
 	int t;
@@ -143,16 +170,6 @@ int main(int argc, char **argv)
 
 	testcase_ignore_log_write();
 	testcase_ignore_log_writen();
-
-	if (argc != 2) {
-		fprintf(stderr, "usage: %s base_directory\n", argv[0]);
-		return EFAULT;
-	}
-
-	if (chdir(argv[1]) != 0) {
-		fprintf(stderr, "error: cannot chdir() to %s\n", argv[1]);
-		return EFAULT;
-	}
 
 	memset(&ds, 0, sizeof(ds));
 	globalconf = NULL;

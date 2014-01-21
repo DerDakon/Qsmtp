@@ -347,7 +347,6 @@ ADD_EXECUTABLE(testcase_filter_badcc
 		filter_badcc_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/badcc.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
 )
 TARGET_LINK_LIBRARIES(testcase_filter_badcc
 		qsmtp_lib
@@ -355,7 +354,7 @@ TARGET_LINK_LIBRARIES(testcase_filter_badcc
 		${MEMCHECK_LIBRARIES}
 )
 ADD_TEST(NAME "Filter-badCC"
-		COMMAND testcase_filter_badcc ${CMAKE_CURRENT_SOURCE_DIR}/filter_badcc)
+		COMMAND testcase_filter_badcc)
 
 ADD_EXECUTABLE(testcase_filter_nomail
 		filter_nomail_test.c
