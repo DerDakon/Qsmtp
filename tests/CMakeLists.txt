@@ -384,14 +384,17 @@ TARGET_LINK_LIBRARIES(testcase_filter_fromdomain
 ADD_TEST(NAME "Filter-FromDomain"
 		COMMAND testcase_filter_fromdomain)
 
-ADD_EXECUTABLE(testcase_getfile
-		getfile_test.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c)
-TARGET_LINK_LIBRARIES(testcase_getfile
+ADD_EXECUTABLE(testcase_vpop_control
+		vpop_control_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/vpop.c)
+TARGET_LINK_LIBRARIES(testcase_vpop_control
+		qsmtp_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
-ADD_TEST(NAME "Getfile"
-		COMMAND testcase_getfile)
+ADD_TEST(NAME "VPop_control"
+		COMMAND testcase_vpop_control)
 
 ADD_EXECUTABLE(testcase_getsetting
 		getsetting_test.c

@@ -10,6 +10,7 @@
 #include <qsmtpd/addrparse.h>
 #include "control.h"
 #include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/userconf.h>
 
 /*
  * Bad CC: check the list of recipient addresses if there is someone were no CC makes sense
@@ -29,21 +30,19 @@ cb_badcc(const struct userconf *ds, const char **logmsg, int *t)
 {
 	char **a;		/* array of domains and/or mailaddresses to block */
 	int rc;			/* return code */
-	int fd;			/* file descriptor of the policy file */
 	struct recip *np;	/* current recipient to check */
 
 	/* if there is only one recipient we don't need to check for CC addresses */
 	if (!head.tqh_first->entries.tqe_next)
 		return 0;
 
-	if ( (fd = getfileglobal(ds, "badcc", t)) < 0)
-		return (errno == ENOENT) ? 0 : -1;
-
-	if ( (rc = loadlistfd(fd, &a, checkaddr)) < 0)
-		return rc;
-
-	if (a == NULL)
+	*t = userconf_get_buffer(ds, "badcc", &a, checkaddr, 1);
+	if (*t < 0) {
+		errno = -*t;
+		return -1;
+	} else if (*t == CONFIG_NONE) {
 		return 0;
+	}
 
 	rc = 0;
 	/* look through the list of recipients but ignore the current one */

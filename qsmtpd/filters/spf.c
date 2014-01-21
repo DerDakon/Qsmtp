@@ -10,6 +10,7 @@
 #include <qsmtpd/antispam.h>
 #include "log.h"
 #include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/userconf.h>
 #include "netio.h"
 
 /* Values for spfpolicy:
@@ -48,14 +49,15 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 
 /* there is no official SPF entry: go and check if someone else provided one, e.g. rspf.rhsbl.docsnyder.de. */
 	if (spfs == SPF_NONE) {
-		int fd;
 		char **a;
 
-		if ( (fd = getfileglobal(ds, "rspf", t)) < 0)
-			return (errno == ENOENT) ? 0 : -1;
-
-		if ( (rc = loadlistfd(fd, &a, domainvalid)) < 0)
-			return rc;
+		*t = userconf_get_buffer(ds, "rspf", &a, domainvalid, 1);
+		if (*t < 0) {
+			errno = -*t;
+			return -1;
+		} else if (*t == CONFIG_NONE) {
+			return 0;
+		}
 
 		if (a != NULL) {
 			char spfname[256];

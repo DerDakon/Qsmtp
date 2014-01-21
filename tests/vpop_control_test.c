@@ -15,8 +15,9 @@
 #define DIR_DEPTH 10
 #define COMPONENT_LENGTH 64
 
-/* name of the dummy file created */
+/* name of the dummy files created */
 #define EXISTING_FILENAME "filename"
+#define EXISTING_FILENAME_CONTENT "content"
 
 static char fnbuffer[(COMPONENT_LENGTH + 1) * DIR_DEPTH + 20];
 static struct userconf ds;
@@ -24,12 +25,29 @@ static struct userconf ds;
 /* to satisfy the linker */
 const char **globalconf;
 
+int
+err_control(const char *fn)
+{
+	fprintf(stderr, "unexpected call to %s(%s)\n",
+		__func__, fn);
+	exit(1);
+}
+
+int
+err_control2(const char *msg, const char *fn)
+{
+	fprintf(stderr, "unexpected call to %s(%s, %s)\n",
+		__func__, msg, fn);
+	exit(1);
+}
+
 static void
 create_dirs(void)
 {
 	char dirname[COMPONENT_LENGTH + 2];
 	unsigned int i;
 	int r;
+	char *fnstart;
 
 	for (i = 0; i < sizeof(dirname) - 2; i++)
 		dirname[i] = '0' + (i % 10);
@@ -46,12 +64,30 @@ create_dirs(void)
 		}
 	}
 
-	strcat(fnbuffer, EXISTING_FILENAME);
+	fnstart = fnbuffer + strlen(fnbuffer);
+	strcat(fnstart, EXISTING_FILENAME);
 	r = creat(fnbuffer, 0644);
 	if (r < 0) {
 		fprintf(stderr, "cannot create target file, error %i\n",
 				errno);
 		exit(1);
+	}
+	close(r);
+
+	*fnstart = '\0';
+	strcat(fnstart, EXISTING_FILENAME_CONTENT);
+	r = creat(fnbuffer, 0644);
+	if (r < 0) {
+		fprintf(stderr, "cannot create target file, error %i\n",
+				errno);
+		exit(1);
+	} else {
+		if (write(r, "test\n", 5) != 5) {
+			fprintf(stderr, "cannot write into target file, error %i\n",
+					errno);
+			close(r);
+			exit(1);
+		}
 	}
 	close(r);
 }
@@ -181,6 +217,54 @@ test_notfound(void)
 	return r;
 }
 
+static int
+test_getbuffer(void)
+{
+	int ret = 0;
+	int r;
+	char **array = NULL;
+
+	ds.userpath.s = fnbuffer;
+	ds.userpath.len = strlen(fnbuffer);
+	ds.domainpath.len = 0;
+	ds.domainpath.s = NULL;
+
+	/* the file exists, but has no content */
+	r = userconf_get_buffer(&ds, EXISTING_FILENAME, &array, NULL, 0);
+	if (r != CONFIG_NONE) {
+		fprintf(stderr, "opening empty file returned %i instead of CONFIG_NONE\n",
+				r);
+		ret++;
+		free(array);
+		array = NULL;
+	}
+
+	r = userconf_get_buffer(&ds, EXISTING_FILENAME_CONTENT, &array, NULL, 0);
+	if (r != CONFIG_USER) {
+		fprintf(stderr, "opening existing file returned %i instead of CONFIG_USER\n",
+				r);
+		ret++;
+	} else if (array == NULL) {
+		fprintf(stderr, "opening existing file returned empty array\n");
+		ret++;
+	} else if (strcmp(*array, "test") != 0) {
+		fprintf(stderr, "existing file should have returned 'test' as content, but returned '%s'\n",
+				*array);
+		ret++;
+	}
+	free(array);
+	array = NULL;
+
+	r = userconf_get_buffer(&ds, "something", &array, NULL, 1);
+	if (r != CONFIG_NONE) {
+		fprintf(stderr, "opening nonexistent file returned %i instead of CONFIG_NONE\n",
+				r);
+		ret++;
+	}
+
+	return ret;
+}
+
 int
 main(void)
 {
@@ -189,7 +273,7 @@ main(void)
 
 	create_dirs();
 
-	memset(&ds, 0, sizeof(ds));
+	userconf_init(&ds);
 
 	/* the buffer points to a filename, which is handled as directory */
 
@@ -201,6 +285,7 @@ main(void)
 	*(slash + 1) = '\0';
 
 	r += test_found();
+	r += test_getbuffer();
 
 	/* now test nonexisting */
 	while (slash != NULL) {

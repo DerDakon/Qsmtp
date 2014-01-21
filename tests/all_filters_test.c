@@ -34,6 +34,37 @@ dnstxt(char **a __attribute__ ((unused)), const char *b __attribute__ ((unused))
 	return -1;
 }
 
+
+int
+userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, checkfunc cf, const int useglobal)
+{
+	int type;
+	int fd;
+	int r;
+
+	if (useglobal)
+		fd = getfileglobal(ds, key, &type);
+	else
+		fd = getfile(ds, key, &type);
+
+	if (fd < 0) {
+		if (errno == ENOENT)
+			return CONFIG_NONE;
+		else
+			return -errno;
+	}
+
+	r = loadlistfd(fd, values, cf);
+	if (r < 0)
+		return -errno;
+
+	if (*values == NULL)
+		return CONFIG_NONE;
+
+	assert((type >= CONFIG_USER) && (type <= CONFIG_GLOBAL));
+	return type;
+}
+
 static void
 default_session_config(void)
 {

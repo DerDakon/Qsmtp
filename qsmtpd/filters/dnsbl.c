@@ -9,6 +9,7 @@
 #include "log.h"
 #include "netio.h"
 #include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/userconf.h>
 
 int
 cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
@@ -16,7 +17,6 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 	char **a;		/* array of domains and/or mailaddresses to block */
 	int i;			/* counter of the array position */
 	int rc;			/* return code */
-	int fd;			/* file descriptor of the policy file */
 	const char *fnb;	/* filename of the blacklist file */
 	const char *fnw;	/* filename of the whitelist file */
 	char *txt = NULL;	/* TXT record of the rbl entry */
@@ -29,32 +29,29 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 		fnw = "whitednsblv6";
 	}
 
-	if ( (fd = getfileglobal(ds, fnb, t)) < 0)
-		return (errno == ENOENT) ? 0 : -1;
-
-	if ( (rc = loadlistfd(fd, &a, domainvalid)) < 0)
-		return rc;
+	*t = userconf_get_buffer(ds, fnb, &a, domainvalid, 1);
+	if (*t < 0) {
+		errno = -*t;
+		return -1;
+	} else if (*t == CONFIG_NONE) {
+		return 0;
+	}
 
 	i = check_rbl(a, &txt);
 	if (i >= 0) {
 		int j, u;
 		char **c;		/* same like **a, just for whitelist */
 
-		if ( (fd = getfile(ds, fnw, &u)) < 0) {
-			if (errno != ENOENT) {
-				free(a);
-				free(txt);
-				return fd;
-			}
-			j = fd;
+		u = userconf_get_buffer(ds, fnw, &c, domainvalid, 0);
+		if (u < 0) {
+			free(a);
+			free(txt);
+			errno = -u;
+			return -1;
+		} else if (u == 0) {
 			errno = 0;
+			j = 0;
 		} else {
-			if ( (rc = loadlistfd(fd, &c, domainvalid)) < 0) {
-				free(a);
-				free(txt);
-				return rc;
-			}
-
 			j = check_rbl(c, NULL);
 		}
 		if (j >= 0) {

@@ -10,6 +10,7 @@
 #include "log.h"
 #include "netio.h"
 #include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/userconf.h>
 
 int
 cb_namebl(const struct userconf *ds, const char **logmsg, int *t)
@@ -17,7 +18,6 @@ cb_namebl(const struct userconf *ds, const char **logmsg, int *t)
 	char **a;		/* array of blacklists to check */
 	int i = 0;		/* counter of the array position */
 	int rc;			/* return code */
-	int fd;			/* file descriptor of the policy file */
 	char *txt = NULL;	/* TXT record of the rbl entry */
 	const char *netmsg[] = {"501 5.7.1 message rejected, you are listed in ",
 				NULL, NULL, NULL, NULL};
@@ -30,14 +30,13 @@ cb_namebl(const struct userconf *ds, const char **logmsg, int *t)
 	if (!xmitstat.mailfrom.len)
 		return 0;
 
-	if ( (fd = getfileglobal(ds, "namebl", t)) < 0)
-		return (errno == ENOENT) ? 0 : -1;
-
-	if ( (rc = loadlistfd(fd, &a, domainvalid)) < 0)
-		return rc;
-
-	if (a == NULL)
+	*t = userconf_get_buffer(ds, "namebl", &a, domainvalid, 1);
+	if (*t < 0) {
+		errno = -*t;
+		return -1;
+	} else if (*t == CONFIG_NONE) {
 		return 0;
+	}
 
 	fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
 

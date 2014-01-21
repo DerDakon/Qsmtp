@@ -7,6 +7,7 @@
 #include <qsmtpd/antispam.h>
 #include "control.h"
 #include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/userconf.h>
 
 int
 cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)
@@ -14,7 +15,6 @@ cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)
 	char **a;		/* array of domains and/or mailaddresses to block */
 	int i;			/* counter of the array position */
 	int rc;			/* return code */
-	int fd;			/* file descriptor of the policy file */
 	const char *fnb;	/* filename of the blacklist file */
 
 	if (xmitstat.esmtp)
@@ -26,11 +26,13 @@ cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)
 		fnb = "forceesmtpv6";
 	}
 
-	if ( (fd = getfileglobal(ds, fnb, t)) < 0)
-		return (errno == ENOENT) ? 0 : -1;
-
-	if ( (rc = loadlistfd(fd, &a, domainvalid)) < 0)
-		return rc;
+	*t = userconf_get_buffer(ds, fnb, &a, domainvalid, 1);
+	if (*t < 0) {
+		errno = -*t;
+		return -1;
+	} else if (*t == CONFIG_NONE) {
+		return 0;
+	}
 
 	i = check_rbl(a, NULL);
 	free(a);

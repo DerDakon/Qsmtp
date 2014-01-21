@@ -10,6 +10,7 @@
 #include <qsmtpd/addrparse.h>
 #include "control.h"
 #include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/userconf.h>
 #include "log.h"
 
 /* Bad "MAIL FROM": reject sender addresses or domains, case is ignored
@@ -69,18 +70,19 @@ cb_badmailfrom(const struct userconf *ds, const char **logmsg, int *t)
 	int u;		/* if it is the user or domain policy */
 	char **a;	/* array of domains and/or mailaddresses to block */
 	int rc = 0;	/* return code */
-	int fd;		/* file descriptor of the policy file */
 	char *at;
 
 	if (!xmitstat.mailfrom.len)
 		return 0;
 
-	if ( (fd = getfileglobal(ds, "badmailfrom", t)) < 0)
-		return (errno != ENOENT) ? fd : 0;
-
 	/* don't check syntax of entries here: there might be things like ".cn" and so on that would fail the test */
-	if ( (rc = loadlistfd(fd, &a, NULL)) < 0)
-		return rc;
+	*t = userconf_get_buffer(ds, "badmailfrom", &a, NULL, 1);
+	if (*t < 0) {
+		errno = -*t;
+		return -1;
+	} else if (*t == CONFIG_NONE) {
+		return 0;
+	}
 
 	at = strchr(xmitstat.mailfrom.s, '@');
 	rc = lookupbmf(at, a);
@@ -88,12 +90,11 @@ cb_badmailfrom(const struct userconf *ds, const char **logmsg, int *t)
 		return rc;
 
 	*logmsg = "bad mail from";
-	if ( (fd = getfileglobal(ds, "goodmailfrom", &u)) < 0) {
-		if (errno != ENOENT)
-			return fd;
-	} else {
-		if (loadlistfd(fd, &a, checkaddr) < 0)
-			return -1;
+	u = userconf_get_buffer(ds, "goodmailfrom", &a, checkaddr, 1);
+	if (u < 0) {
+		errno = -u;
+		return -1;
+	} else if (u != CONFIG_NONE) {
 		if (lookupbmf(at, a)) {
 			logwhitelisted(*logmsg, *t, u);
 			rc = 0;

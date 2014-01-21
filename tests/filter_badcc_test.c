@@ -104,6 +104,36 @@ setup_recip_order(unsigned int valid, int r0, int r1, int r2, int r3, int r4)
 	setup_userconf();
 }
 
+int
+userconf_get_buffer(const struct userconf *uc, const char *key, char ***values, checkfunc cf, const int useglobal)
+{
+	int type;
+	int fd;
+	int r;
+
+	if (useglobal)
+		fd = getfileglobal(uc, key, &type);
+	else
+		fd = getfile(uc, key, &type);
+
+	if (fd < 0) {
+		if (errno == ENOENT)
+			return CONFIG_NONE;
+		else
+			return -errno;
+	}
+
+	r = loadlistfd(fd, values, cf);
+	if (r < 0)
+		return -errno;
+
+	if (*values == NULL)
+		return CONFIG_NONE;
+
+	assert((type >= CONFIG_USER) && (type <= CONFIG_GLOBAL));
+	return type;
+}
+
 int main(int argc, char **argv)
 {
 	char *logmsg;

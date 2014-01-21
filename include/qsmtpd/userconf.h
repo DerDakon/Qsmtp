@@ -4,6 +4,7 @@
 #ifndef USERCONF_H
 #define USERCONF_H
 
+#include <control.h>
 #include <sstring.h>
 
 struct userconf {
@@ -45,5 +46,17 @@ void userconf_free(struct userconf *ds) __attribute__ ((nonnull (1)));
  * @retval 0 filters were loaded (or no configuration is present)
  */
 int userconf_load_configs(struct userconf *ds) __attribute__ ((nonnull (1)));
+
+/**
+ * @brief get a config buffer for a given user or domain
+ * @param ds the userconf buffer
+ * @param key the key name to load the information for
+ * @param values the result array
+ * @param cf a function to filter the entries (may be NULL)
+ * @param useglobal if a global configuration lookup should be performed
+ * @return the type of the configuration entry returned
+ * @retval <0 negative error code
+ */
+int userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, checkfunc cf, const int useglobal);
 
 #endif
