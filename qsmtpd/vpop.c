@@ -473,3 +473,29 @@ userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, 
 
 	return type;
 }
+
+int
+userconf_find_domain(const struct userconf *ds, const char *key, char *domain, const int useglobal)
+{
+	int type;
+	int fd;
+	int r;
+
+	if (useglobal)
+		fd = getfileglobal(ds, key, &type);
+	else
+		fd = getfile(ds, key, &type);
+
+	if (fd < 0) {
+		if (errno == ENOENT)
+			return CONFIG_NONE;
+		else
+			return -errno;
+	}
+
+	r = finddomainfd(fd, domain, 1);
+	if ((r < 0) && (errno == 0))
+		return CONFIG_NONE;
+	else
+		return r;
+}

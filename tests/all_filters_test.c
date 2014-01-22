@@ -142,6 +142,13 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 	return type;
 }
 
+int
+userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const char *key __attribute__ ((unused)),
+		char *domain __attribute__ ((unused)), const int useglobal __attribute__ ((unused)))
+{
+	return 0;
+}
+
 static void
 default_session_config(void)
 {

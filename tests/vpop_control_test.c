@@ -18,6 +18,7 @@
 /* name of the dummy files created */
 #define EXISTING_FILENAME "filename"
 #define EXISTING_FILENAME_CONTENT "content"
+#define EXISTING_FILE_CONTENT "example.net"
 
 static char fnbuffer[(COMPONENT_LENGTH + 1) * DIR_DEPTH + 20];
 static struct userconf ds;
@@ -82,7 +83,7 @@ create_dirs(void)
 				errno);
 		exit(1);
 	} else {
-		if (write(r, "test\n", 5) != 5) {
+		if (write(r, EXISTING_FILE_CONTENT "\n", strlen(EXISTING_FILE_CONTENT) + 1) != strlen(EXISTING_FILE_CONTENT) + 1) {
 			fprintf(stderr, "cannot write into target file, error %i\n",
 					errno);
 			close(r);
@@ -247,8 +248,8 @@ test_getbuffer(void)
 	} else if (array == NULL) {
 		fprintf(stderr, "opening existing file returned empty array\n");
 		ret++;
-	} else if (strcmp(*array, "test") != 0) {
-		fprintf(stderr, "existing file should have returned 'test' as content, but returned '%s'\n",
+	} else if (strcmp(*array, EXISTING_FILE_CONTENT) != 0) {
+		fprintf(stderr, "existing file should have returned 'example.net' as content, but returned '%s'\n",
 				*array);
 		ret++;
 	}
@@ -258,6 +259,52 @@ test_getbuffer(void)
 	r = userconf_get_buffer(&ds, "something", &array, NULL, 1);
 	if (r != CONFIG_NONE) {
 		fprintf(stderr, "opening nonexistent file returned %i instead of CONFIG_NONE\n",
+				r);
+		ret++;
+	}
+
+	return ret;
+}
+
+static int
+test_finddomain(void)
+{
+	int ret = 0;
+	int r;
+
+	ds.userpath.s = fnbuffer;
+	ds.userpath.len = strlen(fnbuffer);
+	ds.domainpath.len = 0;
+	ds.domainpath.s = NULL;
+
+	/* the does not file exist */
+	r = userconf_find_domain(&ds, "something", "example.org", 0);
+	if (r != CONFIG_NONE) {
+		fprintf(stderr, "opening non-existing file returned %i instead of CONFIG_NONE\n",
+				r);
+		ret++;
+	}
+
+	/* the file exists, but has no content */
+	r = userconf_find_domain(&ds, EXISTING_FILENAME, "example.org", 0);
+	if (r != CONFIG_NONE) {
+		fprintf(stderr, "opening empty file returned %i instead of CONFIG_NONE\n",
+				r);
+		ret++;
+	}
+
+	/* the file content does not match the domain */
+	r = userconf_find_domain(&ds, EXISTING_FILENAME_CONTENT, "example.org", 0);
+	if (r != CONFIG_NONE) {
+		fprintf(stderr, "searching file with non-matching domain returned %i instead of CONFIG_NONE\n",
+				r);
+		ret++;
+	}
+
+	/* the file content does not match the domain */
+	r = userconf_find_domain(&ds, EXISTING_FILENAME_CONTENT, EXISTING_FILE_CONTENT, 0);
+	if (r != CONFIG_USER) {
+		fprintf(stderr, "searching file with matching domain returned %i instead of CONFIG_USER\n",
 				r);
 		ret++;
 	}
@@ -286,6 +333,7 @@ main(void)
 
 	r += test_found();
 	r += test_getbuffer();
+	r += test_finddomain();
 
 	/* now test nonexisting */
 	while (slash != NULL) {

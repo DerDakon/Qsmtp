@@ -57,6 +57,19 @@ int userconf_load_configs(struct userconf *ds) __attribute__ ((nonnull (1)));
  * @return the type of the configuration entry returned
  * @retval <0 negative error code
  */
-int userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, checkfunc cf, const int useglobal);
+int userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, checkfunc cf, const int useglobal) __attribute__ ((nonnull (1,2,3)));
+
+/**
+ * @brief find a domain in the user configuration key
+ * @param ds the userconf buffer
+ * @param key the key name for lookup
+ * @param domain the domain name to search for
+ * @param useglobal if a global configuration lookup should be performed
+ * @return the type of the configuration entry returned
+ * @retval 0 the domain was not found in the configuration
+ * @retval 1 the domain was found in the configuration
+ * @retval <0 negative error code
+ */
+int userconf_find_domain(const struct userconf *ds, const char *key, char *domain, const int useglobal) __attribute__ ((nonnull (1,2,3)));
 
 #endif

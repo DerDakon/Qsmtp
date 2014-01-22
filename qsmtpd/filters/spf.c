@@ -127,19 +127,24 @@ strict:
 			fromdomain = HELOSTR;
 		}
 	}
-	rc = finddomainfd(getfileglobal(ds, "spfstrict", t), fromdomain, 1);
-	if (rc <= 0)
-		return rc;
+	*t = userconf_find_domain(ds, "spfstrict", fromdomain, 1);
+	if (*t < 0) {
+		errno = -*t;
+		return -1;
+	} else if (*t == CONFIG_NONE) {
+		return 0;
+	}
 block:
 	if (xmitstat.remotehost.len) {
 		int u;				/* if it is the user or domain policy */
 
-		rc = finddomainfd(getfileglobal(ds, "spfignore", &u), xmitstat.remotehost.s, 1);
-		if (rc > 0) {
+		u = userconf_find_domain(ds, "spfignore", xmitstat.remotehost.s, 1);
+		if (u < 0) {
+			errno = -u;
+			return -1;
+		} else if (u != CONFIG_NONE) {
 			logwhitelisted("SPF", *t, u);
 			return 0;
-		} else if (rc < 0) {
-			return rc;
 		}
 	}
 	if ((xmitstat.spfexp != NULL) && (spfs != SPF_HARD_ERROR)) {
