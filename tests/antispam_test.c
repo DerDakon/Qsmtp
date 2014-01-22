@@ -67,11 +67,6 @@ test_rbl()
 		xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
 		errno = EINVAL;
-		r = check_rbl(NULL, &txt);
-		free(txt);
-		txt = NULL;
-		err += check_nomatch(r, "check_rbl(NULL, txt)");
-
 		dnsentries = NULL;
 		r = check_rbl(rbls, &txt);
 		err += check_nomatch(r, "check_rbl() without DNS entries");

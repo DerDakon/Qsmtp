@@ -93,11 +93,6 @@ check_rbl(char *const *rbls, char **txt)
 	int i = 0;
 	int again = 0;	/* if this is set at least one rbl lookup failed with temp error */
 
-	if (!rbls) {
-		errno = 0;
-		return -1;
-	}
-
 	if (connection_is_ipv4()) {
 		l = reverseip4(lookup);
 		lookup[l++] = '.';

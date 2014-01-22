@@ -9,7 +9,7 @@
 /* qsmtpd/antispam.c */
 
 extern void dotip6(char *);
-extern int check_rbl(char *const *, char **);
+extern int check_rbl(char *const *, char **) __attribute__ ((nonnull (1)));
 extern void tarpit(void);
 extern int domainmatch(const char *fqdn, const size_t len, const char **list);
 extern int lookupipbl(int);
