@@ -42,6 +42,7 @@ static struct {
 	const char *failmsg;
 	const char *goodmailfrom;
 	const char *badmailfrom;
+	const char *userconf;
 	const enum config_domain conf;
 } testdata[] = {
 	{
@@ -81,8 +82,39 @@ static struct {
 	{
 		.mailfrom = "foo@example.com",
 		.conf = CONFIG_USER
-	}
+	},
+	/* X-Mas tree: (nearly) everything on, but should still pass */
+	{
+		.mailfrom = "foo@example.com",
+		.conf = CONFIG_USER,
+		.userconf = "whitelistauth\0forcestarttls=0\0nobounce\0noapos\0check_strict_rfc2822\0"
+				"fromdomain=7\0reject_ipv6only\0helovalid\0smtp_space_bug=0\0block_SoberG\0"
+				"spfpolicy=1\0fail_hard_on_temp\0usersize=100000\0block_wildcardns\0\0"
+	},
 };
+
+static char **
+map_from_list(const char *values)
+{
+	unsigned int i;
+	const char *c = values;
+	char **res;
+
+	for (i = 0; *c != '\0'; i++)
+		c += strlen(c) + 1;
+	
+	res = calloc(i + 1, sizeof(*res));
+	if (res == NULL)
+		exit(ENOMEM);
+	
+	c = values;
+	for (i = 0; *c != '\0'; i++) {
+		res[i] = (char *)c;
+		c += strlen(c) + 1;
+	}
+
+	return res;
+}
 
 int
 userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const char *key,
@@ -90,8 +122,6 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 {
 	int type;
 	const char *res = NULL;
-	unsigned int i;
-	const char *c;
 	checkfunc expected_cf;
 
 	if (strcmp(key, "goodmailfrom") == 0) {
@@ -124,19 +154,7 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 		return CONFIG_NONE;
 	}
 
-	c = res;
-	for (i = 0; *c != '\0'; i++)
-		c += strlen(c) + 1;
-
-	*values = calloc(i + 1, sizeof(*values));
-	if (*values == NULL)
-		return -ENOMEM;
-
-	c = res;
-	for (i = 0; *c != '\0'; i++) {
-		(*values)[i] = (char *)c;
-		c += strlen(c) + 1;
-	}
+	*values = map_from_list(res);
 
 	assert((type >= CONFIG_USER) && (type <= CONFIG_GLOBAL));
 	return type;
@@ -148,6 +166,8 @@ userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const c
 {
 	return 0;
 }
+
+static struct ips frommx;
 
 static void
 default_session_config(void)
@@ -164,6 +184,10 @@ default_session_config(void)
 	xmitstat.helostr.s = "my.host.example.org";
 	xmitstat.helostr.len = strlen(xmitstat.helostr.s);
 	strncpy(xmitstat.remoteip, "::ffff:192.168.8.9", sizeof(xmitstat.remoteip) - 1);
+	memset(&frommx, 0, sizeof(frommx));
+	inet_pton(AF_INET6, "::ffff:10.1.2.3s", &(frommx.addr));
+	frommx.priority = 42;
+	xmitstat.frommx = &frommx;
 
 	TAILQ_INIT(&head);
 }
@@ -274,7 +298,6 @@ main(void)
 	}
 
 	strncpy(confpath, "0/", sizeof(confpath));
-	basedirfd = open(confpath, O_RDONLY);
 
 	testcase_setup_log_writen(test_log_writen);
 	testcase_ignore_ask_dnsa();
@@ -287,8 +310,6 @@ main(void)
 		int r = 0;			/* filter result */
 		const char *fmsg = NULL;	/* returned failure message */
 		unsigned int exp_log_count = 0;	/* expected log messages */
-
-		close(basedirfd);
 
 		/* set default configuration */
 		default_session_config();
@@ -324,6 +345,11 @@ main(void)
 			uc.userpath.s = userpath;
 			uc.userpath.len = strlen(uc.userpath.s);
 		}
+
+		if (testdata[testindex].userconf == NULL)
+			uc.userconf = NULL;
+		else
+			uc.userconf = map_from_list(testdata[testindex].userconf);
 
 		snprintf(confpath, sizeof(confpath), "%u/domain/", testindex);
 		basedirfd = open(confpath, O_RDONLY);
@@ -373,7 +399,7 @@ main(void)
 
 		testindex++;
 		snprintf(confpath, sizeof(confpath), "%u/", testindex);
-		basedirfd = open(confpath, O_RDONLY);
+		free(uc.userconf);
 		free(b);
 	}
 
