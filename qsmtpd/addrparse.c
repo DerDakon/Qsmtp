@@ -52,7 +52,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		return 0;
 	if (j < 4) {
 		/* at this point either @ is set or addrsyntax has already caught this */
-		i = finddomainmm(rcpthosts, rcpthsize, at + 1);
+		i = finddomain(rcpthosts, rcpthsize, at + 1);
 
 		if (!i)
 			return -2;

@@ -532,16 +532,16 @@ main(void)
 	testcase_setup_log_write(test_log_write);
 	testcase_setup_log_writen(test_log_writen);
 
-	puts("== Running tests for finddomainmm()");
+	puts("== Running tests for finddomain()");
 
 	/* empty memory area should not match anything */
-	if (finddomainmm(NULL, 1024, present[0]) != 0) {
+	if (finddomain(NULL, 1024, present[0]) != 0) {
 		fputs("\t ERROR: match found in NULL buffer\n", stderr);
 		error++;
 	}
 
 	for (i = 0; present[i] != NULL; i++) {
-		int search = finddomainmm(contents, strlen(contents), present[i]);
+		int search = finddomain(contents, strlen(contents), present[i]);
 
 		if (search != 1) {
 			error++;
@@ -551,7 +551,7 @@ main(void)
 	}
 
 	for (i = 0; absent[i] != NULL; i++) {
-		int search = finddomainmm(contents, strlen(contents), absent[i]);
+		int search = finddomain(contents, strlen(contents), absent[i]);
 
 		if (search != 0) {
 			error++;

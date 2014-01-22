@@ -412,7 +412,7 @@ finddomainfd(int fd, const char *domain, const int cl)
 		return -1;
 	}
 
-	rc = finddomainmm(map, len, domain);
+	rc = finddomain(map, len, domain);
 
 	munmap(map, len);
 	if (cl) {
@@ -434,10 +434,10 @@ finddomainfd(int fd, const char *domain, const int cl)
 }
 
 /**
- * search a domain entry in a mmaped memory area
+ * search a domain entry in a given buffer
  *
- * @param map memory region where file ist mmapped to
- * @param size size of mmapped area
+ * @param buffer containing the domain list
+ * @param size size of buffer
  * @param domain domain name to find
  * @retval 1 on match
  * @retval 0 if none
@@ -445,16 +445,16 @@ finddomainfd(int fd, const char *domain, const int cl)
  * trailing spaces and tabs in a line are ignored, lines beginning with '#' are ignored, CR in file will cause trouble
  */
 int
-finddomainmm(const char *map, const off_t size, const char *domain)
+finddomain(const char *buf, const off_t size, const char *domain)
 {
 	const char *cur;
 	size_t dl = strlen(domain);
 	off_t pos = 0;
 
-	if (!map)
+	if (!buf)
 		return 0;
 
-	cur = map;
+	cur = buf;
 	do {
 		char *cure = memchr(cur, '\n', size - pos);
 
@@ -487,7 +487,7 @@ finddomainmm(const char *map, const off_t size, const char *domain)
 			while (*cur == '\n') {
 				cur++;
 			}
-			pos = cur - map;
+			pos = cur - buf;
 		}
 	} while (cur);
 
