@@ -6,6 +6,7 @@
 #include "control.h"
 #include "libowfatconn.h"
 #include <qsmtpd/qsmtpd.h>
+#include <qsmtpd/addrparse.h>
 
 #include <assert.h>
 #include <errno.h>
@@ -21,6 +22,8 @@ unsigned int goodrcpt;
 struct recip *thisrecip;
 const char **globalconf;
 
+static unsigned int testindex;
+
 int
 check_host(const char *domain __attribute__ ((unused)))
 {
@@ -34,32 +37,106 @@ dnstxt(char **a __attribute__ ((unused)), const char *b __attribute__ ((unused))
 	return -1;
 }
 
+static struct {
+	const char *mailfrom;
+	const char *failmsg;
+	const char *goodmailfrom;
+	const char *badmailfrom;
+	const enum config_domain conf;
+} testdata[] = {
+	{
+		.mailfrom = NULL,
+		.conf = CONFIG_USER
+	},
+	{
+		.mailfrom = "foo@example.com",
+		.failmsg = "bad_mail_from",
+		.badmailfrom = "foo@example.com\0\0",
+		.conf = CONFIG_USER
+	},
+	{
+		.mailfrom = "foo@example.com",
+		.failmsg = "bad_mail_from",
+		.badmailfrom = "@example.com\0\0",
+		.conf = CONFIG_USER
+	},
+	{
+		.mailfrom = "foo@example.com",
+		.badmailfrom = "@example.co\0\0",
+		.conf = CONFIG_USER
+	},
+	{
+		.mailfrom = "foo@example.com",
+		.failmsg = "bad_mail_from",
+		.badmailfrom = ".com\0\0",
+		.goodmailfrom = "@test.example.com\0\0",
+		.conf = CONFIG_USER
+	},
+	{
+		.mailfrom = NULL,
+		.badmailfrom = ".com\0\0",
+		.goodmailfrom = "@example.com\0\0",
+		.conf = CONFIG_USER
+	},
+	{
+		.mailfrom = "foo@example.com",
+		.conf = CONFIG_USER
+	}
+};
 
 int
-userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, checkfunc cf, const int useglobal)
+userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const char *key,
+		char ***values, checkfunc cf, const int useglobal)
 {
 	int type;
-	int fd;
-	int r;
+	const char *res = NULL;
+	unsigned int i;
+	const char *c;
+	checkfunc expected_cf;
 
-	if (useglobal)
-		fd = getfileglobal(ds, key, &type);
-	else
-		fd = getfile(ds, key, &type);
-
-	if (fd < 0) {
-		if (errno == ENOENT)
-			return CONFIG_NONE;
-		else
-			return -errno;
+	if (strcmp(key, "goodmailfrom") == 0) {
+		res = testdata[testindex].goodmailfrom;
+		type = CONFIG_USER;
+		expected_cf = checkaddr;
+	} else if (strcmp(key, "badmailfrom") == 0) {
+		res = testdata[testindex].badmailfrom;
+		type = CONFIG_USER;
+		expected_cf = NULL;
+	} else {
+		*values = NULL;
+		return CONFIG_NONE;
 	}
 
-	r = loadlistfd(fd, values, cf);
-	if (r < 0)
-		return -errno;
+	if (useglobal != 1) {
+		fprintf(stderr, "%s() was called with useglobal %i\n",
+				__func__, useglobal);
+		exit(1);
+	}
 
-	if (*values == NULL)
+	if (cf != expected_cf) {
+		fprintf(stderr, "%s() was called with cf %p instead of %p\n",
+				__func__, cf, expected_cf);
+		exit(1);
+	}
+
+	if (res == NULL) {
+		*values = NULL;
 		return CONFIG_NONE;
+	}
+
+	c = res;
+	for (i = 0; *c != '\0'; i++)
+		c += strlen(c) + 1;
+
+	*values = calloc(i + 1, sizeof(*values));
+	if (*values == NULL)
+		return -ENOMEM;
+
+	c = res;
+	for (i = 0; *c != '\0'; i++) {
+		(*values)[i] = (char *)c;
+		c += strlen(c) + 1;
+	}
 
 	assert((type >= CONFIG_USER) && (type <= CONFIG_GLOBAL));
 	return type;
@@ -189,14 +266,13 @@ main(void)
 		}
 	}
 
-	i = 0;
 	strncpy(confpath, "0/", sizeof(confpath));
 	basedirfd = open(confpath, O_RDONLY);
 
 	testcase_setup_log_writen(test_log_writen);
 	testcase_ignore_ask_dnsa();
 
-	while (basedirfd >= 0) {
+	while (testindex < sizeof(testdata) / sizeof(testdata[0])) {
 		char userpath[PATH_MAX];
 		int j;
 		char **b = NULL;	/* test configuration storage */
@@ -219,51 +295,19 @@ main(void)
 		TAILQ_INSERT_TAIL(&head, &firstrecip, entries);
 		TAILQ_INSERT_TAIL(&head, &dummyrecip, entries);
 
-		snprintf(userpath, sizeof(userpath), "%i/session", i);
-		j = open(userpath, O_RDONLY);
-		if (j >= 0) {
-			if (loadlistfd(j, &b, NULL)) {
-				fprintf(stderr, "cannot open %s\n", userpath);
-				return 1;
-			}
-
-			if (b != NULL) {
-				int k;
-
-				for (k = 0; b[k] != NULL; k++) {
-					if (str_starts_with(b[k], "mailfrom:")) {
-						xmitstat.mailfrom.s = b[k] + strlen("mailfrom:");
-						xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
-					} else if (strcmp(b[k], "esmtp") == 0) {
-						xmitstat.esmtp = 1;
-					} else if (strcmp(b[k], "ip:") == 0) {
-						strncpy(xmitstat.remoteip, b[k] + strlen("ip:"),
-								sizeof(xmitstat.remoteip) - 1);
-					} else if (str_starts_with(b[k], "failmsg:")) {
-						failmsg = b[k] + strlen("failmsg:");
-					} else if (str_starts_with(b[k], "logmsg:")) {
-						char *endptr;
-						exp_log_count = strtoul(b[k] + strlen("logmsg:"),
-								&endptr, 10);
-						if (*endptr != '\0') {
-							fprintf(stderr, "parse error in %s line %i: %s\n",
-									userpath, k, b[k]);
-							free(b);
-							return 1;
-						}
-					}
-				}
-			}
-		}
+		xmitstat.mailfrom.s = (char *)testdata[testindex].mailfrom;
+		xmitstat.mailfrom.len = (xmitstat.mailfrom.s == NULL) ? 0 : strlen(xmitstat.mailfrom.s);
+		failmsg = testdata[testindex].failmsg;
 
 		if (inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip) <= 0) {
-			fprintf(stderr, "bad ip address given: %s\n", xmitstat.remoteip);
+			fprintf(stderr, "configuration %u: bad ip address given: %s\n",
+					testindex, xmitstat.remoteip);
 			free(b);
 			return 1;
 		}
 		xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
-		snprintf(userpath, sizeof(userpath), "%i/user/", i);
+		snprintf(userpath, sizeof(userpath), "%u/user/", testindex);
 		basedirfd = open(userpath, O_RDONLY);
 		if (basedirfd < 0) {
 			uc.userpath.s = NULL;
@@ -274,7 +318,7 @@ main(void)
 			uc.userpath.len = strlen(uc.userpath.s);
 		}
 
-		snprintf(confpath, sizeof(confpath), "%i/domain/", i);
+		snprintf(confpath, sizeof(confpath), "%u/domain/", testindex);
 		basedirfd = open(confpath, O_RDONLY);
 		if (basedirfd < 0) {
 			uc.domainpath.s = NULL;
@@ -285,9 +329,8 @@ main(void)
 			uc.domainpath.len = strlen(uc.domainpath.s);
 		}
 
-		printf("testing configuration %i,%s%s\n", i,
-				uc.userpath.len ? " user" : "",
-				uc.domainpath.len ? " domain" : "");
+		printf("testing configuration %u,%s\n", testindex,
+				blocktype[testdata[testindex].conf]);
 
 		for (j = 0; (rcpt_cbs[j] != NULL) && (r == 0); j++) {
 			int bt = 0;
@@ -296,33 +339,33 @@ main(void)
 		}
 
 		if ((r != 0) && (failmsg == NULL)) {
-			fprintf(stderr, "configuration %i: filter %i returned %i, message %s\n",
-					i, j, r, fmsg);
+			fprintf(stderr, "configuration %u: filter %i returned %i, message %s\n",
+					testindex, j, r, fmsg);
 			err++;
 		} else if ((r == 0) && (failmsg != NULL)) {
-			fprintf(stderr, "configuration %i: no filter matched, but error should have been '%s'\n",
-					i, failmsg);
+			fprintf(stderr, "configuration %u: no filter matched, but error should have been '%s'\n",
+					testindex, failmsg);
 			err++;
 		} else if (failmsg != NULL) {
 			if (fmsg == NULL) {
-				fprintf(stderr, "configuration %i: filter %i matched with code %i, but the expected message '%s' was not set\n",
-						i, j, r, failmsg);
+				fprintf(stderr, "configuration %u: filter %i matched with code %i, but the expected message '%s' was not set\n",
+						testindex, j, r, failmsg);
 				err++;
 			} else if (!errormsg_matches(fmsg, failmsg)) {
-				fprintf(stderr, "configuration %i: filter %i matched with code %i, but the expected message '%s' was not set, but '%s'\n",
-						i, j, r, failmsg, fmsg);
+				fprintf(stderr, "configuration %u: filter %i matched with code %i, but the expected message '%s' was not set, but '%s'\n",
+						testindex, j, r, failmsg, fmsg);
 				err++;
 			}
 		}
 
 		if (log_count != exp_log_count) {
-			fprintf(stderr, "configuration %i: expected %u log messages, got %u\n",
-					i, exp_log_count, log_count);
+			fprintf(stderr, "configuration %u: expected %u log messages, got %u\n",
+					testindex, exp_log_count, log_count);
 			err++;
 		}
 
-		i++;
-		snprintf(confpath, sizeof(confpath), "%i/", i);
+		testindex++;
+		snprintf(confpath, sizeof(confpath), "%u/", testindex);
 		basedirfd = open(confpath, O_RDONLY);
 		free(b);
 	}
