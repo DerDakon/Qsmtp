@@ -26,7 +26,7 @@ cb_ipbl(const struct userconf *ds, const char **logmsg, int *t)
 		fnw = "ipwlv6";
 	}
 
-	if ( (fd = getfileglobal(ds, fnb, t)) < 0)
+	if ( (fd = getfile(ds, fnb, t, 1)) < 0)
 		return (errno == ENOENT) ? 0 : fd;
 
 	i = lookupipbl(fd);
@@ -36,7 +36,7 @@ cb_ipbl(const struct userconf *ds, const char **logmsg, int *t)
 	if (i > 0) {
 		int u;
 
-		if ( (fd = getfileglobal(ds, fnw, &u)) < 0) {
+		if ( (fd = getfile(ds, fnw, &u, 1)) < 0) {
 			if (errno != ENOENT)
 				return fd;
 			i = 0;

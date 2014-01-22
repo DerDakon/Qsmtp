@@ -28,7 +28,7 @@ cb_nomail(const struct userconf *ds, const char **logmsg, int *t)
 	int i;
 	int codebeg;		/* message begins with reject code */
 
-	fd = getfile(ds, "nomail", t);
+	fd = getfile(ds, "nomail", t, 0);
 	if (fd == -1)
 		return (errno != ENOENT) ? fd : 0;
 

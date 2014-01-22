@@ -99,7 +99,7 @@ check_open_fail(const char *range, const char *reason, const int error)
 	int fd;
 	int type = -1;
 
-	fd = getfile(&ds, "something", &type);
+	fd = getfile(&ds, "something", &type, 0);
 	if (fd != -1) {
 		fprintf(stderr, "opening for %s for test '%s' succeeded, type %i\n",
 				range, reason, type);
@@ -170,22 +170,30 @@ test_found(void)
 	ds.domainpath.len = 0;
 	ds.domainpath.s = NULL;
 
-	fd = getfile(&ds, EXISTING_FILENAME, &type);
+	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
 	r += test_found_internal("user", fd, type, CONFIG_USER);
 
 	/* set both, but user information should still be used */
 	ds.domainpath.len = ds.userpath.len;
 	ds.domainpath.s = ds.userpath.s;
 
-	fd = getfile(&ds, EXISTING_FILENAME, &type);
+	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
 	r += test_found_internal("user", fd, type, CONFIG_USER);
 
 	/* now only with domain information */
 	ds.userpath.len = 0;
 	ds.userpath.s = NULL;
 
-	fd = getfile(&ds, EXISTING_FILENAME, &type);
+	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
 	r += test_found_internal("domain", fd, type, CONFIG_DOMAIN);
+
+	fd = getfile(&ds, "something", &type, 1);
+	if (fd != -1) {
+		fprintf(stderr, "opening global file 'something' succeeded, type %i\n",
+				type);
+		close(fd);
+		return r++;
+	}
 
 	return r;
 }

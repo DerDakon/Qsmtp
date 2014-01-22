@@ -7,8 +7,8 @@ To add your own recipient spamfilter function just follow this steps:
 2. Write your function. It must have the same signature like the others defined
    in qsmtpd/filters/rcpt_filters.c. Here are some things you should know:
 
-   -use getfile or getfileglobal to load a config file from the user directory
-    with fallbacks to domain directory and global config
+   -use getfile to load a config file from the user directory with fallbacks to
+    domain directory and global config
    -if the config entry is a single integer (or a boolean) use
     getsetting{,global} instead and store the value in the file "filterconf" in
     the user or domain directory. This function has a little special behavior

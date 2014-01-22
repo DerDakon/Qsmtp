@@ -12,8 +12,7 @@ struct userconf;
 
 extern const char **globalconf;
 
-extern int getfile(const struct userconf *, const char *, int *);
-extern int getfileglobal(const struct userconf *, const char *, int *);
+extern int getfile(const struct userconf *, const char *, int *, int);
 extern long getsetting(const struct userconf *, const char *, int *);
 extern long getsettingglobal(const struct userconf *, const char *, int *);
 

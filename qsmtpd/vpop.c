@@ -426,7 +426,7 @@ userconf_load_configs(struct userconf *ds)
 
 /* load user and domain "filterconf" file */
 	/* if the file is empty there is no problem, NULL is a legal value for the buffers */
-	if (loadlistfd(getfile(ds, "filterconf", &type), &(ds->userconf), NULL))
+	if (loadlistfd(getfile(ds, "filterconf", &type, 0), &(ds->userconf), NULL))
 		return errno;
 
 	if (type) {
@@ -438,7 +438,7 @@ userconf_load_configs(struct userconf *ds)
 
 	/* make sure this one opens the domain file: just set user path length to 0 */
 	ds->userpath.len = 0;
-	r = loadlistfd(getfile(ds, "filterconf", &type), &(ds->domainconf), NULL);
+	r = loadlistfd(getfile(ds, "filterconf", &type, 0), &(ds->domainconf), NULL);
 
 	ds->userpath.len = l;
 
@@ -452,10 +452,7 @@ userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, 
 	int fd;
 	int r;
 
-	if (useglobal)
-		fd = getfileglobal(ds, key, &type);
-	else
-		fd = getfile(ds, key, &type);
+	fd = getfile(ds, key, &type, useglobal);
 
 	if (fd < 0) {
 		if (errno == ENOENT)
@@ -481,10 +478,7 @@ userconf_find_domain(const struct userconf *ds, const char *key, char *domain, c
 	int fd;
 	int r;
 
-	if (useglobal)
-		fd = getfileglobal(ds, key, &type);
-	else
-		fd = getfile(ds, key, &type);
+	fd = getfile(ds, key, &type, useglobal);
 
 	if (fd < 0) {
 		if (errno == ENOENT)

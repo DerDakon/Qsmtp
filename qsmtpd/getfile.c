@@ -56,14 +56,16 @@ open_in_dir(const char *dirname, const size_t dirlen, const char *fn)
  *
  * @param ds strings of user and domain directory
  * @param fn filename to search
- * @param type if user (0) or domain (1) directory matched, ignore this if (result == -1)
+ * @param type if user (0), domain (1) or global (2) directory matched, ignore this if (result == -1)
+ * @param useglobal if a global configuration lookup should be performed
  * @return file descriptor of opened file
  * @retval -1 on error (errno is set)
  */
 int
-getfile(const struct userconf *ds, const char *fn, int *type)
+getfile(const struct userconf *ds, const char *fn, int *type, int useglobal)
 {
 	int fd;
+	static const char controldir[] = "control/";
 
 	if (ds->userpath.len) {
 		*type = CONFIG_USER;
@@ -81,25 +83,9 @@ getfile(const struct userconf *ds, const char *fn, int *type)
 
 	*type = CONFIG_DOMAIN;
 
-	return open_in_dir(ds->domainpath.s, ds->domainpath.len, fn);
-}
+	fd = open_in_dir(ds->domainpath.s, ds->domainpath.len, fn);
 
-/**
- * use getfile and fall back to /var/qmail/control if this finds nothing
- *
- * @param ds strings of user and domain directory
- * @param fn filename to search
- * @param type if user (0), domain (1) or global (2) directory matched, ignore this if (result == -1)
- * @return file descriptor of opened file
- * @retval -1 on error (errno is set)
- */
-int
-getfileglobal(const struct userconf *ds, const char *fn, int *type)
-{
-	int fd = getfile(ds, fn, type);
-	static const char controldir[] = "control/";
-
-	if ((fd != -1) || (errno != ENOENT))
+	if ((useglobal == 0) || (fd != -1) || (errno != ENOENT))
 		return fd;
 
 	/* neither user nor domain specified how to handle this feature
