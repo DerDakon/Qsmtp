@@ -147,6 +147,32 @@ err_control2(const char *msg, const char *fn)
 }
 
 /**
+ * @brief check if the remote host is listed in local IP map file given by filename
+ * @param filename name of ipbl file
+ * @retval <0 negative error code
+ * @retval >0 on match
+ * @retval 0 no match
+ * @retval -EDONE an error message was already written to the network
+ */
+static int
+lookupipbl_name(const char *filename)
+{
+	int fd = open(filename, O_RDONLY);
+
+	if (fd < 0) {
+		if (errno != ENOENT)
+			return err_control(filename) ? -errno : -EDONE;
+		return 0;
+	}
+
+	fd = lookupipbl(fd);
+	if (fd < 0)
+		return err_control2("error reading from ipbl file: ", filename) ? -errno : -EDONE;
+	else
+		return fd;
+}
+
+/**
  * log error message and terminate program
  *
  * @param error error code that caused the program termination
@@ -207,27 +233,16 @@ is_authenticated(void)
 
 	/* check if client is allowed to relay by IP */
 	if (!relayclient) {
-		int fd;
-		const char *fn = connection_is_ipv4() ? "control/relayclients" : "control/relayclients6";
+		const int ipbl = lookupipbl_name(connection_is_ipv4() ?
+				"control/relayclients" : "control/relayclients6");
 
+		/* reject everything on parse error, else this
+		 * would turn into an open relay by accident */
 		relayclient = 2;
-		if ( (fd = open(fn, O_RDONLY)) < 0) {
-			if (errno != ENOENT) {
-				return err_control(fn) ? -errno : -EDONE;
-			}
-		} else {
-			int ipbl;
-
-			if ((ipbl = lookupipbl(fd)) < 0) {
-				const char *logmess[] = {"parse error in ", fn, NULL};
-
-				/* reject everything on parse error, else this
-				 * would turn into an open relay by accident */
-				log_writen(LOG_ERR, logmess);
-			} else if (ipbl) {
-				relayclient = 1;
-			}
-		}
+		if (ipbl < 0)
+			return ipbl;
+		else if (ipbl > 0)
+			relayclient = 1;
 	}
 
 	if (!(relayclient & 1)) {
@@ -1079,19 +1094,10 @@ next:
 		s = HELOSTR;
 	}
 
-	i = open(connection_is_ipv4() ? "control/spffriends" : "control/spffriends6", O_RDONLY);
-
-	if ((i < 0) && (errno != ENOENT)) {
-		return err_control(connection_is_ipv4() ? "control/spffriends" : "control/spffriends6") ?
-				errno : EDONE;
-	} else if (i >= 0) {
-		i = lookupipbl(i);
-		if (i < 0)
-			return netwrite("421 4.3.5 unable to read controls\r\n") ? errno : EDONE;
-	}
-
-	/* i is <0 if no spffriends file found and ==0 if not whitelisted */
-	if (i > 0) {
+	i = lookupipbl_name(connection_is_ipv4() ? "control/spffriends" : "control/spffriends6");
+	if (i < 0) {
+		return -i;
+	} else if (i > 0) {
 		xmitstat.spf = SPF_IGNORE;
 	} else {
 		i = check_host(s);
