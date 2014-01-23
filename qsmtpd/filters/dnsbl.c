@@ -16,7 +16,7 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 {
 	char **a;		/* array of domains and/or mailaddresses to block */
 	int i;			/* counter of the array position */
-	int rc;			/* return code */
+	int rc = 0;		/* return code */
 	const char *fnb;	/* filename of the blacklist file */
 	const char *fnw;	/* filename of the whitelist file */
 	char *txt = NULL;	/* TXT record of the rbl entry */
