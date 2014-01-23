@@ -48,32 +48,12 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 			free(txt);
 			errno = -u;
 			return -1;
-		} else if (u == 0) {
-			errno = 0;
-			j = 0;
-		} else {
-			j = check_rbl(c, NULL);
-		}
-
-		if (j >= 0) {
-			const char *logmess[] = {"not rejected message to <", THISRCPT, "> from <", MAILFROM,
+		} else if (u == CONFIG_NONE) {
+			const char *netmsg[] = { "501 5.7.1 message rejected, you are listed in ",
+						a[i], NULL, NULL, NULL };
+			const char *logmess[] = { "rejected message to <", THISRCPT, "> from <", MAILFROM,
 						"> from IP [", xmitstat.remoteip, "] {listed in ", a[i], " from ",
-						blocktype[*t], " dnsbl, but whitelisted by ",
-						c[i], " from ", blocktype[u], " whitelist}", NULL};
-			log_writen(LOG_INFO, logmess);
-		} else if (errno) {
-			if (errno == EAGAIN) {
-				*logmsg = "temporary DNS error on RBL lookup";
-				rc = 4;
-			} else {
-				rc = j;
-			}
-		} else {
-			const char *netmsg[] = {"501 5.7.1 message rejected, you are listed in ",
-						a[i], NULL, NULL, NULL};
-			const char *logmess[] = {"rejected message to <", THISRCPT, "> from <", MAILFROM,
-						"> from IP [", xmitstat.remoteip, "] {listed in ", a[i], " from ",
-						blocktype[*t], " dnsbl}", NULL};
+						blocktype[*t], " dnsbl}", NULL };
 
 			log_writen(LOG_INFO, logmess);
 			if (txt) {
@@ -82,6 +62,23 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 			}
 			if ( ! (rc = net_writen(netmsg)) )
 				rc = 1;
+		} else {
+			j = check_rbl(c, NULL);
+
+			if (j >= 0) {
+				const char *logmess[] = { "not rejected message to <", THISRCPT, "> from <", MAILFROM,
+							"> from IP [", xmitstat.remoteip, "] {listed in ", a[i], " from ",
+							blocktype[*t], " dnsbl, but whitelisted by ",
+							c[i], " from ", blocktype[u], " whitelist}", NULL };
+				log_writen(LOG_INFO, logmess);
+			} else if (errno) {
+				if (errno == EAGAIN) {
+					*logmsg = "temporary DNS error on RBL lookup";
+					rc = 4;
+				} else {
+					rc = j;
+				}
+			}
 		}
 	} if (errno) {
 		if (errno == EAGAIN) {
