@@ -44,6 +44,7 @@ static struct {
 	const char *failmsg;		/**< the expected failure message to log */
 	const char *goodmailfrom;	/**< the goodmailfrom configuration */
 	const char *badmailfrom;	/**< the badmailfrom configuration */
+	const char *namebl;		/**< the namebl configuration */
 	const char *userconf;		/**< the contents of the filterconf file */
 	const char *netmsg;		/**< the expected message written to the network */
 	const char *logmsg;		/**< the expected log message */
@@ -86,6 +87,7 @@ static struct {
 	},
 	{
 		.mailfrom = "foo@example.com",
+		.namebl = "foo.example.net\0bar.example.net\0\0",
 		.conf = CONFIG_USER
 	},
 	/* X-Mas tree: (nearly) everything on, but should still pass */
@@ -178,18 +180,18 @@ int
 userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const char *key,
 		char ***values, checkfunc cf, const int useglobal)
 {
-	int type;
 	const char *res = NULL;
 	checkfunc expected_cf;
 
 	if (strcmp(key, "goodmailfrom") == 0) {
 		res = testdata[testindex].goodmailfrom;
-		type = CONFIG_USER;
 		expected_cf = checkaddr;
 	} else if (strcmp(key, "badmailfrom") == 0) {
 		res = testdata[testindex].badmailfrom;
-		type = CONFIG_USER;
 		expected_cf = NULL;
+	} else if (strcmp(key, "namebl") == 0) {
+		res = testdata[testindex].namebl;
+		expected_cf = domainvalid;
 	} else {
 		*values = NULL;
 		return CONFIG_NONE;
@@ -214,8 +216,8 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 
 	*values = map_from_list(res);
 
-	assert((type >= CONFIG_USER) && (type <= CONFIG_GLOBAL));
-	return type;
+	assert((testdata[testindex].conf >= CONFIG_USER) && (testdata[testindex].conf <= CONFIG_GLOBAL));
+	return testdata[testindex].conf;
 }
 
 int
