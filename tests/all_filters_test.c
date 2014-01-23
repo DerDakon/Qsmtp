@@ -23,6 +23,8 @@ struct recip *thisrecip;
 const char **globalconf;
 
 static unsigned int testindex;
+static const char *expected_netmsg;
+static int err;
 
 int
 check_host(const char *domain __attribute__ ((unused)))
@@ -38,12 +40,15 @@ dnstxt(char **a __attribute__ ((unused)), const char *b __attribute__ ((unused))
 }
 
 static struct {
-	const char *mailfrom;
-	const char *failmsg;
-	const char *goodmailfrom;
-	const char *badmailfrom;
-	const char *userconf;
-	const enum config_domain conf;
+	const char *mailfrom;		/**< the from address to set */
+	const char *failmsg;		/**< the expected failure message to log */
+	const char *goodmailfrom;	/**< the goodmailfrom configuration */
+	const char *badmailfrom;	/**< the badmailfrom configuration */
+	const char *userconf;		/**< the contents of the filterconf file */
+	const char *netmsg;		/**< the expected message written to the network */
+	const char *logmsg;		/**< the expected log message */
+	const enum config_domain conf;	/**< which configuration type should be returned for the config entries */
+	const int esmtp;		/**< if transmission should be sent in ESMTP mode */
 } testdata[] = {
 	{
 		.mailfrom = NULL,
@@ -51,13 +56,13 @@ static struct {
 	},
 	{
 		.mailfrom = "foo@example.com",
-		.failmsg = "bad_mail_from",
+		.failmsg = "bad mail from",
 		.badmailfrom = "foo@example.com\0\0",
 		.conf = CONFIG_USER
 	},
 	{
 		.mailfrom = "foo@example.com",
-		.failmsg = "bad_mail_from",
+		.failmsg = "bad mail from",
 		.badmailfrom = "@example.com\0\0",
 		.conf = CONFIG_USER
 	},
@@ -68,7 +73,7 @@ static struct {
 	},
 	{
 		.mailfrom = "foo@example.com",
-		.failmsg = "bad_mail_from",
+		.failmsg = "bad mail from",
 		.badmailfrom = ".com\0\0",
 		.goodmailfrom = "@test.example.com\0\0",
 		.conf = CONFIG_USER
@@ -90,6 +95,60 @@ static struct {
 		.userconf = "whitelistauth\0forcestarttls=0\0nobounce\0noapos\0check_strict_rfc2822\0"
 				"fromdomain=7\0reject_ipv6only\0helovalid\0smtp_space_bug=0\0block_SoberG\0"
 				"spfpolicy=1\0fail_hard_on_temp\0usersize=100000\0block_wildcardns\0\0"
+	},
+	/* catched by nobounce filter */
+	{
+		.userconf = "nobounce\0\0",
+		.netmsg = "550 5.7.1 address does not send mail, there can't be any bounces\r\n",
+		.logmsg = "rejected message to <postmaster> from IP [::ffff:192.168.8.9] {no bounces allowed}",
+		.conf = CONFIG_USER,
+	},
+	/* mail too big */
+	{
+		.userconf = "usersize=1024\0\0",
+		.failmsg = "message too big",
+		.netmsg = "552 5.2.3 Requested mail action aborted: exceeded storage allocation\r\n",
+		.conf = CONFIG_USER,
+		.esmtp = 1
+	},
+	/* reject because of SMTP space bug */
+	{
+		.userconf = "smtp_space_bug=1\0\0",
+		.netmsg = "500 5.5.2 command syntax error\r\n",
+		.logmsg = "rejected message to <postmaster> from <> from IP [::ffff:192.168.8.9] {SMTP space bug}",
+		.conf = CONFIG_USER
+	},
+	/* passed because of SMTP space bug in ESMTP mode */
+	{
+		.userconf = "smtp_space_bug=1\0\0",
+		.conf = CONFIG_USER,
+		.esmtp = 1
+	},
+	/* rejected because of SMTP space bug in ESMTP mode, but authentication is required */
+	{
+		.mailfrom = "ba'al@example.org",
+		.userconf = "smtp_space_bug=2\0\0",
+		.netmsg = "500 5.5.2 command syntax error\r\n",
+		.logmsg = "rejected message to <postmaster> from <ba'al@example.org> from IP [::ffff:192.168.8.9] {SMTP space bug}",
+		.conf = CONFIG_USER,
+		.esmtp = 1
+	},
+	/* rejected because no STARTTLS mode is used */
+	{
+		.userconf = "forcestarttls\0\0",
+		.failmsg = "TLS required",
+		.netmsg = "501 5.7.1 recipient requires encrypted message transmission\r\n",
+		.conf = CONFIG_USER,
+		.esmtp = 1
+	},
+	/* apostroph rejected */
+	{
+		.mailfrom = "ba'al@example.org",
+		.failmsg = "apostroph in from",
+		.userconf = "noapos\0\0",
+		.netmsg = "501 5.7.1 recipient does not like you\r\n",
+		.conf = CONFIG_USER,
+		.esmtp = 1
 	},
 };
 
@@ -172,7 +231,6 @@ static struct ips frommx;
 static void
 default_session_config(void)
 {
-	xmitstat.esmtp = 0; /* no */
 	xmitstat.ipv4conn = 1; /* yes */
 	xmitstat.check2822 = 2; /* no decision yet */
 	xmitstat.helostatus = 1; /* HELO is my name */
@@ -183,6 +241,7 @@ default_session_config(void)
 	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
 	xmitstat.helostr.s = "my.host.example.org";
 	xmitstat.helostr.len = strlen(xmitstat.helostr.s);
+	xmitstat.thisbytes = 5000;
 	strncpy(xmitstat.remoteip, "::ffff:192.168.8.9", sizeof(xmitstat.remoteip) - 1);
 	memset(&frommx, 0, sizeof(frommx));
 	inet_pton(AF_INET6, "::ffff:10.1.2.3s", &(frommx.addr));
@@ -198,48 +257,57 @@ str_starts_with(const char *str, const char *pattern)
 	return (strncmp(str, pattern, strlen(pattern)) == 0);
 }
 
-/*
- * The message in the control file (expect) has spaces replaced by underscores
- * because the configuration file loader doesn't allow spaces in values.
- */
-static int __attribute__ ((nonnull (1,2)))
-errormsg_matches(const char *msg, const char *expect)
-{
-	size_t pos = 0;
-
-	while (msg[pos] != '\0') {
-		if ((msg[pos] == expect[pos]) ||
-				((msg[pos] == ' ') && (expect[pos] == '_'))) {
-			pos++;
-			continue;
-		}
-		return 0;
-	}
-
-	return (expect[pos] == '\0');
-}
-
 static unsigned int log_count;
 
 void
 test_log_writen(int priority, const char **s)
 {
+	char buffer[1024];
 	int i;
 
-	printf("log priority %i: ", priority);
-	for (i = 0; s[i] != NULL; i++)
-		printf("%s", s[i]);
+	buffer[0] = '\0';
+	for (i = 0; s[i] != NULL; i++) {
+		strcat(buffer, s[i]);
+		assert(strlen(buffer) < sizeof(buffer));
+	}
+	printf("log priority %i: %s\n", priority, buffer);
 
-	printf("\n");
+	if ((testdata[testindex].logmsg != NULL) &&
+			(strcmp(testdata[testindex].logmsg, buffer) != 0)) {
+		fprintf(stderr, "expected log message '%s' instead\n",
+				testdata[testindex].logmsg);
+		err++;
+	}
 
 	log_count++;
+}
+
+int
+test_netnwrite(const char *msg, const size_t len)
+{
+	if (expected_netmsg == NULL) {
+		fprintf(stderr, "no message expected, but got message '");
+		fflush(stderr);
+		write(2, msg, len);
+		fprintf(stderr, "'\n");
+		err++;
+	} else if ((strncmp(expected_netmsg, msg, len) != 0) || (strlen(expected_netmsg) != len)) {
+		fprintf(stderr, "expected message %s, but got message '", expected_netmsg);
+		fflush(stderr);
+		write(2, msg, len);
+		fprintf(stderr, "'\n");
+		err++;
+	} else {
+		expected_netmsg = NULL;
+	}
+
+	return 0;
 }
 
 int
 main(void)
 {
 	int i;
-	int err = 0;
 	struct userconf uc;
 	struct recip dummyrecip;
 	struct recip firstrecip;
@@ -300,6 +368,7 @@ main(void)
 	strncpy(confpath, "0/", sizeof(confpath));
 
 	testcase_setup_log_writen(test_log_writen);
+	testcase_setup_netnwrite(test_netnwrite);
 	testcase_ignore_ask_dnsa();
 
 	while (testindex < sizeof(testdata) / sizeof(testdata[0])) {
@@ -310,6 +379,7 @@ main(void)
 		int r = 0;			/* filter result */
 		const char *fmsg = NULL;	/* returned failure message */
 		unsigned int exp_log_count = 0;	/* expected log messages */
+		int expected_r = 0;		/* expected filter result */
 
 		/* set default configuration */
 		default_session_config();
@@ -325,7 +395,22 @@ main(void)
 
 		xmitstat.mailfrom.s = (char *)testdata[testindex].mailfrom;
 		xmitstat.mailfrom.len = (xmitstat.mailfrom.s == NULL) ? 0 : strlen(xmitstat.mailfrom.s);
+		xmitstat.esmtp = testdata[testindex].esmtp;
 		failmsg = testdata[testindex].failmsg;
+		expected_netmsg = testdata[testindex].netmsg;
+		if (testdata[testindex].logmsg != NULL)
+			exp_log_count = 1;
+		if (testdata[testindex].netmsg != NULL) {
+			if (*testdata[testindex].netmsg == '5')
+				expected_r = 1;
+			else if (*testdata[testindex].netmsg == '4')
+				expected_r = 4;
+			else
+				fprintf(stderr, "unexpected net message, does not start with 4 or 5: %s\n",
+						testdata[testindex].netmsg);
+		} else if (testdata[testindex].failmsg != NULL) {
+			expected_r = 2;
+		}
 
 		if (inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip) <= 0) {
 			fprintf(stderr, "configuration %u: bad ip address given: %s\n",
@@ -371,24 +456,24 @@ main(void)
 			r = rcpt_cbs[j](&uc, &fmsg, &bt);
 		}
 
-		if ((r != 0) && (failmsg == NULL)) {
-			fprintf(stderr, "configuration %u: filter %i returned %i, message %s\n",
-					testindex, j, r, fmsg);
-			err++;
-		} else if ((r == 0) && (failmsg != NULL)) {
-			fprintf(stderr, "configuration %u: no filter matched, but error should have been '%s'\n",
-					testindex, failmsg);
+		if (r != expected_r) {
+			fprintf(stderr, "configuration %u: filter %i returned %i instead of %i, message %s (should be %s)\n",
+					testindex, j, r, expected_r, fmsg, failmsg);
 			err++;
 		} else if (failmsg != NULL) {
 			if (fmsg == NULL) {
 				fprintf(stderr, "configuration %u: filter %i matched with code %i, but the expected message '%s' was not set\n",
 						testindex, j, r, failmsg);
 				err++;
-			} else if (!errormsg_matches(fmsg, failmsg)) {
+			} else if (strcmp(fmsg, failmsg) != 0) {
 				fprintf(stderr, "configuration %u: filter %i matched with code %i, but the expected message '%s' was not set, but '%s'\n",
 						testindex, j, r, failmsg, fmsg);
 				err++;
 			}
+		} else if (fmsg != NULL) {
+			fprintf(stderr, "configuration %u: filter %i matched with code %i, but unexpected message '%s' was set\n",
+					testindex, j, r, fmsg);
+			err++;
 		}
 
 		if (log_count != exp_log_count) {
