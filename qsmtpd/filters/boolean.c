@@ -48,9 +48,8 @@ cb_boolean(const struct userconf *ds, const char **logmsg, int *t)
 		const char *at = strchr(xmitstat.mailfrom.s, '@');
 
 		if (memchr(xmitstat.mailfrom.s, '\'', at - xmitstat.mailfrom.s)) {
-			rc = netwrite("501 5.7.1 recipient does not like you\r\n");
 			*logmsg = "apostroph in from";
-			return rc ? rc : 1;
+			return 2;
 		}
 	}
 

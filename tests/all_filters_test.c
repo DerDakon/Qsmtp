@@ -146,7 +146,6 @@ static struct {
 		.mailfrom = "ba'al@example.org",
 		.failmsg = "apostroph in from",
 		.userconf = "noapos\0\0",
-		.netmsg = "501 5.7.1 recipient does not like you\r\n",
 		.conf = CONFIG_USER,
 		.esmtp = 1
 	},
