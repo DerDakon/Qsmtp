@@ -50,16 +50,15 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 			return -1;
 		} else if (u == CONFIG_NONE) {
 			const char *netmsg[] = { "501 5.7.1 message rejected, you are listed in ",
-						a[i], NULL, NULL, NULL };
+						a[i], NULL, txt, NULL };
 			const char *logmess[] = { "rejected message to <", THISRCPT, "> from <", MAILFROM,
 						"> from IP [", xmitstat.remoteip, "] {listed in ", a[i], " from ",
 						blocktype[*t], " dnsbl}", NULL };
 
 			log_writen(LOG_INFO, logmess);
-			if (txt) {
+			if (txt)
 				netmsg[2] = ", message: ";
-				netmsg[3] = txt;
-			}
+
 			if ( ! (rc = net_writen(netmsg)) )
 				rc = 1;
 		} else {
