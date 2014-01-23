@@ -44,6 +44,8 @@ cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)
 			} else {
 				rc = -1;
 			}
+		} else {
+			rc = 0;
 		}
 	} else {
 		*logmsg = "ESMTP forced";
