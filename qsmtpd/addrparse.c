@@ -15,7 +15,7 @@
  * @param in input to parse
  * @param flags \arg \c 1: rcpt to checks (e.g. source route is allowed) \arg \c 0: mail from checks
  * @param addr struct string to contain the address (memory will be malloced, is set if 0 or -1 is returned)
- * @param more here starts the data behind the first '>' behind the first '<' (or NULL if none)
+ * @param more here starts the data behind the first '>' behind the first '<' (or NULL if line ends after the '>')
  * @param ds store the userconf of the user here
  * @return if address was validated
  * @retval 0 address exists locally
