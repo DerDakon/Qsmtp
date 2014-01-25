@@ -7,7 +7,6 @@
 #include <control.h>
 #include <netio.h>
 #include <qsmtpd/qsmtpd.h>
-#include <qsmtpd/vpop.h>
 
 /**
  * @brief check an email address for syntax errors and/or existence

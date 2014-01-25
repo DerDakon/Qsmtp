@@ -1,7 +1,6 @@
 #include <qsmtpd/addrparse.h>
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
-#include <qsmtpd/vpop.h>
 #include <netio.h>
 #include <sstring.h>
 #include "test_io/testcase_io.h"
