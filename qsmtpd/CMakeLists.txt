@@ -1,23 +1,14 @@
 ADD_SUBDIRECTORY(filters)
-
-ADD_LIBRARY(Qsmtpd_auth_checkpassword STATIC
-	qsauth_backend_cp.c
-)
-
-TARGET_LINK_LIBRARIES(Qsmtpd_auth_checkpassword
-	${MEMCHECK_LIBRARIES}
-)
+ADD_SUBDIRECTORY(backends)
 
 SET(QSMTPD_SRCS
 	addrparse.c
 	addrsyntax.c
 	antispam.c
 	auth.c
-	getfile.c
 	qsmtpd.c
 	starttls.c
 	spf.c
-	vpop.c
 	data.c
 	syntax.c
 	xtext.c
@@ -32,7 +23,6 @@ SET(QSMTPD_HDRS
 	../include/qsmtpd/qsmtpd.h
 	../include/qsmtpd/syntax.h
 	../include/qsmtpd/userfilters.h
-	../include/qsmtpd/vpop.h
 )
 
 ADD_EXECUTABLE(Qsmtpd
@@ -45,6 +35,7 @@ TARGET_LINK_LIBRARIES(Qsmtpd
 	qsmtp_io_lib
 	rcptfilters
 	Qsmtpd_auth_checkpassword
+	Qsmtpd_user_vpopm
 	${MEMCHECK_LIBRARIES}
 )
 

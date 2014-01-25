@@ -331,7 +331,7 @@ ADD_EXECUTABLE(testcase_all_filters
 		all_filters_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/backends/user_vpopm/getfile.c
 )
 TARGET_LINK_LIBRARIES(testcase_all_filters
 		rcptfilters
@@ -358,7 +358,7 @@ ADD_TEST(NAME "Filter-badCC"
 
 ADD_EXECUTABLE(testcase_filter_nomail
 		filter_nomail_test.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/backends/user_vpopm/getfile.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/nomail.c
 )
 TARGET_LINK_LIBRARIES(testcase_filter_nomail
@@ -373,7 +373,7 @@ ADD_EXECUTABLE(testcase_filter_fromdomain
 		filter_fromdomain_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/fromdomain.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/backends/user_vpopm/getfile.c
 )
 TARGET_LINK_LIBRARIES(testcase_filter_fromdomain
 		qsmtp_lib
@@ -384,10 +384,9 @@ ADD_TEST(NAME "Filter-FromDomain"
 		COMMAND testcase_filter_fromdomain)
 
 ADD_EXECUTABLE(testcase_vpop_control
-		vpop_control_test.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/vpop.c)
+		vpop_control_test.c)
 TARGET_LINK_LIBRARIES(testcase_vpop_control
+		Qsmtpd_user_vpopm
 		qsmtp_lib
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
@@ -397,7 +396,7 @@ ADD_TEST(NAME "VPop_control"
 
 ADD_EXECUTABLE(testcase_getsetting
 		getsetting_test.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c)
+		${CMAKE_SOURCE_DIR}/qsmtpd/backends/user_vpopm/getfile.c)
 TARGET_LINK_LIBRARIES(testcase_getsetting
 		qsmtp_lib
 		${MEMCHECK_LIBRARIES}
@@ -610,10 +609,9 @@ ADD_TEST(NAME "EHLO_parsing"
 
 
 ADD_EXECUTABLE(testcase_vpop_user_exists
-		userexists_test.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/vpop.c)
+		userexists_test.c)
 TARGET_LINK_LIBRARIES(testcase_vpop_user_exists
+		Qsmtpd_user_vpopm
 		qsmtp_lib
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
@@ -624,10 +622,9 @@ ADD_TEST(NAME "VPop_user_exists"
 
 ADD_EXECUTABLE(testcase_vpop_vget_dir
 		vpop_vget_dir_test.c
-		cdb_entries.h
-		${CMAKE_SOURCE_DIR}/qsmtpd/getfile.c
-		${CMAKE_SOURCE_DIR}/qsmtpd/vpop.c)
+		cdb_entries.h)
 TARGET_LINK_LIBRARIES(testcase_vpop_vget_dir
+		Qsmtpd_user_vpopm
 		qsmtp_lib
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
