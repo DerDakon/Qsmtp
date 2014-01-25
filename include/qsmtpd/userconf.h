@@ -1,4 +1,4 @@
-/** \file vpop.h
+/** \file userconf.h
  \brief definition of the helper functions around the user configuration
  */
 #ifndef USERCONF_H
