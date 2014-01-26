@@ -72,4 +72,17 @@ int userconf_get_buffer(const struct userconf *ds, const char *key, char ***valu
  */
 int userconf_find_domain(const struct userconf *ds, const char *key, char *domain, const int useglobal) __attribute__ ((nonnull (1,2,3)));
 
+/**
+ * @brief initialize the backend to query for local users
+ * @return if initialization was successful
+ * @retval 0 backend was successfully initialized
+ * @retval >0 error code
+ */
+int userbackend_init(void);
+
+/**
+ * @brief free the resources needed by the user backend
+ */
+void userbackend_free(void);
+
 #endif
