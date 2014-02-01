@@ -102,7 +102,13 @@ sortmx(struct ips **p)
 		struct ips *this = res;
 		struct ips *tmp = next->next;
 
-		if (res->priority > next->priority) {
+		if ((res->priority > next->priority)
+#ifndef IPV4ONLY
+				|| ((res->priority == next->priority)
+					&& IN6_IS_ADDR_V4MAPPED(&(res->addr))
+					&& !IN6_IS_ADDR_V4MAPPED(&(next->addr)))
+#endif
+				) {
 			next->next = res;
 			res = next;
 		} else {
