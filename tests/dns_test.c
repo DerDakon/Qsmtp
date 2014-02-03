@@ -1,11 +1,13 @@
 #include "qdns.h"
 #include "test_io/testcase_io.h"
 
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <arpa/inet.h>
 
 static int
-verify(struct ips *ip)
+verify(const struct ips *ip)
 {
 	int err = 0;
 
@@ -37,24 +39,54 @@ verify(struct ips *ip)
 	return err;
 }
 
-int
-main(void)
+static int
+verify_ipv6_sorted(const struct ips *ip)
 {
-	struct ips *ipa, *ipb;
+	int err = verify(ip);
+
+	if (IN6_IS_ADDR_V4MAPPED(ip)) {
+		fputs("v4 mapped address comes first\n", stderr);
+		return ++err;
+	}
+
+	if (!IN6_IS_ADDR_V4MAPPED(ip->next)) {
+		fputs("second position is no IPv4 mapped address\n", stderr);
+		return ++err;
+	}
+
+	if (!IN6_IS_ADDR_V4MAPPED(ip->next->next)) {
+		fputs("third position is no IPv4 mapped address\n", stderr);
+		return ++err;
+	}
+
+	return err;
+}
+
+/**
+ * @brief check that sorting by priority works
+ */
+static int
+test_sort_priority(void)
+{
+	struct ips *ipa;
+	struct ips *ipb = NULL;
+	int ret = 0;
 	unsigned int i;
-	int err = 0;
+	const unsigned int count = 3;
 
-	ipb = NULL;
-
-	for (i = 3; i > 0; --i) {
+	for (i = count; i > 0; --i) {
 		ipa = malloc(sizeof(*ipa));
+		if (ipa == NULL) {
+			freeips(ipb);
+			exit(ENOMEM);
+		}
 		memset(ipa, 0, sizeof(*ipa));
 		ipa->addr.s6_addr32[2] = i * 1000;
 		ipa->next = ipb;
 		ipb = ipa;
 	}
 
-	for (i = 16; i > 0; --i) {
+	for (i = 2 << (count + 1); i > 0; --i) {
 		unsigned int k = 0;
 
 		ipa = ipb;
@@ -71,11 +103,69 @@ main(void)
 		ipa = ipb;
 		sortmx(&ipa);
 
-		err += verify(ipa);
+		ret += verify(ipa);
 		ipb = ipa;
 	}
 
 	freeips(ipb);
+
+	return ret;
+}
+
+/**
+ * @brief check that for 2 IPs with the same priority the IPv6 one is preferred
+ */
+static int
+test_sort_ipv6(void)
+{
+	struct ips *ipa;
+	struct ips *ipb = NULL;
+	int ret = 0;
+	unsigned int i;
+	const unsigned int count = 3;
+
+	for (i = count; i > 0; --i) {
+		ipa = malloc(sizeof(*ipa));
+		if (ipa == NULL) {
+			freeips(ipb);
+			exit(ENOMEM);
+		}
+		ipa->addr.s6_addr32[3] = i * 1000;
+		/* make this v4mapped or not */
+		ipa->addr.s6_addr32[1] = 0;
+		if (i == count) {
+			ipa->addr.s6_addr32[2] = 0;
+			ipa->addr.s6_addr32[0] = htonl(0xfe800000);
+		} else {
+			ipa->addr.s6_addr32[2] = htonl(0xffff);
+			ipa->addr.s6_addr32[0] = 0;
+		}
+		ipa->next = ipb;
+		ipa->priority = 42;
+		ipb = ipa;
+	}
+
+	ipa = ipb;
+	sortmx(&ipa);
+
+	ret += verify_ipv6_sorted(ipa);
+
+	/* sorting again should not change anything */
+	sortmx(&ipa);
+	ret += verify_ipv6_sorted(ipa);
+
+	freeips(ipa);
+
+	return ret;
+}
+
+int
+main(void)
+{
+	int err = 0;
+
+	err += test_sort_priority();
+	err += test_sort_ipv6();
 
 	return err;
 }
