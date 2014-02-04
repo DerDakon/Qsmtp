@@ -92,6 +92,17 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 	exit(0);
 }
 
+/*
+ * private version: ignore all configured smtproutes since this tool will not
+ * really deliver any mail.
+ */
+struct ips *
+smtproute(const char *remhost __attribute__((unused)), const size_t reml __attribute__((unused)), unsigned int *port __attribute__((unused)))
+{
+	errno = 0;
+	return NULL;
+}
+
 static void
 setup(void)
 {
