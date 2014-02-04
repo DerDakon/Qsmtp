@@ -278,7 +278,7 @@ tls_init()
 	/* protection against CVE-2011-1431 */
 	sync_pipelining();
 
-	if (netwrite("220 ready for tls\r\n"))
+	if (netwrite("220 2.0.0 ready for tls\r\n"))
 		return errno;
 
 	/* can't set ssl earlier, else netwrite above would try to send the data encrypted with the unfinished ssl */

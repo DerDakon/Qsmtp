@@ -1114,7 +1114,7 @@ next:
 int
 smtp_vrfy(void)
 {
-	return netwrite("252 send some mail, I'll do my very best\r\n") ? errno : 0;
+	return netwrite("252 2.1.5 send some mail, I'll do my very best\r\n") ? errno : 0;
 }
 
 int
