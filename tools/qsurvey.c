@@ -450,6 +450,7 @@ main(int argc, char *argv[])
 {
 	int i;
 	struct ips *mx = NULL;
+	const char *logdir = getenv("QSURVEY_LOGDIR");
 
 	setup();
 
@@ -486,7 +487,16 @@ main(int argc, char *argv[])
 work:
 	if (!mx)
 		exit(0);
-	chdir("/tmp/Qsurvey");
+
+	if (logdir == NULL)
+		logdir = "/tmp/Qsurvey";
+
+	if (chdir(logdir) < 0) {
+		fprintf(stderr, "cannot chdir to log directory %s: %s\n",
+				logdir, strerror(errno));
+		exit(1);
+	}
+
 	memset(ipname, 0, sizeof(ipname));
 	for (i = 12; i <= 14; i++) {
 		ultostr(mx->addr.s6_addr[i], ipname + strlen(ipname));
