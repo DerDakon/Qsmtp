@@ -2,16 +2,18 @@ SET_SOURCE_FILES_PROPERTIES(fcshell.c PROPERTIES COMPILE_FLAGS --std=c99)
 
 #ADD_EXECUTABLE(fcshell fcshell.c)
 
-ADD_EXECUTABLE(Qsurvey
-	qsurvey.c
-	${CMAKE_SOURCE_DIR}/qremote/conn.c
-	${CMAKE_SOURCE_DIR}/qremote/starttlsr.c
-)
-TARGET_LINK_LIBRARIES(Qsurvey
-	qsmtp_lib
-	qsmtp_io_lib
-	${MEMCHECK_LIBRARIES}
-)
+IF (USE_OPENAT)
+	ADD_EXECUTABLE(Qsurvey
+		qsurvey.c
+		${CMAKE_SOURCE_DIR}/qremote/conn.c
+		${CMAKE_SOURCE_DIR}/qremote/starttlsr.c
+	)
+	TARGET_LINK_LIBRARIES(Qsurvey
+		qsmtp_lib
+		qsmtp_io_lib
+		${MEMCHECK_LIBRARIES}
+	)
+ENDIF ()
 
 ADD_EXECUTABLE(testspf testspf.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
 TARGET_LINK_LIBRARIES(testspf

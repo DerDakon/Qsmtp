@@ -11,6 +11,7 @@
 #include <sys/mman.h>
 #include <stdio.h>
 #include <errno.h>
+#include <limits.h>
 #include <unistd.h>
 #include <syslog.h>
 #include <string.h>
@@ -34,6 +35,7 @@ char *rhost;
 size_t rhostlen;
 char *partner_fqdn;
 static int logfd;
+static int logdirfd;
 
 /**
  * @brief write status message to stdout
@@ -433,8 +435,6 @@ dieerror(int error)
 	_exit(0);
 }
 
-static char ipname[16];
-
 static void
 makelog(const char *ext)
 {
@@ -442,9 +442,7 @@ makelog(const char *ext)
 
 	if (logfd)
 		close(logfd);
-	memcpy(fn, ipname, strlen(ipname));
-	memcpy(fn + strlen(ipname), ext, strlen(ext) + 1);
-	logfd = open(fn, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+	logfd = openat(logdirfd, ext, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
 	if (logfd == -1) {
 		if (strcmp(ext, "conn")) {
 			write(2, "can not create ", 15);
@@ -456,12 +454,97 @@ makelog(const char *ext)
 	}
 }
 
+/**
+ * @brief create a directory tree
+ * @param pattern the dot-separated pattern to use
+ * @return fd of the last directory created
+ *
+ * Given a pattern of foo.bar it will create the directories foo/ and foo/bar.
+ * It is no error if they already exist. If creation fails the process is
+ * terminated.
+ */
+static int
+mkdir_pr(const char *pattern)
+{
+	char fnbuf[PATH_MAX];
+	const char *end;
+	const char *start;
+	int r;
+	int dirfd = dup(logdirfd);
+
+	if (dirfd < 0) {
+		fprintf(stderr, "cannot open current directory: %s\n",
+			strerror(errno));
+		exit(1);
+	}
+
+	end = pattern + strlen(pattern);
+	start = strrchr(pattern, '.');
+
+	if (start == NULL)
+		start = pattern;
+
+	while (start != pattern) {
+		const size_t len = end - start - 1;
+		int nextdir;
+		strncpy(fnbuf, start + 1, end - start - 1);
+		fnbuf[len] = '\0';
+		r = mkdirat(dirfd, fnbuf, 0755);
+
+		if ((r < 0) && (errno != EEXIST)) {
+			fprintf(stderr, "cannot create %s: %s\n",
+					fnbuf, strerror(errno));
+			exit(1);
+		}
+
+		nextdir = openat(dirfd, fnbuf, O_RDONLY);
+		if (nextdir < 0) {
+			fprintf(stderr, "cannot open %s: %s\n",
+					fnbuf, strerror(errno));
+			close(dirfd);
+			exit(1);
+		}
+		close(dirfd);
+		dirfd = nextdir;
+
+		end = start;
+		start--;
+		while ((start != pattern) && (*start != '.'))
+			start--;
+	}
+
+	strncpy(fnbuf, pattern, end - pattern);
+	fnbuf[end - pattern] = '\0';
+
+	r = mkdirat(dirfd, fnbuf, 0755);
+	if ((r < 0) && (errno != EEXIST)) {
+		fprintf(stderr, "cannot create %s: %s\n",
+				fnbuf, strerror(errno));
+		close(dirfd);
+		exit(1);
+	}
+
+	r = openat(dirfd, fnbuf, O_RDONLY);
+	if (r < 0) {
+		fprintf(stderr, "cannot open %s: %s\n",
+				fnbuf, strerror(errno));
+		close(dirfd);
+		exit(1);
+	}
+	close(dirfd);
+
+	return r;
+}
+
 int
 main(int argc, char *argv[])
 {
 	int i;
 	struct ips *mx = NULL;
 	const char *logdir = getenv("QSURVEY_LOGDIR");
+	int dirfd;
+	char ipname[17]; /* enough for "255/255/255/255/" */
+	char iplinkname[PATH_MAX];
 
 	setup();
 
@@ -470,7 +553,6 @@ main(int argc, char *argv[])
 		exit(EINVAL);
 	}
 
-	ipname[0] = '\0';
 	getmxlist(argv[1], &mx);
 	sortmx(&mx);
 
@@ -502,26 +584,42 @@ work:
 	if (logdir == NULL)
 		logdir = "/tmp/Qsurvey";
 
-	if (chdir(logdir) < 0) {
-		fprintf(stderr, "cannot chdir to log directory %s: %s\n",
+	logdirfd = open(logdir, O_RDONLY);
+
+	if (logdirfd < 0) {
+		fprintf(stderr, "cannot open log directory %s: %s\n",
 				logdir, strerror(errno));
 		exit(1);
 	}
 
+	dirfd = mkdir_pr(argv[1]);
+
 	memset(ipname, 0, sizeof(ipname));
-	for (i = 12; i <= 14; i++) {
+	for (i = 12; i <= 15; i++) {
 		ultostr(mx->addr.s6_addr[i], ipname + strlen(ipname));
-		if (i == mkdir(ipname, S_IRUSR | S_IWUSR | S_IXUSR)) {
-			if (errno != EEXIST) {
-				write(2, "cannot create directory ", 24);
-				write(2, ipname, strlen(ipname));
-				write(2, "\n", 1);
-			}
+		if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
+			fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
+			exit(1);
 		}
 		ipname[strlen(ipname)] = '/';
 	}
-	ultostr(mx->addr.s6_addr[15], ipname + strlen(ipname));
-	ipname[strlen(ipname)] = '-';
+	i = openat(logdirfd, ipname, O_RDONLY);
+	if (i < 0) {
+		fprintf(stderr, "cannot open IP directory %s: %s\n",
+				ipname, strerror(errno));
+		close(logdirfd);
+		close(dirfd);
+		exit(1);
+	}
+
+	close(logdirfd);
+	logdirfd = i;
+
+	ipname[strlen(ipname) - 1] = '\0';
+	sprintf(iplinkname, "%s/%s", logdir, ipname);
+	for (i = 3; i > 0; i--)
+		*strchr(ipname, '/') = '.';
+	symlinkat(iplinkname, dirfd, ipname);
 
 	makelog("conn");
 
