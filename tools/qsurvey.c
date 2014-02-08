@@ -541,6 +541,9 @@ main(int argc, char *argv[])
 {
 	int i;
 	struct ips *mx = NULL;
+#ifndef IPV4ONLY
+	struct ips *cur;
+#endif
 	const char *logdir = getenv("QSURVEY_LOGDIR");
 	int dirfd;
 	char ipname[17]; /* enough for "255/255/255/255/" */
@@ -554,9 +557,23 @@ main(int argc, char *argv[])
 	}
 
 	getmxlist(argv[1], &mx);
+#ifndef IPV4ONLY
+	/* IPv6 addresses are currently not supported, so filter them out.
+	 * This is not needed if IPV4ONLY is set, then this has already
+	 * been done. */
+	for (cur = mx; cur != NULL; cur = cur->next)
+		if (!IN6_IS_ADDR_V4MAPPED(&(cur->addr)))
+			cur->priority = 65537;
+#endif
 	sortmx(&mx);
 
-	if (!mx->next && IN6_IS_ADDR_V4MAPPED(&(mx->addr)))
+	/* if no IPv4 address is available just exit */
+	if (mx->priority > 65536)
+		return 0;
+
+	/* only one IPv4 address is available: just do it in this
+	 * process, no need to fork. */
+	if ((mx->next == NULL) || (mx->next->priority > 65536))
 		goto work;
 
 	while (mx) {
@@ -584,7 +601,7 @@ main(int argc, char *argv[])
 
 work:
 	if (!mx)
-		exit(0);
+		return 0;
 
 	if (logdir == NULL)
 		logdir = "/tmp/Qsurvey";
