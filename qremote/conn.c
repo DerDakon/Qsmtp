@@ -184,8 +184,6 @@ getmxlist(char *remhost, struct ips **mx)
 		err_mem(0);
 	}
 
-	remove_ipv6(mx);
-
 	if (!*mx) {
 		if (ask_dnsmx(remhost, mx)) {
 			write(1, "Z4.4.3 cannot find a mail exchanger for ", 40);
@@ -194,4 +192,6 @@ getmxlist(char *remhost, struct ips **mx)
 			net_conn_shutdown(shutdown_abort);
 		}
 	}
+
+	remove_ipv6(mx);
 }
