@@ -91,7 +91,7 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 
 	free(heloname.s);
 
-	exit(0);
+	_exit(0);
 }
 
 /*
@@ -157,7 +157,7 @@ void
 quit(void)
 {
 	quitmsg();
-	exit(0);
+	_exit(0);
 }
 
 /**
@@ -229,7 +229,7 @@ netget(void)
 
 				write(1, "Z", 1);
 				write_status(tmp);
-				quit();
+				net_conn_shutdown(shutdown_clean);
 			}
 		}
 	}
@@ -257,7 +257,7 @@ netget(void)
 syntax:
 	/* if this fails we're already in bad trouble */
 	(void) write_status("Zsyntax error in server reply\n");
-	quit();
+	net_conn_shutdown(shutdown_clean);
 }
 
 /**
@@ -448,9 +448,10 @@ makelog(const char *ext)
 			write(2, "can not create ", 15);
 			write(2, fn, strlen(fn));
 			write(2, "\n", 1);
-			quit();
-		} else
-			exit(1);
+			net_conn_shutdown(shutdown_clean);
+		} else {
+			net_conn_shutdown(shutdown_abort);
+		}
 	}
 }
 
@@ -541,20 +542,18 @@ main(int argc, char *argv[])
 {
 	int i;
 	struct ips *mx = NULL;
-#ifndef IPV4ONLY
 	struct ips *cur;
-#endif
 	const char *logdir = getenv("QSURVEY_LOGDIR");
 	int dirfd;
 	char ipname[17]; /* enough for "255/255/255/255/" */
 	char iplinkname[PATH_MAX];
 
-	setup();
-
-	if (argc == 0) {
+	if (argc != 2) {
 		write(2, "Usage: Qsurvey hostname\n", 24);
 		exit(EINVAL);
 	}
+
+	setup();
 
 	getmxlist(argv[1], &mx);
 #ifndef IPV4ONLY
@@ -568,21 +567,25 @@ main(int argc, char *argv[])
 	sortmx(&mx);
 
 	/* if no IPv4 address is available just exit */
-	if (mx->priority > 65536)
+	if (mx->priority > 65536) {
+		freeips(mx);
 		return 0;
+	}
 
 	/* only one IPv4 address is available: just do it in this
 	 * process, no need to fork. */
+	cur = mx;
 	if ((mx->next == NULL) || (mx->next->priority > 65536))
 		goto work;
 
-	while (mx) {
-		while (mx && !IN6_IS_ADDR_V4MAPPED(&(mx->addr))) {
-			mx = mx->next;
-		}
+	while (cur) {
+		while ((cur != NULL) && (cur->priority > 65536))
+			cur = cur->next;
 
-		if (!mx)
-			exit(0);
+		if (cur == NULL) {
+			freeips(mx);
+			return 0;
+		}
 
 		switch (fork()) {
 		case -1:
@@ -592,7 +595,7 @@ main(int argc, char *argv[])
 		case 0:
 			break;
 		default:
-			mx = mx->next;
+			cur = cur->next;
 			continue;
 		}
 
@@ -600,8 +603,10 @@ main(int argc, char *argv[])
 	}
 
 work:
-	if (!mx)
+	if (cur == NULL) {
+		freeips(mx);
 		return 0;
+	}
 
 	if (logdir == NULL)
 		logdir = "/tmp/Qsurvey";
@@ -611,17 +616,19 @@ work:
 	if (logdirfd < 0) {
 		fprintf(stderr, "cannot open log directory %s: %s\n",
 				logdir, strerror(errno));
-		exit(1);
+		freeips(mx);
+		return 1;
 	}
 
 	dirfd = mkdir_pr(argv[1]);
 
 	memset(ipname, 0, sizeof(ipname));
 	for (i = 12; i <= 15; i++) {
-		ultostr(mx->addr.s6_addr[i], ipname + strlen(ipname));
+		ultostr(cur->addr.s6_addr[i], ipname + strlen(ipname));
 		if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
 			fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
-			exit(1);
+			freeips(mx);
+			return 1;
 		}
 		ipname[strlen(ipname)] = '/';
 	}
@@ -631,7 +638,8 @@ work:
 				ipname, strerror(errno));
 		close(logdirfd);
 		close(dirfd);
-		exit(1);
+		freeips(mx);
+		net_conn_shutdown(shutdown_abort);
 	}
 
 	close(logdirfd);
@@ -645,11 +653,13 @@ work:
 
 	makelog("conn");
 
-	tryconn(mx, &in6addr_any, &in6addr_any);
+	tryconn(cur, &in6addr_any, &in6addr_any);
 	close(0);
 	dup2(socketd, 0);
-	if (netget() != 220)
-		quit();
+	if (netget() != 220) {
+		freeips(mx);
+		net_conn_shutdown(shutdown_clean);
+	}
 
 	/* AOL and others */
 	while (linein[3] == '-')
@@ -657,10 +667,12 @@ work:
 
 	makelog("ehlo");
 
-	if (greeting())
-		quit();
+	if (greeting()) {
+		freeips(mx);
+		net_conn_shutdown(shutdown_clean);
+	}
 
-	getrhost(mx);
+	getrhost(cur);
 	freeips(mx);
 
 	if (smtpext & 0x04) {
@@ -669,7 +681,7 @@ work:
 			makelog("tls-ehlo");
 			if (greeting()) {
 				write(2, "EHLO failed after STARTTLS\n", 28);
-				quit();
+				net_conn_shutdown(shutdown_clean);
 			}
 		}
 	}
@@ -694,5 +706,5 @@ work:
 	do {
 		netget();
 	} while (linein[3] == '-');
-	quit();
+	net_conn_shutdown(shutdown_clean);
 }
