@@ -568,13 +568,18 @@ main(int argc, char *argv[])
 			exit(0);
 
 		switch (fork()) {
-		case -1:	i = errno;
-				write(2, "unable to fork\n", 15);
-				exit(i);
-		case 0:		goto work;
+		case -1:
+			i = errno;
+			write(2, "unable to fork\n", 15);
+			exit(i);
+		case 0:
+			break;
+		default:
+			mx = mx->next;
+			continue;
 		}
 
-		mx = mx->next;
+		break;
 	}
 
 work:
