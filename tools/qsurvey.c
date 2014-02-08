@@ -27,6 +27,7 @@
 #include <qremote/qremote.h>
 #include "fmt.h"
 #include "qmaildir.h"
+#include "tls.h"
 
 int socketd;
 string heloname;
@@ -35,7 +36,8 @@ char *rhost;
 size_t rhostlen;
 char *partner_fqdn;
 static int logfd;
-static int logdirfd;
+static int logdirfd = -1;
+static struct ips *mx;
 
 /**
  * @brief write status message to stdout
@@ -89,9 +91,12 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 		socketd = -1;
 	}
 
+	freeips(mx);
 	free(heloname.s);
+	if (logdirfd >= 0)
+		close(logdirfd);
 
-	_exit(0);
+	ssl_exit(0);
 }
 
 /*
@@ -163,12 +168,11 @@ quit(void)
 /**
  * print remote host information to buffer
  *
- * @param mx list of MX entries, entry with priority 65538 is active
+ * @param m list of MX entries, entry with priority 65538 is active
  */
 static inline void
-getrhost(const struct ips *mx)
+getrhost(const struct ips *m)
 {
-	const struct ips *m = mx;
 	int r;
 
 	free(partner_fqdn);
@@ -541,7 +545,6 @@ int
 main(int argc, char *argv[])
 {
 	int i;
-	struct ips *mx = NULL;
 	struct ips *cur;
 	const char *logdir = getenv("QSURVEY_LOGDIR");
 	int dirfd;
@@ -550,7 +553,7 @@ main(int argc, char *argv[])
 
 	if (argc != 2) {
 		write(2, "Usage: Qsurvey hostname\n", 24);
-		exit(EINVAL);
+		return EINVAL;
 	}
 
 	setup();
@@ -591,7 +594,8 @@ main(int argc, char *argv[])
 		case -1:
 			i = errno;
 			write(2, "unable to fork\n", 15);
-			exit(i);
+			freeips(mx);
+			return i;
 		case 0:
 			break;
 		default:
@@ -627,8 +631,8 @@ work:
 		ultostr(cur->addr.s6_addr[i], ipname + strlen(ipname));
 		if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
 			fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
-			freeips(mx);
-			return 1;
+			close(dirfd);
+			net_conn_shutdown(shutdown_abort);
 		}
 		ipname[strlen(ipname)] = '/';
 	}
@@ -638,7 +642,6 @@ work:
 				ipname, strerror(errno));
 		close(logdirfd);
 		close(dirfd);
-		freeips(mx);
 		net_conn_shutdown(shutdown_abort);
 	}
 
