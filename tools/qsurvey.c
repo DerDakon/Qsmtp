@@ -544,12 +544,12 @@ mkdir_pr(const char *pattern)
 int
 main(int argc, char *argv[])
 {
-	int i;
-	struct ips *cur;
-	const char *logdir = getenv("QSURVEY_LOGDIR");
-	int dirfd;
-	char ipname[17]; /* enough for "255/255/255/255/" */
 	char iplinkname[PATH_MAX];
+	char ipname[64]; /* enough for "1122/3344/5566/7788/99aa/bbcc/ddee/ff00/\0" */
+	const char *logdir = getenv("QSURVEY_LOGDIR");
+	struct ips *cur;
+	int i;
+	int dirfd;
 
 	if (argc != 2) {
 		write(2, "Usage: Qsurvey hostname\n", 24);
@@ -559,23 +559,17 @@ main(int argc, char *argv[])
 	setup();
 
 	getmxlist(argv[1], &mx);
-#ifndef IPV4ONLY
-	/* IPv6 addresses are currently not supported, so filter them out.
-	 * This is not needed if IPV4ONLY is set, then this has already
-	 * been done. */
-	for (cur = mx; cur != NULL; cur = cur->next)
-		if (!IN6_IS_ADDR_V4MAPPED(&(cur->addr)))
-			cur->priority = 65537;
-#endif
 	sortmx(&mx);
 
+#ifdef IPV4ONLY
 	/* if no IPv4 address is available just exit */
 	if (mx->priority > 65536) {
 		freeips(mx);
 		return 0;
 	}
+#endif
 
-	/* only one IPv4 address is available: just do it in this
+	/* only one address is available: just do it in this
 	 * process, no need to fork. */
 	cur = mx;
 	if ((mx->next == NULL) || (mx->next->priority > 65536))
@@ -627,14 +621,29 @@ work:
 	dirfd = mkdir_pr(argv[1]);
 
 	memset(ipname, 0, sizeof(ipname));
-	for (i = 12; i <= 15; i++) {
-		ultostr(cur->addr.s6_addr[i], ipname + strlen(ipname));
-		if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
-			fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
-			close(dirfd);
-			net_conn_shutdown(shutdown_abort);
+	if (IN6_IS_ADDR_V4MAPPED(&(cur->addr))) {
+		for (i = 12; i <= 15; i++) {
+			char append[5];
+			sprintf(append, "%u/", cur->addr.s6_addr[i]);
+			strcat(ipname, append);
+			if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
+				fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
+				close(dirfd);
+				net_conn_shutdown(shutdown_abort);
+			}
 		}
-		ipname[strlen(ipname)] = '/';
+	} else {
+		for (i = 0; i < 8; i++) {
+			char append[6];
+			sprintf(append, "%04x/", ntohs(cur->addr.s6_addr16[i]));
+			strcat(ipname, append);
+			if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
+				fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
+				freeips(mx);
+				close(logdirfd);
+				net_conn_shutdown(shutdown_abort);
+			}
+		}
 	}
 	i = openat(logdirfd, ipname, O_RDONLY);
 	if (i < 0) {
