@@ -651,7 +651,10 @@ work:
 	ipname[strlen(ipname) - 1] = '\0';
 	sprintf(iplinkname, "%s/%s", logdir, ipname);
 
-	inet_ntop(AF_INET, cur->addr.s6_addr32 + 3, ipname, sizeof(ipname));
+	if (IN6_IS_ADDR_V4MAPPED(&(cur->addr)))
+		inet_ntop(AF_INET, cur->addr.s6_addr32 + 3, ipname, sizeof(ipname));
+	else
+		inet_ntop(AF_INET6, &(cur->addr), ipname, sizeof(ipname));
 	symlinkat(iplinkname, dirfd, ipname);
 
 	makelog("conn");
