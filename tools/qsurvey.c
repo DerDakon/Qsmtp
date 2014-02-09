@@ -650,8 +650,8 @@ work:
 
 	ipname[strlen(ipname) - 1] = '\0';
 	sprintf(iplinkname, "%s/%s", logdir, ipname);
-	for (i = 3; i > 0; i--)
-		*strchr(ipname, '/') = '.';
+
+	inet_ntop(AF_INET, cur->addr.s6_addr32 + 3, ipname, sizeof(ipname));
 	symlinkat(iplinkname, dirfd, ipname);
 
 	makelog("conn");
