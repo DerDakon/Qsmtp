@@ -79,7 +79,7 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, int *t)
 				}
 			}
 		}
-	} if (errno) {
+	} else if (errno) {
 		if (errno == EAGAIN) {
 			*logmsg = "temporary DNS error on RBL lookup";
 			rc = 4;
