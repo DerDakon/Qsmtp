@@ -19,36 +19,45 @@
 extern int socketd;
 unsigned int targetport = 25;
 
+/**
+ * @brief create a socket and connect to the given ip
+ * @param remoteip the target address
+ * @param outip the local IP the connection should originate from
+ * @return the socket descriptor or a negative error code
+ */
 static int
 conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 {
 	int rc;
+	int sd;
+
 #ifdef IPV4ONLY
 	struct sockaddr_in sock;
 
-	socketd = socket(PF_INET, SOCK_STREAM, 0);
+	sd = socket(PF_INET, SOCK_STREAM, 0);
 
-	if (socketd < 0)
-		return errno;
+	if (sd < 0)
+		return -errno;
 
 	sock.sin_family = AF_INET;
 	sock.sin_port = 0;
 	sock.sin_addr.s_addr = outip->s6_addr32[3];
 
-	rc = bind(socketd, (struct sockaddr *) &sock, sizeof(sock));
-
-	if (rc)
-		return errno;
+	if (bind(sd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
+		int err = errno;
+		while ((close(sd) < 0) && (errno == EINTR));
+		return -err;
+	}
 
 	sock.sin_port = htons(targetport);
 	sock.sin_addr.s_addr = remoteip.s6_addr32[3];
 #else
 	struct sockaddr_in6 sock;
 
-	socketd = socket(PF_INET6, SOCK_STREAM, 0);
+	sd = socket(PF_INET6, SOCK_STREAM, 0);
 
-	if (socketd < 0)
-		return errno;
+	if (sd < 0)
+		return -errno;
 
 	sock.sin6_family = AF_INET6;
 	sock.sin6_port = 0;
@@ -56,16 +65,25 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 	sock.sin6_addr = *outip;
 	sock.sin6_scope_id = 0;
 
-	rc = bind(socketd, (struct sockaddr *) &sock, sizeof(sock));
-
-	if (rc)
-		return errno;
+	if (bind(sd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
+		int err = errno;
+		while ((close(sd) < 0) && (errno == EINTR));
+		return -err;
+	}
 
 	sock.sin6_port = htons(targetport);
 	sock.sin6_addr = remoteip;
 #endif
 
-	return connect(socketd, (struct sockaddr *) &sock, sizeof(sock)) ? errno : 0;
+	rc = connect(sd, (struct sockaddr *) &sock, sizeof(sock));
+
+	if (rc < 0) {
+		int err = errno;
+		while ((close(sd) < 0) && (errno == EINTR));
+		return -err;
+	}
+	
+	return  sd;
 }
 
 /**
@@ -83,6 +101,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 	while (1) {
 		struct ips *thisip;
 		const struct in6_addr *outip;
+		int sd;
 
 		for (thisip = mx; thisip; thisip = thisip->next) {
 			if (thisip->priority == 65538)
@@ -105,8 +124,10 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 #endif
 			outip = outip4;
 
-		if (!conn(thisip->addr, outip)) {
+		sd = conn(thisip->addr, outip);
+		if (sd >= 0) {
 			/* set priority to 65538 to allow getrhost() to find active MX */
+			socketd = sd;
 			thisip->priority = 65538;
 			return;
 		}
