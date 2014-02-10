@@ -9,7 +9,7 @@
 
 unsigned int targetport;	/**< the port on the destination host to connect to */
 
-extern void tryconn(struct ips *, const struct in6_addr *outip4, const struct in6_addr *outip6);
+extern int tryconn(struct ips *, const struct in6_addr *outip4, const struct in6_addr *outip6);
 extern void getmxlist(char *, struct ips **);
 
 #endif
