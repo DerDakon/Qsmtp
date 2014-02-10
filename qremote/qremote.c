@@ -519,7 +519,7 @@ main(int argc, char *argv[])
 			return 0;
 		}
 */
-		tryconn(mx, &outip, &outip6);
+		socketd = tryconn(mx, &outip, &outip6);
 		dup2(socketd, 0);
 		if (netget() != 220) {
 			quitmsg();

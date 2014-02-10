@@ -16,7 +16,6 @@
 #include "log.h"
 #include <qremote/qremote.h>
 
-extern int socketd;
 unsigned int targetport = 25;
 
 /**
@@ -91,11 +90,12 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
  *
  * @param mx list of IP adresses to try
  * @param outip local IP to use
+ * @return the socket descriptor of the open connection
  *
  * Every entry where a connection attempt was made is marked with a priority of 65537,
  * the last one tried with 65538
  */
-void
+int
 tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *outip6)
 {
 	while (1) {
@@ -129,7 +129,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 			/* set priority to 65538 to allow getrhost() to find active MX */
 			socketd = sd;
 			thisip->priority = 65538;
-			return;
+			return sd;
 		}
 		thisip->priority = 65537;
 	}
