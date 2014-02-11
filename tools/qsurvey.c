@@ -669,7 +669,6 @@ work:
 	makelog("conn");
 
 	socketd = tryconn(cur, &in6addr_any, &in6addr_any);
-	close(0);
 	dup2(socketd, 0);
 	if (netget() != 220) {
 		freeips(mx);
