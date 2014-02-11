@@ -13,6 +13,12 @@ IF (USE_OPENAT)
 		qsmtp_io_lib
 		${MEMCHECK_LIBRARIES}
 	)
+
+	INSTALL(TARGETS
+			Qsurvey
+		DESTINATION bin
+		COMPONENT tools
+	)
 ENDIF ()
 
 ADD_EXECUTABLE(testspf testspf.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
@@ -38,7 +44,6 @@ ADD_EXECUTABLE(addipbl addipbl.c)
 ADD_EXECUTABLE(sendremote sendremote.c)
 
 INSTALL(TARGETS
-		Qsurvey
 		testspf
 		qpencode
 		clearpass
