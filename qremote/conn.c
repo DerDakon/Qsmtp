@@ -110,7 +110,6 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 				break;
 		}
 		if (!thisip) {
-			close(socketd);
 			write_status("Zcan't connect to any server\n");
 			exit(0);
 		}
@@ -127,7 +126,6 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 		sd = conn(thisip->addr, outip);
 		if (sd >= 0) {
 			/* set priority to 65538 to allow getrhost() to find active MX */
-			socketd = sd;
 			thisip->priority = 65538;
 			return sd;
 		}
