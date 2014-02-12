@@ -86,6 +86,17 @@ validroute(const char *s)
 	return 1;
 }
 
+static const char *
+tagvalue(char **lines, const unsigned int index)
+{
+	unsigned int i = 0;
+
+	while (strncmp(lines[i], tags[index], strlen(tags[index])) != 0)
+		i++;
+	
+	return lines[i] + strlen(tags[index]) + 1;
+}
+
 /**
  * @brief get static route for domain
  *
@@ -132,8 +143,6 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 #else
 			int fd = open(fn, O_RDONLY);
 #endif
-			unsigned int i = 0;
-			const char *val;
 			const char *target = NULL;
 
 			if (fd < 0) {
@@ -173,10 +182,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 
 			if (tagmask & 1) {
 				/* find host */
-				while (strncmp(array[i], tags[0], strlen(tags[0])) != 0)
-					i++;
-
-				val = array[i] + strlen(tags[0]) + 1;
+				const char *val = tagvalue(array, 0);
 
 				target = val;
 				if (ask_dnsaaaa(val, &mx)) {
@@ -195,14 +201,8 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			}
 
 			if (tagmask & 2) {
-				i = 0;
-
-				while (strncmp(array[i], tags[1], strlen(tags[1])) != 0)
-					i++;
-
-				val = array[i] + strlen(tags[1]) + 1;
-
 				char *more;
+				const char *val = tagvalue(array, 1);
 				
 				/* overwrite the colon ending the hostname so the code
 				 * below will not take this as part of the host name */
