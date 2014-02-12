@@ -203,9 +203,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			if (tagmask & 2) {
 				char *more;
 				const char *val = tagvalue(array, 1);
-				
-				/* overwrite the colon ending the hostname so the code
-				 * below will not take this as part of the host name */
+
 				*targetport = strtoul(val, &more, 10);
 				if ((*more != '\0') || (*targetport >= 65536) || (*targetport == 0)) {
 					const char *logmsg[] = {"invalid port number '", val,
