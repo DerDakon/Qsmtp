@@ -87,14 +87,14 @@ validroute(const char *s)
 }
 
 static const char *
-tagvalue(char **lines, const unsigned int index)
+tagvalue(char **lines, const unsigned int idx)
 {
 	unsigned int i = 0;
 
-	while (strncmp(lines[i], tags[index], strlen(tags[index])) != 0)
+	while (strncmp(lines[i], tags[idx], strlen(tags[idx])) != 0)
 		i++;
 	
-	return lines[i] + strlen(tags[index]) + 1;
+	return lines[i] + strlen(tags[idx]) + 1;
 }
 
 /**
