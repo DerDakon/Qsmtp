@@ -457,7 +457,6 @@ main(int argc, char *argv[])
 {
 	const char *netmsg[10];
 	int rcptstat = 1;	/* this means: all recipients have been rejected */
-	int i;
 	struct ips *mx = NULL;
 	int rcptcount = argc - 3;
 	struct stat st;
@@ -486,8 +485,7 @@ main(int argc, char *argv[])
 	sortmx(&mx);
 
 	/* this shouldn't fail normally: qmail-rspawn did it before successfully */
-	i = fstat(0, &st);
-	if (i) {
+	if (fstat(0, &st)) {
 		if (errno == ENOMEM)
 			err_mem(0);
 		log_write(LOG_CRIT, "can't fstat() input");
@@ -511,14 +509,6 @@ main(int argc, char *argv[])
 	do {
 		int flagerr = 0;
 
-/*		if (i < 0) {
-			if (errno == ENOMEM)
-				err_mem(1);
-			log_write(LOG_ERR, "error parsing EHLO response");
-			write_status("Zinternal error: can't parse EHLO response\n");
-			return 0;
-		}
-*/
 		if (socketd >= 0)
 			while ((close(socketd) < 0) && (errno == EINTR));
 		socketd = tryconn(mx, &outip, &outip6);
@@ -561,7 +551,7 @@ main(int argc, char *argv[])
 			log_writen(LOG_WARNING, dropmsg);
 			quitmsg();
 		}
-	} while ((socketd < 0) || (i = greeting()));
+	} while ((socketd < 0) || greeting());
 
 	getrhost(mx);
 	freeips(mx);
@@ -596,6 +586,8 @@ main(int argc, char *argv[])
 		netmsg[lastmsg++] = (recodeflag & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
 	}
 	if (smtpext & esmtp_pipelining) {
+		int i;
+
 /* server allows PIPELINING: first send all the messages, then check the replies.
  * This allows to hide network latency. */
 		/* batch the first recipient with the from */
@@ -634,6 +626,8 @@ main(int argc, char *argv[])
 		if (rcptstat)
 			quit();
 	} else {
+		int i;
+
 /* server does not allow pipelining: we must do this one by one */
 		netmsg[lastmsg] = NULL;
 		net_writen(netmsg);
