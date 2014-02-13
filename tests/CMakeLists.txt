@@ -411,19 +411,45 @@ TARGET_LINK_LIBRARIES(testcase_netio
 ADD_TEST(NAME "NetIO"
 		COMMAND testcase_netio)
 
+
+SET(ROUTES_NODIR_TESTS nomatch complete_match with_port port_0 port_100k port_char port_char_no_relay
+		no_colon port_only unresolved)
+SET(ROUTES_DIR_TESTS complete_match_dir with_port_dir port_0_dir port_100k_dir port_char_dir port_only_dir
+		port_char_no_relay_dir unresolved_dir duplicate_host_dir invalid_entry_dir
+		no_equal_dir start_equal_dir)
+
+FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/smtproutes_noopenat.c
+	"#undef USE_OPENAT\n#include \"${CMAKE_SOURCE_DIR}/qremote/smtproutes.c\"\n")
 ADD_EXECUTABLE(testcase_smtproutes
 		smtproutes_test.c
-		${CMAKE_SOURCE_DIR}/qremote/smtproutes.c)
+		${CMAKE_CURRENT_BINARY_DIR}/smtproutes_noopenat.c)
 TARGET_LINK_LIBRARIES(testcase_smtproutes
 		qsmtp_lib
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES})
 
-FOREACH (ROUTETEST nomatch complete_match with_port port_0 port_100k port_char port_char_no_relay
-		no_colon port_only unresolved
-		complete_match_dir with_port_dir port_0_dir port_100k_dir port_char_dir port_only_dir
-		port_char_no_relay_dir unresolved_dir duplicate_host_dir invalid_entry_dir
-		no_equal_dir start_equal_dir)
+IF (USE_OPENAT)
+	ADD_EXECUTABLE(testcase_smtproutes_openat
+			smtproutes_test.c
+			${CMAKE_SOURCE_DIR}/qremote/smtproutes.c)
+	TARGET_LINK_LIBRARIES(testcase_smtproutes_openat
+			qsmtp_lib
+			testcase_io_lib
+			${MEMCHECK_LIBRARIES})
+
+	FOREACH (ROUTETEST IN LISTS ROUTES_DIR_TESTS)
+		ADD_TEST(NAME "SMTProutes-${ROUTETEST}-openat"
+				COMMAND testcase_smtproutes_openat
+				WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}")
+		IF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}/errmsg")
+			FILE(READ "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}/errmsg" ROUTETEST_MSG)
+			SET_TESTS_PROPERTIES(SMTProutes-${ROUTETEST}-openat PROPERTIES
+				PASS_REGULAR_EXPRESSION "^(.*\n)?LOG: ${ROUTETEST_MSG}(\n.*)?$")
+		ENDIF ()
+	ENDFOREACH (ROUTETEST)
+ENDIF ()
+
+FOREACH (ROUTETEST IN LISTS ROUTES_NODIR_TESTS ROUTES_DIR_TESTS)
 	ADD_TEST(NAME "SMTProutes-${ROUTETEST}"
 			COMMAND testcase_smtproutes
 			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}")
