@@ -733,7 +733,7 @@ send_data(unsigned int recodeflag)
 		write(1, num >= 500 ? "D5" : "Z4", 2);
 		write(1, ".3.0 remote host rejected DATA command: ", 40);
 		write(1, linein + 4, linelen - 3);
-		quit();
+		net_conn_shutdown(shutdown_clean);
 	}
 #ifdef DEBUG_IO
 	in_data = 1;

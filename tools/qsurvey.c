@@ -161,13 +161,6 @@ quitmsg(void)
 	socketd = -1;
 }
 
-void
-quit(void)
-{
-	quitmsg();
-	_exit(0);
-}
-
 /**
  * print remote host information to buffer
  *

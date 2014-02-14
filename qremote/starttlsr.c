@@ -18,12 +18,11 @@
 static void __attribute__ ((noreturn))
 tls_quit(void)
 {
-	char *msg = ssl ? "; connected to " : "; connecting to ";
+	const char *msg[] = { ssl ? "; connected to " : "; connecting to ",
+			rhost, "\n" };
 
-	write(1, msg, strlen(msg));
-	write(1, rhost, rhostlen);
-	write(1, ".\n", 2);
-	quit();
+	write_status_m(msg, 3);
+	net_conn_shutdown(shutdown_clean);
 }
 
 static void  __attribute__ ((noreturn))

@@ -217,12 +217,6 @@ setup(void)
 #endif
 }
 
-void
-quit(void)
-{
-	net_conn_shutdown(shutdown_clean);
-}
-
 /**
  * print remote host information to buffer
  *
@@ -293,7 +287,7 @@ netget(void)
 				const char *tmp[] = { "Z", strerror(errno) };
 
 				write_status_m(tmp, 2);
-				quit();
+				net_conn_shutdown(shutdown_clean);;
 			}
 		}
 	}
@@ -315,7 +309,7 @@ netget(void)
 syntax:
 	/* if this fails we're already in bad trouble */
 	write_status("Zsyntax error in server reply\n");
-	quit();
+	net_conn_shutdown(shutdown_clean);;
 }
 
 /**
@@ -562,7 +556,7 @@ main(int argc, char *argv[])
 		if (tls_init()) {
 			if (greeting()) {
 				write_status("ZEHLO failed after STARTTLS\n");
-				quit();
+				net_conn_shutdown(shutdown_clean);;
 			}
 			successmsg[4] = " encrypted";
 		}
@@ -615,7 +609,7 @@ main(int argc, char *argv[])
 		if (checkreply(" ZD", mailerrmsg, 6) >= 300) {
 			for (i = rcptcount; i > 0; i--)
 				checkreply(NULL, NULL, 0);
-			quit();
+			net_conn_shutdown(shutdown_clean);;
 		}
 /* RCPT TO: replies */
 		for (i = rcptcount; i > 0; i--) {
@@ -625,7 +619,7 @@ main(int argc, char *argv[])
 			}
 		}
 		if (rcptstat)
-			quit();
+			net_conn_shutdown(shutdown_clean);;
 	} else {
 		int i;
 
@@ -634,7 +628,7 @@ main(int argc, char *argv[])
 		net_writen(netmsg);
 
 		if (checkreply(" ZD", mailerrmsg, 6) >= 300)
-			quit();
+			net_conn_shutdown(shutdown_clean);;
 
 		netmsg[0] = "RCPT TO:<";
 		netmsg[2] = ">";
@@ -649,7 +643,7 @@ main(int argc, char *argv[])
 			}
 		}
 		if (rcptstat)
-			quit();
+			net_conn_shutdown(shutdown_clean);;
 	}
 	successmsg[0] = rhost;
 #ifdef CHUNKING
@@ -661,5 +655,5 @@ main(int argc, char *argv[])
 #endif
 		send_data(recodeflag);
 	}
-	quit();
+	net_conn_shutdown(shutdown_clean);;
 }

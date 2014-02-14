@@ -131,7 +131,7 @@ send_bdat(unsigned int recodeflag)
 #endif
 			if (checkreply(" ZD", NULL, 0) != 250) {
 				free(chunkbuf);
-				quit();
+				net_conn_shutdown(shutdown_clean);
 			}
 #ifdef DEBUG_IO
 			in_data = 1;
