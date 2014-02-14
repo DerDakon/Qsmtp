@@ -91,6 +91,7 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 #endif
 
 	free(heloname.s);
+	free(rhost);
 
 	exit(0);
 }
