@@ -827,6 +827,12 @@ test_log_write(int priority, const char *s)
 }
 
 void
+write_status(const char *str)
+{
+	puts(str);
+}
+
+void
 test_net_conn_shutdown(const enum conn_shutdown_type sdtype __attribute__((unused)))
 {
 	free(outbuf);

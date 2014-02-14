@@ -22,7 +22,14 @@ unsigned int smtpext;
 struct string heloname;
 int in_data;
 
-void quit(void) { return; }
+void quit(void)
+{
+}
+
+void write_status(const char *str)
+{
+	puts(str);
+}
 
 void net_conn_shutdown(const enum conn_shutdown_type sd_type __attribute__ ((unused)))
 {
