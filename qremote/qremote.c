@@ -40,17 +40,20 @@ char *partner_fqdn;	/**< the DNS name of the remote server, or NULL if no revers
 static struct in6_addr outip;
 static struct in6_addr outip6;
 
-/**
- * @brief write status message to stdout
- * @param str the string to write
- *
- * This will include the trailing 0-byte in the output as qmail-rspawn awaits
- * that as separator between the output fields.
- */
 void
 write_status(const char *str)
 {
 	(void) write(1, str, strlen(str) + 1);
+}
+
+void
+write_status_m(const char **strs, const unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count - 1; i++)
+		(void) write(1, strs[i], strlen(strs[i]));
+	write_status(strs[count - 1]);
 }
 
 static void
@@ -287,10 +290,9 @@ netget(void)
 			goto syntax;
 		default:
 			{
-				char *tmp = strerror(errno);
+				const char *tmp[] = { "Z", strerror(errno) };
 
-				write(1, "Z", 1);
-				write_status(tmp);
+				write_status_m(tmp, 2);
 				quit();
 			}
 		}
@@ -476,9 +478,9 @@ main(int argc, char *argv[])
 	if (targetport == 25) {
 		mx = filter_my_ips(mx);
 		if (mx == NULL) {
-			write(1, "Z4.4.3 all mail exchangers for ", 31);
-			write(1, argv[1], strlen(argv[1]));
-			write_status(" point back to me\n");
+			const char *msg[] = { "Z4.4.3 all mail exchangers for ",
+					argv[1], " point back to me\n" };
+			write_status_m(msg, 3);
 			net_conn_shutdown(shutdown_abort);
 		}
 	}
@@ -532,10 +534,9 @@ main(int argc, char *argv[])
 					break;
 			default:
 				{
-					const char *tmp = strerror(errno);
+					const char *tmp[] = { "Z", strerror(errno) };
 
-					write(1, "Z", 1);
-					write_status(tmp);
+					write_status_m(tmp, 2);
 					quitmsg();
 				}
 			}

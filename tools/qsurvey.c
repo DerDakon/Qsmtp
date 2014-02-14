@@ -39,17 +39,20 @@ static int logfd;
 static int logdirfd = -1;
 static struct ips *mx;
 
-/**
- * @brief write status message to stdout
- * @param str the string to write
- *
- * This will include the trailing 0-byte in the output as qmail-rspawn awaits
- * that as separator between the output fields.
- */
 void
 write_status(const char *str)
 {
 	(void) write(1, str, strlen(str) + 1);
+}
+
+void
+write_status_m(const char **strs, const unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count - 1; i++)
+		(void) write(1, strs[i], strlen(strs[i]));
+	write_status(strs[count - 1]);
 }
 
 static void quitmsg(void);

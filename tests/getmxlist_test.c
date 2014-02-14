@@ -19,9 +19,20 @@ smtproute(const char *a, const size_t b, unsigned int *c)
 void
 write_status(const char *str)
 {
-	(void) write(1, str, strlen(str) + 1);
+	write(1, str, strlen(str) + 1);
 
 	exit(EFAULT);
+}
+
+void
+write_status_m(const char **strs, const unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count - 1; i++)
+		write(1, strs[i], strlen(strs[i]));
+
+	write_status(strs[count - 1]);
 }
 
 void

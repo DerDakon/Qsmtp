@@ -205,9 +205,9 @@ getmxlist(char *remhost, struct ips **mx)
 
 	if (!*mx) {
 		if (ask_dnsmx(remhost, mx)) {
-			write(1, "Z4.4.3 cannot find a mail exchanger for ", 40);
-			write(1, remhost, reml);
-			write_status("\n");
+			const char *msg[] = { "Z4.4.3 cannot find a mail exchanger for ",
+					remhost, "\n" };
+			write_status_m(msg, 3);
 			net_conn_shutdown(shutdown_abort);
 		}
 	}

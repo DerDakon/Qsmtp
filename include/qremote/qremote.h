@@ -12,7 +12,25 @@ extern void err_confn(const char **, void *) __attribute__ ((noreturn)) __attrib
 extern void quit(void) __attribute__ ((noreturn));
 extern int netget(void);
 extern int checkreply(const char *, const char **, const int);
+
+/**
+ * @brief write status message to stdout
+ * @param str the string to write
+ *
+ * This will include the trailing 0-byte in the output as qmail-rspawn awaits
+ * that as separator between the output fields.
+ */
 extern void write_status(const char *str) __attribute__ ((nonnull (1)));
+
+/**
+ * @brief write status messages to stdout
+ * @param strs the strings to write
+ * @param count how many strings to write
+ *
+ * This will include the trailing 0-byte after the last entry in the output
+ * as qmail-rspawn awaits that as separator between the output fields.
+ */
+extern void write_status_m(const char **strs, const unsigned int count) __attribute__ ((nonnull (1)));
 
 extern char *rhost;
 extern size_t rhostlen;
