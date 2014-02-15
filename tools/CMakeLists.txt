@@ -5,6 +5,7 @@ SET_SOURCE_FILES_PROPERTIES(fcshell.c PROPERTIES COMPILE_FLAGS --std=c99)
 IF (USE_OPENAT)
 	ADD_EXECUTABLE(Qsurvey
 		qsurvey.c
+		${CMAKE_SOURCE_DIR}/qremote/client.c
 		${CMAKE_SOURCE_DIR}/qremote/conn.c
 		${CMAKE_SOURCE_DIR}/qremote/starttlsr.c
 	)

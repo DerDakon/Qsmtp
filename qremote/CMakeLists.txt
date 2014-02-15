@@ -7,6 +7,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 SET(QREMOTE_SRCS
 	greeting.c
 	qremote.c
+	client.c
 	conn.c
 	starttlsr.c
 	qrdata.c
@@ -14,6 +15,7 @@ SET(QREMOTE_SRCS
 )
 
 SET(QREMOTE_HDRS
+	../include/qremote/client.h
 	../include/qremote/conn.h
 	../include/qremote/greeting.h
 	../include/qremote/qrdata.h
