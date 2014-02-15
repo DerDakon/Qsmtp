@@ -1,5 +1,5 @@
-/** \file qremote.h
- \brief definitions for EHLO parsing part of Qremote
+/** @file greeting.h
+ @brief definitions for EHLO parsing part of Qremote
  */
 #ifndef GREETING_H
 #define GREETING_H 1
