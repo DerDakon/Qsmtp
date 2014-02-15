@@ -658,3 +658,14 @@ TARGET_LINK_LIBRARIES(testcase_vpop_vget_dir
 
 ADD_TEST(NAME "VPop_vget_dir"
 		COMMAND testcase_vpop_vget_dir "${CMAKE_CURRENT_SOURCE_DIR}")
+
+ADD_EXECUTABLE(testcase_qrclient
+		qrclient_test.c
+		../qremote/client.c)
+TARGET_LINK_LIBRARIES(testcase_qrclient
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "Qrclient"
+		COMMAND testcase_qrclient)
