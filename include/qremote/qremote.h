@@ -10,7 +10,6 @@ extern void err_mem(const int) __attribute__ ((noreturn));
 extern void err_conf(const char *) __attribute__ ((noreturn)) __attribute__ ((nonnull (1)));
 extern void err_confn(const char **, void *) __attribute__ ((noreturn)) __attribute__ ((nonnull (1)));
 extern int netget(void);
-extern int checkreply(const char *, const char **, const int);
 
 /**
  * @brief write status message to stdout

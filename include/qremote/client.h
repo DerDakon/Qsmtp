@@ -6,6 +6,7 @@
 
 struct ips;
 
-void getrhost(const struct ips *m);
+extern void getrhost(const struct ips *m);
+extern int checkreply(const char *status, const char **pre, const int mask);
 
 #endif /* QREMOTE_CLIENT_H */

@@ -5,6 +5,9 @@
  Both DATA and BDAT modes are supported. In DATA mode the message will be recoded
  to quoted-printable if neccessary.
  */
+#include <qremote/qrdata.h>
+#include <qremote/client.h>
+#include <qremote/qremote.h>
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <assert.h>
@@ -14,8 +17,6 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include "netio.h"
-#include <qremote/qremote.h>
-#include <qremote/qrdata.h>
 #include "version.h"
 #include "mime.h"
 #include "log.h"
