@@ -74,7 +74,7 @@ parselocalpart(const char *const addr)
  * @return status code indicating what type of address was found
  * @retval 0 address invalid
  * @retval 1 address only contains a domain name
- * @retval 2 address contains @domain
+ * @retval 2 address contains \@domain
  * @retval 3 address is a full email address
  * @retval 4 address is a full email address with IPv4 or IPv6 address literal
  */
@@ -132,7 +132,11 @@ parseaddr(const char *addr)
  * check an email address for validity, use as loadlistfd callback
  *
  * @param addr the address to check
- * @return 0 if address valid
+ * @return if address valid
+ * @retval 0 address is valid
+ * @retval 1 address is invalid
+ *
+ * This is just !parseaddr(addr). This allows this to be used as callback.
  */
 int
 checkaddr(const char *const addr)
@@ -143,9 +147,9 @@ checkaddr(const char *const addr)
 /**
  * check if the given string is a valid addr-spec
  *
- * @param addrspec string to check
+ * @param addr string to check
  * @return if string is valid addrspec
- * @retval 0 string is not valid
+ * @retval 0 string is invalid
  * @retval 1 string is valid
  */
 int
@@ -158,8 +162,10 @@ addrspec_valid(const char * const addr)
  * @brief check an email address for syntax errors
  *
  * @param in address to parse
- * @param flags 1: rcpt to checks (e.g. source route is allowed), 0: mail from checks,
- *              2: checks for badmailfrom/goodmailfrom lists
+ * @param flags
+ *              @arg @c 0: mail from checks,
+ *              @arg @c 1: rcpt to checks (e.g. source route is allowed),
+ *              @arg @c 2: checks for badmailfrom/goodmailfrom lists
  * @param addr struct string to contain the address (memory will be malloced)
  * @param more here starts the data behind the first '>' behind the first '<' (or NULL if none)
  * @return >0 on success

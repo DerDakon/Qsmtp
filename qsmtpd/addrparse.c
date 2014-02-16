@@ -12,10 +12,14 @@
  * @brief check an email address for syntax errors and/or existence
  *
  * @param in input to parse
- * @param flags \arg \c 1: rcpt to checks (e.g. source route is allowed) \arg \c 0: mail from checks
+ * @param flags
+ *              @arg @c 0: mail from checks
+ *              @arg @c 1: rcpt to checks (e.g. source route is allowed)
  * @param addr struct string to contain the address (memory will be malloced, is set if 0 or -1 is returned)
  * @param more here starts the data behind the first '>' behind the first '<' (or NULL if line ends after the '>')
  * @param ds store the userconf of the user here
+ * @param rcpthosts array of the valid rcpthosts
+ * @param rcpthsize size of rcpthosts array
  * @return if address was validated
  * @retval 0 address exists locally
  * @retval >0 on error (e.g. ENOMEM, return code is error code)
@@ -99,3 +103,4 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	}
 	return 0;
 }
+

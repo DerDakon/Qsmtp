@@ -44,6 +44,7 @@ void userconf_free(struct userconf *ds) __attribute__ ((nonnull (1)));
  * @param ds the userconf buffer to hold the information
  * @return if filters were successfully loaded or error code
  * @retval 0 filters were loaded (or no configuration is present)
+ * @retval >0 error code
  */
 int userconf_load_configs(struct userconf *ds) __attribute__ ((nonnull (1)));
 

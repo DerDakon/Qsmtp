@@ -89,7 +89,8 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
  * try to estabish an SMTP connection to one of the hosts in the ip list
  *
  * @param mx list of IP adresses to try
- * @param outip local IP to use
+ * @param outip4 local IPv4 to bind
+ * @param outip6 local IPv6 to bind
  * @return the socket descriptor of the open connection
  *
  * Every entry where a connection attempt was made is marked with a priority of 65537,

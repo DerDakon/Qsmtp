@@ -795,10 +795,11 @@ enum spf_makro_expansion {
 };
 
 /**
- * parse the domainspec
+ * @brief parse the domainspec
  *
+ * @param domain the current domain string
  * @param token pointer to the string after the token
- * @param dparam domain here the expanded domain string is stored (memory will be malloced)
+ * @param domainspec here the expanded domain string is stored (memory will be malloced)
  * @param ip4cidr the length of the IPv4 net (parsed if present in token, -1 if none given)
  * @param ip6cidr same for IPv6 net length
  * @returns if domainspec is valid or not

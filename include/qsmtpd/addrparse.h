@@ -17,6 +17,7 @@ extern int addrparse(char *in, const int flags, string *addr, char **more, struc
 /**
  * @brief check if the user identified by localpart and ds->domainpath exists
  * @param localpart localpart of mail address
+ * @param domain domainpart of the domain
  * @param ds path of domain
  * @retval 0 user doesn't exist
  * @retval 1 user exists

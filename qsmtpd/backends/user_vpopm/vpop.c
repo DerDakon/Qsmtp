@@ -31,10 +31,10 @@ static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default *
  */
 
 /**
- * Query the users/cdb file for information about this domain
+ * @brief query the users/cdb file for information about this domain
  *
  * @param domain the domain to query
- * @param domaindir if not NULL the directory of this domain is stored here
+ * @param ds the domainpath field of ds will be initialized if a path is found
  * @returns negative error code or flag if domain was found
  * @retval 0 domain is not in database
  * @retval 1 domain was found
@@ -144,12 +144,15 @@ vget_dir(const char *domain, struct userconf *ds)
 	return 1;
 }
 
-/* values for def
-
-  (def & 1)		append "default"
-  (def & 2)		append suff1
+/**
+ * @brief check if a .qmail file exists for the user
+ * @param ds description of the domain directory
+ * @param suff1 the suffix to test (e.g. localpart), may be NULL when def is 1
+ * @param len length of suff1
+ * @param def which suffixes to use (logically or'ed)
+ *            @arg @c 1: append "default"
+ *            @arg @c 2: append suff1
  */
-
 static int
 qmexists(const struct userconf *ds, const char *suff1, const size_t len, const int def)
 {

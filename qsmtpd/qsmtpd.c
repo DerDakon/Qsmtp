@@ -584,6 +584,7 @@ static int helovalid(const char *helo, const size_t len) __attribute__ ((nonnull
  * check if the argument given to HELO/EHLO is syntactically correct
  *
  * @param helo helo to check
+ * @param len length of helo
  * @return 0 on successful call, -1 on error
  * @retval 0 check was completed (xmitstat.helostatus was updated)
  * @retval -1 an error occured (usually ENOMEM)
@@ -1409,3 +1410,4 @@ main(int argc, char **argv)
 		flagbogus = errno;
 	smtploop();
 }
+

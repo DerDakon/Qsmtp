@@ -434,9 +434,9 @@ finddomainfd(int fd, const char *domain, const int cl)
 }
 
 /**
- * search a domain entry in a given buffer
+ * @brief search a domain entry in a given buffer
  *
- * @param buffer containing the domain list
+ * @param buf containing the domain list
  * @param size size of buffer
  * @param domain domain name to find
  * @retval 1 on match
