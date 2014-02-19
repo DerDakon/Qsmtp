@@ -523,7 +523,6 @@ work:
 			strcat(ipname, append);
 			if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
 				fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
-				freeips(mx);
 				close(logdirfd);
 				net_conn_shutdown(shutdown_abort);
 			}
@@ -554,10 +553,8 @@ work:
 
 	socketd = tryconn(cur, &in6addr_any, &in6addr_any);
 	dup2(socketd, 0);
-	if (netget() != 220) {
-		freeips(mx);
+	if (netget() != 220)
 		net_conn_shutdown(shutdown_clean);
-	}
 
 	/* AOL and others */
 	while (linein[3] == '-')
@@ -565,13 +562,12 @@ work:
 
 	makelog("ehlo");
 
-	if (greeting()) {
-		freeips(mx);
+	if (greeting())
 		net_conn_shutdown(shutdown_clean);
-	}
 
 	getrhost(cur);
 	freeips(mx);
+	mx = NULL;
 
 	if (smtpext & 0x04) {
 		makelog("tls-init");
