@@ -611,6 +611,20 @@ work:
 	if (smtpext & 0x04) {
 		makelog("tls-init");
 		if (tls_init()) {
+			X509 *x509 = SSL_get_peer_certificate(ssl);
+
+			if (x509 != NULL) {
+				makelog("server.pem");
+				FILE *f = fdopen(logfd, "w");
+
+				if (f != NULL) {
+					PEM_write_X509(f, x509);
+					fclose(f);
+				}
+
+				X509_free(x509);
+			}
+
 			makelog("tls-ehlo");
 			if (greeting()) {
 				write(2, "EHLO failed after STARTTLS\n", 28);
