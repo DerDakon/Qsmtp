@@ -266,7 +266,7 @@ queue_envelope(const unsigned long msgsize)
 	char t[ULSTRLEN];		/* goodrcpt */
 	char bytes[] = " bytes, ";
 	const char *logmail[] = {"received ", "", "", "message ", "", "to <", NULL, "> from <", MAILFROM,
-					"> ", "from ip [", xmitstat.remoteip, "] (", s, bytes,
+					"> ", "from IP [", xmitstat.remoteip, "] (", s, bytes,
 					NULL, " recipients)", NULL};
 	char *authmsg = NULL;
 	int rc, e;
@@ -475,7 +475,7 @@ smtp_data(void)
 {
 	char s[ULSTRLEN];		/* msgsize */
 	const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
-					"> from ip [", xmitstat.remoteip, "] (", s, " bytes) {",
+					"> from IP [", xmitstat.remoteip, "] (", s, " bytes) {",
 					NULL, NULL, NULL, NULL};
 	int i, rc;
 	int fd;
@@ -802,7 +802,7 @@ smtp_bdat(void)
 {
 	char s[ULSTRLEN];		/* msgsize */
 	const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
-					"> from ip [", xmitstat.remoteip, "] (", s, " bytes) {",
+					"> from IP [", xmitstat.remoteip, "] (", s, " bytes) {",
 					NULL, NULL};
 	int rc;
 	int fd;
