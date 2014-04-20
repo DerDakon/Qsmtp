@@ -24,17 +24,17 @@ ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigne
 	struct in_addr ip4;
 	struct in_addr net4;
 
+	/* do this explicitely here so we don't rely on how the compiler handles
+	 * the shift overflow below. */
+	if (mask == 0)
+		return 1;
+
 	/* this needs to happen using memcpy() and no direct assignment as the alignment
 	 * of the pointers passed in may be arbitrary and this will break on architectures
 	 * with strict alignment (i.e. Sparc). Hopefully the compiler is clever enough to
 	 * optimize this away on other platforms. */
 	memcpy(&ip4.s_addr, ip->s6_addr32 + 3, sizeof(ip4.s_addr));
 	memcpy(&net4.s_addr, &net->s_addr, sizeof(net4.s_addr));
-
-	/* do this explicitely here so we don't rely on how the compiler handles
-	 * the shift overflow below. */
-	if (mask == 0)
-		return 1;
 
 	/* constuct a bit mask out of the net length.
 	 * remoteip and ip are network byte order, it's easier
