@@ -181,7 +181,7 @@ check_ipbl_file(const size_t iplen, const off_t flen, const unsigned char *buf, 
 
 	if (flen % recordlen)
 		return -1;
-	for (i = 0; i < flen; i += 5) {
+	for (i = 0; i < flen; i += recordlen) {
 		/* cc shut up: we know what we are doing here */
 		unsigned char netmask = *(buf + iplen);
 
