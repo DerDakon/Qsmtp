@@ -159,6 +159,10 @@ ip4_test(void)
 	}
 
 	fd = open(fnbuf, O_APPEND | O_RDWR, 0600);
+	if (fd == -1) {
+		fprintf(stderr, "can not open temporary file\n");
+		return ++err;
+	}
 
 	/* write 5 times the same IP with different netmasks.
 	 * None of them should match. */
