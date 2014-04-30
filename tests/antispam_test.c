@@ -92,6 +92,7 @@ test_rbl()
 		entries[0] = "42.42.18.172.bar.example.com";
 		r = check_rbl(rbls, &txt);
 		free(txt);
+		txt = NULL;
 		err += check_nomatch(r, "check_rbl() without matching DNS entries");
 
 		entries[0] = "42.42.18.172.bar.bar.example.com";
