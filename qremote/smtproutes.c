@@ -153,6 +153,9 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 					err_confn(errmsg, NULL);
 				}
 				if (curpart == NULL) {
+#ifdef USE_OPENAT
+					while ((close(dirfd) < 0) && (errno == EINTR));
+#endif
 					break;
 				} else {
 					const char *dot = strchr(curpart, '.');
