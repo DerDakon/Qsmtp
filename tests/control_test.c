@@ -148,8 +148,10 @@ test_oneliner()
 		unlink("oneliner_test");
 	}
 
+	buf = NULL;
 	if ((loadoneliner("nonexistent", &buf, 0) != (size_t)-1) || (errno != ENOENT)) {
 		fputs("loadoneliner() for nonexistent file should fail with ENOENT\n", stderr);
+		free(buf);
 		err++;
 	}
 
