@@ -496,6 +496,7 @@ setup(void)
 
 	/* block sigpipe. If we don't we can't handle the errors in smtp_data() correctly and remote host
 	 * will see a connection drop on error (which is bad and violates RfC) */
+	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = SIG_IGN;
 	j = sigaction(SIGPIPE, &sa, NULL);
 	relayclient = 0;
