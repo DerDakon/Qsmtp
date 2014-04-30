@@ -14,6 +14,8 @@ readData(char *buf, const size_t len)
 		ssize_t res = read(3, buf + pos, 1);
 		if (res < 0)
 			exit(errno);
+		if (res == 0)
+			exit(EINVAL);
 		pos++;
 	} while ((pos < len) && (buf[pos - 1] != '\0'));
 
