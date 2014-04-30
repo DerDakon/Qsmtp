@@ -238,7 +238,8 @@ test_lload()
 	}
 	if (buf != NULL) {
 		fputs("lloadfilefd() on a file with only newlines did not set the buf pointer to NULL\n", stderr);
-		free(buf);
+		if (buf != &ch)
+			free(buf);
 		err++;
 	}
 
