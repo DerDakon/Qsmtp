@@ -365,15 +365,13 @@ dieerror(int error)
 static void
 makelog(const char *ext)
 {
-	char fn[30];
-
 	if (logfd)
 		close(logfd);
 	logfd = openat(logdirfd, ext, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
 	if (logfd == -1) {
 		if (strcmp(ext, "conn")) {
 			write(2, "can not create ", 15);
-			write(2, fn, strlen(fn));
+			write(2, ext, strlen(ext));
 			write(2, "\n", 1);
 			net_conn_shutdown(shutdown_clean);
 		} else {
