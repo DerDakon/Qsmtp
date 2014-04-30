@@ -431,7 +431,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
  * @param len length of buffer
  */
 static void
-recode_qp(const char *buf, off_t len)
+recode_qp(const char *buf, const off_t len)
 {
 	unsigned int idx = 0;
 	char sendbuf[1280];
