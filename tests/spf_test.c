@@ -533,6 +533,7 @@ setup_transfer(const char *helo, const char *from, const char *remoteip)
 	memcpy(xmitstat.mailfrom.s, from, strlen(from));
 	memcpy(xmitstat.helostr.s, helo, strlen(helo));
 
+	assert(strlen(remoteip) < sizeof(xmitstat.remoteip));
 	strncpy(xmitstat.remoteip, remoteip, sizeof(xmitstat.remoteip));
 	if (inet_pton(AF_INET6, remoteip, &xmitstat.sremoteip) != 1) {
 		fprintf(stderr, "can not parse %s as IPv6 address for mailfrom %s\n", remoteip, from);
@@ -563,6 +564,7 @@ runtest(struct spftestcase *tc)
 	if (tc->badip == NULL)
 		return 0;
 
+	assert(strlen(tc->badip) < sizeof(xmitstat.remoteip));
 	strncpy(xmitstat.remoteip, tc->badip, sizeof(xmitstat.remoteip));
 	inet_pton(AF_INET6, tc->badip, &xmitstat.sremoteip);
 
