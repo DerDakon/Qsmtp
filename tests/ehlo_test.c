@@ -13,7 +13,7 @@ testcase_ignore(void)
 		"X-FOO WITH ARGS",
 		"FOO",
 		"FOO WITH ARGS",
-		"SIZEX"
+		"SIZEX",
 		"SIZEX WITH ARGS",
 		"PIPELININGX",
 		"PIPELININGX WITH ARGS",
