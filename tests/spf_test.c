@@ -2321,6 +2321,12 @@ test_parse()
 			.key = "invalid-redirect-makro3.example.net",
 			.value = "v=spf1 redirect=foo.example.%qcom/"
 		},
+		/* not in test suite: exists with netmask given */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "invalid-exists-with-net4.example.net",
+			.value = "v=spf1 exists:foo.example.com/16",
+		},
 		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
@@ -2365,6 +2371,7 @@ test_parse()
 		SPF_FAIL_PERM,
 		SPF_FAIL_PERM,
 		SPF_FAIL_PERM,
+		SPF_FAIL_MALF,
 		SPF_FAIL_MALF
 	};
 	int err = 0;

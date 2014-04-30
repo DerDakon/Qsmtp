@@ -1221,6 +1221,7 @@ spfexists(const char *domain, const char *token)
 		return i;
 	}
 	if ((ip4l > 0) || (ip6l > 0) || !domainspec) {
+		free(domainspec);
 		return SPF_FAIL_MALF;
 	}
 	i = ask_dnsa(domainspec, NULL);
