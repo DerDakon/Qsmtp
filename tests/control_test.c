@@ -71,7 +71,6 @@ createTestFile(const char * const name, const char * const value)
 	}
 	if (write(fd, value, strlen(value)) != (ssize_t)strlen(value)) {
 		fputs("ERROR: writing value to test file did not work\n", stderr);
-		close(fd);
 		unlink(name);
 	}
 	close(fd);
