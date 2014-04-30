@@ -18,6 +18,8 @@ const char *valid[] = {
 	"me@[127.0.0.1]",
 	"me@[IPv6:::1]",
 	"me@[IPv6:ffe::ffff:0123]",
+	"me@[IPv6:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd]",	/* IPv6 address of maximum length */
+	"me@[IPv6:0000:0000:0000:0000:0000:FfFf:124.123.123.123]", /* IPv4 mapped IPv6 address, maximum length */
 	"toolonglocalpart12345678901234567890123456789012345678901234567890@example.com",	/* localpart >64 chars */
 	NULL
 };
@@ -34,6 +36,7 @@ const char *invalid[] = {
 	"me@[::1]",			/* valid IPv6 address without IPv6: prefix */
 	"me@[IPv6:::1",			/* missing closing bracket */
 	"me@[IPv6:::1].com",		/* text after closing bracket */
+	"me@[IPv6:1234:6789:1234:6789:1234:6789:1234:6789:123400]", /* too long IPv6 string, exactly the length of INET6_ADDRSTRLEN */
 	"me@[IPv6:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd:abcd]",	/* too long IPv6 string */
 	"me@[127.128.129.140.2]",	/* too long IPv4 string */
 	NULL

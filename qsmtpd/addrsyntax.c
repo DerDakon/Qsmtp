@@ -107,7 +107,7 @@ parseaddr(const char *addr)
 			char ipbuf[INET6_ADDRSTRLEN];
 
 			addrlen = cl - at - 7;
-			if (addrlen > INET6_ADDRSTRLEN)
+			if (addrlen >= INET6_ADDRSTRLEN)
 				return 0;
 			memcpy(ipbuf, at + 7, addrlen);
 			ipbuf[addrlen] = '\0';
