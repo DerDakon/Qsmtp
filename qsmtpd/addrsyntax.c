@@ -117,7 +117,7 @@ parseaddr(const char *addr)
 			struct in_addr ip4;
 
 			addrlen = cl - at - 2;
-			if (addrlen > INET_ADDRSTRLEN)
+			if (addrlen >= INET_ADDRSTRLEN)
 				return 0;
 			memcpy(ipbuf, at + 2, addrlen);
 			ipbuf[addrlen] = '\0';
