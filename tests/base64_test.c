@@ -349,7 +349,7 @@ errdetect_test(void)
 		STREMPTY(odata);
 		memcpy(testdata, testpattern, sizeof(testpattern));
 		testdata[42] = badchars[i];
-		b64decode(testdata, sizeof(testdata) - 1, &odata);
+		r = b64decode(testdata, sizeof(testdata) - 1, &odata);
 		if (r == 0)
 			free(odata.s);
 		if (r <= 0) {
