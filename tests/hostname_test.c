@@ -20,6 +20,7 @@ static const char *invalid_names[] = {
 	"aaaa.a", /* top level domain too short */
 	"toooolooooooooooooooooooooooooooooooooooooooooooooooooooooooooong.sub.example.org", /* subpart has more than 63 characters */
 	"second.toooolooooooooooooooooooooooooooooooooooooooooooooooooooooooooong.sub.example.org", /* subpart has more than 63 characters */
+	"second.toooolooooooooooooooooooooooooooooooooooooooooooooooooooooooooong", /* last subpart has more than 63 characters */
 	"toooo.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.very.looooong.example.org", /* more than 255 characters */
 	"under_score.is.not.allowed.example.net",
 	"spaces are not permitted.foo.bar",

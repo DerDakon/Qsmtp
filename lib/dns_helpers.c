@@ -20,7 +20,7 @@ int
 domainvalid(const char * const host)
 {
 	const char *h = host;
-	const char *dt, *lastdt;
+	const char *dt = NULL;
 
 	if (!*h || (*h == '.'))
 		return 1;
@@ -30,6 +30,12 @@ domainvalid(const char * const host)
 			 return 1;
 		}
 		if (*h == '.') {
+			const char *lastdt = (dt == NULL) ? host : dt;
+
+			/* each string between two dots must not exceed 63 characters */
+			if (h - lastdt > 64)
+				return 1;
+			dt = h;
 			h++;
 			/* empty parts are not allowed */
 			if (*h == '.')
@@ -42,26 +48,17 @@ domainvalid(const char * const host)
 	if ((h - host) > 255)
 		return 1;
 	/* a FQDN must have at least one dot */
-	dt = strrchr(host, '.');
 	if (dt == NULL)
 		return 1;
 	/* the shortest top level domain has 2 characters, the host name
-	 * must have at least one and there is one delimiter. */
-	if ((h - dt) < 3)
+	 * must have at least one and there is one delimiter. The 63 character 
+	 * limit also applies here. */
+	if (((h - dt) < 3) || ((h - dt) > 64))
 		return 1;
 	/* there is no top level domain ending with something different from a letter */
 	h--;
 	if (!(((*h >= 'a') && (*h <= 'z')) || ((*h >= 'A') && (*h <= 'Z'))))
 		return 1;
-
-	lastdt = host;
-	/* each string between two dots must not exceed 63 characters */
-	do {
-		dt = strchr(lastdt + 1, '.');
-		if ((dt != NULL) && (dt - lastdt > 64))
-			return 1;
-		lastdt = dt;
-	} while (dt != NULL);
 
 	return 0;
 }
