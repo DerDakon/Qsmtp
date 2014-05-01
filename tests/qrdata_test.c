@@ -731,7 +731,8 @@ checkreply(const char *status, const char **pre __attribute__ ((unused)), const 
 
 		for (opos = 0; opos < (off_t)outpos; opos++) {
 			if (outbuf[opos] == '\r') {
-				assert(outbuf[++opos] == '\n');
+				opos++;
+				assert(outbuf[opos] == '\n');
 				if (msg_expect[epos++] != '\n') {
 					fprintf(stderr, "unexpected line end detected in recoded buffer at position %lu\n",
 							(unsigned long) opos);
