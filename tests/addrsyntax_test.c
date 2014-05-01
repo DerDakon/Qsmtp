@@ -2,6 +2,7 @@
 #include "sstring.h"
 #include "test_io/testcase_io.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -209,6 +210,7 @@ addrsyntax_test(void)
 		const size_t explen = (syntaxpatterns[i].addr == NULL) ? 0 : strlen(syntaxpatterns[i].addr);
 
 		STREMPTY(outaddr);
+		assert(strlen(syntaxpatterns[i].in) < sizeof(inbuf));
 		strcpy(inbuf, syntaxpatterns[i].in);
 
 		printf("Testing '%s' with flags %i\n", syntaxpatterns[i].in, syntaxpatterns[i].flags);
