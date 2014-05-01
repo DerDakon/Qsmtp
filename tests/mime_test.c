@@ -1,6 +1,7 @@
 #include "mime.h"
 #include "test_io/testcase_io.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -277,6 +278,7 @@ test_multipart_boundary()
 
 		strcpy(linebuf, begin);
 		strcat(linebuf, "\"");
+		assert(strlen(qboundaries[i]) < sizeof(linebuf) - strlen(linebuf) - 1);
 		strcat(linebuf, qboundaries[i]);
 		strcat(linebuf, "\"");
 

@@ -773,14 +773,14 @@ test_net_writen(void)
 	strcpy(exp, many[0]);
 	exp[3] = '-';
 	for (i = 1; i < 51; i++)
-		strcat(exp, many[1]);
+		strcat(exp, digits);
 
 	if (read_check(exp))
 		ret++;
 
 	strcpy(exp, many[0]);
 	for (i = 51; i < 59; i++)
-		strcat(exp, many[1]);
+		strcat(exp, digits);
 
 	if (read_check(exp))
 		ret++;
@@ -793,7 +793,7 @@ test_net_writen(void)
 	 * together with any of the other 2 */
 	exp[0] = '\0';
 	for (i = 0; i < 50; i++)
-		strcat(exp, many[1]);
+		strcat(exp, digits);
 	longthings[1] = exp;
 	if (net_writen(longthings) != 0) {
 		fprintf(stderr, "%s: cannot write 'long' output\n", testname);

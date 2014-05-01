@@ -268,8 +268,8 @@ test_log_writen(int priority, const char **s)
 
 	buffer[0] = '\0';
 	for (i = 0; s[i] != NULL; i++) {
+		assert(strlen(buffer) + strlen(s[i]) < sizeof(buffer));
 		strcat(buffer, s[i]);
-		assert(strlen(buffer) < sizeof(buffer));
 	}
 	printf("log priority %i: %s\n", priority, buffer);
 

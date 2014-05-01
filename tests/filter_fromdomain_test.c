@@ -66,6 +66,7 @@ setup_ip(const char *ip)
 {
 	int r;
 
+	assert(strlen(ip) < sizeof(xmitstat.remoteip));
 	strcpy(xmitstat.remoteip, ip);
 	r = inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
 	assert(r == 1);

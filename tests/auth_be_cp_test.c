@@ -9,6 +9,7 @@
 #include "auth_users.h"
 #include "test_io/testcase_io.h"
 
+#include <assert.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -240,6 +241,7 @@ test_setup_errors(const char *dummy)
 	const char *args_invalid_count[] = { "Qsmtpd", "foo.example.com" };
 	const char *args_noexec[] = { "Qsmtpd", "foo.example.com", baddummy, "" };
 
+	assert(strlen(dummy) + strlen("/something") < sizeof(baddummy));
 	strcpy(baddummy, dummy);
 	strcat(baddummy, "/something");
 
