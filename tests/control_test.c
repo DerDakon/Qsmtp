@@ -136,23 +136,27 @@ test_oneliner()
 	for (i = 0; onelines[i] != NULL; i++) {
 		createTestFile("oneliner_test", onelines[i]);
 
+		buf = NULL;
 		len = loadoneliner("oneliner_test", &buf, 0);
 		if ((len == (size_t)-1) != (i & 1)) {
 			puts("ERROR: loadoneliner() test failed:");
 			puts(onelines[i]);
-		} else {
-			if (len != (size_t)-1)
-				free(buf);
+			err++;
 		}
+
+		if (len != (size_t)-1)
+			free(buf);
 		unlink("oneliner_test");
 	}
 
 	buf = NULL;
-	if ((loadoneliner("nonexistent", &buf, 0) != (size_t)-1) || (errno != ENOENT)) {
+	len = loadoneliner("nonexistent", &buf, 0);
+	if ((len != (size_t)-1) || (errno != ENOENT)) {
 		fputs("loadoneliner() for nonexistent file should fail with ENOENT\n", stderr);
-		free(buf);
 		err++;
 	}
+	if (len != (size_t)-1)
+		free(buf);
 
 	return err;
 }
