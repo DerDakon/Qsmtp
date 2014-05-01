@@ -146,7 +146,7 @@ userconf_get_buffer(const struct userconf *uc, const char *key, char ***values, 
 	for (i = 0; *c != '\0'; i++)
 		c += strlen(c) + 1;
 
-	*values = calloc(i + 1, sizeof(*values));
+	*values = calloc(i + 1, sizeof(**values));
 	if (*values == NULL)
 		return -ENOMEM;
 
