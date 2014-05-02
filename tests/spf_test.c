@@ -342,6 +342,11 @@ check_received(int spfstatus, int log)
 	const char *spfstates[] = { "pass", "fail", "softfail", "none", "neutral", "temperror", "permerror", NULL };
 	const char *tmp;
 
+	if ((spfstatus < SPF_NONE) || ((spfstatus > SPF_HARD_ERROR) && (spfstatus != SPF_IGNORE))) {
+		fprintf(stderr, "invalid SPF status code: %i\n", spfstatus);
+		return 1;
+	}
+
 	if (pipe(fd) != 0) {
 		fputs("Can not create pipes\n", stderr);
 		return 1;
