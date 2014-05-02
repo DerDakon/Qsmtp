@@ -119,8 +119,8 @@ main(int argc, char **argv)
 	if (mkdir("users", 0700) != 0) {
 		err = errno;
 		fputs("ERROR: can not create temporary directory for CDB test\n", stderr);
-		chdir("..");
-		rmdir(cdbtestdir);
+		if (chdir("..") == 0)
+			rmdir(cdbtestdir);
 		return err;
 	}
 	err = 0;
@@ -139,8 +139,8 @@ main(int argc, char **argv)
 		err = errno;
 		fputs("ERROR: can not create temporary file for CDB test\n", stderr);
 		rmdir("users");
-		chdir("..");
-		rmdir(cdbtestdir);
+		if (chdir("..") == 0)
+			rmdir(cdbtestdir);
 		return err;
 	}
 	close(fd);
@@ -151,8 +151,8 @@ main(int argc, char **argv)
 	}
 	unlink("users/cdb");
 	rmdir("users");
-	chdir("..");
-	rmdir(cdbtestdir);
+	if (chdir("..") == 0)
+		rmdir(cdbtestdir);
 
 	if (chdir(argv[1]) != 0) {
 		puts("ERROR: can not chdir to given directory");
