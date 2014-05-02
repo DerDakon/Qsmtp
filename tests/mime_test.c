@@ -194,7 +194,8 @@ test_multipart_boundary()
 			cstring line;
 			int r;
 
-			strcpy(linebuf, begin);
+			assert(sizeof(linebuf) > strlen(begin) + 2 + strlen(boundaries[i]));
+			strncpy(linebuf, begin, sizeof(linebuf));
 			strcat(linebuf, boundaries[i]);
 
 			STREMPTY(line);
@@ -230,7 +231,7 @@ test_multipart_boundary()
 				fprintf(stderr, "unquoted boundary (middle) %u: found '%.*s', expected '%s'\n",
 						i, (int)boundary.len, boundary.s, boundaries[i]);
 
-			strcpy(linebuf, begin);
+			strncpy(linebuf, begin, sizeof(linebuf));
 			strcat(linebuf, "\"");
 			strcat(linebuf, boundaries[i]);
 			strcat(linebuf, "\"");

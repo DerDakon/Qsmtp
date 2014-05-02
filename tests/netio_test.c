@@ -842,7 +842,7 @@ test_net_write_multiline(void)
 
 	/* many small messages */
 	for (i = 2; i < 28; i++)
-		many[i] = many[1];
+		many[i] = digits;
 	many[28] = "\r\n";
 	many[29] = NULL;
 
@@ -851,9 +851,11 @@ test_net_write_multiline(void)
 		return ++ret;
 	}
 
-	strcpy(exp, many[0]);
-	for (i = 1; i < 28; i++)
-		strcat(exp, many[1]);
+	assert(strlen(many[0]) + 27 * strlen(digits) < sizeof(exp));
+	strncpy(exp, many[0], sizeof(exp));
+	for (i = 0; i < 27; i++)
+		memcpy(exp + strlen(many[0]) + strlen(digits) * i, digits, strlen(digits));
+	exp[strlen(many[0]) + strlen(digits) * 30] = '\0';
 
 	if (read_check(exp))
 		ret++;
@@ -863,9 +865,10 @@ test_net_write_multiline(void)
 		ret++;
 	}
 
-	exp[0] = '\0';
 	for (i = 0; i < 30; i++)
-		strcat(exp, many[1]);
+		memcpy(exp + strlen(digits) * i, digits, strlen(digits));
+	exp[strlen(digits) * 30] = '\0';
+
 	longthings[1] = exp;
 	if (net_write_multiline(longthings) != 0) {
 		fprintf(stderr, "%s: cannot write 'long' output\n", testname);
