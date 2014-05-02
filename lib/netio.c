@@ -419,22 +419,26 @@ netnwrite(const char *s, const size_t l)
  * does not return on timeout, programm will be cancelled
  *
  * \warning s[0] must be short enough to fit completely into the buffer
+ * \warning s[0] must contain the whole status code as well as the following space (' ') or hyphen ('-')
  * \warning every s[] must not have a sequence longer then 506 characters without a space (' ') in them
  */
 int
 net_writen(const char *const *s)
 {
 	unsigned int i;
-	size_t len = 0;
+	size_t len = strlen(s[0]);
 	/* RfC 2821, section 4.5.3: reply line
 	 *   The maximum total length of a reply line including the reply code
 	 *   and the <CRLF> is 512 characters.  More information may be
 	 *   conveyed through multiple-line replies. */
 	char msg[512];
 
-	assert(sizeof(msg) > strlen(s[0]) - 2);
+	assert(sizeof(msg) > len - 2);
+	assert(len > 3);
 
-	for (i = 0; s[i]; i++) {
+	memcpy(msg, s[0], len);
+
+	for (i = 1; s[i]; i++) {
 		size_t off = 0;
 		const size_t l = strlen(s[i]);
 
