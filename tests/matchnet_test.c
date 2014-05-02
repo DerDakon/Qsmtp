@@ -15,6 +15,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 struct xmitstat xmitstat;
 
@@ -321,6 +323,8 @@ int dnstxt(char **out __attribute__ ((unused)), const char *host __attribute__ (
 int main(void)
 {
 	int errcnt = 0;
+
+	umask(S_IWGRP | S_IWOTH);
 
 	if (ip4_test())
 		errcnt++;
