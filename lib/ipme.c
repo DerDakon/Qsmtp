@@ -34,6 +34,9 @@ filter_my_ips(struct ips *ipl)
 		struct ips *tmp;
 		struct ips *prev = NULL;
 
+		if (curi->ifa_addr == NULL)
+			continue;
+
 		switch (curi->ifa_addr->sa_family) {
 		case AF_INET:
 			break;
