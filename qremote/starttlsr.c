@@ -87,8 +87,7 @@ tls_init(void)
 	SSL_library_init();
 	ctx = SSL_CTX_new(SSLv23_client_method());
 	if (!ctx) {
-		if (!servercert)
-			return 0;
+		free(servercert);
 		tls_quitmsg("Z4.5.0 TLS error initializing ctx", ssl_error());
 	}
 
@@ -96,7 +95,9 @@ tls_init(void)
 		if (!SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
 			SSL_CTX_free(ctx);
 			write(1, "Z4.5.0 TLS unable to load ", 20);
-			tls_quitmsg(servercert, ssl_error());
+			write(1, servercert, strlen(servercert));
+			free(servercert);
+			tls_quitmsg("", ssl_error());
 		}
 		/* set the callback here; SSL_set_verify didn't work before 0.9.6c */
 		SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
@@ -109,8 +110,7 @@ tls_init(void)
 	myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);
 	if (!myssl) {
-		if (!servercert)
-			return 0;
+		free(servercert);
 		tls_quitmsg("Z4.5.0 TLS error initializing ssl", ssl_error());
 	}
 
@@ -118,6 +118,7 @@ tls_init(void)
 
 	/* while the server is preparing a responce, do something else */
 	if (loadlistfd(open("control/tlsclientciphers", O_RDONLY), &saciphers, NULL) == -1) {
+		free(servercert);
 		SSL_free(myssl);
 		err_conf("can't open tlsclientciphers");
 	}
@@ -145,6 +146,7 @@ tls_init(void)
 
 		write(1, "Z4.5.0 STARTTLS rejected while ", 25);
 		write(1, servercert, strlen(servercert));
+		free(servercert);
 		write(1, " exists", 7);
 		tls_quit();
 	}
