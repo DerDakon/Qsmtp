@@ -153,6 +153,7 @@ tls_init(void)
 
 	ssl = myssl;
 	if (ssl_timeoutconn(timeout) <= 0) {
+		free(servercert);
 		tls_quitmsg("Z4.5.0 TLS connect failed", ssl_strerror());
 	}
 
