@@ -38,15 +38,16 @@ test_vpop(void)
 {
 	int errcnt = 0; /**< error count */
 	unsigned int tvidx = 0;	/**< index in cdb_testvector */
+	struct userconf ds;
+
+	userconf_init(&ds);
 
 	while (cdb_testvector[tvidx].value != NULL) {
 		int r;
-		struct userconf ds;
+		char *tmp;
 
-		userconf_init(&ds);
 		/* first test: only get the directory */
 		r = vget_dir(cdb_testvector[tvidx].key, &ds);
-		userconf_free(&ds);
 		if (r < 0) {
 			puts("ERROR: vget_dir() did not find expected directory");
 			puts(cdb_testvector[tvidx].key);
@@ -55,6 +56,19 @@ test_vpop(void)
 			continue;
 		}
 
+		/* calling vget_dir() twice for the same domain should preserve the
+		 * original information in ds. */
+		tmp = ds.domainpath.s;
+		r = vget_dir(cdb_testvector[tvidx].key, &ds);
+
+		if (tmp != ds.domainpath.s) {
+			printf("second call to vget_dir(%s) did not preserve the domain path entry, "
+					"old pointer was %p, new pointer is %p\n", cdb_testvector[tvidx].key,
+					tmp, ds.domainpath.s);
+			errcnt++;
+		}
+
+
 		tvidx++;
 	}
 
@@ -62,14 +76,11 @@ test_vpop(void)
 	tvidx = 0;
 	while (cdb_testvector[tvidx].key != NULL) {
 		int r;
-		struct userconf ds;
 
 		if (cdb_testvector[tvidx].value != NULL) {
 			tvidx++;
 			continue;
 		}
-
-		userconf_init(&ds);
 
 		r = vget_dir(cdb_testvector[tvidx].key, &ds);
 		if (r > 0) {
@@ -79,10 +90,10 @@ test_vpop(void)
 				puts(ds.domainpath.s);
 			errcnt++;
 		}
-		userconf_free(&ds);
-
 		tvidx++;
 	}
+
+	userconf_free(&ds);
 
 	return errcnt;
 }

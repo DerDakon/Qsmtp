@@ -34,7 +34,7 @@ static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default *
  * @brief query the users/cdb file for information about this domain
  *
  * @param domain the domain to query
- * @param ds the domainpath field of ds will be initialized if a path is found
+ * @param ds pointer to userconf struct holding the domain info
  * @returns negative error code or flag if domain was found
  * @retval 0 domain is not in database
  * @retval 1 domain was found
@@ -52,7 +52,7 @@ static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default *
 int
 vget_dir(const char *domain, struct userconf *ds)
 {
-	int fd, i;
+	int fd;
 	char cdb_key[264];	/* maximum length of domain + 3 byte for !-\0 + padding to be sure */
 	size_t cdbkeylen;
 	const char *cdb_buf;
@@ -130,15 +130,27 @@ vget_dir(const char *domain, struct userconf *ds)
 	len = strlen(cdb_buf);
 	while (*(cdb_buf + len - 1) == '/')
 		--len;
-	i = newstr(&(ds->domainpath), len + 2);
-	if (i != 0) {
-		munmap(cdb_mmap, st.st_size);
-		return -ENOMEM;
-	}
 
-	memcpy(ds->domainpath.s, cdb_buf, len);
-	ds->domainpath.s[len] = '/';
-	ds->domainpath.s[--ds->domainpath.len] = '\0';
+	/* ds->domainpath.s includes a trailing '/' so it is one byte longer */
+	if ((len + 1 != ds->domainpath.len) || (memcmp(ds->domainpath.s, cdb_buf, len) != 0)) {
+		char *tmp;
+
+		tmp = realloc(ds->domainpath.s, len + 2);
+		if (tmp == NULL) {
+			munmap(cdb_mmap, st.st_size);
+			return -ENOMEM;
+		}
+
+		/* the domain has changed, clear all contents */
+		ds->domainpath.s = NULL;
+		userconf_free(ds);
+
+		ds->domainpath.s = tmp;
+		ds->domainpath.len = len + 1;
+		memcpy(ds->domainpath.s, cdb_buf, len);
+		ds->domainpath.s[len] = '/';
+		ds->domainpath.s[len + 1] = '\0';
+	}
 
 	munmap(cdb_mmap, st.st_size);
 	return 1;
