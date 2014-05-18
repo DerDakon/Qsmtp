@@ -138,9 +138,11 @@ tls_init(void)
 
 	/* read the responce to STARTTLS */
 	if (netget() != 220) {
-		SSL_free(myssl);
+		ssl_free(myssl);
+
 		if (!servercert)
 			return 0;
+
 		write(1, "Z4.5.0 STARTTLS rejected while ", 25);
 		write(1, servercert, strlen(servercert));
 		write(1, " exists", 7);
