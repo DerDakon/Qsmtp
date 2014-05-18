@@ -684,3 +684,6 @@ ADD_TEST(NAME "STARTTLSr"
 
 ADD_TEST(NAME "STARTTLSr_no_partner_conf"
 		COMMAND testcase_starttlsr noconf.example.com)
+
+SET_TESTS_PROPERTIES(STARTTLSr STARTTLSr_no_partner_conf PROPERTIES
+		PASS_REGULAR_EXPRESSION "^Z4.5.0 STARTTLS rejected; connecting to ")
