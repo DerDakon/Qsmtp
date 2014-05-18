@@ -98,7 +98,11 @@ int main(int argc, char **argv)
 		return EINVAL;
 	} else if (argc == 2) {
 		partner_fqdn = argv[1];
+		rhost = partner_fqdn;
+	} else {
+		rhost = "[192.0.2.4]";
 	}
+	rhostlen = strlen(rhost);
 
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_ssl_free(test_ssl_free);
