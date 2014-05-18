@@ -152,8 +152,6 @@ tls_init(void)
 	}
 
 	ssl = myssl;
-	SSL_set_rfd(myssl, socketd);
-	SSL_set_wfd(myssl, socketd);
 	if (ssl_timeoutconn(timeout) <= 0) {
 		tls_quitmsg("Z4.5.0 TLS connect failed", ssl_strerror());
 	}
