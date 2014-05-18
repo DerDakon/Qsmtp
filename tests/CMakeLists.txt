@@ -669,3 +669,12 @@ TARGET_LINK_LIBRARIES(testcase_qrclient
 
 ADD_TEST(NAME "Qrclient"
 		COMMAND testcase_qrclient)
+
+ADD_EXECUTABLE(testcase_starttlsr
+		starttlsr_test.c
+		../qremote/starttlsr.c)
+TARGET_LINK_LIBRARIES(testcase_starttlsr
+		testcase_io_lib
+		qsmtp_lib
+		${OPENSSL_LIBRARIES}
+)
