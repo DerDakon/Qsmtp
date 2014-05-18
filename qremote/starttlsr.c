@@ -141,13 +141,15 @@ tls_init(void)
 	if (netget() != 220) {
 		ssl_free(myssl);
 
-		if (!servercert)
-			return 0;
-
-		write(1, "Z4.5.0 STARTTLS rejected while ", 25);
-		write(1, servercert, strlen(servercert));
-		free(servercert);
-		write(1, " exists", 7);
+		if (!servercert) {
+			const char msg[] = "Z4.5.0 STARTTLS rejected";
+			write(1, msg, strlen(msg));
+		} else {
+			write(1, "Z4.5.0 STARTTLS rejected while ", 25);
+			write(1, servercert, strlen(servercert));
+			free(servercert);
+			write(1, " exists", 7);
+		}
 		tls_quit();
 	}
 
