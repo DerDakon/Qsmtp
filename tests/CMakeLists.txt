@@ -511,7 +511,7 @@ ADD_TEST(NAME "Qremote_to_ip"
 
 IF (AUTOQMAIL_FROM_TESTSUITE)
 	SET_TESTS_PROPERTIES(Qremote_noinput_noargs PROPERTIES
-			PASS_REGULAR_EXPRESSION "^Zinternal error: Qremote called with invalid arguments\n")
+			PASS_REGULAR_EXPRESSION "^Z4.3.0 internal error: Qremote called with invalid arguments\n")
 	SET_TESTS_PROPERTIES(Qremote_to_invalid PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z4\\.4\\.3 cannot find a mail exchanger for invalid\\.invalid\n")
 	SET_TESTS_PROPERTIES(Qremote_to_localhost PROPERTIES
@@ -521,14 +521,14 @@ IF (AUTOQMAIL_FROM_TESTSUITE)
 	SET_TESTS_PROPERTIES(Qremote_to_bad_expression Qremote_to_bad_expression2 PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z4\\.3\\.0 parse error in first argument\n")
 	SET_TESTS_PROPERTIES(Qremote_to_ip PROPERTIES
-			PASS_REGULAR_EXPRESSION "^Zinternal error: can't mmap\\(\\) input\n")
+			PASS_REGULAR_EXPRESSION "^Z4.3.0 internal error: can't mmap\\(\\) input\n")
 ELSE ()
 	SET_TESTS_PROPERTIES(Qremote_noinput_noargs Qremote_to_invalid
 			Qremote_to_localhost Qremote_to_localhost6
 			Qremote_to_bad_expression Qremote_to_bad_expression2
 			Qremote_to_ip
 			PROPERTIES
-			PASS_REGULAR_EXPRESSION "^Z")
+			PASS_REGULAR_EXPRESSION "^Z[45]\\.[0-9]\\.[0-9] ")
 ENDIF ()
 
 ADD_EXECUTABLE(testcase_qsdata
