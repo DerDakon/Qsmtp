@@ -31,6 +31,15 @@ void write_status(const char *str)
 	puts(str);
 }
 
+void write_status_m(const char **strs, const unsigned int count)
+{
+	unsigned int i;
+
+	for (i = 0; i < count - 1; i++)
+		fputs(strs[i], stdout);
+	puts(strs[count - 1]);
+}
+
 void net_conn_shutdown(const enum conn_shutdown_type sd_type __attribute__ ((unused)))
 {
 	exit(0);

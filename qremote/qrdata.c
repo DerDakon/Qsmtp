@@ -731,9 +731,9 @@ send_data(unsigned int recodeflag)
 	successmsg[2] = "";
 	netwrite("DATA\r\n");
 	if ( (num = netget()) != 354) {
-		write(1, num >= 500 ? "D5" : "Z4", 2);
-		write(1, ".3.0 remote host rejected DATA command: ", 40);
-		write(1, linein + 4, linelen - 3);
+		const char *msg[] = { num >= 500 ? "D5" : "Z4", ".3.0 remote host rejected DATA command: ",
+				linein + 4 };
+		write_status_m(msg, 3);
 		net_conn_shutdown(shutdown_clean);
 	}
 #ifdef DEBUG_IO
