@@ -36,8 +36,6 @@ void
 write_status(const char *str)
 {
 	puts(str);
-
-	exit(0);
 }
 
 int
