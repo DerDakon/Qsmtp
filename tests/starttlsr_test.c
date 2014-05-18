@@ -91,8 +91,15 @@ test_ssl_free(SSL *myssl)
 	EVP_cleanup();
 }
 
-int main(void)
+int main(int argc, char **argv)
 {
+	if (argc > 2) {
+		fprintf(stderr, "Usage: %s [partner_fqdn]\n", argv[0]);
+		return EINVAL;
+	} else if (argc == 2) {
+		partner_fqdn = argv[1];
+	}
+
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_ssl_free(test_ssl_free);
 

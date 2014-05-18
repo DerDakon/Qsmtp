@@ -681,3 +681,6 @@ TARGET_LINK_LIBRARIES(testcase_starttlsr
 
 ADD_TEST(NAME "STARTTLSr"
 		COMMAND testcase_starttlsr)
+
+ADD_TEST(NAME "STARTTLSr_no_partner_conf"
+		COMMAND testcase_starttlsr noconf.example.com)
