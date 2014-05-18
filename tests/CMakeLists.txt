@@ -678,3 +678,6 @@ TARGET_LINK_LIBRARIES(testcase_starttlsr
 		qsmtp_lib
 		${OPENSSL_LIBRARIES}
 )
+
+ADD_TEST(NAME "STARTTLSr"
+		COMMAND testcase_starttlsr)
