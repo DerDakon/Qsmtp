@@ -1,8 +1,11 @@
 /** \file tls.c
  \brief helper functions for STARTTLS
  */
-#include <openssl/ssl.h>
+#include <openssl/conf.h>
+#include <openssl/crypto.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/ssl.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
@@ -12,8 +15,15 @@ SSL *ssl = NULL;
 
 void ssl_free(SSL *myssl)
 {
-	SSL_shutdown(myssl);
+	if (SSL_shutdown(myssl) == 0)
+		SSL_shutdown(myssl);
 	SSL_free(myssl);
+
+	/* this is what an SSL_library_exit() should do to reduce memcheck noise */
+	ERR_remove_state(0);
+	CONF_modules_unload(1);
+	CRYPTO_cleanup_all_ex_data();
+	EVP_cleanup();
 }
 
 /* _exit is defined to ssl_exit in tls.h to be sure ssl is always freed correctly */
