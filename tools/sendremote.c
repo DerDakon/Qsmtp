@@ -26,7 +26,12 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	execve("./qremote/Qremote", argv + 1, NULL);
+	for (fd = 1; fd < argc - 1; fd++)
+		argv[fd] = argv[fd + 1];
+	argv[argc - 1] = NULL;
+	argv[0] = "./qremote/Qremote";
+
+	execve(argv[0], argv, NULL);
 
 	return 0;
 }
