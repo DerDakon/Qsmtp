@@ -111,7 +111,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 				break;
 		}
 		if (!thisip) {
-			write_status("Zcan't connect to any server\n");
+			write_status("Z4.4.2 can't connect to any server\n");
 			exit(0);
 		}
 

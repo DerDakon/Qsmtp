@@ -89,13 +89,13 @@ tls_init(void)
 	if (!ctx) {
 		if (!servercert)
 			return 0;
-		tls_quitmsg("ZTLS error initializing ctx", ssl_error());
+		tls_quitmsg("Z4.5.0 TLS error initializing ctx", ssl_error());
 	}
 
 	if (servercert) {
 		if (!SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
 			SSL_CTX_free(ctx);
-			write(1, "ZTLS unable to load ", 20);
+			write(1, "Z4.5.0 TLS unable to load ", 20);
 			tls_quitmsg(servercert, ssl_error());
 		}
 		/* set the callback here; SSL_set_verify didn't work before 0.9.6c */
@@ -111,7 +111,7 @@ tls_init(void)
 	if (!myssl) {
 		if (!servercert)
 			return 0;
-		tls_quitmsg("ZTLS error initializing ssl", ssl_error());
+		tls_quitmsg("Z4.5.0 TLS error initializing ssl", ssl_error());
 	}
 
 	netwrite("STARTTLS\r\n");
@@ -141,7 +141,7 @@ tls_init(void)
 		SSL_free(myssl);
 		if (!servercert)
 			return 0;
-		write(1, "ZSTARTTLS rejected while ", 25);
+		write(1, "Z4.5.0 STARTTLS rejected while ", 25);
 		write(1, servercert, strlen(servercert));
 		write(1, " exists", 7);
 		tls_quit();
@@ -151,7 +151,7 @@ tls_init(void)
 	SSL_set_rfd(myssl, socketd);
 	SSL_set_wfd(myssl, socketd);
 	if (ssl_timeoutconn(timeout) <= 0) {
-		tls_quitmsg("ZTLS connect failed", ssl_strerror());
+		tls_quitmsg("Z4.5.0 TLS connect failed", ssl_strerror());
 	}
 
 	if (servercert) {
@@ -160,14 +160,14 @@ tls_init(void)
 		long r = SSL_get_verify_result(ssl);
 
 		if (r != X509_V_OK) {
-			write(1, "ZTLS unable to verify server with ", 34);
+			write(1, "Z4.5.0 TLS unable to verify server with ", 34);
 			tls_quitmsg(servercert, X509_verify_cert_error_string(r));
 		}
 		free(servercert);
 
 		peercert = SSL_get_peer_certificate(ssl);
 		if (!peercert) {
-			write(1, "ZTLS unable to verify server ", 29);
+			write(1, "Z4.5.0 TLS unable to verify server ", 29);
 			tls_quitmsg(partner_fqdn, "no certificate provided");
 		}
 
@@ -201,7 +201,7 @@ tls_init(void)
 				}
 			}
 			if (!peer.len) {
-				write(1, "ZTLS unable to verify server ", 29);
+				write(1, "Z4.5.0 TLS unable to verify server ", 29);
 				tls_quitmsg(partner_fqdn, "certificate contains no valid commonName");
 			}
 			if (!match_partner(peer.s, peer.len)) {
@@ -209,7 +209,7 @@ tls_init(void)
 				int idx = 0;
 				size_t j;
 
-				write(1, "ZTLS unable to verify server ", 29);
+				write(1, "Z4.5.0 TLS unable to verify server ", 29);
 				write(1, partner_fqdn, fqlen);
 				write(1, ": received certificate for ", 27);
 				for (j = 0; j < peer.len; ++j) {

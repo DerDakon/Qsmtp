@@ -240,7 +240,7 @@ netget(void)
 			goto syntax;
 		default:
 			{
-				const char *tmp[] = { "Z", strerror(errno) };
+				const char *tmp[] = { "Z4.3.0 ", strerror(errno) };
 
 				write_status_m(tmp, 2);
 				net_conn_shutdown(shutdown_clean);;
@@ -264,7 +264,10 @@ netget(void)
 	return r * 10 + q;
 syntax:
 	/* if this fails we're already in bad trouble */
-	write_status("Zsyntax error in server reply\n");
+	/* Even if 5.5.2 is a permanent error don't use 'D' return code here,
+	 * hope that this is just a hiccup on the other side and will get
+	 * fixed soon. */
+	write_status("Z5.5.2 syntax error in server reply\n");
 	net_conn_shutdown(shutdown_clean);;
 }
 
@@ -322,12 +325,12 @@ dieerror(int error)
 
 	switch (error) {
 	case ETIMEDOUT:
-		write_status("Zconnection to remote timed out\n");
+		write_status("Z4.4.1 connection to remote timed out\n");
 		logmsg[2] = " timed out";
 		log_writen(LOG_WARNING, logmsg);
 		break;
 	case ECONNRESET:
-		write_status("Zconnection to remote server died\n");
+		write_status("Z4.4.1 connection to remote server died\n");
 		logmsg[2] = " died";
 		log_writen(LOG_WARNING, logmsg);
 		break;
@@ -353,7 +356,7 @@ main(int argc, char *argv[])
 
 	if (rcptcount <= 0) {
 		log_write(LOG_CRIT, "too few arguments");
-		write_status("Zinternal error: Qremote called with invalid arguments\n");
+		write_status("Z4.3.0 internal error: Qremote called with invalid arguments\n");
 		net_conn_shutdown(shutdown_abort);
 	}
 
@@ -374,7 +377,7 @@ main(int argc, char *argv[])
 		if (errno == ENOMEM)
 			err_mem(0);
 		log_write(LOG_CRIT, "can't fstat() input");
-		write_status("Zinternal error: can't fstat() input\n");
+		write_status("Z4.3.0 internal error: can't fstat() input\n");
 		freeips(mx);
 		net_conn_shutdown(shutdown_abort);
 	}
@@ -383,7 +386,7 @@ main(int argc, char *argv[])
 
 	if (msgdata == MAP_FAILED) {
 		log_write(LOG_CRIT, "can't mmap() input");
-		write_status("Zinternal error: can't mmap() input\n");
+		write_status("Z4.3.0 internal error: can't mmap() input\n");
 		freeips(mx);
 		net_conn_shutdown(shutdown_abort);
 	}
@@ -412,12 +415,12 @@ main(int argc, char *argv[])
 					err_mem(1);
 			case EINVAL:
 			case E2BIG:
-					write_status("Zsyntax error in server reply\n");
+					write_status("Z5.5.2 syntax error in server reply\n");
 					quitmsg();
 					break;
 			default:
 				{
-					const char *tmp[] = { "Z", strerror(errno) };
+					const char *tmp[] = { "Z4.3.0 ", strerror(errno) };
 
 					write_status_m(tmp, 2);
 					quitmsg();
