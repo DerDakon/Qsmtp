@@ -427,7 +427,7 @@ userconf_load_configs(struct userconf *ds)
 	int type, r;
 	const size_t l = ds->userpath.len;
 
-/* load user and domain "filterconf" file */
+	/* load user and domain "filterconf" file */
 	/* if the file is empty there is no problem, NULL is a legal value for the buffers */
 	if (loadlistfd(getfile(ds, "filterconf", &type, 0), &(ds->userconf), NULL))
 		return errno;
