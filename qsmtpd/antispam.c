@@ -183,11 +183,14 @@ check_ipbl_file(const size_t iplen, const off_t flen, const unsigned char *buf, 
 		return -1;
 	for (i = 0; i < flen; i += recordlen) {
 		/* cc shut up: we know what we are doing here */
-		unsigned char netmask = *(buf + iplen);
+		const unsigned char netmask = *(buf + iplen);
+		uintptr_t tmp[1 + (recordlen / sizeof(uintptr_t))];
 
 		if ((netmask < 8) || (netmask > maskmax))
 			return -1;
-		if ((*matchfunc)(&xmitstat.sremoteip, (void *)buf, netmask))
+		/* do a memcpy() here to have the buffer always properly aligned */
+		memcpy(tmp, buf, recordlen);
+		if ((*matchfunc)(&xmitstat.sremoteip, tmp, netmask))
 			return 1;
 		buf += recordlen;
 	}
