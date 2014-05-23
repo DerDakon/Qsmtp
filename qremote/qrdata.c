@@ -445,17 +445,23 @@ recode_qp(const char *buf, const off_t len)
 		return;
 
 	while (off < len) {
-		while (idx + chunk < sizeof(sendbuf) - 11) {
-			if (off + (off_t) chunk == len) {
-				break;
-			}
+		if (idx > 0) {
+			/* flush out everything already in the buffer */
+			netnwrite(sendbuf, idx);
+			lastlf = (sendbuf[idx - 1] == '\n');
+			idx = 0;
+		}
 
+		while ((idx + chunk < sizeof(sendbuf) - 11) && (off + (off_t) chunk < len)) {
 			if (buf[off + chunk] == '\r') {
 				chunk++;
 				llen = 0;
 				if (buf[off + chunk] == '\n') {
+					/* valid CRLF pair, chunk can accumulate further */
 					chunk++;
 				} else {
+					/* CR without following LF, copy chunk, insert LF,
+					 * start next chunk */
 					memcpy(sendbuf + idx, buf + off, chunk);
 					off += chunk;
 					idx += chunk;
@@ -464,6 +470,8 @@ recode_qp(const char *buf, const off_t len)
 				}
 				continue;
 			} else if (buf[off + chunk] == '\n') {
+				/* LF without preceding CR, copy chunk without LF, insert
+				 * CRLF, skip LF in input, start next chunk */
 				memcpy(sendbuf + idx, buf + off, chunk);
 				off += chunk + 1;
 				idx += chunk;
@@ -564,12 +572,6 @@ recode_qp(const char *buf, const off_t len)
 			off += chunk;
 			idx += chunk;
 			chunk = 0;
-		}
-
-		if (len != off) {
-			netnwrite(sendbuf, idx);
-			lastlf = (sendbuf[idx - 1] == '\n');
-			idx = 0;
 		}
 	}
 	lastlf = (sendbuf[idx - 1] == '\n');
