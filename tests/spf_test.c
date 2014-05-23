@@ -76,7 +76,7 @@ parseips(const char *list)
 		if (end == NULL) {
 			parsep = next;
 		} else {
-			assert(end - next < sizeof(curbuf));
+			assert((size_t)(end - next) < sizeof(curbuf));
 			strncpy(curbuf, next, end - next);
 			curbuf[end - next] = '\0';
 			         parsep = curbuf;
