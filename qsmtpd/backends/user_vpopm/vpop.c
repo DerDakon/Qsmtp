@@ -150,6 +150,12 @@ vget_dir(const char *domain, struct userconf *ds)
 		memcpy(ds->domainpath.s, cdb_buf, len);
 		ds->domainpath.s[len] = '/';
 		ds->domainpath.s[len + 1] = '\0';
+	} else {
+		/* the domainpath is the same as already in ds, keep it. Just wipe the user config. */
+		free(ds->userpath.s);
+		STREMPTY(ds->userpath);
+		free(ds->userconf);
+		ds->userconf = NULL;
 	}
 
 	munmap(cdb_mmap, st.st_size);

@@ -43,7 +43,7 @@ test_vpop(void)
 	userconf_init(&ds);
 
 	while (cdb_testvector[tvidx].value != NULL) {
-		int r;
+		int r, s;
 		char *tmp;
 
 		/* first test: only get the directory */
@@ -59,7 +59,13 @@ test_vpop(void)
 		/* calling vget_dir() twice for the same domain should preserve the
 		 * original information in ds. */
 		tmp = ds.domainpath.s;
-		r = vget_dir(cdb_testvector[tvidx].key, &ds);
+		s = vget_dir(cdb_testvector[tvidx].key, &ds);
+
+		if (r != s) {
+			printf("first call to vget_dir() returned %i, but second call returned %i\n",
+					r, s);
+			errcnt++;
+		}
 
 		if (tmp != ds.domainpath.s) {
 			printf("second call to vget_dir(%s) did not preserve the domain path entry, "
@@ -68,6 +74,10 @@ test_vpop(void)
 			errcnt++;
 		}
 
+		if ((ds.userpath.s != NULL) || (ds.userpath.len != 0) || (ds.userconf != NULL)) {
+			printf("a successful call to vget_dir() did not clear the user entries\n");
+			errcnt++;
+		}
 
 		tvidx++;
 	}
