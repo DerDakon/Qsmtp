@@ -821,6 +821,7 @@ test_net_write_multiline(void)
 	const char *many[30] = { "250 ", digits };
 	char exp[520];
 	int i;
+	size_t offs;
 
 	testname = "net_write_multiline";
 
@@ -867,16 +868,19 @@ test_net_write_multiline(void)
 
 	for (i = 0; i < 30; i++)
 		memcpy(exp + strlen(digits) * i, digits, strlen(digits));
-	exp[strlen(digits) * 30] = '\0';
+	offs = strlen(digits) * 30;
+	exp[offs] = '\0';
 
 	longthings[1] = exp;
 	if (net_write_multiline(longthings) != 0) {
 		fprintf(stderr, "%s: cannot write 'long' output\n", testname);
 		return ++ret;
 	}
-	memmove(exp + strlen(longthings[0]), exp, strlen(exp) + 1);
+	memmove(exp + strlen(longthings[0]), exp, offs + 1);
 	memcpy(exp, longthings[0], strlen(longthings[0]));
-	strcat(exp, longthings[2]);
+	offs += strlen(longthings[0]);
+	assert(offs < sizeof(exp) - strlen(longthings[2]));
+	strncpy(exp + offs, longthings[2], strlen(longthings[2]));
 	if (read_check(exp))
 		ret++;
 
