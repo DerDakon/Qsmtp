@@ -31,10 +31,10 @@ cdb_unpack(const char *buf)
 #ifdef __le32_to_cpup
 	return __le32_to_cpup((uint32_t *) buf);
 #else
-	return (((unsigned char)buf[3]) << 24) +
-			(((unsigned char)buf[2]) << 16) +
-			(((unsigned char)buf[1]) << 8) +
-			((unsigned char)buf[0]);
+	return (((uint32_t)((unsigned char)buf[3])) << 24) +
+			(((uint32_t)((unsigned char)buf[2])) << 16) +
+			(((uint32_t)((unsigned char)buf[1])) << 8) +
+			((uint32_t)((unsigned char)buf[0]));
 #endif
 }
 
