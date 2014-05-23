@@ -40,7 +40,7 @@ ip4_matchnet(const struct in6_addr *ip, const struct in_addr *net, const unsigne
 	 * remoteip and ip are network byte order, it's easier
 	 * to convert mask to network byte order than both
 	 * to host order. It's ugly, isn't it? */
-	m.s_addr = htonl(-1 - ((1 << (32 - mask)) - 1));
+	m.s_addr = htonl(-1 - ((1U << (32 - mask)) - 1));
 
 	return ((ip4.s_addr & m.s_addr) == (net4.s_addr & m.s_addr));
 }
@@ -66,7 +66,7 @@ ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsign
 		maskv6.s6_addr32[i] = -1;
 	}
 	if ((mask % 32) != 0)
-		maskv6.s6_addr32[mask / 32] = htonl(-1 - ((1 << (32 - (mask % 32))) - 1));
+		maskv6.s6_addr32[mask / 32] = htonl(-1 - ((1U << (32 - (mask % 32))) - 1));
 
 	for (i = 3; i >= 0; i--) {
 		if ((ip->s6_addr32[i] & maskv6.s6_addr32[i]) != (net->s6_addr32[i] & maskv6.s6_addr32[i])) {
