@@ -23,9 +23,9 @@ static struct {
 		.inpattern = "missing@end.bracket",
 		.flags = 0,
 		.syntaxresult = 0,
-		.expect_netwrite = 1,
+		.expect_netwrite = 2,
 		.parseresult = EBOGUS,
-		.expect_tarpit = 1,
+		.expect_tarpit = 2,
 	},
 	{
 		.inpattern = "missing@end.bracket",
@@ -68,9 +68,9 @@ static struct {
 		.flags = 1,
 		.syntaxresult = 3,
 		.expect_netwrite = 0,
-		.expect_net_writen = 1,
+		.expect_net_writen = 2,
 		.parseresult = -1,
-		.expect_tarpit = 1,
+		.expect_tarpit = 2,
 		.userexists_result = 0,
 	},
 	/* existing local user */
@@ -101,9 +101,9 @@ static struct {
 		.flags = 1,
 		.syntaxresult = 4,
 		.expect_netwrite = 0,
-		.expect_net_writen = 1,
+		.expect_net_writen = 2,
 		.parseresult = -1,
-		.expect_tarpit = 1,
+		.expect_tarpit = 2,
 	},
 	/* existing local user, but user_exists() returns with error */
 	{
@@ -196,10 +196,12 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 int
 user_exists(const string *localpart, const char *domain, struct userconf *ds)
 {
-	assert(ds->userpath.s == NULL);
-	assert(ds->userpath.len == 0);
-	assert(ds->domainpath.s == NULL);
-	assert(ds->domainpath.len == 0);
+	if (ds != NULL) {
+		assert(ds->userpath.s == NULL);
+		assert(ds->userpath.len == 0);
+		assert(ds->domainpath.s == NULL);
+		assert(ds->domainpath.len == 0);
+	}
 	if (strchr(testdata[testindex].inpattern, '[') != NULL) {
 		if (strcmp(domain, liphost.s) != 0) {
 			fprintf(stderr, "index %u: domain '%s' passed to %s, but expected '%s'\n",
@@ -328,43 +330,61 @@ main(void)
 	testcase_setup_net_writen(test_net_writen);
 
 	for (testindex = 0; testdata[testindex].inpattern[0] != '\0'; testindex++) {
-		struct string addr;
+		struct string addr1, addr2;
 		char *more;
 		struct userconf ds;
 
 		userconf_init(&ds);
-		STREMPTY(addr);
+		STREMPTY(addr1);
+		STREMPTY(addr2);
 
 		const int r = addrparse(testdata[testindex].inpattern, testdata[testindex].flags,
-				&addr, &more, &ds, rcpthosts, rcpthsize);
+				&addr1, &more, &ds, rcpthosts, rcpthsize);
+
+		const int s = addrparse(testdata[testindex].inpattern, testdata[testindex].flags,
+				&addr2, &more, NULL, rcpthosts, rcpthsize);
+
+		if (r != s) {
+			fprintf(stderr, "index %u: call to addrparse() with ds pointer returned %i, "
+					"but with NULL returned %i\n", testindex, r, s);
+			errcounter++;
+		}
+
+		if ((addr1.len != addr2.len) || ((addr1.len != 0) && (memcmp(addr1.s, addr2.s, addr1.len) != 0))) {
+			fprintf(stderr, "index %u: call to addrparse() with ds pointer returned addr %zu/%s, "
+					"but with NULL returned %zu/%s\n", testindex, addr1.len, addr1.s, addr2.len, addr2.s);
+			errcounter++;
+		}
+
+		free(addr2.s);
 
 		if (r != testdata[testindex].parseresult) {
 			fprintf(stderr, "index %u: expected result %i from addrparse(), but got %i\n",
 					testindex, testdata[testindex].parseresult, r);
 			errcounter++;
 			userconf_free(&ds);
-			free(addr.s);
+			free(addr1.s);
 			continue;
 		}
 
 		userconf_free(&ds);
 
 		if (testdata[testindex].parseresult <= 0) {
-			if (addr.len == 0) {
+			if (addr1.len == 0) {
 				if (testdata[testindex].parseresult == 0) {
 					fprintf(stderr, "index %u: expected address not returned\n",
 							testindex);
 					errcounter++;
 				}
-			} else if ((strncmp(addr.s, testdata[testindex].inpattern, addr.len) != 0) ||
-					(testdata[testindex].inpattern[addr.len] != '>')) {
+			} else if ((strncmp(addr1.s, testdata[testindex].inpattern, addr1.len) != 0) ||
+					(testdata[testindex].inpattern[addr1.len] != '>')) {
 				fprintf(stderr, "index %u: got '%s' instead of expected address\n",
-						testindex, addr.s);
+						testindex, addr1.s);
 				errcounter++;
 			}
 		}
 
-		free(addr.s);
+		free(addr1.s);
 	}
 
 	return errcounter;

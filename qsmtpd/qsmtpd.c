@@ -957,7 +957,6 @@ smtp_from(void)
 	 * in RfC 2821, section 4.5.3.1 */
 	unsigned int validlength = 510;
 	int seenbody = 0;	/* if we found a "BODY=" after mail, there may only be one */
-	struct userconf ds;
 	struct statvfs sbuf;
 	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> is syntactically correct", NULL};
 	char *s;
@@ -983,11 +982,9 @@ smtp_from(void)
 		}
 	}
 
-	userconf_init(&ds);
-	i = addrparse(linein + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, &ds, rcpthosts, rcpthsize);
+	i = addrparse(linein + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, NULL, rcpthosts, rcpthsize);
 	xmitstat.frommx = NULL;
 	xmitstat.fromdomain = 0;
-	userconf_free(&ds);
 	if (i > 0)
 		return i;
 	else if (i == -1) {

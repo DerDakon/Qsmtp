@@ -27,6 +27,8 @@
  * @retval -1 if address local but nonexistent (expired or most probably faked) _OR_ if
  *          domain of address does not exist (in both cases error is sent to network
  *          before leaving)
+ *
+ * ds may be NULL in case the result is not interesting (e.g. if only checking MAIL FROM).
  */
 int
 addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds, const char *rcpthosts, const off_t rcpthsize)

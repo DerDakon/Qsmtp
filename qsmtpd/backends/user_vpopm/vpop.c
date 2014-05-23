@@ -22,6 +22,7 @@
 #include <unistd.h>
 
 static char *vpopbounce;			/**< the bounce command in vpopmails .qmail-default */
+static struct userconf uconf;			/**< global userconfig cache */
 
 /*
  * The function vget_dir is a modified copy of vget_assign from vpopmail. It gets the domain directory out of
@@ -230,11 +231,12 @@ qmexists(const struct userconf *ds, const char *suff1, const size_t len, const i
 }
 
 int
-user_exists(const string *localpart, const char *domain, struct userconf *ds)
+user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 {
 	int userdirfd;
 	struct string userdirtmp;	/* temporary storage of the pointer for userdir */
 	int res;
+	struct userconf *ds = (dsp == NULL) ? &uconf : dsp;
 
 	/* '/' is a valid character for localparts but we don't want it because
 	 * it could be abused to check the existence of files */
@@ -410,12 +412,16 @@ userbackend_init(void)
 		return e;
 	}
 
+	userconf_init(&uconf);
+
 	return 0;
 }
 
 void
 userbackend_free(void)
 {
+	userconf_free(&uconf);
+
 	free(vpopbounce);
 }
 
