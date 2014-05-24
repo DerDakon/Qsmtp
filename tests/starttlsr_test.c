@@ -89,6 +89,12 @@ test_ssl_free(SSL *myssl)
 	EVP_cleanup();
 }
 
+const char *
+test_ssl_error(void)
+{
+	return "expected SSL testcase error";
+}
+
 int main(int argc, char **argv)
 {
 	if (argc > 2) {
@@ -97,6 +103,8 @@ int main(int argc, char **argv)
 	} else if (argc == 2) {
 		partner_fqdn = argv[1];
 		rhost = partner_fqdn;
+		if (strstr(partner_fqdn, "bad") != NULL)
+			testcase_setup_ssl_error(test_ssl_error);
 	} else {
 		rhost = "[192.0.2.4]";
 	}

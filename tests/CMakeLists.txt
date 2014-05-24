@@ -687,3 +687,10 @@ ADD_TEST(NAME "STARTTLSr_no_partner_conf"
 
 SET_TESTS_PROPERTIES(STARTTLSr STARTTLSr_no_partner_conf PROPERTIES
 		PASS_REGULAR_EXPRESSION "^Z4.5.0 STARTTLS rejected; connecting to ")
+
+ADD_TEST(NAME "STARTTLSr_bad_partner_certs"
+		COMMAND testcase_starttlsr badconf.example.com
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/invalid_entry_dir")
+
+SET_TESTS_PROPERTIES(STARTTLSr_bad_partner_certs PROPERTIES
+		PASS_REGULAR_EXPRESSION "^Z4.5.0 TLS unable to load control/tlshosts/badconf.example.com.pem: expected SSL testcase error; connecting to badconf.example.com\n$")
