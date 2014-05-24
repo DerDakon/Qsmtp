@@ -223,8 +223,8 @@ tls_init(void)
 					} else {
 						buf[idx++] = peer.s[j];
 					}
-					if (idx == 64) {
-						write(1, buf, 64);
+					if (idx == sizeof(buf)) {
+						write(1, buf, sizeof(buf));
 						idx = 0;
 					}
 				}
