@@ -40,6 +40,9 @@
  *
  * striptab == 2 means: the only whitespace in a non-comment line may be immediately
  * before the line break, in any amount.
+ *
+ * buf is always in a sane state when this function returns: either it is NULL
+ * or a valid buffer, in the latter case the return value will be >0.
  */
 size_t
 lloadfilefd(int fd, char **buf, const int striptab)
@@ -49,11 +52,11 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	int i;
 	struct stat st;
 
+	*buf = NULL;
 	if (fd < 0) {
-		if (errno == ENOENT) {
-			*buf = NULL;
+		if (errno == ENOENT)
 			return 0;
-		} else
+		else
 			return -1;
 	}
 	while (flock(fd, LOCK_SH | LOCK_NB)) {
@@ -67,7 +70,6 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			do {
 				i = close(fd);
 			} while ((i == -1) && (errno == EINTR));
-			*buf = NULL;
 			errno = ENOLCK;	/* not the right error code, but good enough */
 			return -1;
 		}
@@ -77,12 +79,10 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		do {
 			i = close(fd);
 		} while ((i == -1) && (errno == EINTR));
-		*buf = NULL;
 		errno = err;
 		return -1;
 	}
 	if (!st.st_size) {
-		*buf = NULL;
 		do {
 			i = close(fd);
 		} while ((i == -1) && (errno == EINTR));
@@ -164,7 +164,6 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		}
 		if (!k) {
 			free(inbuf);
-			*buf = NULL;
 			return 0;
 		}
 
@@ -172,11 +171,9 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		j = k;
 		if (k != oldlen + 1) {
 			*buf = realloc(inbuf, k);
-			if (!*buf) {
-				free(inbuf);
-				j = (size_t)-1;
-				errno = ENOMEM;
-			}
+			if (*buf == NULL)
+				/* Can't shrink? Well, then the long buffer */
+				*buf = inbuf;
 		} else {
 			*buf = inbuf;
 		}
@@ -188,7 +185,6 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			}
 		}
 		free(inbuf);
-		*buf = NULL;
 		j = 0;
 	}
 	return j;

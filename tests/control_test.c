@@ -177,12 +177,17 @@ test_lload()
 	/* simulate permission denied */
 	errno = EACCES;
 
+	buf = &ch;
 	if (lloadfilefd(-1, &buf, 0) != (size_t)-1) {
 		fputs("lloadfilefd(-1) did not fail\n", stderr);
 		err++;
 	}
-	/* must work, buf should not be changed */
-	free(buf);
+	if (buf != NULL) {
+		fputs("lloadfilefd(-1) did not set buf to NULL\n", stderr);
+		err++;
+		if (buf != &ch)
+			free(buf);
+	}
 
 	createTestFile("emptyfile", "");
 
@@ -205,12 +210,21 @@ test_lload()
 	if (buf != NULL) {
 		fputs("lloadfilefd() with an empty file did not set the buf pointer to NULL\n", stderr);
 		err++;
+		if (buf != &ch)
+			free(buf);
 	}
 
 	/* fd is already closed so locking must fail */
+	buf = &ch;
 	if ((lloadfilefd(fd, &buf, 0) != (size_t)-1) || (errno != ENOLCK)) {
 		fputs("Trying to lock an already closed fd must fail\n", stderr);
 		err++;
+	}
+	if (buf != NULL) {
+		fputs("lloadfilefd() with an already closed fd did not set the buf pointer to NULL\n", stderr);
+		err++;
+		if (buf != &ch)
+			free(buf);
 	}
 
 	createTestFile("emptyfile", "\n\n\n\n");
@@ -244,9 +258,9 @@ test_lload()
 	}
 	if (buf != NULL) {
 		fputs("lloadfilefd() on a file with only newlines did not set the buf pointer to NULL\n", stderr);
+		err++;
 		if (buf != &ch)
 			free(buf);
-		err++;
 	}
 
 	unlink("emptyfile");
@@ -258,11 +272,17 @@ test_lload()
 		return err + 1;
 	}
 
-	buf = NULL;
+	buf = &ch;
 	if ((lloadfilefd(fd, &buf, 2) != (size_t)-1) || (errno != EINVAL)) {
 		free(buf);
 		fputs("lloadfilefd() on a file with spaces in the middle of a line should fail with striptabs 2\n", stderr);
 		err++;
+	}
+	if (buf != NULL) {
+		fputs("lloadfilefd() on a file with spaces in the middle of a line did not set the buf pointer to NULL\n", stderr);
+		err++;
+		if (buf != &ch)
+			free(buf);
 	}
 	unlink("lloadfile_test");
 
@@ -273,12 +293,20 @@ test_lload()
 		return err + 1;
 	}
 
-	buf = NULL;
+	buf = &ch;
 	sz = lloadfilefd(fd, &buf, 0);
+	if (buf == &ch) {
+		fputs("lloadfilefd() with striptabs 0 did not return set buffer\n", stderr);
+		err++;
+		buf = NULL;
+	} else if (buf == NULL) {
+		fputs("lloadfilefd() with striptabs 0 did not return a buffer\n", stderr);
+		err++;
+	}
 	if (sz != strlen(comment)) {
 		fputs("lloadfilefd() with striptabs 0 did not return correct size\n", stderr);
 		err++;
-	} else if (memcmp(buf, comment, strlen(comment)) != 0) {
+	} else if ((buf != NULL) && (memcmp(buf, comment, strlen(comment)) != 0)) {
 		fputs("lloadfilefd() with striptabs 0 did not return correct contents\n", stderr);
 		err++;
 	}
