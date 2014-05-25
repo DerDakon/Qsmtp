@@ -17,13 +17,18 @@ size_t rhostlen;
 char *partner_fqdn;
 unsigned int smtpext;
 string heloname;
+static unsigned int conf_error_expected;
 
 void
 err_conf(const char *errmsg)
 {
+	fputs("CONFIG error: ", stderr);
 	fputs(errmsg, stderr);
 
-	exit(EFAULT);
+	if (conf_error_expected)
+		exit(0);
+	else
+		exit(EFAULT);
 }
 
 void
@@ -105,6 +110,8 @@ int main(int argc, char **argv)
 		rhost = partner_fqdn;
 		if (strstr(partner_fqdn, "bad") != NULL)
 			testcase_setup_ssl_error(test_ssl_error);
+		if (strstr(partner_fqdn, "conferror.") != NULL)
+			conf_error_expected = 1;
 	} else {
 		rhost = "[192.0.2.4]";
 	}

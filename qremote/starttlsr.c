@@ -120,7 +120,7 @@ tls_init(void)
 	if (loadlistfd(open("control/tlsclientciphers", O_RDONLY), &saciphers, NULL) == -1) {
 		free(servercert);
 		ssl_free(myssl);
-		err_conf("can't open tlsclientciphers");
+		err_conf("can't open tlsclientciphers\n");
 	}
 	if (saciphers) {
 		while (saciphers[i + 1]) {
