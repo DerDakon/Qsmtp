@@ -685,7 +685,11 @@ ADD_TEST(NAME "STARTTLSr"
 ADD_TEST(NAME "STARTTLSr_no_partner_conf"
 		COMMAND testcase_starttlsr noconf.example.com)
 
-SET_TESTS_PROPERTIES(STARTTLSr STARTTLSr_no_partner_conf PROPERTIES
+ADD_TEST(NAME "STARTTLSr_tlsciphers_good"
+		COMMAND testcase_starttlsr badconf.example.com
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/tlsclientciphers_good")
+
+SET_TESTS_PROPERTIES(STARTTLSr STARTTLSr_no_partner_conf STARTTLSr_tlsciphers_good PROPERTIES
 		PASS_REGULAR_EXPRESSION "^Z4.5.0 STARTTLS rejected; connecting to ")
 
 ADD_TEST(NAME "STARTTLSr_bad_partner_certs"
