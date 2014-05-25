@@ -243,6 +243,7 @@ loadoneliner(const char *filename, char **buf, const int optional)
 	fd = open(filename, O_RDONLY);
 	if (fd == -1) {
 		j = (size_t)-1;
+		*buf = NULL;
 	} else {
 		j = loadonelinerfd(fd, buf);
 	}
@@ -288,6 +289,7 @@ loadonelinerfd(int fd, char **buf)
 
 	if (strlen(*buf) + 1 != j) {
 		free(*buf);
+		*buf = NULL;
 
 		errno = EINVAL;
 		return (size_t)-1;

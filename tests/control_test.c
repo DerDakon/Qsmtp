@@ -99,17 +99,27 @@ test_oneliner()
 	if (buf != NULL) {
 		fputs("loadonelinerfd() for not existing file should set the buffer to NULL\n", stderr);
 		err++;
+		if (buf != &ch)
+			free(buf);
 	}
 
 	errno = EACCES;
+	buf = &ch;
 	if (loadonelinerfd(-1, &buf) != (size_t)-1) {
 		fputs("loadonelinerfd() for read protected file should return -1\n", stderr);
 		err++;
+	}
+	if (buf != NULL) {
+		fputs("loadonelinerfd() for read protected file should set the buffer to NULL\n", stderr);
+		err++;
+		if (buf != &ch)
+			free(buf);
 	}
 
 	createTestFile("oneliner_test", nocontent);
 
 	fd = open("oneliner_test", O_RDONLY);
+	buf = &ch;
 	len = loadonelinerfd(fd, &buf);
 	if (len != (size_t)-1) {
 		fputs("loadonelinerfd() for file without useful content should return -1\n", stderr);
@@ -118,10 +128,13 @@ test_oneliner()
 	if (buf != NULL) {
 		fputs("loadonelinerfd() for file without useful content should set the buffer to NULL\n", stderr);
 		err++;
+		if (buf != &ch)
+			free(buf);
 	}
 
 	puts("== Running tests for loadoneliner()");
 
+	buf = &ch;
 	len = loadoneliner("oneliner_test", &buf, 0);
 	if (len != (size_t)-1) {
 		fputs("loadoneliner() for file without useful content should return -1\n", stderr);
@@ -130,33 +143,43 @@ test_oneliner()
 	if (buf != NULL) {
 		fputs("loadoneliner() for file without useful content should set the buffer to NULL\n", stderr);
 		err++;
+		if (buf != &ch)
+			free(buf);
 	}
 	unlink("oneliner_test");
 
 	for (i = 0; onelines[i] != NULL; i++) {
 		createTestFile("oneliner_test", onelines[i]);
 
-		buf = NULL;
+		buf = &ch;
 		len = loadoneliner("oneliner_test", &buf, 0);
 		if ((len == (size_t)-1) != (i & 1)) {
-			puts("ERROR: loadoneliner() test failed:");
-			puts(onelines[i]);
+			fprintf(stderr, "ERROR: loadoneliner() test failed: %s\n", onelines[i]);
 			err++;
 		}
 
-		if (len != (size_t)-1)
+		if (((len == 0) || (len == (size_t)-1)) && (buf != NULL)) {
+			fprintf(stderr, "ERROR: loadoneliner() returned %zu, but did not set buf to NULL\n", len);
+			err++;
+		}
+
+		if (buf != &ch)
 			free(buf);
 		unlink("oneliner_test");
 	}
 
-	buf = NULL;
+	buf = &ch;
 	len = loadoneliner("nonexistent", &buf, 0);
 	if ((len != (size_t)-1) || (errno != ENOENT)) {
 		fputs("loadoneliner() for nonexistent file should fail with ENOENT\n", stderr);
 		err++;
 	}
-	if (len != (size_t)-1)
-		free(buf);
+	if (buf != NULL) {
+		fputs("loadoneliner() for not existing file should set the buffer to NULL\n", stderr);
+		err++;
+		if (buf != &ch)
+			free(buf);
+	}
 
 	return err;
 }
