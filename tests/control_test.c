@@ -274,7 +274,6 @@ test_lload()
 
 	buf = &ch;
 	if ((lloadfilefd(fd, &buf, 2) != (size_t)-1) || (errno != EINVAL)) {
-		free(buf);
 		fputs("lloadfilefd() on a file with spaces in the middle of a line should fail with striptabs 2\n", stderr);
 		err++;
 	}
