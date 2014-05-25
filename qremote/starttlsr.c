@@ -139,18 +139,18 @@ tls_init(void)
 
 	/* read the responce to STARTTLS */
 	if (netget() != 220) {
+		const char *msg;
 		ssl_free(myssl);
 
 		if (!servercert) {
-			const char msg[] = "Z4.5.0 STARTTLS rejected";
-			write(1, msg, strlen(msg));
+			msg = "Z4.5.0 STARTTLS rejected";
 		} else {
 			write(1, "Z4.5.0 STARTTLS rejected while ", 31);
 			write(1, servercert, strlen(servercert));
 			free(servercert);
-			write(1, " exists", 7);
+			msg = " exists";
 		}
-		tls_quit();
+		tls_quitmsg(msg, NULL);
 	}
 
 	ssl = myssl;
@@ -207,6 +207,7 @@ tls_init(void)
 			}
 			if (!peer.len) {
 				write(1, "Z4.5.0 TLS unable to verify server ", 35);
+				// FIXME: X509_free(peercert); ?
 				tls_quitmsg(partner_fqdn, "certificate contains no valid commonName");
 			}
 			if (!match_partner(peer.s, peer.len)) {
@@ -229,6 +230,7 @@ tls_init(void)
 					}
 				}
 				write(1, buf, idx);
+				// FIXME: X509_free(peercert); ?
 				tls_quit();
 			}
 		}
