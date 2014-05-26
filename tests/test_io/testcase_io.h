@@ -6,6 +6,8 @@
 
 #include "netio.h"
 
+#define TESTIO_MAX_LINELEN 1002
+
 #define DECLARE_TC_SETUP(a) \
 	extern void testcase_setup_##a(func_##a *f); \
 	extern void testcase_ignore_##a()

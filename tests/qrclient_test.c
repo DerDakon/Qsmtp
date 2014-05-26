@@ -4,9 +4,11 @@
 
 #include "test_io/testcase_io.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 
 #define ipstr_example "2001:db8:17:f4:d3::4"
@@ -17,6 +19,9 @@
 char *partner_fqdn;
 char *rhost;
 size_t rhostlen;
+static const char *netget_input;
+static int statusfdout;
+static int statusfdin;
 
 void
 err_mem(const int k __attribute__((unused)))
@@ -27,8 +32,23 @@ err_mem(const int k __attribute__((unused)))
 int
 netget(void)
 {
-	exit(EFAULT);
-	return -1;
+	char num[4];
+
+	if (netget_input == NULL) {
+		exit(EFAULT);
+		return -1;
+	}
+
+	assert(strlen(netget_input) > 3);
+
+	memcpy(num, netget_input, 3);
+	num[3] = 0;
+
+	strncpy(linein, netget_input, TESTIO_MAX_LINELEN);
+	linein[TESTIO_MAX_LINELEN - 1] = '\0';
+	linelen = strlen(linein);
+
+	return atoi(num);
 }
 
 int
@@ -123,6 +143,133 @@ testcase_noname(const char *ipstr)
 	return 0;
 }
 
+/**
+ * @brief check the result of checkreply()
+ * @param msg the message expected on the status fd, NULL if none
+ * @param status the expected result of checkreply()
+ * @param statusc the status returned by checkreply()
+ */
+static int
+check_cr(const char *msg, const int statuse, const int statusc)
+{
+	int ret = 0;
+	fd_set fds;
+	int i;
+	struct timeval tout = { 0, 0 };
+
+	if (statusc != statuse) {
+		fprintf(stderr, "checkreply() returned %i, but %i was expected\n",
+				statusc, statuse);
+		ret++;
+	}
+
+	FD_ZERO(&fds);
+	FD_SET(statusfdout, &fds);
+	i = select(statusfdout + 1, &fds, NULL, NULL, &tout);
+
+	if (i == 0) {
+		/* nothing sent to statusfd */
+		if (msg != NULL) {
+			fprintf(stderr, "checkreply() did not write status, but '%s' was expected\n",
+					msg);
+			ret++;
+		}
+	} else if (i > 0) {
+		char buf[1024];
+
+		ssize_t r = read(statusfdout, buf, sizeof(buf));
+		buf[r > 0 ? r : 0] = '\0';
+
+		assert(i == 1);
+
+		if (msg == NULL) {
+			fprintf(stderr, "checkreply() wrote '%s', but no output was expected\n",
+					buf);
+			ret++;
+		} else {
+			if (strcmp(buf, msg) != 0) {
+				fprintf(stderr, "checkreply() wrote '%s', but '%s' was expected\n",
+					buf, msg);
+				ret++;
+			}
+		}
+	} else {
+		fprintf(stderr, "error %i from select\n", errno);
+		ret++;
+	}
+
+	return ret;
+}
+
+static int
+testcase_checkreply(void)
+{
+	int ret = 0;
+	int fds[2];
+	const char *pre[] = { "pre1", "pre2", NULL };
+
+	statusfdin = 1;
+
+	if (pipe(fds) != 0) {
+		fprintf(stderr, "%s: cannot create pipes: %i\n", __func__, errno);
+		return ++ret;
+	}
+
+	if (dup2(fds[1], statusfdin) != statusfdin) {
+		fprintf(stderr, "%s: cannot redirect stdout to pipe: %i\n", __func__, errno);
+		close(fds[0]);
+		close(fds[1]);
+		return ++ret;
+	}
+
+	close(fds[1]);
+	statusfdout = fds[0];
+
+	netget_input = "220 ";
+	ret += check_cr(NULL, 220, checkreply(NULL, NULL, 0));
+
+	netget_input = "220 ";
+	ret += check_cr(NULL, 220, checkreply(" ZD", NULL, 0));
+
+	netget_input = "220 ";
+	ret += check_cr("K220 ", 220, checkreply("KZD", NULL, 0));
+
+	netget_input = "199 too low";
+	ret += check_cr("D199 too low", 599, checkreply(" ZD", NULL, 0));
+
+	netget_input  = "421 temp";
+	ret += check_cr("Z421 temp", 421, checkreply(" ZD", NULL, 0));
+
+	netget_input = "220 ";
+	ret += check_cr(NULL, 220, checkreply(NULL, pre, 0));
+	
+	netget_input = "220 ";
+	ret += check_cr(NULL, 220, checkreply(" ZD", pre, 0));
+	
+	netget_input = "220 ";
+	ret += check_cr("K220 ", 220, checkreply("KZD", pre, 0));
+	ret += check_cr("Kpre1pre2220 ", 220, checkreply("KZD", pre, 1));
+	ret += check_cr("Kpre1pre2220 ", 220, checkreply("KZD", pre, 5));
+
+	netget_input  = "421 temp";
+	ret += check_cr("Z421 temp", 421, checkreply(" ZD", pre, 0));
+	ret += check_cr("Z421 temp", 421, checkreply(" ZD", pre, 1));
+	ret += check_cr("Zpre1pre2421 temp", 421, checkreply(" ZD", pre, 2));
+	ret += check_cr("Zpre1pre2421 temp", 421, checkreply(" ZD", pre, 6));
+	ret += check_cr("Z421 temp", 421, checkreply(" ZD", pre, 4));
+
+	netget_input  = "500 perm";
+	ret += check_cr("D500 perm", 500, checkreply(" ZD", pre, 0));
+	ret += check_cr("D500 perm", 500, checkreply(" ZD", pre, 1));
+	ret += check_cr("D500 perm", 500, checkreply(" ZD", pre, 2));
+	ret += check_cr("Dpre1pre2500 perm", 500, checkreply(" ZD", pre, 4));
+	ret += check_cr("Dpre1pre2500 perm", 500, checkreply(" ZD", pre, 6));
+
+	close(fds[0]);
+
+	return ret;
+}
+
 int
 main(void)
 {
@@ -133,6 +280,8 @@ main(void)
 	ret += testcase_valid_return();
 	ret += testcase_noname(ipstr_unknown);
 	ret += testcase_noname(ipstr_fail);
+
+	ret += testcase_checkreply();
 
 	free(partner_fqdn);
 	free(rhost);

@@ -5,7 +5,7 @@
 
 #include <string.h>
 
-char linein[1002];
+char linein[TESTIO_MAX_LINELEN];
 size_t linelen;
 
 int
