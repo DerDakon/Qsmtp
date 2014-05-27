@@ -82,24 +82,22 @@ checkreply(const char *status, const char **pre, const int mask)
 
 	res = netget();
 	if (status) {
-		int m;
+		unsigned int m;	// mask bit
 
 		if ((res >= SUCCESS_MINIMUM_STATUS) && (res <= SUCCESS_MAXIMUM_STATUS)) {
-			if (status[0] == ' ') {
+			if (status[0] == ' ')
 				ignore = 1;
-			} else {
-				write(1, status, 1);
-			}
-			m = 1;
+			else
+				m = 0;
 		} else if ((res >= TEMP_MINIMUM_STATUS) && (res <= TEMP_MAXIMUM_STATUS)) {
-			write(1, status + 1, 1);
-			m = 2;
+			m = 1;
 		} else {
-			write(1, status + 2, 1);
-			m = 4;
+			m = 2;
 		}
 		if (!ignore) {
-			if (pre && (m & mask)) {
+			write(1, status + m, 1);
+
+			if (pre && ((1 << m) & mask)) {
 				int i = 0;
 
 				while (pre[i]) {
