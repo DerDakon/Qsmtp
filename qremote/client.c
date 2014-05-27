@@ -78,7 +78,7 @@ int
 checkreply(const char *status, const char **pre, const int mask)
 {
 	int res;
-	int ignore = 0;
+	int ignore = (status == NULL);
 
 	res = netget();
 	if (status) {
@@ -110,7 +110,7 @@ checkreply(const char *status, const char **pre, const int mask)
 	/* consume multiline reply */
 	while (linein[3] == '-') {
 		/* send out the last (buffered) line */
-		if (status && !ignore) {
+		if (!ignore) {
 			write(1, linein, linelen);
 			write(1, "\n", 1);
 		}
@@ -118,7 +118,7 @@ checkreply(const char *status, const char **pre, const int mask)
 		(void) netget();
 	}
 
-	if (status && !ignore)
+	if (!ignore)
 		write(1, linein, linelen + 1);
 	/* this allows us to check for 2xx with (x < 300) later */
 	if (res < 200)

@@ -299,6 +299,9 @@ testcase_checkreply(void)
 	netget_input = "500-perm1\n500-perm2\n500 perm3";
 	ret += check_cr("Dpre1pre2500-perm1\n500-perm2\n500 perm3", 500, checkreply(" ZD", pre, 4));
 
+	netget_input = "500-perm1\n500-perm2\n500 perm3";
+	ret += check_cr(NULL, 500, checkreply(NULL, NULL, 0));
+
 	close(fds[0]);
 
 	return ret;
