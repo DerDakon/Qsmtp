@@ -33,20 +33,32 @@ int
 netget(void)
 {
 	char num[4];
+	const char *lf;
 
 	if (netget_input == NULL) {
 		exit(EFAULT);
 		return -1;
 	}
 
-	assert(strlen(netget_input) > 3);
+	lf = strchr(netget_input, '\n');
+	if (lf != NULL)
+		linelen = lf - netget_input;
+	else
+		linelen = strlen(netget_input);
+
+	assert(linelen > 3);
+	assert(linelen < TESTIO_MAX_LINELEN);
 
 	memcpy(num, netget_input, 3);
 	num[3] = 0;
 
-	strncpy(linein, netget_input, TESTIO_MAX_LINELEN);
-	linein[TESTIO_MAX_LINELEN - 1] = '\0';
-	linelen = strlen(linein);
+	strncpy(linein, netget_input, linelen);
+	linein[linelen] = '\0';
+
+	if (lf == NULL)
+		netget_input = NULL;
+	else
+		netget_input = lf + 1;
 
 	return atoi(num);
 }
@@ -225,15 +237,18 @@ testcase_checkreply(void)
 	close(fds[1]);
 	statusfdout = fds[0];
 
+	/* no status is legal, nothing should be printed */
 	netget_input = "220 ";
 	ret += check_cr(NULL, 220, checkreply(NULL, NULL, 0));
 
+	/* space for success means nothing should be printed */
 	netget_input = "220 ";
 	ret += check_cr(NULL, 220, checkreply(" ZD", NULL, 0));
 
 	netget_input = "220 ";
 	ret += check_cr("K220 ", 220, checkreply("KZD", NULL, 0));
 
+	/* check too small status code */
 	netget_input = "199 too low";
 	ret += check_cr("D199 too low", 599, checkreply(" ZD", NULL, 0));
 
@@ -245,25 +260,44 @@ testcase_checkreply(void)
 	
 	netget_input = "220 ";
 	ret += check_cr(NULL, 220, checkreply(" ZD", pre, 0));
-	
+
+	/* printing out success messages, verify that mask is honored */
 	netget_input = "220 ";
 	ret += check_cr("K220 ", 220, checkreply("KZD", pre, 0));
+	netget_input = "220 ";
 	ret += check_cr("Kpre1pre2220 ", 220, checkreply("KZD", pre, 1));
+	netget_input = "220 ";
 	ret += check_cr("Kpre1pre2220 ", 220, checkreply("KZD", pre, 5));
 
+	/* printing out temporary errors, verify that mask is honored */
 	netget_input  = "421 temp";
 	ret += check_cr("Z421 temp", 421, checkreply(" ZD", pre, 0));
+	netget_input  = "421 temp";
 	ret += check_cr("Z421 temp", 421, checkreply(" ZD", pre, 1));
+	netget_input  = "421 temp";
 	ret += check_cr("Zpre1pre2421 temp", 421, checkreply(" ZD", pre, 2));
+	netget_input  = "421 temp";
 	ret += check_cr("Zpre1pre2421 temp", 421, checkreply(" ZD", pre, 6));
+	netget_input  = "421 temp";
 	ret += check_cr("Z421 temp", 421, checkreply(" ZD", pre, 4));
 
+	/* printing out permanent errors, verify that mask is honored */
 	netget_input  = "500 perm";
 	ret += check_cr("D500 perm", 500, checkreply(" ZD", pre, 0));
+	netget_input  = "500 perm";
 	ret += check_cr("D500 perm", 500, checkreply(" ZD", pre, 1));
+	netget_input  = "500 perm";
 	ret += check_cr("D500 perm", 500, checkreply(" ZD", pre, 2));
+	netget_input  = "500 perm";
 	ret += check_cr("Dpre1pre2500 perm", 500, checkreply(" ZD", pre, 4));
+	netget_input  = "500 perm";
 	ret += check_cr("Dpre1pre2500 perm", 500, checkreply(" ZD", pre, 6));
+
+	/* now multiline replies */
+	netget_input = "500-perm1\n500-perm2\n500 perm3";
+	ret += check_cr("D500-perm1\n500-perm2\n500 perm3", 500, checkreply(" ZD", pre, 2));
+	netget_input = "500-perm1\n500-perm2\n500 perm3";
+	ret += check_cr("Dpre1pre2500-perm1\n500-perm2\n500 perm3", 500, checkreply(" ZD", pre, 4));
 
 	close(fds[0]);
 

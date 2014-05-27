@@ -107,20 +107,21 @@ checkreply(const char *status, const char **pre, const int mask)
 					i++;
 				}
 			}
-			write(1, linein, linelen);
 		}
 	}
+	/* consume multiline reply */
 	while (linein[3] == '-') {
-		/* ignore the SMTP code sent here, if it's different from the one before the server is broken */
-		(void) netget();
+		/* send out the last (buffered) line */
 		if (status && !ignore) {
 			write(1, linein, linelen);
 			write(1, "\n", 1);
 		}
+		/* ignore the SMTP code sent here, if it's different from the one before the server is broken */
+		(void) netget();
 	}
 
 	if (status && !ignore)
-		write(1, "", 1);
+		write(1, linein, linelen + 1);
 	/* this allows us to check for 2xx with (x < 300) later */
 	if (res < 200)
 		res = 599;
