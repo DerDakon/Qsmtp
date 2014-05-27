@@ -331,6 +331,15 @@ net_read(void)
 			if (linenlen != 0)
 				memcpy(lineinn, p, linenlen);
 		}
+
+		/* do this again here: if there is a broken client that
+		 * handles '.' duplication in data phase wrong this allows
+		 * smtp_data to get his '\n.\n' and throw him out. If he
+		 * is broken once why not twice? */
+
+		DEBUG_IN(linelen);
+
+		return 0;
 	} else if (p == NULL) {
 		/* the whole buffer is filled, but neither CR nor LF is found */
 		loop_long(0);
@@ -349,15 +358,6 @@ net_read(void)
 		errno = EINVAL;
 		return -1;
 	}
-
-	/* do this again here: if there is a broken client that
-	 * handles '.' duplication in data phase wrong this allows
-	 * smtp_data to get his '\n.\n' and throw him out. If he
-	 * is broken once why not twice? */
-
-	DEBUG_IN(linelen);
-
-	return 0;
 }
 
 /**
