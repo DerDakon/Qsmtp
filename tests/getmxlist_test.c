@@ -17,7 +17,7 @@ smtproute(const char *a __attribute__ ((unused)), const size_t b __attribute__ (
 void
 write_status(const char *str)
 {
-	write(1, str, strlen(str) + 1);
+	puts(str);
 
 	exit(EFAULT);
 }
@@ -28,7 +28,7 @@ write_status_m(const char **strs, const unsigned int count)
 	unsigned int i;
 
 	for (i = 0; i < count - 1; i++)
-		write(1, strs[i], strlen(strs[i]));
+		fputs(strs[i], stdout);
 
 	write_status(strs[count - 1]);
 }
@@ -38,7 +38,7 @@ err_mem(const int doquit __attribute__ ((unused)))
 {
 	(void) doquit;
 
-	write_status("Z4.3.0 Out of memory.\n");
+	write_status("Z4.3.0 Out of memory.");
 
 	exit(ENOMEM);
 }

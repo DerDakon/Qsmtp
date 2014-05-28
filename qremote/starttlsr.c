@@ -19,9 +19,9 @@ static void __attribute__ ((noreturn))
 tls_quit(void)
 {
 	const char *msg[] = { ssl ? "; connected to " : "; connecting to ",
-			rhost, "\n" };
+			rhost };
 
-	write_status_m(msg, 3);
+	write_status_m(msg, 2);
 	net_conn_shutdown(shutdown_clean);
 }
 

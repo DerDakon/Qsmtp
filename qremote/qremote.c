@@ -45,7 +45,8 @@ static struct in6_addr outip6;
 void
 write_status(const char *str)
 {
-	(void) write(1, str, strlen(str) + 1);
+	(void) write(1, str, strlen(str));
+	(void) write(1, "\n", 2);
 }
 
 void
@@ -102,7 +103,7 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 void
 err_mem(const int doquit)
 {
-	write_status("Z4.3.0 Out of memory.\n");
+	write_status("Z4.3.0 Out of memory.");
 
 	net_conn_shutdown(doquit ? shutdown_clean : shutdown_abort);
 }
@@ -128,7 +129,7 @@ err_confn(const char **errmsg, void *freebuf)
 	log_writen(LOG_ERR, errmsg);
 	free(freebuf);
 
-	write_status("Z4.3.0 Configuration error.\n");
+	write_status("Z4.3.0 Configuration error.");
 	net_conn_shutdown(shutdown_clean);
 }
 
@@ -267,7 +268,7 @@ syntax:
 	/* Even if 5.5.2 is a permanent error don't use 'D' return code here,
 	 * hope that this is just a hiccup on the other side and will get
 	 * fixed soon. */
-	write_status("Z5.5.2 syntax error in server reply\n");
+	write_status("Z5.5.2 syntax error in server reply");
 	net_conn_shutdown(shutdown_clean);;
 }
 
@@ -325,12 +326,12 @@ dieerror(int error)
 
 	switch (error) {
 	case ETIMEDOUT:
-		write_status("Z4.4.1 connection to remote timed out\n");
+		write_status("Z4.4.1 connection to remote timed out");
 		logmsg[2] = " timed out";
 		log_writen(LOG_WARNING, logmsg);
 		break;
 	case ECONNRESET:
-		write_status("Z4.4.1 connection to remote server died\n");
+		write_status("Z4.4.1 connection to remote server died");
 		logmsg[2] = " died";
 		log_writen(LOG_WARNING, logmsg);
 		break;
@@ -356,7 +357,7 @@ main(int argc, char *argv[])
 
 	if (rcptcount <= 0) {
 		log_write(LOG_CRIT, "too few arguments");
-		write_status("Z4.3.0 internal error: Qremote called with invalid arguments\n");
+		write_status("Z4.3.0 internal error: Qremote called with invalid arguments");
 		net_conn_shutdown(shutdown_abort);
 	}
 
@@ -365,7 +366,7 @@ main(int argc, char *argv[])
 		mx = filter_my_ips(mx);
 		if (mx == NULL) {
 			const char *msg[] = { "Z4.4.3 all mail exchangers for ",
-					argv[1], " point back to me\n" };
+					argv[1], " point back to me" };
 			write_status_m(msg, 3);
 			net_conn_shutdown(shutdown_abort);
 		}
@@ -377,7 +378,7 @@ main(int argc, char *argv[])
 		if (errno == ENOMEM)
 			err_mem(0);
 		log_write(LOG_CRIT, "can't fstat() input");
-		write_status("Z4.3.0 internal error: can't fstat() input\n");
+		write_status("Z4.3.0 internal error: can't fstat() input");
 		freeips(mx);
 		net_conn_shutdown(shutdown_abort);
 	}
@@ -386,7 +387,7 @@ main(int argc, char *argv[])
 
 	if (msgdata == MAP_FAILED) {
 		log_write(LOG_CRIT, "can't mmap() input");
-		write_status("Z4.3.0 internal error: can't mmap() input\n");
+		write_status("Z4.3.0 internal error: can't mmap() input");
 		freeips(mx);
 		net_conn_shutdown(shutdown_abort);
 	}
@@ -415,7 +416,7 @@ main(int argc, char *argv[])
 					err_mem(1);
 			case EINVAL:
 			case E2BIG:
-					write_status("Z5.5.2 syntax error in server reply\n");
+					write_status("Z5.5.2 syntax error in server reply");
 					quitmsg();
 					break;
 			default:
@@ -447,7 +448,7 @@ main(int argc, char *argv[])
 	if (smtpext & esmtp_starttls) {
 		if (tls_init()) {
 			if (greeting()) {
-				write_status("ZEHLO failed after STARTTLS\n");
+				write_status("ZEHLO failed after STARTTLS");
 				net_conn_shutdown(shutdown_clean);;
 			}
 			successmsg[4] = " encrypted";

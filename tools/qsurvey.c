@@ -46,7 +46,8 @@ static struct in6_addr outip6;
 void
 write_status(const char *str)
 {
-	(void) write(1, str, strlen(str) + 1);
+	(void) write(1, str, strlen(str));
+	(void) write(1, "\n", 2);
 }
 
 void
@@ -67,7 +68,7 @@ err_mem(const int doquit)
 	if (doquit)
 		quitmsg();
 /* write text including 0 byte */
-	write_status("Z4.3.0 Out of memory.\n");
+	write_status("Z4.3.0 Out of memory.");
 	_exit(0);
 }
 
@@ -77,7 +78,7 @@ err_confn(const char **errmsg, void *freebuf)
 	log_writen(LOG_ERR, errmsg);
 	free(freebuf);
 	/* write text including 0 byte */
-	write_status("Z4.3.0 Configuration error.\n");
+	write_status("Z4.3.0 Configuration error.");
 	_exit(0);
 }
 
@@ -219,10 +220,9 @@ netget(void)
 		case E2BIG:	goto syntax;
 		default:
 			{
-				char *tmp = strerror(errno);
+				const char *tmp[] = { "Z4.3.0 ", strerror(errno) };
 
-				write(1, "Z", 1);
-				write_status(tmp);
+				write_status_m(tmp, 2);
 				net_conn_shutdown(shutdown_clean);
 			}
 		}
@@ -250,7 +250,7 @@ netget(void)
 	return r * 10 + q;
 syntax:
 	/* if this fails we're already in bad trouble */
-	(void) write_status("Zsyntax error in server reply\n");
+	(void) write_status("Z5.5.2 syntax error in server reply");
 	net_conn_shutdown(shutdown_clean);
 }
 
@@ -351,11 +351,11 @@ dieerror(int error)
 {
 	switch (error) {
 	case ETIMEDOUT:
-		write_status("Zconnection to remote server died\n");
+		write_status("Z4.4.1 connection to remote server died");
 		log_write(LOG_WARNING, "connection timed out");
 		break;
 	case ECONNRESET:
-		write_status("Zconnection to remote timed out\n");
+		write_status("Z4.4.1 connection to remote timed out");
 		log_write(LOG_WARNING, "connection died");
 		break;
 	}

@@ -394,7 +394,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 	if (!header || (need_recode(buf, header) & 1)) {
 		/* no empty line found: treat whole message as header. But this means we have
 		 * 8bit characters in header which is a bug in the client that we can't handle */
-		write_status("D5.6.3 message contains unencoded 8bit data in message header\n");
+		write_status("D5.6.3 message contains unencoded 8bit data in message header");
 		net_conn_shutdown(shutdown_abort);
 	}
 
@@ -407,7 +407,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 			wrap_header(buf, header);
 		}
 	} else if (*multipart < 0) {
-		write_status("D5.6.3 syntax error in Content-Type message header\n");
+		write_status("D5.6.3 syntax error in Content-Type message header");
 		net_conn_shutdown(shutdown_abort);
 	} else {
 		if (!body_recode) {

@@ -111,7 +111,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 				break;
 		}
 		if (!thisip) {
-			write_status("Z4.4.2 can't connect to any server\n");
+			write_status("Z4.4.2 can't connect to any server");
 			exit(0);
 		}
 
@@ -194,7 +194,7 @@ getmxlist(char *remhost, struct ips **mx)
 		}
 
 		log_writen(LOG_ERR, logmsg);
-		write_status("Z4.3.0 parse error in first argument\n");
+		write_status("Z4.3.0 parse error in first argument");
 		net_conn_shutdown(shutdown_abort);
 	}
 
@@ -207,8 +207,8 @@ getmxlist(char *remhost, struct ips **mx)
 	if (!*mx) {
 		if (ask_dnsmx(remhost, mx)) {
 			const char *msg[] = { "Z4.4.3 cannot find a mail exchanger for ",
-					remhost, "\n" };
-			write_status_m(msg, 3);
+					remhost };
+			write_status_m(msg, 2);
 			net_conn_shutdown(shutdown_abort);
 		}
 	}
