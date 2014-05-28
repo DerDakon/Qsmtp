@@ -318,6 +318,36 @@ TARGET_LINK_LIBRARIES(testcase_mime
 ADD_TEST(NAME "MIME"
 		COMMAND testcase_mime)
 
+ADD_EXECUTABLE(testcase_mime_boundary
+		mime_boundary_test.c
+		${CMAKE_SOURCE_DIR}/qremote/mime.c
+)
+TARGET_LINK_LIBRARIES(testcase_mime_boundary
+# 		qsmtp_lib
+# 		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "MIME_boundary_empty"
+		COMMAND testcase_mime_boundary "\"\"")
+SET_TESTS_PROPERTIES(MIME_boundary_empty PROPERTIES
+		PASS_REGULAR_EXPRESSION "^D5.6.3 boundary definition is empty\n$")
+
+ADD_TEST(NAME "MIME_boundary_long"
+		COMMAND testcase_mime_boundary "a123456789b123456789c123456789d123456789e123456789f123456789g123456789h")
+SET_TESTS_PROPERTIES(MIME_boundary_long PROPERTIES
+		PASS_REGULAR_EXPRESSION "^D5.6.3 boundary definition is too long\n$")
+
+ADD_TEST(NAME "MIME_boundary_invalid"
+		COMMAND testcase_mime_boundary "#")
+SET_TESTS_PROPERTIES(MIME_boundary_invalid PROPERTIES
+		PASS_REGULAR_EXPRESSION "^D5.6.3 boundary definition contains invalid character\n$")
+
+ADD_TEST(NAME "MIME_boundary_quoted_space"
+		COMMAND testcase_mime_boundary "\"a \"")
+SET_TESTS_PROPERTIES(MIME_boundary_quoted_space PROPERTIES
+		PASS_REGULAR_EXPRESSION "^D5.6.3 quoted boundary definition may not end in space\n$")
+
 ADD_EXECUTABLE(testcase_antispam
 		antispam_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c
