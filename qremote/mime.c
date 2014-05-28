@@ -90,6 +90,90 @@ skipwhitespace(const char *line, const size_t len)
 }
 
 /**
+ * get length of MIME header token as defined in RfC 2045, section 5.1
+ *
+ * @param line header line to scan
+ * @param len length of line
+ * @return length of parameter
+ * @retval 0 syntax error
+ */
+static size_t __attribute__ ((pure)) __attribute__ ((nonnull(1)))
+mime_token(const char *line, const size_t len)
+{
+	size_t i = 0;
+
+	for (; i < len; i++) {
+		if ((line[i] == ';') || (line[i] == '=')) {
+			return i;
+		}
+		if ((line[i] == ' ') || (line[i] == '\t') ||
+					(line[i] == '\r') || (line[i] == '\n')) {
+			const char *e = skipwhitespace(line + i, len - i);
+
+			return (e == line + len) ? i : 0;
+		}
+		if ((line[i] <= 32) || TSPECIAL(line[i])) {
+			return 0;
+		}
+	}
+	return i;
+}
+
+/**
+ * get length of MIME header parameter
+ *
+ * @param line header line to scan
+ * @param len length of line
+ * @return length of parameter
+ * @retval 0 syntax error
+ */
+static size_t __attribute__ ((pure)) __attribute__ ((nonnull(1)))
+mime_param(const char *line, const size_t len)
+{
+	size_t i = mime_token(line, len);
+
+	if (!i || (i == len) || (line[i] != '='))
+		return 0;
+
+	i++;
+	if (line[i] == '"') {
+		for (i++; i < len; i++) {
+			if ((line[i] == '"') && (line[i - 1] != '\\')) {
+				break;
+			}
+		}
+
+		/* the end of quote has not been found */
+		if (i == len)
+			return 0;
+
+		/* skip over closing quote */
+		i++;
+
+		/* end of string */
+		if (i == len)
+			return i;
+
+		/* if no end quote has been found or something invalid follows fail */
+		if ((line[i] != ';') && (line[i] != '(') && !WSPACE(line[i]))
+			return 0;
+
+		return i;
+	} else {
+		size_t j;
+
+		if (WSPACE(line[i]))
+			return 0;
+		j = mime_token(line + i, len - i);
+
+		i += j;
+		if ((i == len) || (line[i] == ';') || WSPACE(line[i]))
+			return i;
+		return 0;
+	}
+}
+
+/**
  * scan "Content-Type" header line and check if type is multipart/(*)
  *
  * @param line header field
@@ -241,90 +325,6 @@ getfieldlen(const char *msg, const size_t len)
 	} while (r && ((*cr == ' ') || (*cr == '\t')));
 
 	return ((*(cr - 1) == '\n') || (*(cr - 1) == '\r')) ? len - r : 0;
-}
-
-/**
- * get length of MIME header parameter
- *
- * @param line header line to scan
- * @param len length of line
- * @return length of parameter
- * @retval 0 syntax error
- */
-size_t
-mime_param(const char *line, const size_t len)
-{
-	size_t i = mime_token(line, len);
-
-	if (!i || (i == len) || (line[i] != '='))
-		return 0;
-
-	i++;
-	if (line[i] == '"') {
-		for (i++; i < len; i++) {
-			if ((line[i] == '"') && (line[i - 1] != '\\')) {
-				break;
-			}
-		}
-
-		/* the end of quote has not been found */
-		if (i == len)
-			return 0;
-
-		/* skip over closing quote */
-		i++;
-
-		/* end of string */
-		if (i == len)
-			return i;
-
-		/* if no end quote has been found or something invalid follows fail */
-		if ((line[i] != ';') && (line[i] != '(') && !WSPACE(line[i]))
-			return 0;
-
-		return i;
-	} else {
-		size_t j;
-
-		if (WSPACE(line[i]))
-			return 0;
-		j = mime_token(line + i, len - i);
-
-		i += j;
-		if ((i == len) || (line[i] == ';') || WSPACE(line[i]))
-			return i;
-		return 0;
-	}
-}
-
-/**
- * get length of MIME header token as defined in RfC 2045, section 5.1
- *
- * @param line header line to scan
- * @param len length of line
- * @return length of parameter
- * @retval 0 syntax error
- */
-size_t
-mime_token(const char *line, const size_t len)
-{
-	size_t i = 0;
-
-	for (; i < len; i++) {
-		if ((line[i] == ';') || (line[i] == '=')) {
-			return i;
-		}
-		if ((line[i] == ' ') || (line[i] == '\t') ||
-					(line[i] == '\r') || (line[i] == '\n')) {
-			const char *e = skipwhitespace(line + i, len - i);
-
-			return (e == line + len) ? i : 0;
-		}
-		if ((line[i] <= 32) || TSPECIAL(line[i])) {
-			return 0;
-		}
-	}
-	return i;
 }
 
 /**
