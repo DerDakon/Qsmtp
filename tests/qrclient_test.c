@@ -63,6 +63,17 @@ netget(void)
 	return atoi(num);
 }
 
+void
+write_status(const char *str)
+{
+	const size_t l = strlen(str) + 1;
+	const ssize_t r = write(statusfdin, str, l);
+
+	if (r != (ssize_t)l)
+		fprintf(stderr, "writing %s to pipe returned %zi (errno %i) instead of %zu\n",
+				str, r, errno, l);
+}
+
 int
 test_ask_dnsname(const struct in6_addr *ip, char **result)
 {

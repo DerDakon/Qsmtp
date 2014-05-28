@@ -119,7 +119,7 @@ checkreply(const char *status, const char **pre, const int mask)
 	}
 
 	if (!ignore)
-		write(1, linein, linelen + 1);
+		write_status(linein);
 	/* this allows us to check for 2xx with (x < 300) later */
 	if (res < 200)
 		res = 599;
