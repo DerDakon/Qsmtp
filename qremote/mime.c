@@ -228,8 +228,7 @@ is_multipart(const cstring *line, cstring *boundary)
 						e = memchr(ch + 10, '"', line->len - 10 - (ch - line->s));
 						/* error would have been detected in mime_param() above */
 						assert(e != NULL);
-						boundary->len = e - ch - 10;
-						j = boundary->len;
+						j = e - ch - 10;
 					} else {
 						quoted = 0;
 						j = 0;
@@ -237,8 +236,9 @@ is_multipart(const cstring *line, cstring *boundary)
 										(boundary->s + j < line->s + line ->len)) {
 							j++;
 						}
-						boundary->len = j;
 					}
+					boundary->len = j;
+
 					if (!boundary->len) {
 						write_status("D5.6.3 boundary definition is empty");
 						net_conn_shutdown(shutdown_abort);
