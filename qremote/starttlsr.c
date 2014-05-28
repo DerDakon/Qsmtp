@@ -25,14 +25,12 @@ tls_quit(void)
 	net_conn_shutdown(shutdown_clean);
 }
 
-static void  __attribute__ ((noreturn))
+static void  __attribute__ ((noreturn)) __attribute__ ((nonnull (1, 2)))
 tls_quitmsg(const char *s1, const char *s2)
 {
 	write(1, s1, strlen(s1));
-	if (s2) {
-		write(1, ": ", 2);
-		write(1, s2, strlen(s2));
-	}
+	write(1, ": ", 2);
+	write(1, s2, strlen(s2));
 	tls_quit();
 }
 
@@ -150,7 +148,8 @@ tls_init(void)
 			free(servercert);
 			msg = " exists";
 		}
-		tls_quitmsg(msg, NULL);
+		write(1, msg, strlen(msg));
+		tls_quit();
 	}
 
 	ssl = myssl;
