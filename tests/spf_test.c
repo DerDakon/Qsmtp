@@ -6,6 +6,7 @@
 #include <mime_chars.h>
 #include <sstring.h>
 #include <qremote/mime.h> /* for skipwhitespace() */
+#include <qremote/qremote.h> /* for write_status(), required by mime */
 
 #include "test_io/testcase_io.h"
 
@@ -15,6 +16,13 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
+
+void
+write_status(const char *str)
+{
+	puts(str);
+	exit(EFAULT);
+}
 
 enum dnstype {
 	DNSTYPE_A,

@@ -1,9 +1,16 @@
 #include <qremote/mime.h>
+#include <qremote/qremote.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+
+void
+write_status(const char *str)
+{
+	puts(str);
+}
 
 static int
 test_ws()

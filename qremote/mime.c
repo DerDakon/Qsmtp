@@ -4,6 +4,7 @@
 #include <qremote/mime.h>
 
 #include <qremote/qrdata.h>
+#include <qremote/qremote.h>
 #include <mime_chars.h>
 #include <netio.h>
 #include <sstring.h>
@@ -155,16 +156,13 @@ is_multipart(const cstring *line, cstring *boundary)
 						boundary->len = j;
 					}
 					if (!boundary->len) {
-						const char errmsg[] = "D5.6.3 boundary definition is empty\n";
-						write(1, errmsg, strlen(errmsg));
+						write_status("D5.6.3 boundary definition is empty");
 						net_conn_shutdown(shutdown_abort);
 					} else if (boundary->len > 70) {
-						const char errmsg[] = "D5.6.3 boundary definition is too long\n";
-						write(1, errmsg, strlen(errmsg));
+						write_status("D5.6.3 boundary definition is too long");
 						net_conn_shutdown(shutdown_abort);
 					} else if ((quoted == 1) && (boundary->s[boundary->len - 1] == ' ')) {
-						const char errmsg[] = "D5.6.3 quoted boundary definition may not end in space\n";
-						write(1, errmsg, strlen(errmsg));
+						write_status("D5.6.3 quoted boundary definition may not end in space");
 						net_conn_shutdown(shutdown_abort);
 					}
 
@@ -194,7 +192,7 @@ is_multipart(const cstring *line, cstring *boundary)
 						case '?':
 							continue;
 						default:
-							write(1, "D5.6.3 boundary definition contains invalid character\n", 55);
+							write_status("D5.6.3 boundary definition contains invalid character");
 							net_conn_shutdown(shutdown_abort);
 						}
 					}
