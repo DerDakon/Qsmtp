@@ -8,11 +8,9 @@
 #include <unistd.h>
 
 struct ips *
-smtproute(const char *a, const size_t b, unsigned int *c)
+smtproute(const char *a __attribute__ ((unused)), const size_t b __attribute__ ((unused)),
+		unsigned int *c __attribute__ ((unused)))
 {
-	(void) a;
-	(void) b;
-	(void) c;
 	return NULL;
 }
 
@@ -36,7 +34,7 @@ write_status_m(const char **strs, const unsigned int count)
 }
 
 void
-err_mem(const int doquit)
+err_mem(const int doquit __attribute__ ((unused)))
 {
 	(void) doquit;
 
