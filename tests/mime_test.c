@@ -142,6 +142,13 @@ test_multipart_bad(void)
 #endif
 		NULL
 	};
+	const char *good_lines[] = {
+		"Content-Type: multipart/mixed; boundary=a", /* ascii, everything is fine */
+		"Content-Type: multipart/mixed; boundary=\"a\"", /* ascii, but quoted */
+		"Content-Type: multipart/mixed;\tboundary=a\t", /* enclosed in tabs */
+		"Content-Type: multipart/mixed; boundary=a ", /* enclosed in spaces */
+		NULL
+	};
 	int ret = 0;
 	unsigned int i;
 
@@ -158,6 +165,27 @@ test_multipart_bad(void)
 		if (r != -1) {
 			fprintf(stderr, "bad line '%s' was not detected, result was %i\n",
 				bad_lines[i], r);
+			ret++;
+		}
+	}
+
+	for (i = 0; good_lines[i] != NULL; i++) {
+		cstring boundary;
+		cstring line;
+		int r;
+
+		STREMPTY(line);
+		line.s = good_lines[i];
+		line.len = strlen(line.s);
+
+		r = is_multipart(&line, &boundary);
+		if (r != 1) {
+			fprintf(stderr, "good line '%s' was not detected, result was %i\n",
+				good_lines[i], r);
+			ret++;
+		} else if ((boundary.len != 1) || (strncmp(boundary.s, "a", boundary.len) != 0)) {
+			fprintf(stderr, "good line '%s' returned boundary len %zu string '%s'\n",
+				good_lines[i], boundary.len, boundary.s);
 			ret++;
 		}
 	}
