@@ -9,6 +9,7 @@ SET(QREMOTE_SRCS
 	qremote.c
 	client.c
 	conn.c
+	mime.c
 	starttlsr.c
 	qrdata.c
 	smtproutes.c
@@ -17,6 +18,7 @@ SET(QREMOTE_SRCS
 SET(QREMOTE_HDRS
 	../include/qremote/client.h
 	../include/qremote/conn.h
+	../include/qremote/mime.h
 	../include/qremote/greeting.h
 	../include/qremote/qrdata.h
 	../include/qremote/qremote.h

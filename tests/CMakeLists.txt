@@ -14,6 +14,7 @@ ADD_EXECUTABLE(testcase_spf
 		spf_test.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/spf.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c
+		${CMAKE_SOURCE_DIR}/qremote/mime.c # for skipwhitespace()
 )
 
 TARGET_LINK_LIBRARIES(testcase_spf
@@ -158,6 +159,7 @@ ADD_TEST(NAME "Xtext"
 ADD_EXECUTABLE(testcase_qrdata
 		qrdata_test.c
 		${CMAKE_SOURCE_DIR}/qremote/qrdata.c
+		${CMAKE_SOURCE_DIR}/qremote/mime.c
 )
 
 TARGET_LINK_LIBRARIES(testcase_qrdata
@@ -304,7 +306,9 @@ ADD_TEST(NAME "QDNS"
 		COMMAND testcase_qdns)
 
 ADD_EXECUTABLE(testcase_mime
-		mime_test.c)
+		mime_test.c
+		${CMAKE_SOURCE_DIR}/qremote/mime.c
+)
 TARGET_LINK_LIBRARIES(testcase_mime
 		qsmtp_lib
 		testcase_io_lib

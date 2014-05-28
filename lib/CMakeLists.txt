@@ -32,7 +32,6 @@ SET(QSMTP_LIB_SRCS
 	base64.c
 	ipme.c
 	match.c
-	mime.c
 	cdb.c
 	mmap.c
 	fmt.c
@@ -45,7 +44,7 @@ SET(QSMTP_LIB_HDRS
 	../include/fmt.h
 	../include/ipme.h
 	../include/match.h
-	../include/mime.h
+	../include/mime_chars.h
 	../include/mmap.h
 	../include/sstring.h
 	${CMAKE_BINARY_DIR}/version.h

@@ -28,7 +28,11 @@ TARGET_LINK_LIBRARIES(testspf
 	qsmtp_io_lib
 )
 
-ADD_EXECUTABLE(qpencode qp.c ${CMAKE_SOURCE_DIR}/qremote/qrdata.c)
+ADD_EXECUTABLE(qpencode
+	qp.c
+	${CMAKE_SOURCE_DIR}/qremote/mime.c
+	${CMAKE_SOURCE_DIR}/qremote/qrdata.c
+)
 TARGET_LINK_LIBRARIES(qpencode
 	qsmtp_lib
 	qsmtp_io_lib

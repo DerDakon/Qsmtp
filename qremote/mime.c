@@ -1,15 +1,17 @@
 /** @file mime.c
   \brief MIME handling functions
  */
-#include "mime.h"
+#include <qremote/mime.h>
+
+#include <qremote/qrdata.h>
+#include <mime_chars.h>
+#include <netio.h>
+#include <sstring.h>
 
 #include <assert.h>
 #include <strings.h>
 #include <string.h>
 #include <unistd.h>
-#include "netio.h"
-#include <qremote/qrdata.h>
-#include "sstring.h"
 
 /**
  * skip whitespaces in header line

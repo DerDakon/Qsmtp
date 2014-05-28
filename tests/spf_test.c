@@ -3,7 +3,10 @@
  */
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/antispam.h>
-#include "sstring.h"
+#include <mime_chars.h>
+#include <sstring.h>
+#include <qremote/mime.h> /* for skipwhitespace() */
+
 #include "test_io/testcase_io.h"
 
 #include <assert.h>
@@ -12,7 +15,6 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <unistd.h>
-#include <mime.h>
 
 enum dnstype {
 	DNSTYPE_A,

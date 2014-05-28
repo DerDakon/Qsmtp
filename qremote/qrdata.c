@@ -7,6 +7,7 @@
  */
 #include <qremote/qrdata.h>
 #include <qremote/client.h>
+#include <qremote/mime.h>
 #include <qremote/qremote.h>
 #include <sys/types.h>
 #include <sys/mman.h>
@@ -18,7 +19,6 @@
 #include <syslog.h>
 #include "netio.h"
 #include "version.h"
-#include "mime.h"
 #include "log.h"
 #include "fmt.h"
 

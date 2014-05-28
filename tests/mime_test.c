@@ -1,4 +1,4 @@
-#include "mime.h"
+#include <qremote/mime.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>

@@ -17,7 +17,7 @@
 #include "match.h"
 #include "netio.h"
 #include "fmt.h"
-#include "mime.h"
+#include "mime_chars.h"
 
 static const char spf_delimiters[] = ".-+,/_=";
 
