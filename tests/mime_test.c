@@ -125,6 +125,7 @@ test_multipart_bad(void)
 		"Content-Type: (comment does not end",
 		"Content-Type: multipart/ju=nk", /* '=' is not allowed at this point */
 		"Content-Type: multipart/mixed", /* no boundary given */
+		"Content-Type: multipart/mixed  \t", /* no boundary given */
 		"Content-Type: multipart/mixed;", /* no boundary given */
 		"Content-Type: multipart/mixed; foo=bar", /* no boundary given */
 		"Content-Type: multipart/mixed; =", /* no valid token */
@@ -147,14 +148,16 @@ test_multipart_bad(void)
 	for (i = 0; bad_lines[i] != NULL; i++) {
 		cstring boundary;
 		cstring line;
+		int r;
 
 		STREMPTY(line);
 		line.s = bad_lines[i];
 		line.len = strlen(line.s);
 
-		if (is_multipart(&line, &boundary) != -1) {
-			fprintf(stderr, "bad line '%s' was not detected\n",
-				bad_lines[i]);
+		r = is_multipart(&line, &boundary);
+		if (r != -1) {
+			fprintf(stderr, "bad line '%s' was not detected, result was %i\n",
+				bad_lines[i], r);
 			ret++;
 		}
 	}
