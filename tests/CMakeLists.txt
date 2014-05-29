@@ -746,3 +746,10 @@ ADD_TEST(NAME "STARTTLSr_matching_tlshost"
 
 SET_TESTS_PROPERTIES(STARTTLSr_matching_tlshost PROPERTIES
 		PASS_REGULAR_EXPRESSION "^Z4.5.0 STARTTLS rejected while control/tlshosts/testcert.example.org.pem exists; connecting to testcert.example.org\n$")
+
+ADD_TEST(NAME "STARTTLSr_conn_failure"
+		COMMAND testcase_starttlsr testcert.example.org 220
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
+
+SET_TESTS_PROPERTIES(STARTTLSr_conn_failure PROPERTIES
+		PASS_REGULAR_EXPRESSION "^ZZ4.5.0 TLS connect failed: expected error case; connected to testcert.example.org\n$")

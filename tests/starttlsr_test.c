@@ -1,5 +1,6 @@
 #include <qremote/qremote.h>
 #include <qremote/starttlsr.h>
+#include <ssl_timeoutio.h>
 #include <tls.h>
 
 #include "test_io/testcase_io.h"
@@ -18,6 +19,7 @@ char *partner_fqdn;
 unsigned int smtpext;
 string heloname;
 static unsigned int conf_error_expected;
+static int netget_result = 421;
 
 void
 err_conf(const char *errmsg)
@@ -46,7 +48,7 @@ write_status(const char *str)
 int
 netget(void)
 {
-	return 421;
+	return netget_result;
 }
 
 void
@@ -63,7 +65,15 @@ write_status_m(const char **strs, const unsigned int count)
 int
 ssl_timeoutconn(time_t t __attribute__((unused)))
 {
+	if (netget_result == 220)
+		return -1;
 	exit(EFAULT);
+}
+
+const char *
+test_ssl_strerror(void)
+{
+	return "expected error case";
 }
 
 int
@@ -102,16 +112,20 @@ test_ssl_error(void)
 
 int main(int argc, char **argv)
 {
-	if (argc > 2) {
-		fprintf(stderr, "Usage: %s [partner_fqdn]\n", argv[0]);
+	if (argc > 3) {
+		fprintf(stderr, "Usage: %s [partner_fqdn [netget_result]]\n", argv[0]);
 		return EINVAL;
-	} else if (argc == 2) {
+	} else if (argc >= 2) {
 		partner_fqdn = argv[1];
 		rhost = partner_fqdn;
 		if (strstr(partner_fqdn, "bad") != NULL)
 			testcase_setup_ssl_error(test_ssl_error);
 		if (strstr(partner_fqdn, "conferror.") != NULL)
 			conf_error_expected = 1;
+		if (argc > 2) {
+			netget_result = atoi(argv[2]);
+			testcase_setup_ssl_strerror(test_ssl_strerror);
+		}
 	} else {
 		rhost = "[192.0.2.4]";
 	}
