@@ -739,3 +739,10 @@ ADD_TEST(NAME "STARTTLSr_tlsciphers_dir"
 
 SET_TESTS_PROPERTIES(STARTTLSr_tlsciphers_dir PROPERTIES
 		PASS_REGULAR_EXPRESSION "^CONFIG error: can't open tlsclientciphers\n$")
+
+ADD_TEST(NAME "STARTTLSr_matching_tlshost"
+		COMMAND testcase_starttlsr testcert.example.org
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
+
+SET_TESTS_PROPERTIES(STARTTLSr_matching_tlshost PROPERTIES
+		PASS_REGULAR_EXPRESSION "^Z4.5.0 STARTTLS rejected while control/tlshosts/testcert.example.org.pem exists; connecting to testcert.example.org\n$")
