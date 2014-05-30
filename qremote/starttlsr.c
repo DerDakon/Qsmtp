@@ -165,7 +165,9 @@ tls_init(void)
 
 		if (r != X509_V_OK) {
 			write(1, "Z4.5.0 TLS unable to verify server with ", 40);
-			tls_quitmsg(servercert, X509_verify_cert_error_string(r));
+			write(1, servercert, strlen(servercert));
+			free(servercert);
+			tls_quitmsg("", X509_verify_cert_error_string(r));
 		}
 		free(servercert);
 
