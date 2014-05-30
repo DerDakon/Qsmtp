@@ -15,14 +15,13 @@
 #include "sstring.h"
 #include <qremote/starttlsr.h>
 
-static void  __attribute__ ((noreturn)) __attribute__ ((nonnull (1, 2)))
+static void  __attribute__ ((nonnull (1, 2)))
 tls_quitmsg(const char *s1, const char *s2)
 {
 	const char *msg[] = { s1, ": ", s2,  ssl ? "; connected to " : "; connecting to ",
 			rhost };
 
 	write_status_m(msg, 5);
-	net_conn_shutdown(shutdown_clean);
 }
 
 static int
@@ -84,6 +83,7 @@ tls_init(void)
 	if (!ctx) {
 		free(servercert);
 		tls_quitmsg("Z4.5.0 TLS error initializing ctx", ssl_error());
+		return 1;
 	}
 
 	if (servercert) {
@@ -93,6 +93,7 @@ tls_init(void)
 			write(1, servercert, strlen(servercert));
 			free(servercert);
 			tls_quitmsg("", ssl_error());
+			return 1;
 		}
 		/* set the callback here; SSL_set_verify didn't work before 0.9.6c */
 		SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
@@ -107,6 +108,7 @@ tls_init(void)
 	if (!myssl) {
 		free(servercert);
 		tls_quitmsg("Z4.5.0 TLS error initializing ssl", ssl_error());
+		return 1;
 	}
 
 	netwrite("STARTTLS\r\n");
@@ -158,6 +160,7 @@ tls_init(void)
 	if (ssl_timeoutconn(timeout) <= 0) {
 		free(servercert);
 		tls_quitmsg("Z4.5.0 TLS connect failed", ssl_strerror());
+		return 1;
 	}
 
 	if (servercert) {
@@ -170,6 +173,7 @@ tls_init(void)
 			write(1, servercert, strlen(servercert));
 			free(servercert);
 			tls_quitmsg("", X509_verify_cert_error_string(r));
+			return 1;
 		}
 		free(servercert);
 
@@ -177,6 +181,7 @@ tls_init(void)
 		if (!peercert) {
 			write(1, "Z4.5.0 TLS unable to verify server ", 35);
 			tls_quitmsg(partner_fqdn, "no certificate provided");
+			return 1;
 		}
 
 		/* RFC 2595 section 2.4: find a matching name
@@ -212,6 +217,7 @@ tls_init(void)
 				write(1, "Z4.5.0 TLS unable to verify server ", 35);
 				X509_free(peercert);
 				tls_quitmsg(partner_fqdn, "certificate contains no valid commonName");
+				return 1;
 			}
 			if (!match_partner(peer.s, peer.len)) {
 				char buf[64];
