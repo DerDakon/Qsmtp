@@ -15,15 +15,6 @@
 #include "sstring.h"
 #include <qremote/starttlsr.h>
 
-static void  __attribute__ ((nonnull (1, 2)))
-tls_quitmsg(const char *s1, const char *s2)
-{
-	const char *msg[] = { s1, ": ", s2,  ssl ? "; connected to " : "; connecting to ",
-			rhost };
-
-	write_status_m(msg, 5);
-}
-
 static int
 match_partner(const char *s, size_t len)
 {
@@ -81,18 +72,22 @@ tls_init(void)
 	SSL_library_init();
 	ctx = SSL_CTX_new(SSLv23_client_method());
 	if (!ctx) {
+		const char *msg[] = { "Z4.5.0 TLS error initializing ctx: ", ssl_error(), "; connecting to ",
+				rhost };
+
+		write_status_m(msg, 4);
 		free(servercert);
-		tls_quitmsg("Z4.5.0 TLS error initializing ctx", ssl_error());
 		return 1;
 	}
 
 	if (servercert) {
 		if (!SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
+			const char *msg[] = { "Z4.5.0 TLS unable to load ", servercert, ": ",
+					ssl_error(),  "; connecting to ", rhost };
+
+			write_status_m(msg, 6);
 			SSL_CTX_free(ctx);
-			write(1, "Z4.5.0 TLS unable to load ", 26);
-			write(1, servercert, strlen(servercert));
 			free(servercert);
-			tls_quitmsg("", ssl_error());
 			return 1;
 		}
 		/* set the callback here; SSL_set_verify didn't work before 0.9.6c */
@@ -106,8 +101,11 @@ tls_init(void)
 	myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);
 	if (!myssl) {
+		const char *msg[] = { "Z4.5.0 TLS error initializing ssl: ", ssl_error(), "; connecting to ",
+				rhost };
+
 		free(servercert);
-		tls_quitmsg("Z4.5.0 TLS error initializing ssl", ssl_error());
+		write_status_m(msg, 4);
 		return 1;
 	}
 
@@ -158,8 +156,11 @@ tls_init(void)
 
 	ssl = myssl;
 	if (ssl_timeoutconn(timeout) <= 0) {
+		const char *msg[] = { "Z4.5.0 TLS connect failed: ", ssl_strerror(), "; connecting to ",
+				rhost };
+
 		free(servercert);
-		tls_quitmsg("Z4.5.0 TLS connect failed", ssl_strerror());
+		write_status_m(msg, 4);
 		return 1;
 	}
 
@@ -169,18 +170,21 @@ tls_init(void)
 		long r = SSL_get_verify_result(ssl);
 
 		if (r != X509_V_OK) {
-			write(1, "Z4.5.0 TLS unable to verify server with ", 40);
-			write(1, servercert, strlen(servercert));
+			const char *msg[] = { "Z4.5.0 TLS unable to verify server with ", servercert,
+					": ", X509_verify_cert_error_string(r), "; connected to ", rhost };
+
+			write_status_m(msg, 6);
 			free(servercert);
-			tls_quitmsg("", X509_verify_cert_error_string(r));
 			return 1;
 		}
 		free(servercert);
 
 		peercert = SSL_get_peer_certificate(ssl);
 		if (!peercert) {
-			write(1, "Z4.5.0 TLS unable to verify server ", 35);
-			tls_quitmsg(partner_fqdn, "no certificate provided");
+			const char *msg[] = { "Z4.5.0 TLS unable to verify server ", partner_fqdn,
+					": no certificate provided; connected to ", rhost };
+
+			write_status_m(msg, 4);
 			return 1;
 		}
 
@@ -214,9 +218,11 @@ tls_init(void)
 				}
 			}
 			if (!peer.len) {
-				write(1, "Z4.5.0 TLS unable to verify server ", 35);
+				const char *msg[] = { "Z4.5.0 TLS unable to verify server ", partner_fqdn,
+						": certificate contains no valid commonName; connected to ", rhost };
+					
+				write_status_m(msg, 4);
 				X509_free(peercert);
-				tls_quitmsg(partner_fqdn, "certificate contains no valid commonName");
 				return 1;
 			}
 			if (!match_partner(peer.s, peer.len)) {
