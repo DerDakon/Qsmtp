@@ -608,7 +608,9 @@ work:
 
 	if (smtpext & 0x04) {
 		makelog("tls-init");
-		if (tls_init()) {
+		if (tls_init() != 0) {
+			net_conn_shutdown(shutdown_clean);
+		} else {
 			X509 *x509 = SSL_get_peer_certificate(ssl);
 
 			if (x509 != NULL) {

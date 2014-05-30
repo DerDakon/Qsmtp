@@ -15,23 +15,14 @@
 #include "sstring.h"
 #include <qremote/starttlsr.h>
 
-static void __attribute__ ((noreturn))
-tls_quit(void)
-{
-	const char *msg[] = { ssl ? "; connected to " : "; connecting to ",
-			rhost };
-
-	write_status_m(msg, 2);
-	net_conn_shutdown(shutdown_clean);
-}
-
 static void  __attribute__ ((noreturn)) __attribute__ ((nonnull (1, 2)))
 tls_quitmsg(const char *s1, const char *s2)
 {
-	write(1, s1, strlen(s1));
-	write(1, ": ", 2);
-	write(1, s2, strlen(s2));
-	tls_quit();
+	const char *msg[] = { s1, ": ", s2,  ssl ? "; connected to " : "; connecting to ",
+			rhost };
+
+	write_status_m(msg, 5);
+	net_conn_shutdown(shutdown_clean);
 }
 
 static int
@@ -54,6 +45,12 @@ match_partner(const char *s, size_t len)
 	return 0;
 }
 
+/**
+ * @brief send STARTTLS and handle the connection setup
+ * @return if connection was successfully established
+ * @retval 0 SSL mode successfully set up
+ * @retval 1 SSL setup failed, transmission should be terminated
+ */
 int
 tls_init(void)
 {
@@ -137,19 +134,24 @@ tls_init(void)
 
 	/* read the responce to STARTTLS */
 	if (netget() != 220) {
-		const char *msg;
+		const char *msg[] = { NULL, NULL, NULL,  "; connecting to ",
+				rhost };
+		unsigned int first;
+
 		ssl_free(myssl);
 
 		if (!servercert) {
-			msg = "Z4.5.0 STARTTLS rejected";
+			first = 2;
+			msg[2] = "Z4.5.0 STARTTLS rejected";
 		} else {
-			write(1, "Z4.5.0 STARTTLS rejected while ", 31);
-			write(1, servercert, strlen(servercert));
-			free(servercert);
-			msg = " exists";
+			first = 0;
+			msg[0] = "Z4.5.0 STARTTLS rejected while ";
+			msg[1] = servercert;
+			msg[2] = " exists";
 		}
-		write(1, msg, strlen(msg));
-		tls_quit();
+		write_status_m(msg + first, 5 - first);
+		free(servercert);
+		return 1;
 	}
 
 	ssl = myssl;
@@ -213,6 +215,7 @@ tls_init(void)
 			}
 			if (!match_partner(peer.s, peer.len)) {
 				char buf[64];
+				const char *msg[] = { buf, "; connected to ", rhost };
 				int idx = 0;
 				size_t j;
 
@@ -230,14 +233,14 @@ tls_init(void)
 						idx = 0;
 					}
 				}
-				write(1, buf, idx);
 				// FIXME: X509_free(peercert); ?
-				tls_quit();
+				write_status_m(msg, 3);
+				return 1;
 			}
 		}
 
 		X509_free(peercert);
 	}
 
-	return 1;
+	return 0;
 }

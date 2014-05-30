@@ -76,6 +76,13 @@ test_ssl_strerror(void)
 	return "expected error case";
 }
 
+void
+test_net_conn_shutdown(const enum conn_shutdown_type sd_type __attribute__((unused)))
+{
+	if (ssl != NULL)
+		ssl_free(ssl);
+}
+
 int
 test_netnwrite(const char *s, const size_t len)
 {
@@ -112,6 +119,8 @@ test_ssl_error(void)
 
 int main(int argc, char **argv)
 {
+	int r;
+
 	if (argc > 3) {
 		fprintf(stderr, "Usage: %s [partner_fqdn [netget_result]]\n", argv[0]);
 		return EINVAL;
@@ -133,6 +142,11 @@ int main(int argc, char **argv)
 
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_ssl_free(test_ssl_free);
+	testcase_setup_net_conn_shutdown(test_net_conn_shutdown);
 
-	return tls_init();
+	r = tls_init();
+
+	test_net_conn_shutdown(shutdown_clean);
+
+	return r;
 }

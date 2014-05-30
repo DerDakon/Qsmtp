@@ -446,11 +446,12 @@ main(int argc, char *argv[])
 	mailerrmsg[1] = rhost;
 
 	if (smtpext & esmtp_starttls) {
-		if (tls_init()) {
-			if (greeting()) {
-				write_status("ZEHLO failed after STARTTLS");
-				net_conn_shutdown(shutdown_clean);;
-			}
+		if (tls_init() != 0) {
+			net_conn_shutdown(shutdown_clean);
+		} else if (greeting()) {
+			write_status("ZEHLO failed after STARTTLS");
+			net_conn_shutdown(shutdown_clean);;
+		} else {
 			successmsg[4] = " encrypted";
 		}
 	}
