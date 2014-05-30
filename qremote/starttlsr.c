@@ -210,7 +210,7 @@ tls_init(void)
 			}
 			if (!peer.len) {
 				write(1, "Z4.5.0 TLS unable to verify server ", 35);
-				// FIXME: X509_free(peercert); ?
+				X509_free(peercert);
 				tls_quitmsg(partner_fqdn, "certificate contains no valid commonName");
 			}
 			if (!match_partner(peer.s, peer.len)) {
@@ -233,7 +233,7 @@ tls_init(void)
 						idx = 0;
 					}
 				}
-				// FIXME: X509_free(peercert); ?
+				X509_free(peercert);
 				write_status_m(msg, 3);
 				return 1;
 			}
