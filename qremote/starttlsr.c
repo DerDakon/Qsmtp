@@ -226,27 +226,20 @@ tls_init(void)
 				return 1;
 			}
 			if (!match_partner(peer.s, peer.len)) {
-				char buf[64];
-				const char *msg[] = { buf, "; connected to ", rhost };
-				int idx = 0;
+				char buf[peer.len + 1];
+				const char *msg[] = { "Z4.5.0 TLS unable to verify server ", partner_fqdn,
+					": received certificate for ", buf, "; connected to ", rhost };
 				size_t j;
 
-				write(1, "Z4.5.0 TLS unable to verify server ", 35);
-				write(1, partner_fqdn, fqlen);
-				write(1, ": received certificate for ", 27);
 				for (j = 0; j < peer.len; ++j) {
-					if ( (peer.s[j] < 33) || (peer.s[j] > 126) ) {
-						buf[idx++] = '?';
-					} else {
-						buf[idx++] = peer.s[j];
-					}
-					if (idx == sizeof(buf)) {
-						write(1, buf, sizeof(buf));
-						idx = 0;
-					}
+					if ( (peer.s[j] < 33) || (peer.s[j] > 126) )
+						buf[j] = '?';
+					else
+						buf[j] = peer.s[j];
 				}
+				buf[peer.len] = '\0';
 				X509_free(peercert);
-				write_status_m(msg, 3);
+				write_status_m(msg, 6);
 				return 1;
 			}
 		}
