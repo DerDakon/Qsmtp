@@ -69,7 +69,7 @@ tls_out(const char *s1, const char *s2)
 	return net_writen(msg);
 }
 
-static int
+static int __attribute__((nonnull(1)))
 tls_err(const char *s)
 {
 	return tls_out(s, ssl_error());
