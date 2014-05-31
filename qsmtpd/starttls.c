@@ -61,15 +61,11 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 	return DH_generate_parameters(keylen, DH_GENERATOR_2, NULL, NULL);
 }
 
-static int
+static int __attribute__((nonnull(1, 2)))
 tls_out(const char *s1, const char *s2)
 {
-	const char *msg[] = {"454 4.3.0 TLS ", s1, NULL, NULL, NULL};
+	const char *msg[] = {"454 4.3.0 TLS ", s1, ": ", s2, NULL};
 
-	if (s2) {
-		msg[2] = ": ";
-		msg[3] = s2;
-	}
 	return net_writen(msg);
 }
 
