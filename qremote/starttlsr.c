@@ -88,6 +88,7 @@ tls_init(void)
 			write_status_m(msg, 6);
 			SSL_CTX_free(ctx);
 			free(servercert);
+			ssl_library_destroy();
 			return 1;
 		}
 		/* set the callback here; SSL_set_verify didn't work before 0.9.6c */

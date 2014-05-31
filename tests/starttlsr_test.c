@@ -104,7 +104,12 @@ test_ssl_free(SSL *myssl)
 		SSL_shutdown(myssl);
 	SSL_free(myssl);
 
-	/* this is what an SSL_library_exit() should do to reduce memcheck noise */
+	ssl_library_destroy();
+}
+
+void
+ssl_library_destroy()
+{
 	ERR_remove_state(0);
 	CONF_modules_unload(1);
 	CRYPTO_cleanup_all_ex_data();

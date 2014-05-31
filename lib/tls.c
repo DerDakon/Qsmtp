@@ -19,11 +19,7 @@ void ssl_free(SSL *myssl)
 		SSL_shutdown(myssl);
 	SSL_free(myssl);
 
-	/* this is what an SSL_library_exit() should do to reduce memcheck noise */
-	ERR_remove_state(0);
-	CONF_modules_unload(1);
-	CRYPTO_cleanup_all_ex_data();
-	EVP_cleanup();
+	ssl_library_destroy();
 }
 
 /* _exit is defined to ssl_exit in tls.h to be sure ssl is always freed correctly */
@@ -33,6 +29,20 @@ void __attribute__ ((noreturn)) ssl_exit(int status)
 	if (ssl)
 		ssl_free(ssl);
 	_exit(status);
+}
+
+/**
+ * @brief free internal check memory of the SSL library
+ *
+ * This would ideally be a function of the SSL library, but it is not.
+ */
+void
+ssl_library_destroy()
+{
+	ERR_remove_state(0);
+	CONF_modules_unload(1);
+	CRYPTO_cleanup_all_ex_data();
+	EVP_cleanup();
 }
 
 const char *ssl_error(void)
