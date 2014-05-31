@@ -107,6 +107,7 @@ tls_init(void)
 
 		free(servercert);
 		write_status_m(msg, 4);
+		ssl_library_destroy();
 		return 1;
 	}
 
