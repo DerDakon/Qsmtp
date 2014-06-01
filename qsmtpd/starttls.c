@@ -258,7 +258,7 @@ tls_init()
 
 	/* this will also check whether public and private keys match */
 	if (!SSL_use_RSAPrivateKey_file(myssl, certfilename, SSL_FILETYPE_PEM)) {
-		SSL_free(myssl);
+		ssl_free(myssl);
 		free(saciphers.s);
 		return tls_err("no valid RSA private key") ? errno : EDONE;
 	}
@@ -274,8 +274,10 @@ tls_init()
 	/* protection against CVE-2011-1431 */
 	sync_pipelining();
 
-	if (netwrite("220 2.0.0 ready for tls\r\n"))
+	if (netwrite("220 2.0.0 ready for tls\r\n")) {
+		ssl_free(myssl);
 		return errno;
+	}
 
 	/* can't set ssl earlier, else netwrite above would try to send the data encrypted with the unfinished ssl */
 	ssl = myssl;
@@ -292,7 +294,7 @@ tls_init()
 	l = strlen(prot);
 	newprot = realloc(protocol, l + 20);
 	if (!newprot) {
-		SSL_free(ssl);
+		ssl_free(ssl);
 		ssl = NULL;
 		return ENOMEM;
 	}
