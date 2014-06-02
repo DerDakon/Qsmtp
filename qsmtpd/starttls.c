@@ -273,8 +273,13 @@ tls_init()
 
 	SSL_set_tmp_rsa_callback(myssl, tmp_rsa_cb);
 	SSL_set_tmp_dh_callback(myssl, tmp_dh_cb);
-	SSL_set_rfd(myssl, 0);
-	SSL_set_wfd(myssl, socketd);
+	j = SSL_set_rfd(myssl, 0);
+	if (j == 1)
+		j = SSL_set_wfd(myssl, socketd);
+	if (j != 1) {
+		ssl_free(myssl);
+		return tls_err("unable to set fd") ? errno : EDONE;
+	}
 
 	/* protection against CVE-2011-1431 */
 	sync_pipelining();

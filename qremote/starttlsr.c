@@ -135,8 +135,16 @@ tls_init(void)
 		err_conf("can't set ciphers\n");
 	}
 
-	/* SSL_set_options(myssl, SSL_OP_NO_TLSv1); */
-	SSL_set_fd(myssl, socketd);
+	i = SSL_set_fd(myssl, socketd);
+	if (i != 1) {
+		const char *msg[] = { "Z4.5.0 TLS error setting fd: ", ssl_error(), "; connecting to ",
+				rhost };
+
+		free(servercert);
+		write_status_m(msg, 4);
+		ssl_free(myssl);
+		return 1;
+	}
 
 	/* read the responce to STARTTLS */
 	if (netget() != 220) {
