@@ -112,7 +112,7 @@ tls_init(void)
 
 	netwrite("STARTTLS\r\n");
 
-	/* while the server is preparing a responce, do something else */
+	/* while the server is preparing a response, do something else */
 	if (loadlistfd(open("control/tlsclientciphers", O_RDONLY), &saciphers, NULL) == -1) {
 		free(servercert);
 		ssl_free(myssl);
