@@ -91,8 +91,6 @@ tls_init(void)
 			ssl_library_destroy();
 			return 1;
 		}
-		/* set the callback here; SSL_set_verify didn't work before 0.9.6c */
-		SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 	}
 
 	/* let the other side complain if it needs a cert and we don't have one */
@@ -110,6 +108,7 @@ tls_init(void)
 		ssl_library_destroy();
 		return 1;
 	}
+	SSL_set_verify(myssl, SSL_VERIFY_NONE, NULL);
 
 	netwrite("STARTTLS\r\n");
 

@@ -224,8 +224,6 @@ tls_init()
 		X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK |
 						X509_V_FLAG_CRL_CHECK_ALL);
 
-	/* set the callback here; SSL_set_verify didn't work before 0.9.6c */
-	SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 
 	saciphers.len = lloadfilefd(open(ciphfn, O_RDONLY), &(saciphers.s), 1);
 	if (saciphers.len == (size_t)-1) {
@@ -255,6 +253,8 @@ tls_init()
 		free(saciphers.s);
 		return tls_err("unable to initialize ssl") ? errno : EDONE;
 	}
+
+	SSL_set_verify(myssl, SSL_VERIFY_NONE, NULL);
 
 	/* this will also check whether public and private keys match */
 	if (!SSL_use_RSAPrivateKey_file(myssl, certfilename, SSL_FILETYPE_PEM)) {
