@@ -127,8 +127,13 @@ tls_init(void)
 	} else {
 		ciphers = "DEFAULT";
 	}
-	SSL_set_cipher_list(myssl, ciphers);
+	i = SSL_set_cipher_list(myssl, ciphers);
 	free(saciphers);
+	if (i != 1) {
+		free(servercert);
+		ssl_free(myssl);
+		err_conf("can't set ciphers\n");
+	}
 
 	/* SSL_set_options(myssl, SSL_OP_NO_TLSv1); */
 	SSL_set_fd(myssl, socketd);

@@ -201,6 +201,7 @@ tls_init()
 	X509_LOOKUP *lookup;
 	char *newprot;
 	const char ciphfn[] = "control/tlsserverciphers";
+	int j;
 
 	SSL_library_init();
 	STREMPTY(saciphers);
@@ -263,8 +264,12 @@ tls_init()
 		return tls_err("no valid RSA private key") ? errno : EDONE;
 	}
 
-	SSL_set_cipher_list(myssl, ciphers);
+	j = SSL_set_cipher_list(myssl, ciphers);
 	free(saciphers.s);
+	if (j != 1) {
+		ssl_free(myssl);
+		return tls_err("unable to set ciphers") ? errno : EDONE;
+	}
 
 	SSL_set_tmp_rsa_callback(myssl, tmp_rsa_cb);
 	SSL_set_tmp_dh_callback(myssl, tmp_dh_cb);
