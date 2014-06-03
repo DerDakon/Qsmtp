@@ -508,7 +508,7 @@ main(int argc, char *argv[])
 /* RCPT TO: replies */
 		for (i = rcptcount; i > 0; i--) {
 			if (checkreply(" sh", NULL, 0) < 300) {
-				write_status("r");
+				write(1, "r", 2);
 				rcptstat = 0;
 			}
 		}
@@ -532,7 +532,7 @@ main(int argc, char *argv[])
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
 			if (checkreply(" sh", NULL, 0) < 300) {
-				write_status("r");
+				write(1, "r", 2);
 				rcptstat = 0;
 			}
 		}
