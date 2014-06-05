@@ -42,23 +42,6 @@ char *partner_fqdn;	/**< the DNS name of the remote server, or NULL if no revers
 static struct in6_addr outip;
 static struct in6_addr outip6;
 
-void
-write_status(const char *str)
-{
-	(void) write(1, str, strlen(str));
-	(void) write(1, "\n", 2);
-}
-
-void
-write_status_m(const char **strs, const unsigned int count)
-{
-	unsigned int i;
-
-	for (i = 0; i < count - 1; i++)
-		(void) write(1, strs[i], strlen(strs[i]));
-	write_status(strs[count - 1]);
-}
-
 static void
 quitmsg(void)
 {
@@ -508,7 +491,7 @@ main(int argc, char *argv[])
 /* RCPT TO: replies */
 		for (i = rcptcount; i > 0; i--) {
 			if (checkreply(" sh", NULL, 0) < 300) {
-				write(1, "r", 2);
+				write_status_raw("r", 2);
 				rcptstat = 0;
 			}
 		}
@@ -532,7 +515,7 @@ main(int argc, char *argv[])
 			netmsg[1] = argv[i];
 			net_writen(netmsg);
 			if (checkreply(" sh", NULL, 0) < 300) {
-				write(1, "r", 2);
+				write_status_raw("r", 2);
 				rcptstat = 0;
 			}
 		}

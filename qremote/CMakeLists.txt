@@ -10,9 +10,10 @@ SET(QREMOTE_SRCS
 	client.c
 	conn.c
 	mime.c
-	starttlsr.c
 	qrdata.c
 	smtproutes.c
+	starttlsr.c
+	status.c
 )
 
 SET(QREMOTE_HDRS

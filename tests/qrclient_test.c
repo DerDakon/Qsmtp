@@ -21,7 +21,7 @@ char *rhost;
 size_t rhostlen;
 static const char *netget_input;
 static int statusfdout;
-static int statusfdin;
+extern int statusfd; /* in qremote/status.c */
 
 void
 err_mem(const int k __attribute__((unused)))
@@ -61,17 +61,6 @@ netget(void)
 		netget_input = lf + 1;
 
 	return atoi(num);
-}
-
-void
-write_status(const char *str)
-{
-	const size_t l = strlen(str) + 1;
-	const ssize_t r = write(statusfdin, str, l);
-
-	if (r != (ssize_t)l)
-		fprintf(stderr, "writing %s to pipe returned %zi (errno %i) instead of %zu\n",
-				str, r, errno, l);
 }
 
 int
@@ -210,6 +199,14 @@ check_cr(const char *msg, const int statuse, const int statusc)
 					buf);
 			ret++;
 		} else {
+			/* the output must end in \n\0 */
+			if ((r < 2) || (buf[r - 2] != '\n') || (buf[r - 1] != '\0')) {
+				fprintf(stderr, "checkreply() wrote '%s', but did not terminate with \\n\\0\n",
+					buf);
+				ret++;
+			} else {
+				buf[r - 2] = '\0';
+			}
 			if (strcmp(buf, msg) != 0) {
 				fprintf(stderr, "checkreply() wrote '%s', but '%s' was expected\n",
 					buf, msg);
@@ -231,21 +228,14 @@ testcase_checkreply(void)
 	int fds[2];
 	const char *pre[] = { "pre1", "pre2", NULL };
 
-	statusfdin = 1;
+	statusfd = 1;
 
 	if (pipe(fds) != 0) {
 		fprintf(stderr, "%s: cannot create pipes: %i\n", __func__, errno);
 		return ++ret;
 	}
 
-	if (dup2(fds[1], statusfdin) != statusfdin) {
-		fprintf(stderr, "%s: cannot redirect stdout to pipe: %i\n", __func__, errno);
-		close(fds[0]);
-		close(fds[1]);
-		return ++ret;
-	}
-
-	close(fds[1]);
+	statusfd = fds[1];
 	statusfdout = fds[0];
 
 	/* no status is legal, nothing should be printed */
@@ -314,6 +304,7 @@ testcase_checkreply(void)
 	ret += check_cr(NULL, 500, checkreply(NULL, NULL, 0));
 
 	close(fds[0]);
+	close(fds[1]);
 
 	return ret;
 }

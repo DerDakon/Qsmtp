@@ -695,7 +695,9 @@ ADD_TEST(NAME "VPop_vget_dir"
 
 ADD_EXECUTABLE(testcase_qrclient
 		qrclient_test.c
-		../qremote/client.c)
+		../qremote/client.c
+		../qremote/status.c
+)
 TARGET_LINK_LIBRARIES(testcase_qrclient
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES}

@@ -40,6 +40,12 @@ err_mem(const int k __attribute__((unused)))
 }
 
 void
+write_status_raw(const char *str, const size_t len)
+{
+	(void) write(1, str, len);
+}
+
+void
 write_status(const char *str)
 {
 	puts(str);

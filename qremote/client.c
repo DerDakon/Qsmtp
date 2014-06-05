@@ -95,13 +95,13 @@ checkreply(const char *status, const char **pre, const int mask)
 			m = 2;
 		}
 		if (!ignore) {
-			write(1, status + m, 1);
+			write_status_raw(status + m, 1);
 
 			if (pre && ((1 << m) & mask)) {
 				int i = 0;
 
 				while (pre[i]) {
-					write(1, pre[i], strlen(pre[i]));
+					write_status_raw(pre[i], strlen(pre[i]));
 					i++;
 				}
 			}
@@ -111,8 +111,12 @@ checkreply(const char *status, const char **pre, const int mask)
 	while (linein[3] == '-') {
 		/* send out the last (buffered) line */
 		if (!ignore) {
-			write(1, linein, linelen);
-			write(1, "\n", 1);
+			/* Put the newline into linein to avoid a second write just for that.
+			 * Since linein is always 0-terminated there is enough space to hold
+			 * that character, and the contents of linein are overwritten by the
+			 * following call to netget() anyway. */
+			linein[linelen] = '\n';
+			write_status_raw(linein, linelen + 1);
 		}
 		/* ignore the SMTP code sent here, if it's different from the one before the server is broken */
 		(void) netget();

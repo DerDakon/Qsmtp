@@ -8,6 +8,7 @@ IF (USE_OPENAT)
 		${CMAKE_SOURCE_DIR}/qremote/client.c
 		${CMAKE_SOURCE_DIR}/qremote/conn.c
 		${CMAKE_SOURCE_DIR}/qremote/starttlsr.c
+		${CMAKE_SOURCE_DIR}/qremote/status.c
 	)
 	TARGET_LINK_LIBRARIES(Qsurvey
 		qsmtp_lib

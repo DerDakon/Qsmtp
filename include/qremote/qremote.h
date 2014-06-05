@@ -12,7 +12,14 @@ extern void err_confn(const char **, void *) __attribute__ ((noreturn)) __attrib
 extern int netget(void);
 
 /**
- * @brief write status message to stdout
+ * @brief write raw status message to qmail-rspawn
+ * @param str the data to write
+ * @param len length of the data to write
+ */
+extern void write_status_raw(const char *str, const size_t len) __attribute__ ((nonnull (1)));
+
+/**
+ * @brief write status message to qmail-rspawn
  * @param str the string to write
  *
  * This will include the trailing 0-byte in the output as qmail-rspawn awaits
@@ -21,7 +28,7 @@ extern int netget(void);
 extern void write_status(const char *str) __attribute__ ((nonnull (1)));
 
 /**
- * @brief write status messages to stdout
+ * @brief write status messages to qmail-rspawn
  * @param strs the strings to write
  * @param count how many strings to write
  *
