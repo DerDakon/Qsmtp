@@ -13,6 +13,7 @@
 
 #include "test_io/testcase_io.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 #include <syslog.h>
@@ -130,6 +131,7 @@ check_all_msgs(void)
 static inline void
 setinput(const char *str)
 {
+	assert(strlen(str) < sizeof(linein));
 	strcpy(linein, str);
 	linelen = strlen(linein);
 }
