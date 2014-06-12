@@ -53,6 +53,7 @@ queue_reset(void)
 		fd0[1] = -1;
 	}
 	while (close(fd1[1]) && (errno == EINTR));
+	while ((waitpid(qpid, NULL, 0) == -1) && (errno == EINTR));
 }
 
 static int
@@ -507,9 +508,7 @@ smtp_data(void)
 	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n")) {
 		int e = errno;
 
-		while (close(fd0[1]) && (errno == EINTR));
-		while (close(fd1[1]) && (errno == EINTR));
-		while ((waitpid(qpid, NULL, 0) == -1) && (errno == EINTR));
+		queue_reset();
 		return e;
 	}
 #ifdef DEBUG_IO
