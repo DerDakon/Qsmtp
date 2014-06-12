@@ -1127,7 +1127,7 @@ int
 smtp_rset(void)
 {
 	if (comstate == 0x0800)
-		rset_queue();
+		queue_reset();
 	/* if there was EHLO or HELO before we reset to the state to immediately after this */
 	if (comstate >= 0x008) {
 		freedata();

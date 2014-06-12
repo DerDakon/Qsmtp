@@ -6,7 +6,7 @@
 
 extern int smtp_data(void);
 extern int smtp_bdat(void);
-extern void rset_queue(void);
+extern void queue_reset(void);
 
 extern unsigned long maxbytes;
 

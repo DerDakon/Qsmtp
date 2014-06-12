@@ -46,7 +46,7 @@ err_fork(void)
  * reset queue descriptors
  */
 void
-rset_queue(void)
+queue_reset(void)
 {
 	if (fd0[1]) {
 		while (close(fd0[1]) && (errno == EINTR));
@@ -747,7 +747,7 @@ loop_data:
 	return rc;
 err_write:
 	rc = errno;
-	rset_queue();
+	queue_reset();
 	freedata();
 
 /* first check, then read: if the error happens on the last line nothing will be read here */
@@ -921,7 +921,7 @@ smtp_bdat(void)
 
 	if (bdaterr) {
 		if (fd1[1]) {
-			rset_queue();
+			queue_reset();
 			fd1[1] = -1;
 		}
 	} else {
@@ -934,7 +934,7 @@ smtp_bdat(void)
 	return bdaterr;
 err_write:
 	rc = errno;
-	rset_queue();
+	queue_reset();
 	freedata();
 
 	if ((rc == ENOSPC) || (rc == EFBIG)) {
