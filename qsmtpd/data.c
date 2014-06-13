@@ -49,7 +49,7 @@ err_fork(void)
 void
 queue_reset(void)
 {
-	if (queuefd_data) {
+	if (queuefd_data >= 0) {
 		while (close(queuefd_data) && (errno == EINTR));
 		queuefd_data = -1;
 	}
@@ -915,7 +915,7 @@ smtp_bdat(void)
 	}
 
 	if (bdaterr) {
-		if (queuefd_hdr) {
+		if (queuefd_hdr >= 0) {
 			queue_reset();
 			queuefd_hdr = -1;
 		}
