@@ -141,7 +141,7 @@ check_queueheader(void)
 	if (pipe(fd0) != 0)
 		return 1;
 
-	if (fcntl(fd0[0] ,F_SETFL,fcntl(fd0[0] ,F_GETFL) | O_NONBLOCK) != 0)
+	if (fcntl(fd0[0], F_SETFL, fcntl(fd0[0] ,F_GETFL) | O_NONBLOCK) != 0)
 		return 2;
 
 	/* setup */
