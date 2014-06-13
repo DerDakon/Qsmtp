@@ -428,7 +428,7 @@ setup(void)
 	if (databytes) {
 		maxbytes = databytes;
 	} else {
-		maxbytes = -1UL - 1000;
+		maxbytes = ((size_t)-1) - 1000;
 	}
 	if ( (j = loadintfd(open("control/authhide", O_RDONLY), &tl, 0)) ) {
 		log_write(LOG_ERR, "parse error in control/authhide");

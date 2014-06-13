@@ -4,10 +4,12 @@
 #ifndef QSDATA_H
 #define QSDATA_H
 
+#include <sys/types.h>
+
 extern int smtp_data(void);
 extern int smtp_bdat(void);
 extern void queue_reset(void);
 
-extern unsigned long maxbytes;
+extern size_t maxbytes;
 
 #endif

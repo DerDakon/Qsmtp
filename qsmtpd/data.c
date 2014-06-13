@@ -23,7 +23,7 @@
 
 static const char noqueue[] = "451 4.3.2 can not connect to queue\r\n";
 static pid_t qpid;			/* the pid of qmail-queue */
-unsigned long maxbytes;
+size_t maxbytes;			/* the maximum allowed size of message data */
 static char datebuf[35] = ">; ";		/* the date for the From- and Received-lines */
 static int queuefd_data = -1;		/**< descriptor to send message data to qmail-queue */
 static int queuefd_hdr = -1;		/**< descriptor to send header data to qmail-queue */
