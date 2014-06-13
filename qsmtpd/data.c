@@ -24,7 +24,6 @@
 static const char noqueue[] = "451 4.3.2 can not connect to queue\r\n";
 static pid_t qpid;			/* the pid of qmail-queue */
 unsigned long maxbytes;
-static int chunked;			/* set to 1 if BDAT transfer is running */
 static char datebuf[35] = ">; ";		/* the date for the From- and Received-lines */
 static int queuefd_data = -1;		/**< descriptor to send message data to qmail-queue */
 static int queuefd_hdr = -1;		/**< descriptor to send header data to qmail-queue */
@@ -190,8 +189,12 @@ date822(char *buf)
 
 #define WRITEL(fd, str)		WRITE(fd, str, strlen(str))
 
+/**
+ * @brief write Received header line
+ * @param chunked if message was transferred using BDAT
+ */
 static int
-queue_header(void)
+queue_header(const int chunked)
 {
 	int rc;
 	size_t i = (authhide && is_authenticated_client()) ? 2 : 0;
@@ -265,8 +268,13 @@ queue_header(void)
 			} \
 		} while (0)
 
+/**
+ * @brief write the envelope data to qmail-queue and syslog
+ * @param msgsize size of the received message in bytes
+ * @param chunked if message was transferred using BDAT
+ */
 static int
-queue_envelope(const unsigned long msgsize)
+queue_envelope(const unsigned long msgsize, const int chunked)
 {
 	char s[ULSTRLEN];		/* msgsize */
 	char t[ULSTRLEN];		/* goodrcpt */
@@ -496,7 +504,6 @@ smtp_data(void)
 	unsigned int hops = 0;		/* number of "Received:"-lines */
 
 	msgsize = 0;
-	chunked = 0;
 
 	if (badbounce || !goodrcpt) {
 		tarpit();
@@ -518,7 +525,7 @@ smtp_data(void)
 	in_data = 1;
 #endif
 
-	if ( (rc = queue_header()) )
+	if ( (rc = queue_header(0)) )
 		goto loop_data;
 
 	/* loop until:
@@ -689,7 +696,7 @@ smtp_data(void)
 			goto err_write;
 	}
 	queuefd_data = -1;
-	if (queue_envelope(msgsize))
+	if (queue_envelope(msgsize, 0))
 		goto err_write;
 
 #ifdef DEBUG_IO
@@ -826,11 +833,10 @@ smtp_bdat(void)
 		msgsize = 0;
 		bdaterr = 0;
 		comstate = 0x0800;
-		chunked = 1;
 
 		bdaterr = queue_init();
 
-		if (!bdaterr && (rc = queue_header()) ) {
+		if (!bdaterr && (rc = queue_header(1)) ) {
 			bdaterr = rc;
 		}
 	}
@@ -907,7 +913,7 @@ smtp_bdat(void)
 				goto err_write;
 		}
 		queuefd_data = -1;
-		if (queue_envelope(msgsize))
+		if (queue_envelope(msgsize, 1))
 			goto err_write;
 
 		commands[11].state = 0x010;
@@ -923,7 +929,6 @@ smtp_bdat(void)
 		const char *bdatmess[] = {"250 2.5.0 ", linein + 5, " octets received", NULL};
 
 		bdaterr = net_writen(bdatmess) ? errno : 0;
-		chunked = 0;
 	}
 
 	return bdaterr;

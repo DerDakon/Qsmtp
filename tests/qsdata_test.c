@@ -167,6 +167,7 @@ check_queueheader(void)
 		ssize_t mismatch = -1;
 		const char *expect;
 		const char *testname;
+		int chunked = 0;
 
 		memset(&xmitstat, 0, sizeof(xmitstat));
 
@@ -297,7 +298,7 @@ check_queueheader(void)
 
 		printf("Running test: %s\n", testname);
 
-		if (queue_header()) {
+		if (queue_header(chunked)) {
 			err = 3;
 			break;
 		}
@@ -349,7 +350,7 @@ check_queueheader(void)
 	relayclient = 0;
 	xmitstat.spf = SPF_PASS;
 
-	if (queue_header() != -1) {
+	if (queue_header(0) != -1) {
 		fprintf(stderr, "queue_header() for fd -1 did not fail\n");
 		err = 8;
 	} else if (errno != EBADF) {
