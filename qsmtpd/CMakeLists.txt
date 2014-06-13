@@ -6,6 +6,7 @@ SET(QSMTPD_SRCS
 	addrsyntax.c
 	antispam.c
 	auth.c
+	queue.c
 	qsmtpd.c
 	starttls.c
 	spf.c
@@ -17,6 +18,7 @@ SET(QSMTPD_SRCS
 SET(QSMTPD_HDRS
 	../include/qsmtpd/addrparse.h
 	../include/qsmtpd/antispam.h
+	../include/qsmtpd/queue.h
 	../include/qsmtpd/qsauth.h
 	../include/qsmtpd/qsauth_backend.h
 	../include/qsmtpd/qsdata.h

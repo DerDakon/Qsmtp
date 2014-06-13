@@ -24,6 +24,8 @@ int socketd = 1;
 long comstate = 0x001;
 int authhide;
 int submission_mode;
+int queuefd_data = -1;
+int queuefd_hdr = -1;
 
 struct recip *thisrecip;
 
@@ -57,6 +59,30 @@ tarpit(void)
 void
 sync_pipelining(void)
 {
+}
+
+void
+queue_reset(void)
+{
+	exit(EFAULT);
+}
+
+int
+queue_init(void)
+{
+	exit(EFAULT);
+}
+
+int
+queue_envelope(const unsigned long sz __attribute__ ((unused)), const int chunked __attribute__ ((unused)))
+{
+	exit(EFAULT);
+}
+
+int
+queue_result(void)
+{
+	exit(EFAULT);
 }
 
 int
@@ -299,7 +325,7 @@ check_queueheader(void)
 
 		printf("Running test: %s\n", testname);
 
-		if (queue_header(chunked)) {
+		if (write_received(chunked)) {
 			err = 3;
 			break;
 		}
@@ -351,7 +377,7 @@ check_queueheader(void)
 	relayclient = 0;
 	xmitstat.spf = SPF_PASS;
 
-	if (queue_header(0) != -1) {
+	if (write_received(0) != -1) {
 		fprintf(stderr, "queue_header() for fd -1 did not fail\n");
 		err = 8;
 	} else if (errno != EBADF) {

@@ -28,6 +28,7 @@
 #include <signal.h>
 #include <dirent.h>
 #include <qsmtpd/addrparse.h>
+#include <qsmtpd/queue.h>
 #include <qsmtpd/starttls.h>
 #include <qsmtpd/syntax.h>
 #include <qsmtpd/xtext.h>
