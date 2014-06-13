@@ -136,6 +136,7 @@ check_queueheader(void)
 	struct recip to;
 	int err = 0;
 	int idx;
+	int fd0[2];
 
 	if (pipe(fd0) != 0)
 		return 1;
@@ -157,6 +158,8 @@ check_queueheader(void)
 
 	TAILQ_INIT(&head);
 	TAILQ_INSERT_TAIL(&head, &to, entries);
+
+	queuefd_data = fd0[1];
 
 	for (idx = 0; idx < 13; idx++) {
 		char outbuf[2048];
@@ -340,9 +343,8 @@ check_queueheader(void)
 	close(fd0[0]);
 	close(fd0[1]);
 
-	/* pass invalid fds in, this should cause the write() to fail */
-	fd0[0] = -1;
-	fd0[1] = -1;
+	/* pass invalid fd in, this should cause the write() to fail */
+	queuefd_data = -1;
 
 	relayclient = 0;
 	xmitstat.spf = SPF_PASS;

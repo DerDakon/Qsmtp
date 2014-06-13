@@ -22,11 +22,12 @@
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
 
 static const char noqueue[] = "451 4.3.2 can not connect to queue\r\n";
-static int fd0[2], fd1[2];		/* the fds to communicate with qmail-queue */
 static pid_t qpid;			/* the pid of qmail-queue */
 unsigned long maxbytes;
 static int chunked;			/* set to 1 if BDAT transfer is running */
 static char datebuf[35] = ">; ";		/* the date for the From- and Received-lines */
+static int queuefd_data = -1;		/**< descriptor to send message data to qmail-queue */
+static int queuefd_hdr = -1;		/**< descriptor to send header data to qmail-queue */
 
 static int
 err_pipe(void)
@@ -48,11 +49,11 @@ err_fork(void)
 void
 queue_reset(void)
 {
-	if (fd0[1]) {
-		while (close(fd0[1]) && (errno == EINTR));
-		fd0[1] = -1;
+	if (queuefd_data) {
+		while (close(queuefd_data) && (errno == EINTR));
+		queuefd_data = -1;
 	}
-	while (close(fd1[1]) && (errno == EINTR));
+	while (close(queuefd_hdr) && (errno == EINTR));
 	while ((waitpid(qpid, NULL, 0) == -1) && (errno == EINTR));
 }
 
@@ -61,6 +62,7 @@ queue_init(void)
 {
 	int i;
 	const char *qqbin = NULL;
+	int fd0[2], fd1[2];		/* the fds to communicate with qmail-queue */
 
 	if (pipe(fd0)) {
 		if ( (i = err_pipe()) )
@@ -120,6 +122,10 @@ queue_init(void)
 			return i;
 		return EDONE;
 	}
+
+	queuefd_data = fd0[1];
+	queuefd_hdr = fd1[1];
+
 	return 0;
 }
 
@@ -187,7 +193,6 @@ date822(char *buf)
 static int
 queue_header(void)
 {
-	int fd = fd0[1];
 	int rc;
 	size_t i = (authhide && is_authenticated_client()) ? 2 : 0;
 	/* do not bother that the next two messages are basically the same:
@@ -197,58 +202,58 @@ queue_header(void)
 
 /* write "Received-SPF: " line */
 	if (!is_authenticated_client() && (relayclient != 1)) {
-		if ( (rc = spfreceived(fd, xmitstat.spf)) )
+		if ( (rc = spfreceived(queuefd_data, xmitstat.spf)) )
 			return rc;
 	}
 /* write the "Received: " line to mail header */
-	WRITEL(fd, "Received: ");
+	WRITEL(queuefd_data, "Received: ");
 	if (!i) {
 		if (xmitstat.remotehost.len) {
-			WRITEL(fd, "from ");
-			WRITE(fd, xmitstat.remotehost.s, xmitstat.remotehost.len);
+			WRITEL(queuefd_data, "from ");
+			WRITE(queuefd_data, xmitstat.remotehost.s, xmitstat.remotehost.len);
 		} else {
-			WRITEL(fd, "from unknown");
+			WRITEL(queuefd_data, "from unknown");
 		}
-		WRITEL(fd, " ([");
-		WRITE(fd, xmitstat.remoteip, strlen(xmitstat.remoteip));
-		WRITEL(fd, "]");
+		WRITEL(queuefd_data, " ([");
+		WRITE(queuefd_data, xmitstat.remoteip, strlen(xmitstat.remoteip));
+		WRITEL(queuefd_data, "]");
 		if (xmitstat.remoteport) {
-			WRITEL(fd, ":");
-			WRITEL(fd, xmitstat.remoteport);
+			WRITEL(queuefd_data, ":");
+			WRITEL(queuefd_data, xmitstat.remoteport);
 		}
 		if (xmitstat.helostr.len) {
-			WRITEL(fd, " HELO ");
-			WRITE(fd, xmitstat.helostr.s, xmitstat.helostr.len);
+			WRITEL(queuefd_data, " HELO ");
+			WRITE(queuefd_data, xmitstat.helostr.s, xmitstat.helostr.len);
 		}
 	}
 	if (xmitstat.authname.len) {
 		const char authstr[] = ") (auth=";
-		WRITE(fd, authstr + i, strlen(authstr) - i);
-		WRITE(fd, xmitstat.authname.s, xmitstat.authname.len);
+		WRITE(queuefd_data, authstr + i, strlen(authstr) - i);
+		WRITE(queuefd_data, xmitstat.authname.s, xmitstat.authname.len);
 	} else if (xmitstat.tlsclient != NULL) {
 		const char authstr[] = ") (cert=";
-		WRITE(fd, authstr + i, strlen(authstr) - i);
-		WRITEL(fd, xmitstat.tlsclient);
+		WRITE(queuefd_data, authstr + i, strlen(authstr) - i);
+		WRITEL(queuefd_data, xmitstat.tlsclient);
 	} else if (xmitstat.remoteinfo != NULL) {
-		WRITEL(fd, ") (ident=");
-		WRITEL(fd, xmitstat.remoteinfo);
+		WRITEL(queuefd_data, ") (ident=");
+		WRITEL(queuefd_data, xmitstat.remoteinfo);
 	}
-	WRITEL(fd, ")\n\tby ");
-	WRITE(fd, heloname.s, heloname.len);
-	WRITEL(fd, " (" VERSIONSTRING ") with ");
+	WRITEL(queuefd_data, ")\n\tby ");
+	WRITE(queuefd_data, heloname.s, heloname.len);
+	WRITEL(queuefd_data, " (" VERSIONSTRING ") with ");
 	if (chunked)
-		WRITEL(fd, "(chunked) ");
-	WRITEL(fd, protocol);
+		WRITEL(queuefd_data, "(chunked) ");
+	WRITEL(queuefd_data, protocol);
 	/* add the 'A' to the end of ESMTP or ESMTPS as described in RfC 3848 */
 	if (xmitstat.authname.len != 0) {
-		WRITEL(fd, afterprotauth);
+		WRITEL(queuefd_data, afterprotauth);
 	} else {
-		WRITEL(fd, afterprot);
+		WRITEL(queuefd_data, afterprot);
 	}
-	WRITE(fd, head.tqh_first->to.s, head.tqh_first->to.len);
+	WRITE(queuefd_data, head.tqh_first->to.s, head.tqh_first->to.len);
 	date822(datebuf + 3);
 	datebuf[34] = '\n';
-	WRITE(fd, datebuf, 35);
+	WRITE(queuefd_data, datebuf, 35);
 	return 0;
 }
 
@@ -271,7 +276,6 @@ queue_envelope(const unsigned long msgsize)
 					NULL, " recipients)", NULL};
 	char *authmsg = NULL;
 	int rc, e;
-	int fd = fd1[1];
 
 	if (ssl)
 		logmail[1] = "encrypted ";
@@ -307,8 +311,8 @@ queue_envelope(const unsigned long msgsize)
 /* write the envelope information to qmail-queue */
 
 	/* write the return path to qmail-queue */
-	WRITEL(fd, "F");
-	WRITE(fd, MAILFROM, xmitstat.mailfrom.len + 1);
+	WRITEL(queuefd_hdr, "F");
+	WRITE(queuefd_hdr, MAILFROM, xmitstat.mailfrom.len + 1);
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
@@ -318,22 +322,22 @@ queue_envelope(const unsigned long msgsize)
 			const char *at = strchr(l->to.s, '@');
 
 			log_writen(LOG_INFO, logmail);
-			WRITEL(fd, "T");
+			WRITEL(queuefd_hdr, "T");
 			if (at && (*(at + 1) == '[')) {
-				WRITE(fd, l->to.s, at - l->to.s + 1);
-				WRITE(fd, liphost.s, liphost.len + 1);
+				WRITE(queuefd_hdr, l->to.s, at - l->to.s + 1);
+				WRITE(queuefd_hdr, liphost.s, liphost.len + 1);
 			} else {
-				WRITE(fd, l->to.s, l->to.len + 1);
+				WRITE(queuefd_hdr, l->to.s, l->to.len + 1);
 			}
 		}
 		TAILQ_REMOVE(&head, head.tqh_first, entries);
 		free(l->to.s);
 		free(l);
 	}
-	WRITE(fd, "", 1);
+	WRITE(queuefd_hdr, "", 1);
 err_write:
 	e = errno;
-	while ( (rc = close(fd)) ) {
+	while ( (rc = close(queuefd_hdr)) ) {
 		if (errno != EINTR) {
 			e = errno;
 			break;
@@ -479,7 +483,6 @@ smtp_data(void)
 					"> from IP [", xmitstat.remoteip, "] (", s, " bytes) {",
 					NULL, NULL, NULL, NULL};
 	int i, rc;
-	int fd;
 	unsigned int headerflags = 0;	/* Date: and From: are required in header,
 					 * else message is bogus (RfC 2822, section 3.6).
 					 * We also scan for Message-Id here.
@@ -515,9 +518,6 @@ smtp_data(void)
 	in_data = 1;
 #endif
 
-	/* fd is now the file descriptor we are writing to. This is better than always
-	 * calculating the offset to fd0[1] */
-	fd = fd0[1];
 	if ( (rc = queue_header()) )
 		goto loop_data;
 
@@ -534,7 +534,7 @@ smtp_data(void)
 		if (linein[0] == '.') {
 			/* write buffer beginning at [1], we do not have to check if the second character
 			 * is also a '.', RfC 2821 says only we should discard the '.' beginning the line */
-			WRITE(fd, linein + 1, linelen - 1);
+			WRITE(queuefd_data, linein + 1, linelen - 1);
 			msgsize += linelen + 1;
 		} else {
 			int flagr = 1;	/* if the line may be a "Received:" or "Delivered-To:"-line */
@@ -600,10 +600,10 @@ smtp_data(void)
 			}
 
 			/* write buffer beginning at [0] */
-			WRITE(fd, linein, linelen);
+			WRITE(queuefd_data, linein, linelen);
 			msgsize += linelen + 2;
 		}
-		WRITEL(fd, "\n");
+		WRITEL(queuefd_data, "\n");
 		/* this has to stay here and can't be combined with the net_read before the while loop:
 		 * if we combine them we add an extra new line for the line that ends the transmission */
 		if (net_read())
@@ -611,13 +611,13 @@ smtp_data(void)
 	}
 	if (submission_mode) {
 		if (!(headerflags & HEADER_HAS_DATE)) {
-			WRITEL(fd, "Date: ");
-			WRITE(fd, datebuf + 3, 32);
+			WRITEL(queuefd_data, "Date: ");
+			WRITE(queuefd_data, datebuf + 3, 32);
 		}
 		if (!(headerflags & HEADER_HAS_FROM)) {
-			WRITEL(fd, "From: <");
-			WRITE(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
-			WRITEL(fd, ">\n");
+			WRITEL(queuefd_data, "From: <");
+			WRITE(queuefd_data, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+			WRITEL(queuefd_data, ">\n");
 		}
 		if (!(headerflags & HEADER_HAS_MSGID)) {
 			char timebuf[20];
@@ -625,7 +625,7 @@ smtp_data(void)
 			struct timezone tz = { .tz_minuteswest = 0, .tz_dsttime = 0 };
 			size_t l;
 
-			WRITEL(fd, "Message-Id: <");
+			WRITEL(queuefd_data, "Message-Id: <");
 
 			gettimeofday(&ti, &tz);
 			ultostr((const unsigned long) ti.tv_sec, timebuf);
@@ -633,10 +633,10 @@ smtp_data(void)
 			timebuf[l] = '.';
 			ultostr(ti.tv_usec, timebuf + l + 1);
 			l += 1 + strlen(timebuf + l + 1);
-			WRITE(fd, timebuf, l);
-			WRITEL(fd, "@");
-			WRITE(fd, msgidhost.s, msgidhost.len);
-			WRITEL(fd, ">\n");
+			WRITE(queuefd_data, timebuf, l);
+			WRITEL(queuefd_data, "@");
+			WRITE(queuefd_data, msgidhost.s, msgidhost.len);
+			WRITEL(queuefd_data, ">\n");
 		}
 	} else {
 		if (xmitstat.check2822 & 1) {
@@ -653,7 +653,7 @@ smtp_data(void)
 	}
 	if (!linelen) {
 		/* if(linelen) message has no body and we already are at the end */
-		WRITEL(fd, "\n");
+		WRITEL(queuefd_data, "\n");
 		if (net_read())
 			goto loop_data;
 		while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes)) {
@@ -669,10 +669,10 @@ smtp_data(void)
 			}
 
 			offset = (linein[0] == '.') ? 1 : 0;
-			WRITE(fd, linein + offset, linelen - offset);
+			WRITE(queuefd_data, linein + offset, linelen - offset);
 			msgsize += linelen + 2 - offset;
 
-			WRITEL(fd, "\n");
+			WRITEL(queuefd_data, "\n");
 			if (net_read())
 				goto loop_data;
 		}
@@ -684,11 +684,11 @@ smtp_data(void)
 		goto loop_data;
 	}
 	/* the message body is sent to qmail-queue. Close the file descriptor and send the envelope information */
-	while (close(fd)) {
+	while (close(queuefd_data)) {
 		if (errno != EINTR)
 			goto err_write;
 	}
-	fd0[1] = -1;
+	queuefd_data = -1;
 	if (queue_envelope(msgsize))
 		goto err_write;
 
@@ -712,8 +712,8 @@ loop_data:
 			logmail[9] = "read error}";
 		}
 	}
-	while (close(fd0[1]) && (errno == EINTR));
-	fd0[1] = -1;
+	while (close(queuefd_data) && (errno == EINTR));
+	queuefd_data = -1;
 	/* eat all data until the transmission ends. But just drop it and return
 	 * an error defined before jumping here */
 	do {
@@ -722,7 +722,7 @@ loop_data:
 			msgsize--;
 		net_read();
 	} while ((linelen != 1) && (linein[0] != '.'));
-	while (close(fd1[1]) && (errno == EINTR));
+	while (close(queuefd_hdr) && (errno == EINTR));
 	ultostr(msgsize, s);
 
 	while (head.tqh_first != NULL) {
@@ -804,7 +804,6 @@ smtp_bdat(void)
 					"> from IP [", xmitstat.remoteip, "] (", s, " bytes) {",
 					NULL, NULL};
 	int rc;
-	int fd;
 #warning FIXME: loop detection missing
 	unsigned int hops = 0;		/* number of "Received:"-lines */
 	long chunksize;
@@ -823,8 +822,6 @@ smtp_bdat(void)
 	if (*more && strcasecmp(more + 1, "LAST"))
 		return EINVAL;
 
-	/* fd is now the file descriptor we are writing to. This is better than always
-	 * calculating the offset to fd0[1] */
 	if (comstate != 0x0800) {
 		msgsize = 0;
 		bdaterr = 0;
@@ -837,7 +834,6 @@ smtp_bdat(void)
 			bdaterr = rc;
 		}
 	}
-	fd = fd0[1];
 
 	while (chunksize > 0) {
 		size_t chunk;
@@ -859,7 +855,7 @@ smtp_bdat(void)
 			chunksize -= chunk;
 			msgsize += chunk;
 			if (lastcr && (inbuf[0] != '\n'))
-				WRITEL(fd, "\r");
+				WRITEL(queuefd_data, "\r");
 			lastcr = (inbuf[chunk - 1] == '\r');
 
 			o = 0;
@@ -874,7 +870,7 @@ smtp_bdat(void)
 				/* overwrite CR with LF to keep number of writes low
 				 * then write it all out */
 					inbuf[o - 1] = '\n';
-					WRITE(fd, inbuf + offs, o);
+					WRITE(queuefd_data, inbuf + offs, o);
 					o++;	/* skip the original LF */
 				}
 			}
@@ -883,7 +879,7 @@ smtp_bdat(void)
 				/* keep '\r' in last chunk */
 				chunk--;
 			}
-			WRITE(fd, inbuf + offs, chunk - offs);
+			WRITE(queuefd_data, inbuf + offs, chunk - offs);
 		}
 	}
 
@@ -906,11 +902,11 @@ smtp_bdat(void)
 	if (*more && !bdaterr) {
 		/* the message body is sent to qmail-queue. Close the file descriptor and
 			* send the envelope information */
-		while (close(fd)) {
+		while (close(queuefd_data)) {
 			if (errno != EINTR)
 				goto err_write;
 		}
-		fd0[1] = -1;
+		queuefd_data = -1;
 		if (queue_envelope(msgsize))
 			goto err_write;
 
@@ -919,9 +915,9 @@ smtp_bdat(void)
 	}
 
 	if (bdaterr) {
-		if (fd1[1]) {
+		if (queuefd_hdr) {
 			queue_reset();
-			fd1[1] = -1;
+			queuefd_hdr = -1;
 		}
 	} else {
 		const char *bdatmess[] = {"250 2.5.0 ", linein + 5, " octets received", NULL};
