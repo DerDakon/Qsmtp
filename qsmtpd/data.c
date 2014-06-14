@@ -75,14 +75,14 @@ date822(char *buf)
 	two_digit(buf + 29, tz % 60);
 }
 
-#define WRITE(fd,buf,len) \
+#define WRITE(buf,len) \
 		do { \
-			if ( (rc = write(fd, buf, len)) < 0 ) { \
+			if ( (rc = write(queuefd_data, buf, len)) < 0 ) { \
 				return rc; \
 			} \
 		} while (0)
 
-#define WRITEL(fd, str)		WRITE(fd, str, strlen(str))
+#define WRITEL(str)		WRITE(str, strlen(str))
 
 /**
  * @brief write Received header line
@@ -104,65 +104,64 @@ write_received(const int chunked)
 			return rc;
 	}
 	/* write the "Received: " line to mail header */
-	WRITEL(queuefd_data, "Received: ");
+	WRITEL("Received: ");
 	if (!i) {
 		if (xmitstat.remotehost.len) {
-			WRITEL(queuefd_data, "from ");
-			WRITE(queuefd_data, xmitstat.remotehost.s, xmitstat.remotehost.len);
+			WRITEL("from ");
+			WRITE(xmitstat.remotehost.s, xmitstat.remotehost.len);
 		} else {
-			WRITEL(queuefd_data, "from unknown");
+			WRITEL("from unknown");
 		}
-		WRITEL(queuefd_data, " ([");
-		WRITE(queuefd_data, xmitstat.remoteip, strlen(xmitstat.remoteip));
-		WRITEL(queuefd_data, "]");
+		WRITEL(" ([");
+		WRITE(xmitstat.remoteip, strlen(xmitstat.remoteip));
+		WRITEL("]");
 		if (xmitstat.remoteport) {
-			WRITEL(queuefd_data, ":");
-			WRITEL(queuefd_data, xmitstat.remoteport);
+			WRITEL(":");
+			WRITEL(xmitstat.remoteport);
 		}
 		if (xmitstat.helostr.len) {
-			WRITEL(queuefd_data, " HELO ");
-			WRITE(queuefd_data, xmitstat.helostr.s, xmitstat.helostr.len);
+			WRITEL(" HELO ");
+			WRITE(xmitstat.helostr.s, xmitstat.helostr.len);
 		}
 	}
 	if (xmitstat.authname.len) {
 		const char authstr[] = ") (auth=";
-		WRITE(queuefd_data, authstr + i, strlen(authstr) - i);
-		WRITE(queuefd_data, xmitstat.authname.s, xmitstat.authname.len);
+		WRITEL(authstr + i);
+		WRITE(xmitstat.authname.s, xmitstat.authname.len);
 	} else if (xmitstat.tlsclient != NULL) {
 		const char authstr[] = ") (cert=";
-		WRITE(queuefd_data, authstr + i, strlen(authstr) - i);
-		WRITEL(queuefd_data, xmitstat.tlsclient);
+		WRITEL(authstr + i);
+		WRITEL(xmitstat.tlsclient);
 	} else if (xmitstat.remoteinfo != NULL) {
-		WRITEL(queuefd_data, ") (ident=");
-		WRITEL(queuefd_data, xmitstat.remoteinfo);
+		WRITEL(") (ident=");
+		WRITEL(xmitstat.remoteinfo);
 	}
-	WRITEL(queuefd_data, ")\n\tby ");
-	WRITE(queuefd_data, heloname.s, heloname.len);
-	WRITEL(queuefd_data, " (" VERSIONSTRING ") with ");
+	WRITEL(")\n\tby ");
+	WRITE(heloname.s, heloname.len);
+	WRITEL(" (" VERSIONSTRING ") with ");
 	if (chunked)
-		WRITEL(queuefd_data, "(chunked) ");
-	WRITEL(queuefd_data, protocol);
+		WRITEL("(chunked) ");
+	WRITEL(protocol);
 	/* add the 'A' to the end of ESMTP or ESMTPS as described in RfC 3848 */
 	if (xmitstat.authname.len != 0) {
-		WRITEL(queuefd_data, afterprotauth);
+		WRITEL(afterprotauth);
 	} else {
-		WRITEL(queuefd_data, afterprot);
+		WRITEL(afterprot);
 	}
-	WRITE(queuefd_data, head.tqh_first->to.s, head.tqh_first->to.len);
+	WRITE(head.tqh_first->to.s, head.tqh_first->to.len);
 	date822(datebuf + 3);
 	datebuf[34] = '\n';
-	WRITE(queuefd_data, datebuf, 35);
+	WRITE(datebuf, 35);
 	return 0;
 }
 
 #undef WRITE
-#define WRITE(fd,buf,len) \
+#define WRITE(buf, len) \
 		do { \
-			if ( (rc = write(fd, buf, len)) < 0 ) { \
+			if ( (rc = write(queuefd_data, buf, len)) < 0 ) { \
 				goto err_write; \
 			} \
 		} while (0)
-#define WRITEL(fd, str)		WRITE(fd, str, strlen(str))
 
 /**
  * @brief check if header lines violate RfC822
@@ -265,7 +264,7 @@ smtp_data(void)
 		if (linein[0] == '.') {
 			/* write buffer beginning at [1], we do not have to check if the second character
 			 * is also a '.', RfC 2821 says only we should discard the '.' beginning the line */
-			WRITE(queuefd_data, linein + 1, linelen - 1);
+			WRITE(linein + 1, linelen - 1);
 			msgsize += linelen + 1;
 		} else {
 			int flagr = 1;	/* if the line may be a "Received:" or "Delivered-To:"-line */
@@ -331,10 +330,10 @@ smtp_data(void)
 			}
 
 			/* write buffer beginning at [0] */
-			WRITE(queuefd_data, linein, linelen);
+			WRITE(linein, linelen);
 			msgsize += linelen + 2;
 		}
-		WRITEL(queuefd_data, "\n");
+		WRITEL("\n");
 		/* this has to stay here and can't be combined with the net_read before the while loop:
 		 * if we combine them we add an extra new line for the line that ends the transmission */
 		if (net_read())
@@ -342,13 +341,13 @@ smtp_data(void)
 	}
 	if (submission_mode) {
 		if (!(headerflags & HEADER_HAS_DATE)) {
-			WRITEL(queuefd_data, "Date: ");
-			WRITE(queuefd_data, datebuf + 3, 32);
+			WRITEL("Date: ");
+			WRITE(datebuf + 3, 32);
 		}
 		if (!(headerflags & HEADER_HAS_FROM)) {
-			WRITEL(queuefd_data, "From: <");
-			WRITE(queuefd_data, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
-			WRITEL(queuefd_data, ">\n");
+			WRITEL("From: <");
+			WRITE(xmitstat.mailfrom.s, xmitstat.mailfrom.len);
+			WRITEL(">\n");
 		}
 		if (!(headerflags & HEADER_HAS_MSGID)) {
 			char timebuf[20];
@@ -356,7 +355,7 @@ smtp_data(void)
 			struct timezone tz = { .tz_minuteswest = 0, .tz_dsttime = 0 };
 			size_t l;
 
-			WRITEL(queuefd_data, "Message-Id: <");
+			WRITEL("Message-Id: <");
 
 			gettimeofday(&ti, &tz);
 			ultostr((const unsigned long) ti.tv_sec, timebuf);
@@ -364,10 +363,10 @@ smtp_data(void)
 			timebuf[l] = '.';
 			ultostr(ti.tv_usec, timebuf + l + 1);
 			l += 1 + strlen(timebuf + l + 1);
-			WRITE(queuefd_data, timebuf, l);
-			WRITEL(queuefd_data, "@");
-			WRITE(queuefd_data, msgidhost.s, msgidhost.len);
-			WRITEL(queuefd_data, ">\n");
+			WRITE(timebuf, l);
+			WRITEL("@");
+			WRITE(msgidhost.s, msgidhost.len);
+			WRITEL(">\n");
 		}
 	} else {
 		if (xmitstat.check2822 & 1) {
@@ -384,7 +383,7 @@ smtp_data(void)
 	}
 	if (!linelen) {
 		/* if(linelen) message has no body and we already are at the end */
-		WRITEL(queuefd_data, "\n");
+		WRITEL("\n");
 		if (net_read())
 			goto loop_data;
 		while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes)) {
@@ -400,10 +399,10 @@ smtp_data(void)
 			}
 
 			offset = (linein[0] == '.') ? 1 : 0;
-			WRITE(queuefd_data, linein + offset, linelen - offset);
+			WRITE(linein + offset, linelen - offset);
 			msgsize += linelen + 2 - offset;
 
-			WRITEL(queuefd_data, "\n");
+			WRITEL("\n");
 			if (net_read())
 				goto loop_data;
 		}
@@ -585,7 +584,7 @@ smtp_bdat(void)
 			chunksize -= chunk;
 			msgsize += chunk;
 			if (lastcr && (inbuf[0] != '\n'))
-				WRITEL(queuefd_data, "\r");
+				WRITEL("\r");
 			lastcr = (inbuf[chunk - 1] == '\r');
 
 			o = 0;
@@ -600,7 +599,7 @@ smtp_bdat(void)
 				/* overwrite CR with LF to keep number of writes low
 				 * then write it all out */
 					inbuf[o - 1] = '\n';
-					WRITE(queuefd_data, inbuf + offs, o);
+					WRITE(inbuf + offs, o);
 					o++;	/* skip the original LF */
 				}
 			}
@@ -609,7 +608,7 @@ smtp_bdat(void)
 				/* keep '\r' in last chunk */
 				chunk--;
 			}
-			WRITE(queuefd_data, inbuf + offs, chunk - offs);
+			WRITE(inbuf + offs, chunk - offs);
 		}
 	}
 

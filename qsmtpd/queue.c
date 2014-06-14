@@ -122,15 +122,12 @@ queue_init(void)
 	return 0;
 }
 
-#undef WRITE
-#define WRITE(fd,buf,len) \
+#define WRITE(buf, len) \
 		do { \
-			if ( (rc = write(fd, buf, len)) < 0 ) { \
+			if ( (rc = write(queuefd_hdr, buf, len)) < 0 ) { \
 				goto err_write; \
 			} \
 		} while (0)
-
-#define WRITEL(fd, str)		WRITE(fd, str, strlen(str))
 
 /**
  * @brief write the envelope data to qmail-queue and syslog
@@ -183,8 +180,8 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 /* write the envelope information to qmail-queue */
 
 	/* write the return path to qmail-queue */
-	WRITEL(queuefd_hdr, "F");
-	WRITE(queuefd_hdr, MAILFROM, xmitstat.mailfrom.len + 1);
+	WRITE("F", 1);
+	WRITE(MAILFROM, xmitstat.mailfrom.len + 1);
 
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
@@ -194,19 +191,19 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 			const char *at = strchr(l->to.s, '@');
 
 			log_writen(LOG_INFO, logmail);
-			WRITEL(queuefd_hdr, "T");
+			WRITE("T", 1);
 			if (at && (*(at + 1) == '[')) {
-				WRITE(queuefd_hdr, l->to.s, at - l->to.s + 1);
-				WRITE(queuefd_hdr, liphost.s, liphost.len + 1);
+				WRITE(l->to.s, at - l->to.s + 1);
+				WRITE(liphost.s, liphost.len + 1);
 			} else {
-				WRITE(queuefd_hdr, l->to.s, l->to.len + 1);
+				WRITE(l->to.s, l->to.len + 1);
 			}
 		}
 		TAILQ_REMOVE(&head, head.tqh_first, entries);
 		free(l->to.s);
 		free(l);
 	}
-	WRITE(queuefd_hdr, "", 1);
+	WRITE("", 1);
 err_write:
 	e = errno;
 	while ( (rc = close(queuefd_hdr)) ) {
