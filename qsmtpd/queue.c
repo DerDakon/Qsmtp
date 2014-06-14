@@ -230,9 +230,9 @@ queue_result(void)
 {
 	int status;
 
-	while(waitpid(qpid, &status, 0) == -1) {
+	while (waitpid(qpid, &status, 0) == -1) {
 		/* don't know why this could ever happen, but we want to be sure */
-		if (errno == EINTR) {
+		if (errno != EINTR) {
 			log_write(LOG_ERR, "waitpid(qmail-queue) went wrong");
 			return netwrite("451 4.3.2 error while writing mail to queue\r\n") ? errno : EDONE;
 		}
