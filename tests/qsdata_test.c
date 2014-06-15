@@ -67,10 +67,21 @@ queue_reset(void)
 	exit(EFAULT);
 }
 
+static int queue_init_result = -1;
+
 int
 queue_init(void)
 {
-	exit(EFAULT);
+	int r = queue_init_result;
+
+	switch (queue_init_result) {
+	case 0:
+	case EDONE:
+		queue_init_result = -1;
+		return r;
+	default:
+		exit(EFAULT);
+	}
 }
 
 int
@@ -513,6 +524,23 @@ check_check_rfc822_headers(void)
 	return ret;
 }
 
+static int
+check_data()
+{
+	int ret = 0;
+	int r;
+
+	goodrcpt = 1;
+	queue_init_result = EDONE;
+
+	r = smtp_data();
+
+	if (r != EDONE)
+		ret++;
+
+	return ret;
+}
+
 int main()
 {
 	int ret = 0;
@@ -523,6 +551,7 @@ int main()
 	ret += check_date822();
 	ret += check_queueheader();
 	ret += check_check_rfc822_headers();
+	ret += check_data();
 
 	return ret;
 }
