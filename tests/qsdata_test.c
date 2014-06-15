@@ -323,7 +323,7 @@ check_queueheader(void)
 		if (xmitstat.authname.s != NULL)
 			xmitstat.authname.len = strlen(xmitstat.authname.s);
 
-		printf("Running test: %s\n", testname);
+		printf("%s: Running test: %s\n", __func__, testname);
 
 		if (write_received(chunked)) {
 			err = 3;
@@ -389,6 +389,125 @@ check_queueheader(void)
 	return err;
 }
 
+static int
+check_check_rfc822_headers(void)
+{
+	const char tohdr[] = "To: <foo@example.com>";
+	const char fromhdr[] = "From: <foo@example.com>";
+	const char datehdr[] = "Date: Sun, 15 Jun 2014 18:26:30 +0200";
+	const char msgidhdr[] = "message-id: <12345@example.com>"; /* intentionally lowercase */
+	struct tc {
+		const char *hdrname;		/* expected hdrname */
+		const unsigned int flagsb;	/* flags before test */
+		const unsigned int flagsa;	/* flags after test */
+		const unsigned int rc;		/* expected return code */
+		const char *pattern;		/* input line */
+	} testdata[] = {
+		{
+			.pattern = ""
+		},
+		{
+			.pattern = tohdr
+		},
+		{
+			.pattern = datehdr,
+			.flagsa = 1,
+			.rc = 1
+		},
+		{
+			.pattern = fromhdr,
+			.flagsa = 2,
+			.rc = 1
+		},
+		{
+			.pattern = msgidhdr,
+			.flagsa = 4,
+			.rc = 1
+		},
+		{
+			.pattern = datehdr,
+			.flagsb = 2,
+			.flagsa = 3,
+			.rc = 1
+		},
+		{
+			.pattern = fromhdr,
+			.flagsb = 1,
+			.flagsa = 3,
+			.rc = 1
+		},
+		{
+			.pattern = msgidhdr,
+			.flagsb = 2,
+			.flagsa = 6,
+			.rc = 1
+		},
+		{
+			.hdrname = "Date:",
+			.pattern = datehdr,
+			.flagsb = 1,
+			.flagsa = 1,
+			.rc = -2
+		},
+		{
+			.hdrname = "From:",
+			.pattern = fromhdr,
+			.flagsb = 2,
+			.flagsa = 2,
+			.rc = -2
+		},
+		{
+			.hdrname = "Message-Id:",
+			.pattern = msgidhdr,
+			.flagsb = 4,
+			.flagsa = 4,
+			.rc = -2
+		},
+		{
+			.rc = -8,
+			.pattern = "X-\222"
+		},
+		{
+			.pattern = NULL
+		},
+	};
+	int ret = 0;
+	unsigned int i;
+
+	for (i = 0; testdata[i].pattern != NULL; i++) {
+		const char *hdrname = NULL;
+		unsigned int hdrflags = testdata[i].flagsb;
+
+		printf("%s: Running test: '%s'\n", __func__, testdata[i].pattern);
+		linelen = strlen(testdata[i].pattern);
+		memcpy(linein, testdata[i].pattern, linelen);
+
+		int r = check_rfc822_headers(&hdrflags, &hdrname);
+
+		if (r != testdata[i].rc) {
+			fprintf(stderr, "%s[%u]: return code mismatch, got %i, expected %i\n",
+					__func__, i, r, testdata[i].rc);
+			ret++;
+		} else if ((hdrname != NULL) && (testdata[i].hdrname != NULL)) {
+			if (strcmp(hdrname, testdata[i].hdrname) != 0) {
+				fprintf(stderr, "%s[%u]: header name mismatch, got '%s', expected '%s'\n",
+					__func__, i, hdrname, testdata[i].hdrname);
+				ret++;
+			}
+		} else if ((hdrname != NULL) ^ (testdata[i].hdrname != NULL)) {
+			fprintf(stderr, "%s[%u]: header name mismatch, got '%s', expected '%s'\n",
+				__func__, i, hdrname, testdata[i].hdrname);
+			ret++;
+		} else if (hdrflags != testdata[i].flagsa) {
+			fprintf(stderr, "%s[%u]: flags mismatch, got %u, expected %u\n",
+				__func__, i, hdrflags, testdata[i].flagsa);
+			ret++;
+		}
+	}
+
+	return ret;
+}
+
 int main()
 {
 	int ret = 0;
@@ -398,6 +517,7 @@ int main()
 	ret += check_twodigit();
 	ret += check_date822();
 	ret += check_queueheader();
+	ret += check_check_rfc822_headers();
 
 	return ret;
 }
