@@ -468,6 +468,10 @@ check_check_rfc822_headers(void)
 			.pattern = "X-\222"
 		},
 		{
+			.rc = 0,
+			.pattern = "D"
+		},
+		{
 			.pattern = NULL
 		},
 	};
@@ -481,6 +485,7 @@ check_check_rfc822_headers(void)
 		printf("%s: Running test: '%s'\n", __func__, testdata[i].pattern);
 		linelen = strlen(testdata[i].pattern);
 		memcpy(linein, testdata[i].pattern, linelen);
+		linein[linelen] = '\0';
 
 		int r = check_rfc822_headers(&hdrflags, &hdrname);
 
