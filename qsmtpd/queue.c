@@ -140,7 +140,7 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	char s[ULSTRLEN];		/* msgsize */
 	char t[ULSTRLEN];		/* goodrcpt */
 	char bytes[] = " bytes, ";
-	const char *logmail[] = {"received ", "", "", "message ", "", "to <", NULL, "> from <", MAILFROM,
+	const char *logmail[] = {"received ", "", "message ", "to <", NULL, "> from <", MAILFROM,
 					">", "", "", " from IP [", xmitstat.remoteip, "] (", s, bytes,
 					NULL, " recipients)", NULL};
 	int rc, e;
@@ -155,13 +155,13 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	if (ssl)
 		logmail[1] = "encrypted ";
 	if (chunked)
-		logmail[2] = "chunked ";
+		logmail[2] = "chunked message ";
 	if (xmitstat.spacebug)
-		logmail[4] = "with SMTP space bug ";
+		logmail[3] = "with SMTP space bug to <";
 	ultostr(msgsize, s);
 	if (goodrcpt > 1) {
 		ultostr(goodrcpt, t);
-		logmail[17] = t;
+		logmail[15] = t;
 	} else {
 		bytes[6] = ')';
 		bytes[7] = '\0';
@@ -170,11 +170,11 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 /* print the authname.s into a buffer for the log message */
 	if (xmitstat.authname.len) {
 		if (strcasecmp(xmitstat.authname.s, MAILFROM)) {
-			logmail[9] = "> (authenticated as ";
-			logmail[10] = xmitstat.authname.s;
-			logmail[11] = ")";
+			logmail[7] = "> (authenticated as ";
+			logmail[8] = xmitstat.authname.s;
+			logmail[9] = ")";
 		} else {
-			logmail[9] = "> (authenticated)";
+			logmail[7] = "> (authenticated)";
 		}
 	}
 
@@ -187,7 +187,7 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
 
-		logmail[6] = l->to.s;
+		logmail[4] = l->to.s;
 		if (l->ok) {
 			const char *at = strchr(l->to.s, '@');
 
