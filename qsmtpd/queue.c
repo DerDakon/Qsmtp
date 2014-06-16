@@ -218,11 +218,13 @@ err_write:
 		if (errno == EINTR)
 			continue;
 
-		if (rc == 0)
+		if (rc >= 0)
 			e = errno;
 		rc = -1;
 		break;
 	}
+	if (rc >= 0)
+		rc = 0;
 	queuefd_hdr = -1;
 
 	while (head.tqh_first != NULL) {
