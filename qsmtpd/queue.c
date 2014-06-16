@@ -187,10 +187,10 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
 
-		logmail[4] = l->to.s;
 		if (l->ok) {
 			const char *at = strchr(l->to.s, '@');
 
+			logmail[4] = l->to.s;
 			log_writen(LOG_INFO, logmail);
 			WRITE("T", 1);
 			if (at && (*(at + 1) == '[')) {
