@@ -248,6 +248,7 @@ queue_result(void)
 		int exitcode = WEXITSTATUS(status);
 
 		if (!exitcode) {
+			current_command->state = (0x008 << xmitstat.esmtp);
 			return netwrite("250 2.5.0 accepted message for delivery\r\n") ? errno : 0;
 		} else {
 			char ec[ULSTRLEN];

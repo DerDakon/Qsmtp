@@ -421,7 +421,6 @@ smtp_data(void)
 	if (queue_envelope(msgsize, 0))
 		goto err_write;
 
-	current_command->state = (0x008 << xmitstat.esmtp);
 	return queue_result();
 loop_data:
 	rc = errno;
@@ -628,7 +627,6 @@ smtp_bdat(void)
 		if (queue_envelope(msgsize, 1))
 			goto err_write;
 
-		current_command->state = 0x010;
 		return queue_result();
 	}
 
