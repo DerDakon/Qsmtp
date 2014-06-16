@@ -141,9 +141,8 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	char t[ULSTRLEN];		/* goodrcpt */
 	char bytes[] = " bytes, ";
 	const char *logmail[] = {"received ", "", "", "message ", "", "to <", NULL, "> from <", MAILFROM,
-					"> ", "from IP [", xmitstat.remoteip, "] (", s, bytes,
+					">", "", "", " from IP [", xmitstat.remoteip, "] (", s, bytes,
 					NULL, " recipients)", NULL};
-	char *authmsg = NULL;
 	int rc, e;
 
 	/* the message body is sent to qmail-queue. Close the file descriptor and send the envelope information */
@@ -162,25 +161,20 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	ultostr(msgsize, s);
 	if (goodrcpt > 1) {
 		ultostr(goodrcpt, t);
-		logmail[15] = t;
+		logmail[17] = t;
 	} else {
 		bytes[6] = ')';
 		bytes[7] = '\0';
-		/* logmail[14] is already NULL so that logging will stop there */
+		/* logmail[16] is already NULL so that logging will stop there */
 	}
 /* print the authname.s into a buffer for the log message */
 	if (xmitstat.authname.len) {
 		if (strcasecmp(xmitstat.authname.s, MAILFROM)) {
-			authmsg = malloc(xmitstat.authname.len + 23);
-
-			if (!authmsg)
-				return errno;
-			memcpy(authmsg, "> (authenticated as ", 20);
-			memcpy(authmsg + 20, xmitstat.authname.s, xmitstat.authname.len);
-			memcpy(authmsg + 20 + xmitstat.authname.len, ") ", 3);
-			logmail[9] = authmsg;
+			logmail[9] = "> (authenticated as ";
+			logmail[10] = xmitstat.authname.s;
+			logmail[11] = ")";
 		} else {
-			logmail[9] = "> (authenticated) ";
+			logmail[9] = "> (authenticated)";
 		}
 	}
 
@@ -235,7 +229,6 @@ err_write:
 		free(l);
 	}
 	freedata();
-	free(authmsg);
 	errno = e;
 	return rc;
 }
