@@ -259,48 +259,10 @@ queue_result(void)
 			log_writen(LOG_ERR, logmess);
 
 			/* stolen from qmail.c::qmail_close */
-			switch(exitcode) {
-			case 11:
-				netmsg = "554 5.1.3 envelope address too long for qq\r\n"; break;
-			case 31:
-				netmsg = "554 5.3.0 mail server permanently rejected message\r\n"; break;
-			case 51:
-				netmsg = "451 4.3.0 qq out of memory\r\n"; break;
-			case 52:
-				netmsg = "451 4.3.0 qq timeout\r\n"; break;
-			case 53:
-				netmsg = "451 4.3.0 qq write error or disk full\r\n"; break;
-			case 54:
-				netmsg = "451 4.3.0 qq read error\r\n"; break;
-			case 55:
-				netmsg = "451 4.3.0 qq unable to read configuration\r\n"; break;
-			case 56:
-				netmsg = "451 4.3.0 qq trouble making network connection\r\n"; break;
-			case 61:
-				netmsg = "451 4.3.0 qq trouble in home directory\r\n"; break;
-			case 63:
-			case 64:
-			case 65:
-			case 66:
-			case 62:
-				netmsg = "451 4.3.0 qq trouble creating files in queue\r\n"; break;
-			case 71:
-				netmsg = "451 4.3.0 mail server temporarily rejected message\r\n"; break;
-			case 72:
-				netmsg = "451 4.4.1 connection to mail server timed out\r\n"; break;
-			case 73:
-				netmsg = "451 4.4.1 connection to mail server rejected\r\n"; break;
-			case 74:
-				netmsg = "451 4.4.2 communication with mail server failed\r\n"; break;
-			case 91: /* this happens when the 'F' and 'T' are not correctly sent or understood. */
-			case 81:
-				netmsg = "451 4.3.0 qq internal bug\r\n"; break;
-			default:
-				if ((exitcode >= 11) && (exitcode <= 40))
-					netmsg = "554 5.3.0 qq permanent problem\r\n";
-				else
-					netmsg = "451 4.3.0 qq temporary problem\r\n";
-			}
+			if ((exitcode >= 11) && (exitcode <= 40))
+				netmsg = "554 5.3.0 qq permanent problem\r\n";
+			else
+				netmsg = "451 4.3.0 qq temporary problem\r\n";
 			return netwrite(netmsg) ? errno : EDONE;
 		}
 	} else {
