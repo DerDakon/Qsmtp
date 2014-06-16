@@ -61,7 +61,9 @@ int http_post(void);
 
 #define _C(c,l,m,f,s,o) { .name = c, .len = l, .mask = m, .func = f, .state = s, .flags = o }
 
-struct smtpcomm commands[] = {
+struct smtpcomm *current_command;
+
+static struct smtpcomm commands[] = {
 	_C("NOOP",	 4, 0xffff, smtp_noop,     -1, 0),  /* 0x0001 */
 	_C("QUIT",	 4, 0xfffd, smtp_quit,      0, 0),  /* 0x0002 */
 	_C("RSET",	 4, 0xfffd, smtp_rset,    0x1, 0),  /* 0x0004 */ /* the status to change to is set in smtp_rset */
@@ -1132,7 +1134,7 @@ smtp_rset(void)
 	/* if there was EHLO or HELO before we reset to the state to immediately after this */
 	if (comstate >= 0x008) {
 		freedata();
-		commands[2].state = (0x008 << xmitstat.esmtp);
+		current_command->state = (0x008 << xmitstat.esmtp);
 	}
 	/* we don't need the else case here: if there was no helo/ehlo no one has changed .state */
 	return netwrite("250 2.0.0 ok\r\n") ? errno : 0;
@@ -1346,9 +1348,11 @@ smtploop(void)
 /* set flagbogus to catch if client writes crap. Will be overwritten if a good command comes in */
 		flagbogus = EINVAL;
 /* handle the commands */
-		for (i = 0; i < sizeof(commands) / sizeof(struct smtpcomm); i++) {
+		for (i = 0; i < sizeof(commands) / sizeof(commands[0]); i++) {
 			if (!strncasecmp(linein, commands[i].name, commands[i].len)) {
 				if (comstate & commands[i].mask) {
+					unsigned int ostate = commands[i].state; /* the state originally recorded for this command */
+
 					if (!(commands[i].flags & 2) && (linelen > 510)) {
 						/* RfC 2821, section 4.5.3.1 defines the maximum length of a command line
 						 * to 512 chars if this limit is not raised by an extension. Since we
@@ -1359,8 +1363,11 @@ smtploop(void)
 					}
 					if (!(commands[i].flags & 1) && linein[commands[i].len]) {
 						flagbogus = EINVAL;
-					} else
+					} else {
+						current_command = commands + i;
 						flagbogus = commands[i].func();
+						current_command = NULL;
+					}
 
 					/* command succeded */
 					if (!flagbogus) {
@@ -1368,9 +1375,9 @@ smtploop(void)
 							comstate = commands[i].state;
 						else if (!commands[i].state)
 							comstate = (1 << i);
-						flagbogus = 0;
 						badcmds = 0;
 					}
+					commands[i].state = ostate;	/* in case a command has changed that */
 				} else
 					flagbogus = 1;
 				break;

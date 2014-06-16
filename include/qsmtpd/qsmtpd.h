@@ -53,7 +53,7 @@ struct xmitstat {
 	const char *spfmechanism;	/**< the SPF mechanism that matched */
 };
 
-extern struct smtpcomm commands[];	/**< all supported SMTP commands */
+extern struct smtpcomm *current_command;	/**< the SMTP command currently processed */
 
 extern struct xmitstat xmitstat;
 extern char *protocol;
