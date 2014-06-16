@@ -146,6 +146,13 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	char *authmsg = NULL;
 	int rc, e;
 
+	/* the message body is sent to qmail-queue. Close the file descriptor and send the envelope information */
+	while (close(queuefd_data)) {
+		if (errno != EINTR)
+			return -1;
+	}
+	queuefd_data = -1;
+
 	if (ssl)
 		logmail[1] = "encrypted ";
 	if (chunked)

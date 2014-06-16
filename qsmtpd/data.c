@@ -413,18 +413,14 @@ smtp_data(void)
 		errmsg = NULL;
 		goto loop_data;
 	}
-	/* the message body is sent to qmail-queue. Close the file descriptor and send the envelope information */
-	while (close(queuefd_data)) {
-		if (errno != EINTR)
-			goto err_write;
-	}
-	queuefd_data = -1;
-	if (queue_envelope(msgsize, 0))
-		goto err_write;
 
 #ifdef DEBUG_IO
 	in_data = 0;
 #endif
+
+	if (queue_envelope(msgsize, 0))
+		goto err_write;
+
 	commands[7].state = (0x008 << xmitstat.esmtp);
 	return queue_result();
 loop_data:
@@ -629,13 +625,6 @@ smtp_bdat(void)
 	}
 	/* send envelope data if this is last chunk */
 	if (*more && !bdaterr) {
-		/* the message body is sent to qmail-queue. Close the file descriptor and
-			* send the envelope information */
-		while (close(queuefd_data)) {
-			if (errno != EINTR)
-				goto err_write;
-		}
-		queuefd_data = -1;
 		if (queue_envelope(msgsize, 1))
 			goto err_write;
 
