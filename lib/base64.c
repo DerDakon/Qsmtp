@@ -25,6 +25,9 @@ static const char *b64alpha =
  * The contents of out are undefined as long as something else than 0 is
  * returned, i.e. the memory is freed but the freed pointer may still be
  * recorded in out.
+ *
+ * A final 0-byte will always be added to out->s, which is not counted in
+ * out->len.
  */
 int
 b64decode(const char *in, size_t l, string *out)
