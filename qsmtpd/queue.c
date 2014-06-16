@@ -211,14 +211,20 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 		free(l);
 	}
 	WRITE("", 1);
+	errno = 0;
 err_write:
 	e = errno;
-	while ( (rc = close(queuefd_hdr)) ) {
-		if (errno != EINTR) {
+	while (close(queuefd_hdr) < 0) {
+		if (errno == EINTR)
+			continue;
+
+		if (rc == 0)
 			e = errno;
-			break;
-		}
+		rc = -1;
+		break;
 	}
+	queuefd_hdr = -1;
+
 	while (head.tqh_first != NULL) {
 		struct recip *l = head.tqh_first;
 

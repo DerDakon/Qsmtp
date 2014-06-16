@@ -762,3 +762,15 @@ ADD_TEST(NAME "STARTTLSr_conn_failure"
 
 SET_TESTS_PROPERTIES(STARTTLSr_conn_failure PROPERTIES
 		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 TLS connect failed: expected error case; connecting to testcert\\.example\\.org\n$")
+
+ADD_EXECUTABLE(testcase_queue_envelope
+		queue_envelope_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/queue.c
+)
+TARGET_LINK_LIBRARIES(testcase_queue_envelope
+		qsmtp_lib
+		testcase_io_lib
+)
+
+ADD_TEST(NAME "Queue_envelope"
+		COMMAND testcase_queue_envelope)
