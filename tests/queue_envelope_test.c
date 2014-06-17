@@ -175,6 +175,7 @@ test_log_messages(void)
 {
 	int ret = 0;
 	const char envelope1[] = "F\0Tfoo@example.com\0";
+	const char envelope1ip[] = "Fbaz@example.org\0Tfoo@ip.example.com\0";
 	const char envelope2[] = "F\0Tfoo@example.com\0Tbar@example.com\0";
 	const char envelope1a[] = "Fbaz@example.org\0Tfoo@example.com\0";
 	const char envelope2a[] = "Fbaz@example.org\0Tfoo@example.com\0Tbar@example.com\0";
@@ -278,6 +279,16 @@ test_log_messages(void)
 			.envelope = envelope2,
 			.envsize = sizeof(envelope2)
 		},
+		/* IP replacement */
+		{
+			.rcpt1 = "foo@[127.0.0.1]",
+			.rcpt2 = "!bar@example.com",
+			.msgsize = 47,
+			.from = "baz@example.org",
+			.logmsg = "received message to <foo@[127.0.0.1]> from <baz@example.org> from IP [::ffff:172.28.19.44] (47 bytes)\n",
+			.envelope = envelope1ip,
+			.envsize = sizeof(envelope1ip)
+		},
 		{
 			.rcpt1 = NULL
 		}
@@ -287,6 +298,9 @@ test_log_messages(void)
 
 	strncpy(xmitstat.remoteip, "::ffff:172.28.19.44", sizeof(xmitstat.remoteip) - 1);
 	xmitstat.remoteip[sizeof(xmitstat.remoteip) - 1] = '\0';
+
+	liphost.s = "ip.example.com";
+	liphost.len = strlen(liphost.s);
 
 	for (i = 0; testpattern[i].rcpt1 != NULL; i++) {
 		char rpipe[testpattern[i].envsize + 2];
