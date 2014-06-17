@@ -221,13 +221,6 @@ err_write:
 		rc = 0;
 	queuefd_hdr = -1;
 
-	while (head.tqh_first != NULL) {
-		struct recip *l = head.tqh_first;
-
-		TAILQ_REMOVE(&head, head.tqh_first, entries);
-		free(l->to.s);
-		free(l);
-	}
 	freedata();
 	errno = e;
 	return rc;
