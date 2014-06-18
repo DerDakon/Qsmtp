@@ -87,18 +87,11 @@ queue_init(void)
 				return i;
 			return EDONE;
 	case 0:
-			while (close(fd0[1])) {
-				if (errno != EINTR)
-					_exit(120);
-			}
-			while (close(fd1[1])) {
-				if (errno != EINTR)
-					_exit(120);
-			}
-			if (dup2(fd0[0], 0) == -1)
+			if (pipe_move(fd0, 0) != 0)
 				_exit(120);
-			if (dup2(fd1[0], 1) == -1)
+			if (pipe_move(fd1, 1) != 0)
 				_exit(120);
+
 			/* no chdir here, we already _are_ there (and qmail-queue does it again) */
 			execlp(qqbin, qqbin, NULL);
 			_exit(120);

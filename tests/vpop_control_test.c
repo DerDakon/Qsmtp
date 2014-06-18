@@ -27,6 +27,12 @@ static struct userconf ds;
 const char **globalconf;
 
 int
+pipe_move(int p[2] __attribute__((unused)), int target __attribute__((unused)))
+{
+	exit(EFAULT);
+}
+
+int
 err_control(const char *fn)
 {
 	fprintf(stderr, "unexpected call to %s(%s)\n",

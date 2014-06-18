@@ -25,6 +25,12 @@ fork_clean()
 	exit(EFAULT);
 }
 
+int
+pipe_move(int p[2] __attribute__((unused)), int target __attribute__((unused)))
+{
+	exit(EFAULT);
+}
+
 void
 freedata(void)
 {

@@ -72,15 +72,8 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 		while ((close(pi[1]) < 0) && (errno == EINTR)) {}
 		return err_fork();
 	case 0:
-		while (close(pi[1])) {
-			if (errno != EINTR)
-				_exit(1);
-		}
-		if (pi[0] != 3) {
-			if (dup2(pi[0],3) < 0) {
-				_exit(1);
-			}
-		}
+		if (pipe_move(pi, 3) != 0)
+			_exit(1);
 
 		memset(&sa, 0, sizeof(sa));
 		sa.sa_handler = SIG_DFL;

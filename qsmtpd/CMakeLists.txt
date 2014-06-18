@@ -6,6 +6,7 @@ SET(QSMTPD_SRCS
 	addrsyntax.c
 	antispam.c
 	auth.c
+	child.c
 	queue.c
 	qsmtpd.c
 	starttls.c
