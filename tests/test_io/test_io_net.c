@@ -3,10 +3,12 @@
 
 #include <netio.h>
 
+#include <stdio.h>
 #include <string.h>
 
 char linein[TESTIO_MAX_LINELEN];
 size_t linelen;
+const char *netnwrite_msg;
 
 int
 net_read(void)
@@ -48,6 +50,28 @@ netnwrite(const char *a, const size_t len)
 	ASSERT_CALLBACK(testcase_netnwrite);
 
 	return testcase_netnwrite(a, len);
+}
+
+int
+testcase_netnwrite_compare(const char *a, const size_t len)
+{
+	if (netnwrite_msg == NULL) {
+		fprintf(stderr, "netnwrite('%s', %zu) was called, but no message was expected)\n",
+				a, len);
+		qs_backtrace();
+		abort();
+	}
+
+	if ((strncmp(netnwrite_msg, a, len) != 0) || (strlen(netnwrite_msg) != len)) {
+		fprintf(stderr, "netnwrite('%s', %zu) was called, but message ('%s', %zu) was expected\n",
+				a, len, netnwrite_msg, strlen(netnwrite_msg));
+		qs_backtrace();
+		abort();
+	}
+
+	netnwrite_msg = NULL;
+
+	return 0;
 }
 
 int

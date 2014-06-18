@@ -89,20 +89,6 @@ test_net_conn_shutdown(const enum conn_shutdown_type sd_type __attribute__((unus
 		ssl_free(ssl);
 }
 
-int
-test_netnwrite(const char *s, const size_t len)
-{
-	const char *expect = "STARTTLS\r\n";
-
-	if (strlen(expect) != len)
-		exit(EFAULT);
-
-	if (strncmp(s, expect, len) != 0)
-		exit(EFAULT);
-
-	return 0;
-}
-
 void
 test_ssl_free(SSL *myssl)
 {
@@ -151,7 +137,9 @@ int main(int argc, char **argv)
 	}
 	rhostlen = strlen(rhost);
 
-	testcase_setup_netnwrite(test_netnwrite);
+	netnwrite_msg = "STARTTLS\r\n";
+
+	testcase_setup_netnwrite(testcase_netnwrite_compare);
 	testcase_setup_ssl_free(test_ssl_free);
 	testcase_setup_net_conn_shutdown(test_net_conn_shutdown);
 

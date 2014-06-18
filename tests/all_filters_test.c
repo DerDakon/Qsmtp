@@ -23,7 +23,6 @@ struct recip *thisrecip;
 const char **globalconf;
 
 static unsigned int testindex;
-static const char *expected_netmsg;
 static int err;
 
 int
@@ -284,28 +283,6 @@ test_log_writen(int priority, const char **s)
 }
 
 int
-test_netnwrite(const char *msg, const size_t len)
-{
-	if (expected_netmsg == NULL) {
-		fprintf(stderr, "no message expected, but got message '");
-		fflush(stderr);
-		write(2, msg, len);
-		fprintf(stderr, "'\n");
-		err++;
-	} else if ((strncmp(expected_netmsg, msg, len) != 0) || (strlen(expected_netmsg) != len)) {
-		fprintf(stderr, "expected message %s, but got message '", expected_netmsg);
-		fflush(stderr);
-		write(2, msg, len);
-		fprintf(stderr, "'\n");
-		err++;
-	} else {
-		expected_netmsg = NULL;
-	}
-
-	return 0;
-}
-
-int
 main(void)
 {
 	int i;
@@ -369,7 +346,7 @@ main(void)
 	strncpy(confpath, "0/", sizeof(confpath));
 
 	testcase_setup_log_writen(test_log_writen);
-	testcase_setup_netnwrite(test_netnwrite);
+	testcase_setup_netnwrite(testcase_netnwrite_compare);
 	testcase_ignore_ask_dnsa();
 
 	while (testindex < sizeof(testdata) / sizeof(testdata[0])) {
@@ -398,7 +375,7 @@ main(void)
 		xmitstat.mailfrom.len = (xmitstat.mailfrom.s == NULL) ? 0 : strlen(xmitstat.mailfrom.s);
 		xmitstat.esmtp = testdata[testindex].esmtp;
 		failmsg = testdata[testindex].failmsg;
-		expected_netmsg = testdata[testindex].netmsg;
+		netnwrite_msg = testdata[testindex].netmsg;
 		if (testdata[testindex].logmsg != NULL)
 			exp_log_count = 1;
 		if (testdata[testindex].netmsg != NULL) {

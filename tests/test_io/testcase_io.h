@@ -24,6 +24,17 @@ DECLARE_TC_SETUP(net_writen);
 typedef int (func_netnwrite)(const char *, const size_t);
 DECLARE_TC_SETUP(netnwrite);
 
+extern const char *netnwrite_msg; /**< the next message expected in netnwrite() */
+/**
+ * @brief a simple checker for netnwrite
+ *
+ * This function may be passed to testcase_setup_netnwrite() to have a simple
+ * checker for netnwrite(). The message sent to netnwrite() is compared to
+ * netnwrite_msg. netnwrite_msg is reset afterwards. If the messages do not
+ * match the program is aborted.
+ */
+extern int testcase_netnwrite_compare(const char *a, const size_t len);
+
 typedef size_t (func_net_readbin)(size_t, char *);
 DECLARE_TC_SETUP(net_readbin);
 

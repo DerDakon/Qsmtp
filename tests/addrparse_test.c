@@ -21,45 +21,32 @@ static struct {
 } testdata[] = {
 	{
 		.inpattern = "missing@end.bracket",
-		.flags = 0,
-		.syntaxresult = 0,
-		.expect_netwrite = 2,
+		.expect_netwrite = 1,
 		.parseresult = EBOGUS,
 		.expect_tarpit = 2,
 	},
 	{
 		.inpattern = "missing@end.bracket",
-		.flags = 0,
 		.syntaxresult = -ENOMEM,
-		.expect_netwrite = 0,
 		.parseresult = ENOMEM,
-		.expect_tarpit = 0,
 	},
 	{
 		.inpattern = "postmaster>",
 		.flags = 1,
 		.syntaxresult = 1,
-		.expect_netwrite = 0,
-		.parseresult = 0,
-		.expect_tarpit = 0,
 	},
 	/* domain not in rcpthosts */
 	{
 		.inpattern = "user@example.com>",
 		.flags = 1,
 		.syntaxresult = 3,
-		.expect_netwrite = 0,
 		.parseresult = -2,
-		.expect_tarpit = 0,
 	},
 	/* domain in rcpthosts, but not local */
 	{
 		.inpattern = "user@example.net>",
 		.flags = 1,
 		.syntaxresult = 3,
-		.expect_netwrite = 0,
-		.parseresult = 0,
-		.expect_tarpit = 0,
 		.userexists_result = 5,
 	},
 	/* local domain, but user does not exist */
@@ -67,21 +54,15 @@ static struct {
 		.inpattern = "user@local.example.net>",
 		.flags = 1,
 		.syntaxresult = 3,
-		.expect_netwrite = 0,
 		.expect_net_writen = 2,
 		.parseresult = -1,
 		.expect_tarpit = 2,
-		.userexists_result = 0,
 	},
 	/* existing local user */
 	{
 		.inpattern = "existing@local.example.net>",
 		.flags = 1,
 		.syntaxresult = 3,
-		.expect_netwrite = 0,
-		.expect_net_writen = 0,
-		.parseresult = 0,
-		.expect_tarpit = 0,
 		.userexists_result = 1,
 	},
 	/* existing local user, addressed with IP address */
@@ -89,10 +70,6 @@ static struct {
 		.inpattern = "existing@[192.0.2.4]>",
 		.flags = 1,
 		.syntaxresult = 4,
-		.expect_netwrite = 0,
-		.expect_net_writen = 0,
-		.parseresult = 0,
-		.expect_tarpit = 0,
 		.userexists_result = 1,
 	},
 	/* existing local user, but wrong IP address */
@@ -100,7 +77,6 @@ static struct {
 		.inpattern = "existing@[192.0.2.42]>",
 		.flags = 1,
 		.syntaxresult = 4,
-		.expect_netwrite = 0,
 		.expect_net_writen = 2,
 		.parseresult = -1,
 		.expect_tarpit = 2,
@@ -110,10 +86,7 @@ static struct {
 		.inpattern = "existing@local.example.net>",
 		.flags = 1,
 		.syntaxresult = 3,
-		.expect_netwrite = 0,
-		.expect_net_writen = 0,
 		.parseresult = ENOMEM,
-		.expect_tarpit = 0,
 		.userexists_result = -ENOMEM
 	},
 	{
@@ -238,37 +211,6 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 }
 
 int
-test_netnwrite(const char *s, const size_t l)
-{
-	const char expstr[] = "501 5.1.3 domain of mail address is syntactically incorrect\r\n";
-
-	if (l != strlen(expstr)) {
-		fprintf(stderr, "index %u: length of input '%s' did not match expected length\n",
-				testindex, s);
-		errcounter++;
-		return -ECONNRESET;
-	}
-
-	if (strcmp(s, expstr) != 0) {
-		fprintf(stderr, "index %u: input '%s' did not match expected input\n",
-				testindex, s);
-		errcounter++;
-		return -ECONNRESET;
-	}
-
-	if (testdata[testindex].expect_netwrite == 0) {
-		fprintf(stderr, "index %u: unexpected call to netwrite()\n",
-				testindex);
-		errcounter++;
-		return -ECONNRESET;
-	}
-
-	testdata[testindex].expect_netwrite--;
-
-	return 0;
-}
-
-int
 test_net_writen(const char *const *msg)
 {
 	char expaddr[128];
@@ -326,23 +268,41 @@ main(void)
 	liphost.len = strlen(liphost.s);
 	strcpy(xmitstat.localip, "192.0.2.4");
 
-	testcase_setup_netnwrite(test_netnwrite);
+	testcase_setup_netnwrite(testcase_netnwrite_compare);
 	testcase_setup_net_writen(test_net_writen);
 
 	for (testindex = 0; testdata[testindex].inpattern[0] != '\0'; testindex++) {
 		struct string addr1, addr2;
 		char *more;
 		struct userconf ds;
+		const char netstring[] = "501 5.1.3 domain of mail address is syntactically incorrect\r\n";
 
 		userconf_init(&ds);
 		STREMPTY(addr1);
 		STREMPTY(addr2);
 
+		if (testdata[testindex].expect_netwrite > 0)
+			netnwrite_msg = netstring;
+
 		const int r = addrparse(testdata[testindex].inpattern, testdata[testindex].flags,
 				&addr1, &more, &ds, rcpthosts, rcpthsize);
 
+		if (testdata[testindex].expect_netwrite > 0) {
+			if (netnwrite_msg != NULL) {
+				fprintf(stderr, "index %u: expected call to netnwrite() did not happen\n", testindex);
+				errcounter++;
+			} else {
+				netnwrite_msg = netstring;
+			}
+		}
+
 		const int s = addrparse(testdata[testindex].inpattern, testdata[testindex].flags,
 				&addr2, &more, NULL, rcpthosts, rcpthsize);
+
+		if ((testdata[testindex].expect_netwrite > 0) && (netnwrite_msg != NULL)) {
+			fprintf(stderr, "index %u: expected call to netnwrite() did not happen\n", testindex);
+			errcounter++;
+		}
 
 		if (r != s) {
 			fprintf(stderr, "index %u: call to addrparse() with ds pointer returned %i, "

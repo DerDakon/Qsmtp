@@ -19,27 +19,6 @@
 const char *tempnoauth = "[MSG:tempnoauth]";
 
 static int err;	/* global error counter */
-static const char *expected_net_write;
-
-static int test_netnwrite(const char *s, const size_t len __attribute__((unused)))
-{
-	if (expected_net_write == NULL) {
-		fprintf(stderr, "no message expected, but received '%s'\n", s);
-		err++;
-		errno = EINVAL;
-		return -1;
-	}
-
-	if (strcmp(s, expected_net_write) != 0) {
-		fprintf(stderr, "expected message '%s', but received '%s'\n", expected_net_write, s);
-		err++;
-		errno = EINVAL;
-		return -1;
-	}
-
-	expected_net_write = NULL;
-	return 0;
-}
 
 static const char *expected_log;
 
@@ -126,9 +105,9 @@ check_all_msgs(void)
 		err++;
 	}
 
-	if (expected_net_write != NULL) {
+	if (netnwrite_msg != NULL) {
 		fprintf(stderr, "expected message '%s' was not received\n",
-				expected_net_write);
+				netnwrite_msg);
 		err++;
 	}
 
@@ -161,7 +140,7 @@ test_fork_fail(void)
 
 	fork_success = 0;
 	expected_log = "cannot fork auth";
-	expected_net_write = tempnoauth;
+	netnwrite_msg = tempnoauth;
 
 	if (auth_backend_execute(&sdummy, &sdummy, &sdummy) != -EDONE) {
 		fprintf(stderr, "auth_backend_execute() did not return -EDONE after failed fork\n");
@@ -182,7 +161,7 @@ test_chkpw_abort(void)
 
 	fork_success = 1;
 	expected_log = "auth child crashed";
-	expected_net_write = tempnoauth;
+	netnwrite_msg = tempnoauth;
 
 	if (auth_backend_execute(&user, &pass, NULL) != -EDONE) {
 		fprintf(stderr, "auth_backend_execute() did not return -EDONE after aborted child\n");
@@ -270,7 +249,7 @@ main(int argc, char **argv)
 	}
 
 	testcase_setup_log_write(test_log_write);
-	testcase_setup_netnwrite(test_netnwrite);
+	testcase_setup_netnwrite(testcase_netnwrite_compare);
 
 	test_fork_fail();
 
