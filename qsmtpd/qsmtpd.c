@@ -563,7 +563,7 @@ freedata(void)
 }
 
 /**
- * \brief fork() but clean up internal structures
+ * @brief fork() but clean up internal structures
  *
  * This will work exactly like fork(). If it returns 0 (i.e. you are the
  * child) it will also clean the memory mappings etc. of the Qsmtpd process

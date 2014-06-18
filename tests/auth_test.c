@@ -376,7 +376,9 @@ main(int argc, char **argv)
 	return EINVAL;
 }
 
-pid_t fork_clean(void)
+
+pid_t
+fork_clean(void)
 {
 	return fork();
 }
