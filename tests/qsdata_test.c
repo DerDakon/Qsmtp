@@ -1,6 +1,7 @@
 #include "../qsmtpd/data.c"
 
 #include <qsmtpd/antispam.h>
+#include "test_io/testcase_io.h"
 #include <version.h>
 
 #include <errno.h>
@@ -526,11 +527,61 @@ check_check_rfc822_headers(void)
 }
 
 static int
-check_data()
+check_data_badbounce()
 {
 	int ret = 0;
 	int r;
 
+	printf("%s\n", __func__);
+	netnwrite_msg = "554 5.1.1 no valid recipients\r\n";
+	badbounce = 1;
+	goodrcpt = 1;
+
+	r = smtp_data();
+
+	if (r != EDONE)
+		ret++;
+
+	if (netnwrite_msg != NULL) {
+		fprintf(stderr, "expected error message not received for bad bounce");
+		ret++;
+	}
+
+	return ret;
+}
+
+static int
+check_data_no_rcpt()
+{
+	int ret = 0;
+	int r;
+
+	printf("%s\n", __func__);
+	netnwrite_msg = "554 5.1.1 no valid recipients\r\n";
+	badbounce = 0;
+	goodrcpt = 0;
+
+	r = smtp_data();
+
+	if (r != EDONE)
+		ret++;
+
+	if (netnwrite_msg != NULL) {
+		fprintf(stderr, "expected error message not received for no recipients");
+		ret++;
+	}
+
+	return ret;
+}
+
+static int
+check_data_qinit_fail()
+{
+	int ret = 0;
+	int r;
+
+	printf("%s\n", __func__);
+	badbounce = 0;
 	goodrcpt = 1;
 	queue_init_result = EDONE;
 
@@ -548,11 +599,15 @@ int main()
 
 	memset(&xmitstat, 0, sizeof(xmitstat));
 
+	testcase_setup_netnwrite(testcase_netnwrite_compare);
+
 	ret += check_twodigit();
 	ret += check_date822();
 	ret += check_queueheader();
 	ret += check_check_rfc822_headers();
-	ret += check_data();
+	ret += check_data_badbounce();
+	ret += check_data_no_rcpt();
+	ret += check_data_qinit_fail();
 
 	return ret;
 }
