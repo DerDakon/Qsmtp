@@ -770,6 +770,7 @@ ADD_EXECUTABLE(testcase_queue_envelope
 TARGET_LINK_LIBRARIES(testcase_queue_envelope
 		qsmtp_lib
 		testcase_io_lib
+		${OPENSSL_LIBRARIES}
 )
 
 ADD_TEST(NAME "Queue_envelope"

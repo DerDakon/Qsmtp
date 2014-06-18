@@ -220,7 +220,7 @@ test_log_messages(void)
 			.rcpt2 = "!bar@example.com",
 			.encrypted = 1,
 			.msgsize = 23,
-			.logmsg = "received encrypted message to <foo@example.com> from <> from IP [::ffff:172.28.19.44] (23 bytes)\n",
+			.logmsg = "received (NONE) encrypted message to <foo@example.com> from <> from IP [::ffff:172.28.19.44] (23 bytes)\n",
 			.envelope = envelope1,
 			.envsize = sizeof(envelope1)
 		},
@@ -252,7 +252,7 @@ test_log_messages(void)
 			.msgsize = 37,
 			.from = "baz@example.org",
 			.authname = "baz@example.org",
-			.logmsg = "received encrypted chunked message to <foo@example.com> from <baz@example.org> (authenticated) from IP [::ffff:172.28.19.44] (37 bytes)\n",
+			.logmsg = "received (NONE) encrypted chunked message to <foo@example.com> from <baz@example.org> (authenticated) from IP [::ffff:172.28.19.44] (37 bytes)\n",
 			.envelope = envelope1a,
 			.envsize = sizeof(envelope1a)
 		},
@@ -262,8 +262,8 @@ test_log_messages(void)
 			.encrypted = 1,
 			.spacebug = 1,
 			.msgsize = 41,
-			.logmsg = "received encrypted message with SMTP space bug to <foo@example.com> from <> from IP [::ffff:172.28.19.44] (41 bytes, 2 recipients)\n"
-				"received encrypted message with SMTP space bug to <bar@example.com> from <> from IP [::ffff:172.28.19.44] (41 bytes, 2 recipients)\n",
+			.logmsg = "received (NONE) encrypted message with SMTP space bug to <foo@example.com> from <> from IP [::ffff:172.28.19.44] (41 bytes, 2 recipients)\n"
+				"received (NONE) encrypted message with SMTP space bug to <bar@example.com> from <> from IP [::ffff:172.28.19.44] (41 bytes, 2 recipients)\n",
 			.envelope = envelope2,
 			.envsize = sizeof(envelope2)
 		},
@@ -274,8 +274,8 @@ test_log_messages(void)
 			.spacebug = 1,
 			.msgsize = 43,
 			.authname = "baz",
-			.logmsg = "received encrypted message with SMTP space bug to <foo@example.com> from <> (authenticated as baz) from IP [::ffff:172.28.19.44] (43 bytes, 2 recipients)\n"
-				"received encrypted message with SMTP space bug to <bar@example.com> from <> (authenticated as baz) from IP [::ffff:172.28.19.44] (43 bytes, 2 recipients)\n",
+			.logmsg = "received (NONE) encrypted message with SMTP space bug to <foo@example.com> from <> (authenticated as baz) from IP [::ffff:172.28.19.44] (43 bytes, 2 recipients)\n"
+				"received (NONE) encrypted message with SMTP space bug to <bar@example.com> from <> (authenticated as baz) from IP [::ffff:172.28.19.44] (43 bytes, 2 recipients)\n",
 			.envelope = envelope2,
 			.envsize = sizeof(envelope2)
 		},
@@ -295,6 +295,9 @@ test_log_messages(void)
 	};
 	unsigned int i;
 	SSL myssl;
+
+	/* this doesn't really look right, but it works for now */
+	memset(&myssl, 0, sizeof(myssl));
 
 	strncpy(xmitstat.remoteip, "::ffff:172.28.19.44", sizeof(xmitstat.remoteip) - 1);
 	xmitstat.remoteip[sizeof(xmitstat.remoteip) - 1] = '\0';

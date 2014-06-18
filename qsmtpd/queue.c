@@ -152,10 +152,12 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	}
 	queuefd_data = -1;
 
-	if (ssl)
-		logmail[1] = "encrypted ";
-	if (chunked)
+	if (ssl) {
+		logmail[1] = SSL_get_cipher(ssl);
+		logmail[2] = chunked ? " encrypted chunked message " : " encrypted message ";
+	} else if (chunked) {
 		logmail[2] = "chunked message ";
+	}
 	if (xmitstat.spacebug)
 		logmail[3] = "with SMTP space bug to <";
 	ultostr(msgsize, s);
