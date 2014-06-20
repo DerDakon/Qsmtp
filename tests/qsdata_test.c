@@ -413,7 +413,7 @@ check_check_rfc822_headers(void)
 		const char *hdrname;		/* expected hdrname */
 		const unsigned int flagsb;	/* flags before test */
 		const unsigned int flagsa;	/* flags after test */
-		const unsigned int rc;		/* expected return code */
+		const int rc;			/* expected return code */
 		const char *pattern;		/* input line */
 	} testdata[] = {
 		{
