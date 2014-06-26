@@ -1048,9 +1048,9 @@ smtp_from(void)
 		return E2BIG;
 
 	while ( ( i = statvfs("queue/lock/sendmutex", &sbuf)) ) {
-		int e;
+		int e = errno;
 
-		switch (e = errno) {
+		switch (e) {
 		case EINTR:
 			break;
 		case ENOMEM:
