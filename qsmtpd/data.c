@@ -104,14 +104,13 @@ write_received(const int chunked)
 			return rc;
 	}
 	/* write the "Received: " line to mail header */
-	WRITEL("Received: ");
+	WRITEL("Received: from ");
+	if (xmitstat.remotehost.len && !authhide)
+		WRITE(xmitstat.remotehost.s, xmitstat.remotehost.len);
+	else
+		WRITEL("unknown");
+
 	if (!i) {
-		if (xmitstat.remotehost.len) {
-			WRITEL("from ");
-			WRITE(xmitstat.remotehost.s, xmitstat.remotehost.len);
-		} else {
-			WRITEL("from unknown");
-		}
 		WRITEL(" ([");
 		WRITE(xmitstat.remoteip, strlen(xmitstat.remoteip));
 		WRITEL("]");
@@ -132,7 +131,7 @@ write_received(const int chunked)
 		const char authstr[] = ") (cert=";
 		WRITEL(authstr + i);
 		WRITEL(xmitstat.tlsclient);
-	} else if (xmitstat.remoteinfo != NULL) {
+	} else if ((xmitstat.remoteinfo != NULL) && !authhide) {
 		WRITEL(") (ident=");
 		WRITEL(xmitstat.remoteinfo);
 	}
