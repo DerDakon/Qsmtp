@@ -92,7 +92,7 @@ static int
 write_received(const int chunked)
 {
 	int rc;
-	size_t i = (authhide && is_authenticated_client()) ? 2 : 0;
+	size_t i = (authhide && is_authenticated_client()) ? 1 : 0;
 	/* do not bother that the next two messages are basically the same:
 	 * the compiler is usually clever enought to find that out, too */
 	const char afterprot[]     =  "\n\tfor <";	/* the string to be written after the protocol */
@@ -131,7 +131,7 @@ write_received(const int chunked)
 		const char authstr[] = ") (cert=";
 		WRITEL(authstr + i);
 		WRITEL(xmitstat.tlsclient);
-	} else if ((xmitstat.remoteinfo != NULL) && !authhide) {
+	} else if ((xmitstat.remoteinfo != NULL) && !i) {
 		WRITEL(") (ident=");
 		WRITEL(xmitstat.remoteinfo);
 	}

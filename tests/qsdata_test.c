@@ -201,13 +201,14 @@ check_queueheader(void)
 
 	queuefd_data = fd0[1];
 
-	for (idx = 0; idx < 13; idx++) {
+	for (idx = 0; idx < 14; idx++) {
 		char outbuf[2048];
 		ssize_t off = 0;
 		ssize_t mismatch = -1;
 		const char *expect;
 		const char *testname;
 		int chunked = 0;
+		static const char received_from[] = "Received: from ";
 
 		memset(&xmitstat, 0, sizeof(xmitstat));
 
@@ -269,7 +270,7 @@ check_queueheader(void)
 			relayclient = 0;
 			authhide = 1;
 			xmitstat.authname.s = "authuser";
-			expect = "Received: (auth=authuser)\n"
+			expect = "Received: from unknown (auth=authuser)\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOLA\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
@@ -279,7 +280,7 @@ check_queueheader(void)
 			relayclient = 0;
 			authhide = 1;
 			xmitstat.tlsclient = "mail@cert.example.com";
-			expect = "Received: (cert=mail@cert.example.com)\n"
+			expect = "Received: from unknown (cert=mail@cert.example.com)\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
@@ -327,6 +328,18 @@ check_queueheader(void)
 			expect = "Received: from unknown ([192.0.2.42])\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) TEST_PROTOCOL\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+		case 13:
+			/* no relayclient, authenticated, authhide, ident should be ignored */
+			testname = "auth + authhide + ident";
+			relayclient = 0;
+			authhide = 1;
+			chunked = 0;
+			xmitstat.remoteinfo = "auth=foo"; /* fake attempt */
+			xmitstat.authname.s = "authuser";
+			expect = "Received: from unknown (auth=authuser)\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOLA\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
 		}
 
 		if (xmitstat.remotehost.s != NULL)
@@ -367,6 +380,13 @@ check_queueheader(void)
 			fprintf(stderr, "expected output not found, got:\n%s\nexpected:\n%s\n", outbuf, expect);
 			if (strlen(outbuf) != strlen(expect))
 				fprintf(stderr, "expected length: %zi, got length: %zi\n", strlen(expect), strlen(outbuf));
+			break;
+		}
+
+		/* to make sure a syntactically valid line is always received */
+		if (strstr(outbuf, received_from) == NULL) {
+			fprintf(stderr, "'Received: from ' not found in output\n");
+			err = 10;
 			break;
 		}
 
