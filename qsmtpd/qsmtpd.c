@@ -1067,7 +1067,7 @@ smtp_from(void)
 		case EOVERFLOW:
 		case EIO:*/
 		/* the other errors not named above should really never happen so
-			* just use default to get better code */
+		 * just use default to get better code */
 		default:
 			log_write(LOG_ERR, "critical: can not get free queue disk space");
 			return e;
