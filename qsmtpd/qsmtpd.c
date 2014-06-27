@@ -1150,6 +1150,7 @@ conn_cleanup(const int rc)
 	freedata();
 	freeppol();
 	userbackend_free();
+	free(xmitstat.authname.s);
 
 	free(protocol);
 	free(globalconf);
@@ -1416,4 +1417,3 @@ main(int argc, char **argv)
 		flagbogus = errno;
 	smtploop();
 }
-
