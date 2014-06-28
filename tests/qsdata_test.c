@@ -328,6 +328,7 @@ check_queueheader(void)
 			expect = "Received: from unknown ([192.0.2.42])\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) TEST_PROTOCOL\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
 		case 13:
 			/* no relayclient, authenticated, authhide, ident should be ignored */
 			testname = "auth + authhide + ident";
