@@ -435,7 +435,9 @@ main(int argc, char *argv[])
 			write_status("ZEHLO failed after STARTTLS");
 			net_conn_shutdown(shutdown_clean);;
 		} else {
-			successmsg[4] = " encrypted";
+			successmsg[3] = "message ";
+			successmsg[4] = SSL_get_cipher(ssl);
+			successmsg[5] = " encrypted";
 		}
 	}
 
