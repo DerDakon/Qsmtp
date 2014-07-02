@@ -730,7 +730,7 @@ ADD_TEST(NAME "STARTTLSr_tlsciphers_good"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/tlsclientciphers_good")
 
 SET_TESTS_PROPERTIES(STARTTLSr STARTTLSr_no_partner_conf STARTTLSr_tlsciphers_good PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 STARTTLS rejected; connecting to ")
+		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 STARTTLS rejected\\; connecting to ")
 
 ADD_TEST(NAME "STARTTLSr_tlsciphers_bad"
 		COMMAND testcase_starttlsr badconf.example.com
@@ -744,7 +744,7 @@ ADD_TEST(NAME "STARTTLSr_bad_partner_certs"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/invalid_pem")
 
 SET_TESTS_PROPERTIES(STARTTLSr_bad_partner_certs PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 TLS unable to load control/tlshosts/badconf\\.example\\.com.\\pem: expected SSL testcase error; connecting to badconf\\.example\\.com\n$")
+		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 TLS unable to load control/tlshosts/badconf\\.example\\.com.\\pem: expected SSL testcase error\\; connecting to badconf\\.example\\.com\n$")
 
 ADD_TEST(NAME "STARTTLSr_tlsciphers_dir"
 		COMMAND testcase_starttlsr badconf.example.com
@@ -758,14 +758,14 @@ ADD_TEST(NAME "STARTTLSr_matching_tlshost"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
 
 SET_TESTS_PROPERTIES(STARTTLSr_matching_tlshost PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 STARTTLS rejected while control/tlshosts/testcert\\.example\\.org\\.pem exists; connecting to testcert\\.example\\.org\n$")
+		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 STARTTLS rejected while control/tlshosts/testcert\\.example\\.org\\.pem exists\\; connecting to testcert\\.example\\.org\n$")
 
 ADD_TEST(NAME "STARTTLSr_conn_failure"
 		COMMAND testcase_starttlsr testcert.example.org 220
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
 
 SET_TESTS_PROPERTIES(STARTTLSr_conn_failure PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 TLS connect failed: expected error case; connecting to testcert\\.example\\.org\n$")
+		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 TLS connect failed: expected error case\\; connecting to testcert\\.example\\.org\n$")
 
 ADD_EXECUTABLE(testcase_queue_envelope
 		queue_envelope_test.c
