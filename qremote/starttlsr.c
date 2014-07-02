@@ -146,7 +146,7 @@ tls_init(void)
 		return 1;
 	}
 
-	/* read the responce to STARTTLS */
+	/* read the response to STARTTLS */
 	if (netget() != 220) {
 		const char *msg[] = { NULL, NULL, NULL,  "; connecting to ",
 				rhost };
