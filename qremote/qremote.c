@@ -385,6 +385,7 @@ main(int argc, char *argv[])
 			while ((close(socketd) < 0) && (errno == EINTR));
 		socketd = tryconn(mx, &outip, &outip6);
 		dup2(socketd, 0);
+		getrhost(mx);
 		if (netget() != 220) {
 			quitmsg();
 			continue;
@@ -417,14 +418,12 @@ main(int argc, char *argv[])
 		if (strncmp("220 ", linein, 4)) {
 			const char *dropmsg[] = {"invalid greeting from ", NULL, NULL};
 
-			getrhost(mx);
 			dropmsg[1] = rhost;
 			log_writen(LOG_WARNING, dropmsg);
 			quitmsg();
 		}
 	} while ((socketd < 0) || greeting());
 
-	getrhost(mx);
 	freeips(mx);
 	mailerrmsg[1] = rhost;
 
