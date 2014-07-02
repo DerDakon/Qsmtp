@@ -730,7 +730,7 @@ ADD_TEST(NAME "STARTTLSr_tlsciphers_good"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/tlsclientciphers_good")
 
 SET_TESTS_PROPERTIES(STARTTLSr STARTTLSr_no_partner_conf STARTTLSr_tlsciphers_good PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 STARTTLS rejected\\; connecting to ")
+		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 STARTTLS rejected\\; connecting to (\\[[0-9\\.]+\\]|[-\\.a-z]+): 421 <content of linein>\n")
 
 ADD_TEST(NAME "STARTTLSr_tlsciphers_bad"
 		COMMAND testcase_starttlsr badconf.example.com
@@ -758,7 +758,7 @@ ADD_TEST(NAME "STARTTLSr_matching_tlshost"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
 
 SET_TESTS_PROPERTIES(STARTTLSr_matching_tlshost PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 STARTTLS rejected while control/tlshosts/testcert\\.example\\.org\\.pem exists\\; connecting to testcert\\.example\\.org\n$")
+		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 STARTTLS rejected while control/tlshosts/testcert\\.example\\.org\\.pem exists\\; connecting to testcert\\.example\\.org: 421 <content of linein>\n$")
 
 ADD_TEST(NAME "STARTTLSr_conn_failure"
 		COMMAND testcase_starttlsr testcert.example.org 220

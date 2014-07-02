@@ -149,7 +149,7 @@ tls_init(void)
 	/* read the response to STARTTLS */
 	if (netget() != 220) {
 		const char *msg[] = { NULL, NULL, NULL,  "; connecting to ",
-				rhost };
+				rhost, ": ", linein };
 		unsigned int first;
 
 		ssl_free(myssl);
@@ -163,7 +163,7 @@ tls_init(void)
 			msg[1] = servercert;
 			msg[2] = " exists";
 		}
-		write_status_m(msg + first, 5 - first);
+		write_status_m(msg + first, 7 - first);
 		free(servercert);
 		return 1;
 	}

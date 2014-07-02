@@ -54,6 +54,7 @@ write_status(const char *str)
 int
 netget(void)
 {
+	snprintf(linein, TESTIO_MAX_LINELEN, "%i <content of linein>", netget_result);
 	return netget_result;
 }
 
