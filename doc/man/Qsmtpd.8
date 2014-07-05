@@ -211,9 +211,24 @@ If this 512 RSA key is provided,
 will use it for TLS sessions instead of generaring one on-the-fly.
 
 .TP 4
+.I servercert.pem.a.a.a.a:b
+SSL certificate specific to the IP 
+.I a.a.a.a
+and the port
+.I b
+the server is listening on. See 
+.IR servercert.pem .
+The address must be in dotted decimal form for
+IPv4 addresses and in the default IPv6 format (no leading zeroes,
+:: abbreviation) for IPv6 addresses.
+
+.TP 4
 .I servercert.pem.a.a.a.a
 SSL certificate specific to the IP the server is listening on. See 
 .IR servercert.pem .
+The address must be in dotted decimal form for
+IPv4 addresses and in the default IPv6 format (no leading zeroes,
+:: abbreviation) for IPv6 addresses.
 
 .TP 4
 .I servercert.pem

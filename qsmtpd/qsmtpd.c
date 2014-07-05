@@ -101,7 +101,7 @@ int socketd = 1;			/**< the descriptor where messages to network are written to 
 long comstate = 0x001;			/**< status of the command state machine, initialized to noop */
 int authhide;				/**< hide source of authenticated mail */
 int submission_mode;			/**< if we should act as message submission agent */
-char certfilename[24 + INET6_ADDRSTRLEN] = "control/servercert.pem";		/**< path to SSL certificate filename */
+char certfilename[24 + INET6_ADDRSTRLEN + 6] = "control/servercert.pem";		/**< path to SSL certificate filename */
 
 struct recip *thisrecip;
 
@@ -730,13 +730,33 @@ smtp_ehlo(void)
 /* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
 	if (!ssl && ((localport == NULL) || (strcmp(localport, "465") != 0))) {
 		const size_t oldlen = strlen(certfilename);
+		size_t iplen;
 		int fd;
 
+		/* append ".<ip>" to the normal certfilename */
 		certfilename[oldlen] = '.';
 		strncpy(certfilename + oldlen + 1, xmitstat.localip,
 				sizeof(certfilename) - oldlen - 1);
+
+		if (localport != NULL) {
+			/* if we know the local port, append ":<port>" */
+			iplen = oldlen + 1 + strlen(xmitstat.localip);
+			certfilename[iplen] = ':';
+			strncpy(certfilename + iplen + 1, localport,
+					sizeof(certfilename) - iplen - 1);
+		}
+
 		fd = open(certfilename, O_RDONLY);
+		if ((fd < 0) && (localport != NULL)) {
+			/* if we know the port, but no file with the port exists
+			 * try without the port now */
+			certfilename[iplen] = '\0';
+			fd = open(certfilename, O_RDONLY);
+		}
+
 		if (fd < 0) {
+			/* the certificate has not been found with ip, try the
+			 * general name. */
 			certfilename[oldlen] = '\0';
 			fd = open(certfilename, O_RDONLY);
 		}
