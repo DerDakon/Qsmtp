@@ -101,8 +101,8 @@ auth_login(struct string *user)
 	string authin, pass;
 	int r;
 
-	if (linelen > 11) {
-		r = b64decode(linein + 11, linelen - 11, user);
+	if (linein.len > 11) {
+		r = b64decode(linein.s + 11, linein.len - 11, user);
 	} else {
 		if (netwrite("334 VXNlcm5hbWU6\r\n")) /* Username: */
 			return -1;
@@ -167,8 +167,8 @@ auth_plain(struct string *user)
 	STREMPTY(slop);
 	STREMPTY(pass);
 
-	if (linelen > 11) {
-		r = b64decode(linein + 11, linelen - 11, &slop);
+	if (linein.len > 11) {
+		r = b64decode(linein.s + 11, linein.len - 11, &slop);
 	} else {
 		string authin;
 
@@ -248,7 +248,7 @@ auth_cram(struct string *user)
 	string authin, challenge, slop, resp;
 	char unique[83];
 
-	if (linelen != strlen("AUTH CRAM-MD5"))
+	if (linein.len != strlen("AUTH CRAM-MD5"))
 		return err_no_initial();
 
 	ultostr(getpid(), t);
@@ -380,7 +380,7 @@ int
 smtp_auth(void)
 {
 	int i;
-	char *type = linein + 5;
+	char *type = linein.s + 5;
 
 	if (xmitstat.authname.len || !auth_permitted())
 		return 1;

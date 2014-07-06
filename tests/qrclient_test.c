@@ -42,18 +42,18 @@ netget(void)
 
 	lf = strchr(netget_input, '\n');
 	if (lf != NULL)
-		linelen = lf - netget_input;
+		linein.len = lf - netget_input;
 	else
-		linelen = strlen(netget_input);
+		linein.len = strlen(netget_input);
 
-	assert(linelen > 3);
-	assert(linelen < TESTIO_MAX_LINELEN);
+	assert(linein.len > 3);
+	assert(linein.len < TESTIO_MAX_LINELEN);
 
 	memcpy(num, netget_input, 3);
 	num[3] = 0;
 
-	strncpy(linein, netget_input, linelen);
-	linein[linelen] = '\0';
+	strncpy(linein.s, netget_input, linein.len);
+	linein.s[linein.len] = '\0';
 
 	if (lf == NULL)
 		netget_input = NULL;

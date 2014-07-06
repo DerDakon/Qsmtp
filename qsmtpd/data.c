@@ -178,13 +178,13 @@ check_rfc822_headers(unsigned int *headerflags, const char **hdrname)
 	const char *searchpattern[] = { "Date:", "From:", "Message-Id:", NULL };
 	int j;
 
-	for (j = linelen - 1; j >= 0; j--) {
-		if (linein[j] < 0)
+	for (j = linein.len - 1; j >= 0; j--) {
+		if (linein.s[j] < 0)
 			return -8;
 	}
 
 	for (j = 0; searchpattern[j] != NULL; j++) {
-		if (!strncasecmp(searchpattern[j], linein, strlen(searchpattern[j]))) {
+		if (!strncasecmp(searchpattern[j], linein.s, strlen(searchpattern[j]))) {
 			if ((*headerflags) & (1 << j)) {
 				*hdrname = searchpattern[j];
 				return -2;
@@ -257,14 +257,13 @@ smtp_data(void)
 	 */
 	if (net_read())
 		goto loop_data;
-/* write the data to mail */
-	while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes) && linelen && (hops <= MAXHOPS)) {
-
-		if (linein[0] == '.') {
+	/* write the data to mail */
+	while (!((linein.len == 1) && (linein.s[0] == '.')) && (msgsize <= maxbytes) && (linein.len > 0) && (hops <= MAXHOPS)) {
+		if (linein.s[0] == '.') {
 			/* write buffer beginning at [1], we do not have to check if the second character
 			 * is also a '.', RfC 2821 says only we should discard the '.' beginning the line */
-			WRITE(linein + 1, linelen - 1);
-			msgsize += linelen + 1;
+			WRITE(linein.s + 1, linein.len - 1);
+			msgsize += linein.len + 1;
 		} else {
 			int flagr = 1;	/* if the line may be a "Received:" or "Delivered-To:"-line */
 
@@ -298,13 +297,13 @@ smtp_data(void)
 				}
 			}
 			if (flagr) {
-				if (!strncasecmp("Received:", linein, 9)) {
+				if (!strncasecmp("Received:", linein.s, 9)) {
 					if (++hops > MAXHOPS) {
 						logmail[9] = "mail loop}";
 						errmsg = "554 5.4.6 too many hops, this message is looping\r\n";
 						goto loop_data;
 					}
-				} else if ((linelen >= 20) && !strncmp("Delivered-To:", linein, 13)) {
+				} else if ((linein.len >= 20) && !strncmp("Delivered-To:", linein.s, 13)) {
 					/* we write it exactly this way, noone else is allowed to
 					 * change our header lines so we do not need to use strncasecmp
 					 *
@@ -319,7 +318,7 @@ smtp_data(void)
 					struct recip *np;
 
 					for (np = head.tqh_first; np != NULL; np = np->entries.tqe_next) {
-						if (np->ok && !strcmp(linein + 14, np->to.s)) {
+						if (np->ok && !strcmp(linein.s + 14, np->to.s)) {
 							logmail[9] = "mail loop}";
 							errmsg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n";
 							goto loop_data;
@@ -329,8 +328,8 @@ smtp_data(void)
 			}
 
 			/* write buffer beginning at [0] */
-			WRITE(linein, linelen);
-			msgsize += linelen + 2;
+			WRITE(linein.s, linein.len);
+			msgsize += linein.len + 2;
 		}
 		WRITEL("\n");
 		/* this has to stay here and can't be combined with the net_read before the while loop:
@@ -380,26 +379,26 @@ smtp_data(void)
 			}
 		}
 	}
-	if (!linelen) {
+	if (linein.len == 0) {
 		/* if(linelen) message has no body and we already are at the end */
 		WRITEL("\n");
 		if (net_read())
 			goto loop_data;
-		while (!((linelen == 1) && (linein[0] == '.')) && (msgsize <= maxbytes)) {
+		while (!((linein.len == 1) && (linein.s[0] == '.')) && (msgsize <= maxbytes)) {
 			int offset;
 
 			if ((xmitstat.check2822 & 1) && !xmitstat.datatype) {
-				for (i = linelen - 1; i >= 0; i--)
-					if (linein[i] < 0) {
+				for (i = linein.len - 1; i >= 0; i--)
+					if (linein.s[i] < 0) {
 						logmail[9] = "8bit-character in message body}";
 						errmsg = "550 5.6.0 message contains 8bit characters\r\n";
 						goto loop_data;
 					}
 			}
 
-			offset = (linein[0] == '.') ? 1 : 0;
-			WRITE(linein + offset, linelen - offset);
-			msgsize += linelen + 2 - offset;
+			offset = (linein.s[0] == '.') ? 1 : 0;
+			WRITE(linein.s + offset, linein.len - offset);
+			msgsize += linein.len + 2 - offset;
 
 			WRITEL("\n");
 			if (net_read())
@@ -441,11 +440,11 @@ loop_data:
 	/* eat all data until the transmission ends. But just drop it and return
 	 * an error defined before jumping here */
 	do {
-		msgsize += linelen + 2;
-		if (linein[0] == '.')
+		msgsize += linein.len + 2;
+		if (linein.s[0] == '.')
 			msgsize--;
 		net_read();
-	} while ((linelen != 1) && (linein[0] != '.'));
+	} while ((linein.len != 1) && (linein.s[0] != '.'));
 	while (close(queuefd_hdr) && (errno == EINTR));
 	ultostr(msgsize, s);
 
@@ -474,7 +473,7 @@ err_write:
 	freedata();
 
 /* first check, then read: if the error happens on the last line nothing will be read here */
-	while ((linelen != 1) || (linein[0] != '.')) {
+	while ((linein.len != 1) || (linein.s[0] != '.')) {
 		if (net_read())
 			break;
 	}
@@ -538,9 +537,9 @@ smtp_bdat(void)
 		return netwrite("554 5.1.1 no valid recipients\r\n") ? errno : EDONE;
 	}
 
-	if ((linein[5] < '0') || (linein[5] > '9'))
+	if ((linein.s[5] < '0') || (linein.s[5] > '9'))
 		return EINVAL;
-	chunksize = strtol(linein + 5, &more, 10);
+	chunksize = strtol(linein.s + 5, &more, 10);
 	if ((chunksize < 0) || (*more && (*more != ' ')))
 		return EINVAL;
 	if (*more && strcasecmp(more + 1, "LAST"))
@@ -635,7 +634,7 @@ smtp_bdat(void)
 			queuefd_hdr = -1;
 		}
 	} else {
-		const char *bdatmess[] = {"250 2.5.0 ", linein + 5, " octets received", NULL};
+		const char *bdatmess[] = {"250 2.5.0 ", linein.s + 5, " octets received", NULL};
 
 		bdaterr = net_writen(bdatmess) ? errno : 0;
 	}

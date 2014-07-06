@@ -108,22 +108,22 @@ checkreply(const char *status, const char **pre, const int mask)
 		}
 	}
 	/* consume multiline reply */
-	while (linein[3] == '-') {
+	while (linein.s[3] == '-') {
 		/* send out the last (buffered) line */
 		if (!ignore) {
 			/* Put the newline into linein to avoid a second write just for that.
 			 * Since linein is always 0-terminated there is enough space to hold
 			 * that character, and the contents of linein are overwritten by the
 			 * following call to netget() anyway. */
-			linein[linelen] = '\n';
-			write_status_raw(linein, linelen + 1);
+			linein.s[linein.len] = '\n';
+			write_status_raw(linein.s, linein.len + 1);
 		}
 		/* ignore the SMTP code sent here, if it's different from the one before the server is broken */
 		(void) netget();
 	}
 
 	if (!ignore)
-		write_status(linein);
+		write_status(linein.s);
 	/* this allows us to check for 2xx with (x < 300) later */
 	if (res < 200)
 		res = 599;

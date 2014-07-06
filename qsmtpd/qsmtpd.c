@@ -687,7 +687,7 @@ smtp_helo(void)
 	xmitstat.esmtp = 0;
 	xmitstat.spf = 0;
 	xmitstat.datatype = 0;
-	if (helovalid(linein + 5, linelen - 5) < 0)
+	if (helovalid(linein.s + 5, linein.len - 5) < 0)
 		return errno;
 	return net_writen(s) ? errno : 0;
 }
@@ -717,7 +717,7 @@ smtp_ehlo(void)
 		protocol = tmp;
 		memcpy(protocol, protocol_esmtp, strlen(protocol_esmtp) + 1);	/* also copy trailing '\0' */
 	}
-	if (helovalid(linein + 5, linelen - 5) < 0)
+	if (helovalid(linein.s + 5, linein.len - 5) < 0)
 		return errno;
 
 	authtypes = smtp_authstring();
@@ -799,15 +799,15 @@ smtp_rcpt(void)
 	const char *okmsg[] = {"250 2.1.0 recipient <", NULL, "> OK", NULL};
 	size_t bugoffset = 0;
 
-	while ((bugoffset < linelen - 8) && (linein[8 + bugoffset] == ' '))
+	while ((bugoffset < linein.len - 8) && (linein.s[8 + bugoffset] == ' '))
 		bugoffset++;
-	if (linein[8 + bugoffset] != '<')
+	if (linein.s[8 + bugoffset] != '<')
 		return EINVAL;
 	if (bugoffset != 0)
 		xmitstat.spacebug = 1;
 
 	userconf_init(&ds);
-	i = addrparse(linein + 9 + bugoffset, 1, &tmp, &more, &ds, rcpthosts, rcpthsize);
+	i = addrparse(linein.s + 9 + bugoffset, 1, &tmp, &more, &ds, rcpthosts, rcpthsize);
 	if  (i > 0) {
 		return i;
 	} else if (i == -1) {
@@ -986,9 +986,9 @@ smtp_from(void)
 	size_t bugoffset = 0;
 
 	/* detect broken clients that have spaces between ':' and '<' */
-	while ((bugoffset < linelen - 10) && (linein[10 + bugoffset] == ' '))
+	while ((bugoffset < linein.len - 10) && (linein.s[10 + bugoffset] == ' '))
 		bugoffset++;
-	if (linein[10 + bugoffset] != '<')
+	if (linein.s[10 + bugoffset] != '<')
 		return EINVAL;
 	if (bugoffset != 0)
 		xmitstat.spacebug = 1;
@@ -1005,7 +1005,7 @@ smtp_from(void)
 		}
 	}
 
-	i = addrparse(linein + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, NULL, rcpthosts, rcpthsize);
+	i = addrparse(linein.s + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, NULL, rcpthosts, rcpthsize);
 	xmitstat.frommx = NULL;
 	xmitstat.fromdomain = 0;
 	if (i > 0)
@@ -1064,7 +1064,7 @@ smtp_from(void)
 			return EINVAL;
 		continue;
 	}
-	if (linelen > validlength)
+	if (linein.len > validlength)
 		return E2BIG;
 
 	while ( ( i = statvfs("queue/lock/sendmutex", &sbuf)) ) {
@@ -1217,7 +1217,7 @@ http_post(void)
 {
 	if (comstate != 0x001)
 		return EINVAL;
-	if (!strncmp(" / HTTP/1.", linein + 4, 10)) {
+	if (!strncmp(" / HTTP/1.", linein.s + 4, 10)) {
 		const char *logmsg[] = {"dropped connection from [", xmitstat.remoteip, "]: client is talking HTTP to me", NULL};
 		log_writen(LOG_INFO, logmsg);
 		exit(0);
@@ -1234,9 +1234,9 @@ line_valid()
 {
 	size_t i;
 
-	for (i = 0; i < linelen; i++) {
+	for (i = 0; i < linein.len; i++) {
 		/* linein is signed char, so non-ASCII characters are <0 */
-		if (linein[i] <= 0)
+		if (linein.s[i] <= 0)
 			return EINVAL;
 	}
 	return 0;
@@ -1257,7 +1257,7 @@ smtploop(void)
 		switch (flagbogus) {
 		case EBOGUS:
 			/* check if someone talks to us like a HTTP proxy and kill the connection if */
-			if (!strncmp("POST / HTTP/1.", linein, 14)) {
+			if (!strncmp("POST / HTTP/1.", linein.s, 14)) {
 				const char *logmsg[] = {"dropped connection from [", xmitstat.remoteip,
 						"]: client is talking HTTP to me", NULL };
 				log_writen(LOG_INFO, logmsg);
@@ -1277,8 +1277,8 @@ smtploop(void)
 			(void) net_read();
 
 			/* explicitely catch QUIT here: responding with 450 here is bogus */
-			if (!strncasecmp(linein, commands[1].name, commands[1].len)) {
-				if (!linein[commands[1].len])
+			if (!strncasecmp(linein.s, commands[1].name, commands[1].len)) {
+				if (!linein.s[commands[1].len])
 					smtp_quit();
 			}
 			netwrite("450 4.5.0 transmission error, please try again\r\n");
@@ -1370,11 +1370,11 @@ smtploop(void)
 		flagbogus = EINVAL;
 /* handle the commands */
 		for (i = 0; i < sizeof(commands) / sizeof(commands[0]); i++) {
-			if (!strncasecmp(linein, commands[i].name, commands[i].len)) {
+			if (!strncasecmp(linein.s, commands[i].name, commands[i].len)) {
 				if (comstate & commands[i].mask) {
 					unsigned int ostate = commands[i].state; /* the state originally recorded for this command */
 
-					if (!(commands[i].flags & 2) && (linelen > 510)) {
+					if (!(commands[i].flags & 2) && (linein.len > 510)) {
 						/* RfC 2821, section 4.5.3.1 defines the maximum length of a command line
 						 * to 512 chars if this limit is not raised by an extension. Since we
 						 * stripped CRLF our limit is 510. A command may override this check and
@@ -1382,7 +1382,7 @@ smtploop(void)
 						 flagbogus = E2BIG;
 						 break;
 					}
-					if (!(commands[i].flags & 1) && linein[commands[i].len]) {
+					if (!(commands[i].flags & 1) && linein.s[commands[i].len]) {
 						flagbogus = EINVAL;
 					} else {
 						current_command = commands + i;

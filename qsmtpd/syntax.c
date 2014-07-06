@@ -58,8 +58,8 @@ wait_for_quit(void)
 		/* once again we don't care for the return code here as we only want to get rid of this session */
 		(void) net_read();
 
-		if (!strncasecmp(linein, quitcmd, strlen(quitcmd))) {
-			if (!linein[strlen(quitcmd)])
+		if (!strncasecmp(linein.s, quitcmd, strlen(quitcmd))) {
+			if (!linein.s[strlen(quitcmd)])
 				smtp_quit();
 		}
 		check_max_bad_commands();

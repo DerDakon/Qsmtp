@@ -4,12 +4,13 @@
 #ifndef NETIO_H
 #define NETIO_H
 
+#include "sstring.h"
+
 #include <sys/types.h>
 #include <string.h>
 #include <time.h>
 
-extern char linein[];
-extern size_t linelen;
+extern struct string linein;
 
 extern int net_read(void);
 extern int net_writen(const char *const *) __attribute__ ((nonnull (1)));

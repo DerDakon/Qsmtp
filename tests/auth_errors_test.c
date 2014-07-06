@@ -23,8 +23,7 @@
 struct xmitstat xmitstat;
 SSL *ssl = NULL;
 unsigned long sslauth = 0;
-char linein[1002];
-size_t linelen;
+char lineinbuf[1002];
 
 int
 auth_backend_execute(const struct string *user __attribute__((unused)),
@@ -131,9 +130,9 @@ check_all_msgs(void)
 static inline void
 setinput(const char *str)
 {
-	assert(strlen(str) < sizeof(linein));
-	strcpy(linein, str);
-	linelen = strlen(linein);
+	assert(strlen(str) < sizeof(lineinbuf));
+	strncpy(linein.s, str, TESTIO_MAX_LINELEN);
+	linein.len = strlen(linein.s);
 }
 
 int
@@ -143,6 +142,8 @@ main(int argc __attribute__((unused)), char **argv)
 	const char *invalid_base64 = "501 5.5.2 base64 decoding error\r\n";
 	const char *cancel_msg = "501 5.0.0 auth exchange cancelled\r\n";
 	const char *argv_auth[] = { argv[0], "foo.example.com" };
+
+	linein.s = lineinbuf;
 
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_net_readline(test_net_readline);

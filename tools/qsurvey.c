@@ -181,7 +181,7 @@ quitmsg(void)
 			log_write(LOG_ERR, "network read error while waiting for QUIT reply");
 			break;
 		}
-	} while ((linelen >= 4) && (linein[3] == '-'));
+	} while ((linein.len >= 4) && (linein.s[3] == '-'));
 	close(socketd);
 	socketd = -1;
 }
@@ -210,23 +210,23 @@ netget(void)
 			}
 		}
 	}
-	if (linelen < 3)
+	if (linein.len < 3)
 		goto syntax;
-	if ((linelen > 3) && ((linein[3] != ' ') && (linein[3] != '-')))
+	if ((linein.len > 3) && ((linein.s[3] != ' ') && (linein.s[3] != '-')))
 		goto syntax;
-	r = linein[0] - '0';
+	r = linein.s[0] - '0';
 	if ((r < 2) || (r > 5))
 		goto syntax;
-	q = linein[1] - '0';
+	q = linein.s[1] - '0';
 	if ((q < 0) || (q > 9))
 		goto syntax;
 	r = r * 10 + q;
-	q = linein[2] - '0';
+	q = linein.s[2] - '0';
 	if ((q < 0) || (q > 9))
 		goto syntax;
 
 	if (logfd > 0) {
-		write(logfd, linein, linelen);
+		write(logfd, linein.s, linein.len);
 		write(logfd, "\n" ,1);
 	}
 
@@ -244,10 +244,10 @@ cb_size(void)
 {
 	char *s;
 
-	if (!linein[8])
+	if (!linein.s[8])
 		return 0;
 
-	remotesize = strtoul(linein + 8, &s, 10);
+	remotesize = strtoul(linein.s + 8, &s, 10);
 	return *s;
 }
 
@@ -284,7 +284,7 @@ greeting(void)
 			int j = 0;
 
 			while (extensions[j].name) {
-				if (!strncasecmp(linein + 4, extensions[j].name, extensions[j].len)) {
+				if (!strncasecmp(linein.s + 4, extensions[j].name, extensions[j].len)) {
 					if (extensions[j].func) {
 						int r;
 
@@ -302,7 +302,7 @@ greeting(void)
 							log_writen(LOG_WARNING, logmsg);
 						}
 					} else {
-						if (!*(linein + 4 + extensions[j].len)) {
+						if (!*(linein.s + 4 + extensions[j].len)) {
 							smtpext |= (1 << j);
 							break;
 						}
@@ -311,7 +311,7 @@ greeting(void)
 				j++;
 			}
 		}
-	} while (linein[3] == '-');
+	} while (linein.s[3] == '-');
 
 	if (s != 250) {
 /* EHLO failed, try HELO */
@@ -319,7 +319,7 @@ greeting(void)
 		net_writen(cmd);
 		do {
 			s = netget();
-		} while (linein[3] == '-');
+		} while (linein.s[3] == '-');
 		if (s == 250) {
 			smtpext = 0;
 		} else {
@@ -577,7 +577,7 @@ work:
 		net_conn_shutdown(shutdown_clean);
 
 	/* AOL and others */
-	while (linein[3] == '-')
+	while (linein.s[3] == '-')
 		netget();
 
 	makelog("ehlo");
@@ -620,21 +620,21 @@ work:
 	netwrite("VRFY postmaster\r\n");
 	do {
 		netget();
-	} while (linein[3] == '-');
+	} while (linein.s[3] == '-');
 	makelog("noop");
 	netwrite("NOOP\r\n");
 	do {
 		netget();
-	} while (linein[3] == '-');
+	} while (linein.s[3] == '-');
 	makelog("rset");
 	netwrite("RSET\r\n");
 	do {
 		netget();
-	} while (linein[3] == '-');
+	} while (linein.s[3] == '-');
 	makelog("help");
 	netwrite("HELP\r\n");
 	do {
 		netget();
-	} while (linein[3] == '-');
+	} while (linein.s[3] == '-');
 	net_conn_shutdown(shutdown_clean);
 }

@@ -880,13 +880,13 @@ int main(int argc, char **argv)
 			return EFAULT;
 		}
 
-		sprintf(linein, "%u ", datareply);
+		sprintf(linein.s, "%u ", datareply);
 		for (i = 2; i < argc; i++) {
-			strcat(linein, argv[i]);
-			strcat(linein, " ");
+			strcat(linein.s, argv[i]);
+			strcat(linein.s, " ");
 		}
-		strcat(linein, "\r\n");
-		linelen = strlen(linein);
+		strcat(linein.s, "\r\n");
+		linein.len = strlen(linein.s);
 		ascii = 0;
 	} else {
 		int fd;

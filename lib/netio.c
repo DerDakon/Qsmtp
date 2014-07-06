@@ -11,10 +11,12 @@
 #include "ssl_timeoutio.h"
 #include "tls.h"
 
-char linein[1002];			/**< buffer for the line to read: max 1000 chars including CRLF,
+static char lineinbuf[1002];		/**< buffer for the line to read: max 1000 chars including CRLF,
 					 * leading extra '.', closing '\\0' */
-size_t linelen;				/**< length of the line */
-static char lineinn[sizeof(linein)];	/**< if more than one line was in linein the rest is stored here */
+struct string linein = {
+	.s = lineinbuf
+};
+static char lineinn[sizeof(lineinbuf)];	/**< if more than one line was in linein the rest is stored here */
 static size_t linenlen;			/**< length of the lineinn */
 time_t timeout;				/**< how long to wait for data */
 
@@ -60,7 +62,7 @@ void DEBUG_IN(const size_t len)
 		buffer[1] = 'e';
 	}
 	buffer[1 + en] = ' ';
-	memcpy(buffer + 2 + en, linein, len);
+	memcpy(buffer + 2 + en, linein.s, len);
 	buffer[2 + en + len] = '\0';
 	for (i = len + 1 + en; i > 0; i--) {
 		if (buffer[i] < 32)
@@ -217,7 +219,7 @@ loop_long(int has_cr)
 		/* The idea here is to read input until we find a valid line end (CRLF),
 		 * drop everything until this point (i.e. the too long line) and keep
 		 * the rest in the buffer, but still return with an error code. */
-		linenlen = readinput(linein, sizeof(linein));
+		linenlen = readinput(lineinbuf, sizeof(lineinbuf));
 
 		if (linenlen == (size_t) -1) {
 			/* reset that to 0, otherwise it will confuse net_read() */
@@ -225,21 +227,21 @@ loop_long(int has_cr)
 			return;
 		}
 		/* detect if the linebreak is interrupted by buffer end */
-		if (has_cr && (linein[0] == '\n')) {
-			p = linein + 1;
+		if (has_cr && (lineinbuf[0] == '\n')) {
+			p = lineinbuf + 1;
 			linenlen--;
 			break;
 		}
 		has_cr = 0;
 
-		p = find_eol(linein, linenlen, &valid);
+		p = find_eol(lineinbuf, linenlen, &valid);
 
-		if (!valid && (p == linein + linenlen) && (*(p - 1) == '\r')) {
+		if (!valid && (p == lineinbuf + linenlen) && (*(p - 1) == '\r')) {
 			/* we need to read more data */
 			has_cr = 1;
 		} else if (p != NULL) {
 			/* skip the broken part */
-			linenlen -= (p - linein);
+			linenlen -= (p - lineinbuf);
 		}
 	} while ((p == NULL) || has_cr);
 
@@ -266,11 +268,11 @@ net_read(void)
 		p = find_eol(lineinn, linenlen, &valid);
 
 		if (valid) {
-			linelen = p - lineinn - 2;
-			get_from_inbuffer(linein, linelen, 2);
-			linein[linelen] = '\0';
+			linein.len = p - lineinn - 2;
+			get_from_inbuffer(lineinbuf, linein.len, 2);
+			lineinbuf[linein.len] = '\0';
 
-			DEBUG_IN(linelen);
+			DEBUG_IN(linein.len);
 			return 0;
 		/* neither is found, so everything currently in the
 		 * buffer is read, and more must be read from network */
@@ -278,7 +280,7 @@ net_read(void)
 		/* only CR is found and it is at the end of the input buffer */
 				((*(p - 1) == '\r') && (p == lineinn + linenlen))) {
 			readoffset = linenlen;
-			memcpy(linein, lineinn, linenlen);
+			memcpy(lineinbuf, lineinn, linenlen);
 			linenlen = 0;
 		/* something went wrong */
 		} else {
@@ -289,7 +291,7 @@ net_read(void)
 	}
 
 	do {
-		size_t datain = readinput(linein + readoffset, sizeof(linein) - readoffset);
+		size_t datain = readinput(lineinbuf + readoffset, sizeof(lineinbuf) - readoffset);
 		/* now the first readoffset characters of linein are filled with the stuff from the last buffer (if any),
 		 * the next datain characters are filled with the data just read, then there is a '\0' */
 
@@ -302,14 +304,14 @@ net_read(void)
 
 		readoffset += datain;
 
-		p = find_eol(linein, readoffset, &valid);
+		p = find_eol(lineinbuf, readoffset, &valid);
 
 		/* a CR was found at the current end of the input, but there is more
 		 * space to read more data (i.e. the line is not yet too long). Try again
 		 * to see if the next byte would be just the missing LF */
-		if (!valid && (p == linein + readoffset) && (readoffset < sizeof(linein) - 1) &&
+		if (!valid && (p == lineinbuf + readoffset) && (readoffset < sizeof(lineinbuf) - 1) &&
 				(*(p - 1) == '\r')) {
-			datain = readinput(linein + readoffset, 2);
+			datain = readinput(lineinbuf + readoffset, 2);
 			if (datain == 1) {
 				/* check if it is the missing \n */
 				valid = (*p == '\n');
@@ -320,14 +322,14 @@ net_read(void)
 				}
 			}
 		}
-	} while ((p == NULL) && (readoffset < sizeof(linein) - 1));
+	} while ((p == NULL) && (readoffset < sizeof(lineinbuf) - 1));
 
 	if (valid) {
-		linelen = p - linein - 2;
-		linein[linelen] = '\0';
+		linein.len = p - lineinbuf - 2;
+		lineinbuf[linein.len] = '\0';
 		/* if there is more data put it back into the buffer */
-		if (p != linein + readoffset) {
-			linenlen = readoffset - (p - linein);
+		if (p != lineinbuf + readoffset) {
+			linenlen = readoffset - (p - lineinbuf);
 			if (linenlen != 0)
 				memcpy(lineinn, p, linenlen);
 		}
@@ -337,21 +339,21 @@ net_read(void)
 		 * smtp_data to get his '\n.\n' and throw him out. If he
 		 * is broken once why not twice? */
 
-		DEBUG_IN(linelen);
+		DEBUG_IN(linein.len);
 
 		return 0;
 	} else if (p == NULL) {
 		/* the whole buffer is filled, but neither CR nor LF is found */
 		loop_long(0);
 		return -1;
-	} else if ((p == linein + sizeof(linein) - 1) && (*(p - 1) == '\r')) {
+	} else if ((p == lineinbuf + sizeof(lineinbuf) - 1) && (*(p - 1) == '\r')) {
 		/* We found a CR, but a too long line. Let's find out if an LF will follow. */
 		loop_long(1);
 		return -1;
 	} else {
 		/* copy the rest of the input buffer back to lineinn, then return error */
-		if (p != linein + readoffset) {
-			linenlen = readoffset - (p - linein);
+		if (p != lineinbuf + readoffset) {
+			linenlen = readoffset - (p - lineinbuf);
 			if (linenlen != 0)
 				memcpy(lineinn, p, linenlen);
 		}

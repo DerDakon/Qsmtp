@@ -77,8 +77,10 @@ void ultostr(const unsigned long u, char *res)
 	snprintf(res, ULSTRLEN, "%lu", u);
 }
 
-char linein[10];
-size_t linelen;
+char lineinbuf[10];
+struct string linein = {
+	.s = lineinbuf
+};
 
 int netnwrite(const char *s, size_t l)
 {

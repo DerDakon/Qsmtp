@@ -6,8 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 
-char linein[TESTIO_MAX_LINELEN];
-size_t linelen;
+static char lineinbuf[TESTIO_MAX_LINELEN];
+struct string linein = {
+	.s = lineinbuf
+};
 const char *netnwrite_msg;
 
 int

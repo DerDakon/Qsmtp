@@ -325,7 +325,7 @@ int main(int argc, char **argv)
 	}
 
 	memset(&xmitstat, 0, sizeof(xmitstat));
-	linelen = 0;
+	linein.len = 0;
 
 	if (test_nocontrol() != 0)
 		errcnt++;

@@ -20,8 +20,7 @@
 struct xmitstat xmitstat;
 SSL *ssl = NULL;
 unsigned long sslauth = 0;
-char linein[1002];
-size_t linelen;
+char lineinbuf[1002];
 
 enum smtp_state {
 	SMTP_AUTH,
@@ -238,11 +237,11 @@ test_net_readline(size_t num, char *buf)
 static void
 send_data_login(void)
 {
-	strcpy(linein, "AUTH LOGIN");
+	strcpy(linein.s, "AUTH LOGIN");
 
 	if (authtry == 2) {
-		strcat(linein, " ");
-		encode_auth_login(sizeof(linein) - strlen(linein), linein + strlen(linein), users[authtry].username);
+		strcat(linein.s, " ");
+		encode_auth_login(sizeof(lineinbuf) - strlen(lineinbuf), lineinbuf + strlen(lineinbuf), users[authtry].username);
 
 		smtpstate = SMTP_USERNAME;
 		authstate = 2;
@@ -252,11 +251,11 @@ send_data_login(void)
 static void
 send_data_plain(void)
 {
-	strcpy(linein, "AUTH PLAIN");
+	strcpy(linein.s, "AUTH PLAIN");
 
 	if (authtry == 2) {
-		strcat(linein, " ");
-		encode_auth_plain(sizeof(linein) - strlen(linein), linein + strlen(linein));
+		strcat(linein.s, " ");
+		encode_auth_plain(sizeof(lineinbuf) - strlen(lineinbuf), lineinbuf + strlen(lineinbuf));
 
 		smtpstate = SMTP_PASSWORD;
 		authstate = 5;
@@ -270,6 +269,8 @@ int
 main(int argc, char **argv)
 {
 	const char *argv_auth[] = { argv[0], "foo.example.com", argv[1], autharg };
+
+	linein.s = lineinbuf;
 
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_net_readline(test_net_readline);
@@ -316,7 +317,7 @@ main(int argc, char **argv)
 		}
 
 		memset(&xmitstat, 0, sizeof(xmitstat));
-		memset(linein, 0, sizeof(linein));
+		memset(linein.s, 0, sizeof(lineinbuf));
 
 		printf("testing mechanism %s, user \"%s\" with %s password\n",
 				argv[3], users[authtry].username, argv[4]);
@@ -333,7 +334,7 @@ main(int argc, char **argv)
 			break;
 		}
 
-		linelen = strlen(linein);
+		linein.len = strlen(linein.s);
 
 		i = smtp_auth();
 		/* every even try will test a failed authentication */

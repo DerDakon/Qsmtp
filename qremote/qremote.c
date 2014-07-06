@@ -52,7 +52,7 @@ quitmsg(void)
 			log_write(LOG_ERR, "network read error while waiting for QUIT reply");
 			break;
 		}
-	} while ((linelen >= 4) && (linein[3] == '-'));
+	} while ((linein.len >= 4) && (linein.s[3] == '-'));
 	close(socketd);
 	socketd = -1;
 }
@@ -231,18 +231,18 @@ netget(void)
 			}
 		}
 	}
-	if (linelen < 3)
+	if (linein.len < 3)
 		goto syntax;
-	if ((linelen > 3) && ((linein[3] != ' ') && (linein[3] != '-')))
+	if ((linein.len > 3) && ((linein.s[3] != ' ') && (linein.s[3] != '-')))
 		goto syntax;
-	r = linein[0] - '0';
+	r = linein.s[0] - '0';
 	if ((r < 2) || (r > 5))
 		goto syntax;
-	q = linein[1] - '0';
+	q = linein.s[1] - '0';
 	if ((q < 0) || (q > 9))
 		goto syntax;
 	r = r * 10 + q;
-	q = linein[2] - '0';
+	q = linein.s[2] - '0';
 	if ((q < 0) || (q > 9))
 		goto syntax;
 	return r * 10 + q;
@@ -273,18 +273,18 @@ greeting(void)
 	do {
 		s = netget();
 		if (s == 250) {
-			int ext = esmtp_check_extension(linein + 4);
+			int ext = esmtp_check_extension(linein.s + 4);
 
 			if (ext < 0) {
 				const char *logmsg[4] = {"syntax error in EHLO response \"",
-						linein + 4, "\"", NULL};
+						linein.s + 4, "\"", NULL};
 
 				log_writen(LOG_WARNING, logmsg);
 			} else {
 				smtpext |= ext;
 			}
 		}
-	} while (linein[3] == '-');
+	} while (linein.s[3] == '-');
 
 	if (s != 250) {
 /* EHLO failed, try HELO */
@@ -292,7 +292,7 @@ greeting(void)
 		net_writen(cmd);
 		do {
 			s = netget();
-		} while (linein[3] == '-');
+		} while (linein.s[3] == '-');
 		if (s == 250) {
 			smtpext = 0;
 		} else {
@@ -390,7 +390,7 @@ main(int argc, char *argv[])
 			quitmsg();
 			continue;
 		}
-		while (strncmp("220-", linein, 4) == 0) {
+		while (strncmp("220-", linein.s, 4) == 0) {
 			if (net_read() == 0)
 				continue;
 
@@ -415,7 +415,7 @@ main(int argc, char *argv[])
 		if (flagerr)
 			continue;
 
-		if (strncmp("220 ", linein, 4)) {
+		if (strncmp("220 ", linein.s, 4)) {
 			const char *dropmsg[] = {"invalid greeting from ", NULL, NULL};
 
 			dropmsg[1] = rhost;
