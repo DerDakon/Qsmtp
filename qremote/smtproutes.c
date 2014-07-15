@@ -120,17 +120,8 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 	/* check if the dir exists at all to avoid probing for every
 	 * subdomain if the dir does not exist. */
 	const int dirfd = open(dirname, O_RDONLY);
-#ifdef USE_OPENAT
 	const size_t diroffs = 0;
 
-#else
-	const size_t diroffs = strlen(dirname);
-
-	memcpy(fn, dirname, diroffs);
-	/* the descriptor is not needed, only the fact if it was valid or not */
-	if (dirfd >= 0)
-		close(dirfd);
-#endif
 	strcpy(fn + diroffs, remhost);
 
 	*targetport = 25;
@@ -138,11 +129,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 	if (dirfd >= 0) {
 		while (1) {
 			char **array;
-#ifdef USE_OPENAT
 			int fd = openat(dirfd, fn, O_RDONLY);
-#else
-			int fd = open(fn, O_RDONLY);
-#endif
 			const char *target = NULL;
 
 			if (fd < 0) {
@@ -153,9 +140,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 					err_confn(errmsg, NULL);
 				}
 				if (curpart == NULL) {
-#ifdef USE_OPENAT
 					while ((close(dirfd) < 0) && (errno == EINTR));
-#endif
 					break;
 				} else {
 					const char *dot = strchr(curpart, '.');
@@ -224,9 +209,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 
 			free(array);
 
-#ifdef USE_OPENAT
 			while ((close(dirfd) < 0) && (errno == EINTR));
-#endif
 			return mx;
 		}
 	}

@@ -1,9 +1,10 @@
 Your requirements:
  -IPv6 capable system (no need to have IPv6, but libc must know inet_pton and friends)
+ -support for openat()
  -ucspi-tcp including IPv6 patches (get them at http://www.fefe.de/ucspi/)
  -libowfat (>=0.25, get from http://www.fefe.de/libowfat/)
- -qmail
- -openssl
+ -qmail (netqmail is fine)
+ -OpenSSL
  -vpopmail (optional)
  -CMake (>= 2.8, get it from http://www.cmake.org) to generate the build files
 
