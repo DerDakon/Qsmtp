@@ -119,7 +119,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 	const char *curpart = remhost;
 	/* check if the dir exists at all to avoid probing for every
 	 * subdomain if the dir does not exist. */
-	const int dirfd = open(dirname, O_RDONLY);
+	const int dirfd = open(dirname, O_RDONLY | O_DIRECTORY);
 	const size_t diroffs = 0;
 
 	strcpy(fn + diroffs, remhost);
