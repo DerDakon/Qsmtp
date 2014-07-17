@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 	heloname.s = "caliban.sf-tec.de";
 	heloname.len = strlen(heloname.s);
 
-	fd = open(argv[1], O_RDONLY);
+	fd = open(argv[1], O_RDONLY | O_CLOEXEC);
 
 	if (fd < 0)
 		return errno;

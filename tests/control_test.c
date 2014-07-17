@@ -118,7 +118,7 @@ test_oneliner()
 
 	createTestFile("oneliner_test", nocontent);
 
-	fd = open("oneliner_test", O_RDONLY);
+	fd = open("oneliner_test", O_RDONLY | O_CLOEXEC);
 	buf = &ch;
 	len = loadonelinerfd(fd, &buf);
 	if (len != (size_t)-1) {
@@ -214,7 +214,7 @@ test_lload()
 
 	createTestFile("emptyfile", "");
 
-	fd = open("emptyfile", O_RDONLY);
+	fd = open("emptyfile", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fputs("Can not open temporary file for reading\n", stderr);
 		return err + 1;
@@ -252,7 +252,7 @@ test_lload()
 
 	createTestFile("emptyfile", "\n\n\n\n");
 
-	fd = open("emptyfile", O_RDONLY);
+	fd = open("emptyfile", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fputs("Can not open temporary file for reading\n", stderr);
 		return err + 1;
@@ -269,7 +269,7 @@ test_lload()
 			free(buf);
 	}
 
-	fd = open("emptyfile", O_RDONLY);
+	fd = open("emptyfile", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fputs("Can not open temporary file for reading\n", stderr);
 		return err + 1;
@@ -289,7 +289,7 @@ test_lload()
 	unlink("emptyfile");
 
 	createTestFile("lloadfile_test", "a b");
-	fd = open("lloadfile_test", O_RDONLY);
+	fd = open("lloadfile_test", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fputs("Can not open temporary file for reading\n", stderr);
 		return err + 1;
@@ -309,7 +309,7 @@ test_lload()
 	unlink("lloadfile_test");
 
 	createTestFile("lloadfile_test", comment);
-	fd = open("lloadfile_test", O_RDONLY);
+	fd = open("lloadfile_test", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fputs("Can not open temporary file for reading\n", stderr);
 		return err + 1;
@@ -382,7 +382,7 @@ test_intload()
 	while (patterns[i].str != NULL) {
 		createTestFile("control_int", patterns[i].str);
 
-		fd = open("control_int", O_RDONLY);
+		fd = open("control_int", O_RDONLY | O_CLOEXEC);
 		if (fd == -1) {
 			fputs("cannot open control test file\n", stderr);
 			return err + 1;
@@ -431,7 +431,7 @@ test_intload()
 
 	createTestFile("control_int", "xy\n");
 
-	fd = open("control_int", O_RDONLY);
+	fd = open("control_int", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fputs("cannot open control test file\n", stderr);
 		return err + 1;
@@ -507,7 +507,7 @@ test_listload()
 	callbacks[3] = NULL;
 
 	for (i = 0; i <= 3; i++) {
-		int fd = open(fname, O_RDONLY);
+		int fd = open(fname, O_RDONLY | O_CLOEXEC);
 		if (fd == -1) {
 			fputs("cannot open control test file for reading\n", stderr);
 			unlink(fname);
@@ -634,7 +634,7 @@ main(void)
 
 	createTestFile(ctrl_testfile, contents);
 
-	fd = open(ctrl_testfile, O_RDONLY);
+	fd = open(ctrl_testfile, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		puts("cannot open control test file for reading");
 		unlink(ctrl_testfile);
@@ -656,7 +656,7 @@ main(void)
 	for (i = 0; absent[i] != NULL; i++) {
 		int search;
 
-		fd = open(ctrl_testfile, O_RDONLY);
+		fd = open(ctrl_testfile, O_RDONLY | O_CLOEXEC);
 		if (fd == -1) {
 			puts("cannot open control test file for reading");
 			unlink(ctrl_testfile);

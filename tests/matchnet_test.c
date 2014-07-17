@@ -160,7 +160,7 @@ ip4_test(void)
 		err++;
 	}
 
-	fd = open(fnbuf, O_APPEND | O_RDWR, 0600);
+	fd = open(fnbuf, O_APPEND | O_RDWR | O_CLOEXEC, 0600);
 	if (fd == -1) {
 		fprintf(stderr, "can not open temporary file\n");
 		return ++err;
@@ -181,7 +181,7 @@ ip4_test(void)
 		err++;
 	}
 
-	fd = open(fnbuf, O_APPEND | O_RDWR, 0600);
+	fd = open(fnbuf, O_APPEND | O_RDWR | O_CLOEXEC, 0600);
 	if (fd == -1) {
 		fprintf(stderr, "can not open temporary file\n");
 		return ++err;
@@ -195,7 +195,7 @@ ip4_test(void)
 		err++;
 	}
 
-	fd = open(fnbuf, O_APPEND | O_RDWR, 0600);
+	fd = open(fnbuf, O_APPEND | O_RDWR | O_CLOEXEC, 0600);
 	if (fd == -1) {
 		fprintf(stderr, "can not open temporary file\n");
 		return ++err;
@@ -209,7 +209,7 @@ ip4_test(void)
 		fprintf(stderr, "lookupipbl() with file containing invalid netmask should have returned -1 but returned %i\n", i);
 		err++;
 	}
-	fd = open(fnbuf, O_RDWR, 0600);
+	fd = open(fnbuf, O_RDWR | O_CLOEXEC, 0600);
 	if (fd == -1) {
 		fprintf(stderr, "can not open temporary file\n");
 		return ++err;
@@ -236,7 +236,7 @@ ip4_test(void)
 
 	/* test IPv6 connection, file now has invalid size for IPv6 */
 	xmitstat.ipv4conn = 0;
-	fd = open(fnbuf, O_RDONLY);
+	fd = open(fnbuf, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fprintf(stderr, "can not open temporary file\n");
 		return ++err;

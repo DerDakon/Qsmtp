@@ -47,7 +47,7 @@ main(int argc, char *argv[])
 		fputs(" file ip [ip ...]\n", stdout);
 		return 1;
 	}
-	fd = open(argv[1], O_CREAT | O_APPEND | O_WRONLY, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	fd = open(argv[1], O_CREAT | O_APPEND | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd == -1)
 		return errno;
 

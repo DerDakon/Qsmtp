@@ -64,7 +64,7 @@ int main(void)
 	struct ips *mx;
 	unsigned int targetport = 0;
 	unsigned long expectedport;
-	int fd = open("expected_port", O_RDONLY);
+	int fd = open("expected_port", O_RDONLY | O_CLOEXEC);
 	char *ipexpect;
 	size_t ipe_len;
 	struct in6_addr expectedip;

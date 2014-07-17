@@ -119,7 +119,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 	const char *curpart = remhost;
 	/* check if the dir exists at all to avoid probing for every
 	 * subdomain if the dir does not exist. */
-	const int dirfd = open(dirname, O_RDONLY | O_DIRECTORY);
+	const int dirfd = open(dirname, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
 	const size_t diroffs = 0;
 
 	strcpy(fn + diroffs, remhost);
@@ -129,7 +129,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 	if (dirfd >= 0) {
 		while (1) {
 			char **array;
-			int fd = openat(dirfd, fn, O_RDONLY);
+			int fd = openat(dirfd, fn, O_RDONLY | O_CLOEXEC);
 			const char *target = NULL;
 
 			if (fd < 0) {
@@ -214,7 +214,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 		}
 	}
 
-	if ((loadlistfd(open("control/smtproutes", O_RDONLY), &smtproutes, hascolon) == 0) && (smtproutes != NULL)) {
+	if ((loadlistfd(open("control/smtproutes", O_RDONLY | O_CLOEXEC), &smtproutes, hascolon) == 0) && (smtproutes != NULL)) {
 		unsigned int k = 0;
 
 		while (smtproutes[k]) {

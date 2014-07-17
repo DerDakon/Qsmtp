@@ -57,7 +57,7 @@ main(void)
 	if (buf != NULL)
 		return 4;
 
-	fd = open(testfname, O_RDONLY);
+	fd = open(testfname, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fprintf(stderr, "can not open %s for reading\n", testfname);
 		return 5;
@@ -140,7 +140,7 @@ main(void)
 
 	close(fd);
 
-	fd = open(testfname, O_RDONLY);
+	fd = open(testfname, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fprintf(stderr, "can not open %s for reading\n", testfname);
 		return 14;

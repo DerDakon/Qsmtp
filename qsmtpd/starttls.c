@@ -100,7 +100,7 @@ tls_verify(void)
 
 	/* request client cert to see if it can be verified by one of our CAs
 	 * and the associated email address matches an entry in tlsclients */
-	if (loadlistfd(open("control/tlsclients", O_RDONLY), &clients, checkaddr) < 0)
+	if (loadlistfd(open("control/tlsclients", O_RDONLY | O_CLOEXEC), &clients, checkaddr) < 0)
 		return -errno;
 
 	if (clients == NULL)
@@ -226,7 +226,7 @@ tls_init()
 						X509_V_FLAG_CRL_CHECK_ALL);
 
 
-	saciphers.len = lloadfilefd(open(ciphfn, O_RDONLY), &(saciphers.s), 1);
+	saciphers.len = lloadfilefd(open(ciphfn, O_RDONLY | O_CLOEXEC), &(saciphers.s), 1);
 	if (saciphers.len == (size_t)-1) {
 		if (errno != ENOENT) {
 			int e = errno;

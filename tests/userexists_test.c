@@ -139,7 +139,7 @@ err_control2(const char *msg, const char *fn)
 static int
 test_no_cdb(void)
 {
-	int olddir = open(".", O_RDONLY);
+	int olddir = open(".", O_RDONLY | O_CLOEXEC);
 	int ret = 0;
 	int fd;
 
@@ -154,7 +154,7 @@ test_no_cdb(void)
 		return 1;
 	}
 
-	fd = open("users/cdb", O_RDONLY);
+	fd = open("users/cdb", O_RDONLY | O_CLOEXEC);
 	if (fd >= 0) {
 		fprintf(stderr, "users/users/cdb exists, test is not reliable\n");
 		close(fd);
@@ -192,7 +192,7 @@ test_no_cdb(void)
 static int
 test_cdbdir(void)
 {
-	int olddir = open(".", O_RDONLY);
+	int olddir = open(".", O_RDONLY | O_CLOEXEC);
 	int ret = 0;
 	int fd;
 	char buffer[4096];
@@ -210,7 +210,7 @@ test_cdbdir(void)
 		return 1;
 	}
 
-	fd = open("users/cdb/", O_RDONLY);
+	fd = open("users/cdb/", O_RDONLY | O_CLOEXEC);
 	if (fd < 0) {
 		fprintf(stderr, "users/cdbdir/users/cdb is no directory, test is not reliable, error was %i\n", errno);
 		ret++;

@@ -399,7 +399,7 @@ main(void)
 		xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
 		snprintf(userpath, sizeof(userpath), "%u/user/", testindex);
-		basedirfd = open(userpath, O_RDONLY);
+		basedirfd = open(userpath, O_RDONLY | O_CLOEXEC);
 		if (basedirfd < 0) {
 			uc.userpath.s = NULL;
 			uc.userpath.len = 0;
@@ -415,7 +415,7 @@ main(void)
 			uc.userconf = map_from_list(testdata[testindex].userconf);
 
 		snprintf(confpath, sizeof(confpath), "%u/domain/", testindex);
-		basedirfd = open(confpath, O_RDONLY);
+		basedirfd = open(confpath, O_RDONLY | O_CLOEXEC);
 		if (basedirfd < 0) {
 			uc.domainpath.s = NULL;
 			uc.domainpath.len = 0;

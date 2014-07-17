@@ -427,7 +427,7 @@ smtp_authstring(void)
 	if (!auth_permitted())
 		return NULL;
 
-	conflen = lloadfilefd(open("control/authtypes", O_RDONLY), &confbuf, 3);
+	conflen = lloadfilefd(open("control/authtypes", O_RDONLY | O_CLOEXEC), &confbuf, 3);
 
 	if (conflen == (size_t) -1)
 		return NULL;

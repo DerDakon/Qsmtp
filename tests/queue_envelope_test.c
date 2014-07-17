@@ -89,8 +89,8 @@ test_invalid_write(void)
 	int ret = 0;
 	int r;
 
-	queuefd_data = open(".", O_RDONLY);
-	queuefd_hdr = open(".", O_RDONLY);
+	queuefd_data = open(".", O_RDONLY | O_CLOEXEC);
+	queuefd_hdr = open(".", O_RDONLY | O_CLOEXEC);
 
 	goodrcpt = 1;
 
@@ -124,7 +124,7 @@ test_invalid_write2(void)
 	int ret = 0;
 	int r;
 
-	queuefd_data = open(".", O_RDONLY);
+	queuefd_data = open(".", O_RDONLY | O_CLOEXEC);
 	queuefd_hdr = -1;
 
 	goodrcpt = 1;
@@ -336,7 +336,7 @@ test_log_messages(void)
 		create_rcpt(testpattern[i].rcpt1);
 		create_rcpt(testpattern[i].rcpt2);
 
-		queuefd_data = open(".", O_RDONLY);
+		queuefd_data = open(".", O_RDONLY | O_CLOEXEC);
 		queuefd_hdr = fd[1];
 
 		if (queue_envelope(testpattern[i].msgsize, testpattern[i].chunked) != 0) {

@@ -35,7 +35,7 @@ test_cdb(void)
 	char *cdb_mmap;
 
 	/* try to open the cdb file */
-	fd = open("users/cdb", O_RDONLY);
+	fd = open("users/cdb", O_RDONLY | O_CLOEXEC);
 	if (fd < 0) {
 		err = -errno;
 		return err;

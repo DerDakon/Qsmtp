@@ -159,7 +159,7 @@ err_control2(const char *msg, const char *fn)
 static int
 lookupipbl_name(const char *filename)
 {
-	int fd = open(filename, O_RDONLY);
+	int fd = open(filename, O_RDONLY | O_CLOEXEC);
 
 	if (fd < 0) {
 		if (errno != ENOENT)
@@ -289,7 +289,7 @@ setup(void)
 	if ((tmp != NULL) && (*tmp != '\0')) {
 		do_debug_io = 1;
 	} else {
-		j = open("control/Qsmtpd_debug", O_RDONLY);
+		j = open("control/Qsmtpd_debug", O_RDONLY | O_CLOEXEC);
 		do_debug_io = (j > 0);
 		if (j > 0)
 			close(j);
@@ -331,7 +331,7 @@ setup(void)
 		liphost.len = heloname.len;
 	}
 
-	rcpthfd = open("control/rcpthosts", O_RDONLY);
+	rcpthfd = open("control/rcpthosts", O_RDONLY | O_CLOEXEC);
 	if (rcpthfd < 0) {
 		if (errno != ENOENT) {
 			log_write(LOG_ERR, "control/rcpthosts not found");
@@ -415,13 +415,13 @@ setup(void)
 	/* RfC 2821, section 4.5.3.2: "Timeouts"
 	 * An SMTP server SHOULD have a timeout of at least 5 minutes while it
 	 * is awaiting the next command from the sender. */
-	if ( (j = loadintfd(open("control/timeoutsmtpd", O_RDONLY), &tl, 320)) ) {
+	if ( (j = loadintfd(open("control/timeoutsmtpd", O_RDONLY | O_CLOEXEC), &tl, 320)) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/timeoutsmtpd");
 		return e;
 	}
 	timeout = tl;
-	if ( (j = loadintfd(open("control/databytes", O_RDONLY), &databytes, 0)) ) {
+	if ( (j = loadintfd(open("control/databytes", O_RDONLY | O_CLOEXEC), &databytes, 0)) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/databytes");
 		return e;
@@ -431,20 +431,20 @@ setup(void)
 	} else {
 		maxbytes = ((size_t)-1) - 1000;
 	}
-	if ( (j = loadintfd(open("control/authhide", O_RDONLY), &tl, 0)) ) {
+	if ( (j = loadintfd(open("control/authhide", O_RDONLY | O_CLOEXEC), &tl, 0)) ) {
 		log_write(LOG_ERR, "parse error in control/authhide");
 		authhide = 0;
 	} else {
 		authhide = tl ? 1 : 0;
 	}
 
-	if ( (j = loadintfd(open("control/forcesslauth", O_RDONLY), &sslauth, 0)) ) {
+	if ( (j = loadintfd(open("control/forcesslauth", O_RDONLY | O_CLOEXEC), &sslauth, 0)) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/forcesslauth");
 		return e;
 	}
 
-	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY), &tmpconf, NULL)) ) {
+	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY | O_CLOEXEC), &tmpconf, NULL)) ) {
 		if ((errno == ENOENT) || (tmpconf == NULL)) {
 			tmpconf = NULL;
 		} else {
@@ -744,19 +744,19 @@ smtp_ehlo(void)
 					sizeof(certfilename) - iplen - 1);
 		}
 
-		fd = open(certfilename, O_RDONLY);
+		fd = open(certfilename, O_RDONLY | O_CLOEXEC);
 		if ((fd < 0) && (localport != NULL)) {
 			/* if we know the port, but no file with the port exists
 			 * try without the port now */
 			certfilename[iplen] = '\0';
-			fd = open(certfilename, O_RDONLY);
+			fd = open(certfilename, O_RDONLY | O_CLOEXEC);
 		}
 
 		if (fd < 0) {
 			/* the certificate has not been found with ip, try the
 			 * general name. */
 			certfilename[oldlen] = '\0';
-			fd = open(certfilename, O_RDONLY);
+			fd = open(certfilename, O_RDONLY | O_CLOEXEC);
 		}
 
 		if (fd >= 0) {

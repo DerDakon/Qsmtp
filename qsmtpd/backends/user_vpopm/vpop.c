@@ -71,7 +71,7 @@ vget_dir(const char *domain, struct userconf *ds)
 	cdb_key[cdbkeylen] = '\0';
 
 	/* try to open the cdb file */
-	fd = open("users/cdb", O_RDONLY);
+	fd = open("users/cdb", O_RDONLY | O_CLOEXEC);
 	if (fd < 0) {
 		switch (errno) {
 		case ENOENT:
@@ -260,7 +260,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	userdirtmp.s[--userdirtmp.len] = '\0';
 	userdirtmp.s[userdirtmp.len - 1] = '/';
 
-	userdirfd = open(userdirtmp.s, O_RDONLY);
+	userdirfd = open(userdirtmp.s, O_RDONLY | O_CLOEXEC);
 	if (userdirfd < 0) {
 		int e = errno;
 		int fd;
@@ -393,7 +393,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 int
 userbackend_init(void)
 {
-	if (lloadfilefd(open("control/vpopbounce", O_RDONLY), &vpopbounce, 0) == ((size_t)-1)) {
+	if (lloadfilefd(open("control/vpopbounce", O_RDONLY | O_CLOEXEC), &vpopbounce, 0) == ((size_t)-1)) {
 		int e = errno;
 		err_control("control/vpopbounce");
 		return e;

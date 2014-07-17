@@ -145,13 +145,13 @@ setup(void)
 	}
 	heloname.len = j;
 
-	if (loadintfd(open("control/timeoutremote", O_RDONLY), &chunk, 320) < 0) {
+	if (loadintfd(open("control/timeoutremote", O_RDONLY | O_CLOEXEC), &chunk, 320) < 0) {
 		err_conf("parse error in control/timeoutremote");
 	}
 	timeout = chunk;
 
 #ifdef CHUNKING
-	if (loadintfd(open("control/chunksizeremote", O_RDONLY), &chunk, 32768) < 0) {
+	if (loadintfd(open("control/chunksizeremote", O_RDONLY | O_CLOEXEC), &chunk, 32768) < 0) {
 		err_conf("parse error in control/chunksizeremote");
 	} else {
 		if (chunk >= ((unsigned long)1 << 31)) {
@@ -198,7 +198,7 @@ setup(void)
 		outip6 = in6addr_any;
 
 #ifdef DEBUG_IO
-	j = open("control/Qremote_debug", O_RDONLY);
+	j = open("control/Qremote_debug", O_RDONLY | O_CLOEXEC);
 	do_debug_io = (j > 0);
 	if (j > 0)
 		close(j);

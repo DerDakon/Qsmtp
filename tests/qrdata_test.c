@@ -910,7 +910,7 @@ int main(int argc, char **argv)
 		} else {
 			snprintf(fname, sizeof(fname), "%s/qrdata_test_data/%s.in",
 					getenv("QRDATA_INPUT_DIR"), testpatterns[usepattern].name);
-			fd = open(fname, O_RDONLY);
+			fd = open(fname, O_RDONLY | O_CLOEXEC);
 			if (fd == -1) {
 				fprintf(stderr, "error opening input file %s\n", fname);
 				return EFAULT;
@@ -927,7 +927,7 @@ int main(int argc, char **argv)
 		}
 
 		snprintf(fname, sizeof(fname), "qrdata_test_data/%s.out", testpatterns[usepattern].name);
-		fd = open(fname, O_RDONLY);
+		fd = open(fname, O_RDONLY | O_CLOEXEC);
 		if ((fd == -1) && (errno != ENOENT)) {
 			fprintf(stderr, "error opening output file %s\n", fname);
 			return EFAULT;

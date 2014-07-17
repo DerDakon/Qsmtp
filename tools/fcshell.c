@@ -367,7 +367,7 @@ editread(const int type)
 
 		editbuffer.buf.map.mem = NULL;
 		editbuffer.buf.map.len = 0;
-		if ( (fd = open(editbuffer.name, O_RDONLY)) < 0) {
+		if ( (fd = open(editbuffer.name, O_RDONLY | O_CLOEXEC)) < 0) {
 			if (errno != ENOENT) {
 				commstat = errno;
 				err2("opening file failed: ", editbuffer.name);

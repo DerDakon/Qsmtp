@@ -126,7 +126,7 @@ setup(void)
 			err_conf("control/helohost contains invalid name");
 		}
 	}
-	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY), &tmp, 320)) < 0) {
+	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY | O_CLOEXEC), &tmp, 320)) < 0) {
 		err_conf("parse error in control/timeoutremote");
 	}
 	timeout = tmp;
@@ -350,7 +350,7 @@ makelog(const char *ext)
 {
 	if (logfd)
 		close(logfd);
-	logfd = openat(logdirfd, ext, O_WRONLY | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR);
+	logfd = openat(logdirfd, ext, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, S_IRUSR | S_IWUSR);
 	if (logfd == -1) {
 		if (strcmp(ext, "conn")) {
 			write(2, "can not create ", 15);
@@ -406,7 +406,7 @@ mkdir_pr(const char *pattern)
 			exit(1);
 		}
 
-		nextdir = openat(dirfd, fnbuf, O_RDONLY);
+		nextdir = openat(dirfd, fnbuf, O_RDONLY | O_CLOEXEC);
 		if (nextdir < 0) {
 			fprintf(stderr, "cannot open %s: %s\n",
 					fnbuf, strerror(errno));
@@ -433,7 +433,7 @@ mkdir_pr(const char *pattern)
 		exit(1);
 	}
 
-	r = openat(dirfd, fnbuf, O_RDONLY);
+	r = openat(dirfd, fnbuf, O_RDONLY | O_CLOEXEC);
 	if (r < 0) {
 		fprintf(stderr, "cannot open %s: %s\n",
 				fnbuf, strerror(errno));
@@ -513,7 +513,7 @@ work:
 	if (logdir == NULL)
 		logdir = "/tmp/Qsurvey";
 
-	logdirfd = open(logdir, O_RDONLY);
+	logdirfd = open(logdir, O_RDONLY | O_CLOEXEC);
 
 	if (logdirfd < 0) {
 		fprintf(stderr, "cannot open log directory %s: %s\n",
@@ -548,7 +548,7 @@ work:
 			}
 		}
 	}
-	i = openat(logdirfd, ipname, O_RDONLY);
+	i = openat(logdirfd, ipname, O_RDONLY | O_CLOEXEC);
 	if (i < 0) {
 		fprintf(stderr, "cannot open IP directory %s: %s\n",
 				ipname, strerror(errno));

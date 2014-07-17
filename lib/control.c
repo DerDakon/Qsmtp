@@ -221,7 +221,7 @@ loadoneliner(const char *filename, char **buf, const int optional)
 	size_t j;
 	int fd;
 
-	fd = open(filename, O_RDONLY);
+	fd = open(filename, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		j = (size_t)-1;
 		*buf = NULL;

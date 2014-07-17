@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 		return EINVAL;
 	}
 
-	fd = open(argv[1], O_RDONLY);
+	fd = open(argv[1], O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fd = errno;
 		fprintf(stderr, "error %i opening %s\n", fd, argv[1]);
