@@ -76,7 +76,7 @@ getfile(const struct userconf *ds, const char *fn, int *type, int useglobal)
 			return fd;
 	}
 
-	if (!ds->domainpath.len) {
+	if (!ds->domainpath.len && !useglobal) {
 		errno = ENOENT;
 		return -1;
 	}
