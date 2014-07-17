@@ -89,17 +89,13 @@ vget_dir(const char *domain, struct userconf *ds)
 
 	if (fstat(fd, &st) < 0) {
 		err = -errno;
-		while ((close(fd) < 0) && (errno == EINTR));
+		close(fd);
 		return err;
 	}
 	if (!st.st_size) {
 		err = 0;
-		while (close(fd) < 0) {
-			if (errno != EINTR) {
-				err = -errno;
-				break;
-			}
-		}
+		if (close(fd) < 0)
+			err = -errno;
 		return err;
 	}
 
@@ -325,10 +321,8 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 						return -1;
 					}
 				} else {
-					while (close(fd)) {
-						if (errno != EINTR)
-							return -1;
-					}
+					if (close(fd) != 0)
+						return -1;
 					return 4;
 				}
 				p = strchr(p + 1, '-');
@@ -360,13 +354,8 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 					else
 						err = errno;
 				}
-				while (close(fd)) {
-					if (errno != EINTR) {
-						if (err == 0)
-							err = errno;
-						break;
-					}
-				}
+				if ((close(fd) != 0) && (err == 0))
+					err = errno;
 				if (err != 0) {
 					userconf_free(ds);
 					errno = err;
@@ -387,15 +376,13 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 				return 2;
 			}
 		} else {
-			while (close(fd)) {
-				if (errno != EINTR) {
-					userconf_free(ds);
-					return -1;
-				}
+			if (close(fd) != 0) {
+				userconf_free(ds);
+				return -1;
 			}
 		}
 	} else {
-		while ((close(userdirfd) < 0) && (errno == EINTR));
+		close(userdirfd);
 		ds->userpath.s = userdirtmp.s;
 		ds->userpath.len = userdirtmp.len;
 	}

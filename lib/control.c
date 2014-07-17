@@ -49,7 +49,6 @@ lloadfilefd(int fd, char **buf, const int striptab)
 {
 	char *inbuf;
 	size_t oldlen, j;
-	int i;
 	struct stat st;
 
 	*buf = NULL;
@@ -59,53 +58,40 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		else
 			return -1;
 	}
-	while (flock(fd, LOCK_SH | LOCK_NB)) {
-		if (errno != EINTR) {
-			char errcode[ULSTRLEN];
-			const char *logmsg[] = { "cannot lock input file, error code ",
-					errcode, NULL };
+	if (flock(fd, LOCK_SH | LOCK_NB) != 0) {
+		char errcode[ULSTRLEN];
+		const char *logmsg[] = { "cannot lock input file, error code ",
+				errcode, NULL };
 
-			ultostr(errno, errcode);
-			log_writen(LOG_WARNING, logmsg);
-			do {
-				i = close(fd);
-			} while ((i == -1) && (errno == EINTR));
-			errno = ENOLCK;	/* not the right error code, but good enough */
-			return -1;
-		}
+		ultostr(errno, errcode);
+		log_writen(LOG_WARNING, logmsg);
+		close(fd);
+		errno = ENOLCK;	/* not the right error code, but good enough */
+		return -1;
 	}
 	if (fstat(fd, &st) != 0) {
 		int err = errno;
-		do {
-			i = close(fd);
-		} while ((i == -1) && (errno == EINTR));
+		close(fd);
 		errno = err;
 		return -1;
 	}
 	if (!st.st_size) {
-		do {
-			i = close(fd);
-		} while ((i == -1) && (errno == EINTR));
-		return i;
+		return close(fd);
 	}
 	oldlen = st.st_size + 1;
 	inbuf = malloc(oldlen);
 	if (!inbuf) {
-		do {
-			i = close(fd);
-		} while ((i == -1) && (errno == EINTR));
+		close(fd);
 		errno = ENOMEM;
 		return -1;
 	}
 	j = 0;
 	while (j < oldlen - 1) {
 		const ssize_t k = read(fd, inbuf + j, oldlen - 1 - j);
-		if ((k == -1) && (errno != EINTR)) {
+		if (k == -1) {
 			int e = errno;
 
-			do {
-				i = close(fd);
-			} while ((i == -1) && (errno == EINTR));
+			close(fd);
 			free(inbuf);
 			errno = e;
 			return -1;
@@ -113,12 +99,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		if (k > 0)
 			j += k;
 	}
-	while (close(fd) != 0) {
-		if (errno != EINTR) {
-			free(inbuf);
-			return -1;
-		}
-	}
+	close(fd);
 	inbuf[--oldlen] = '\0'; /* if file has no newline at the end */
 	if (!striptab) {
 		*buf = inbuf;
@@ -392,12 +373,10 @@ finddomainfd(int fd, const char *domain, const int cl)
 	}
 
 	while (flock(fd, LOCK_SH | LOCK_NB)) {
-		if (errno != EINTR) {
-			while (close(fd) && (errno == EINTR));
-			log_write(LOG_WARNING, "cannot lock input file");
-			errno = ENOLCK;	/* not the right error code, but good enough */
-			return -1;
-		}
+		close(fd);
+		log_write(LOG_WARNING, "cannot lock input file");
+		errno = ENOLCK;	/* not the right error code, but good enough */
+		return -1;
 	}
 
 	map = mmap_fd(fd, &len);
@@ -405,7 +384,7 @@ finddomainfd(int fd, const char *domain, const int cl)
 	if (map == NULL) {
 		int e = errno;
 
-		while (close(fd) && (errno == EINTR));
+		close(fd);
 		errno = e;
 		return -1;
 	}
@@ -414,18 +393,13 @@ finddomainfd(int fd, const char *domain, const int cl)
 
 	munmap(map, len);
 	if (cl) {
-		while ((i = close(fd))) {
-			if (errno != EINTR) {
-				break;
-			}
-		}
+		i = close(fd);
 	} else {
-		while ( (i = flock(fd, LOCK_UN)) ) {
-			if (errno != EINTR) {
-				log_write(LOG_WARNING, "cannot unlock input file");
-				errno = ENOLCK;	/* not the right error code, but good enough */
-				return -1;
-			}
+		i = flock(fd, LOCK_UN);
+		if (i != 0) {
+			log_write(LOG_WARNING, "cannot unlock input file");
+			errno = ENOLCK;	/* not the right error code, but good enough */
+			return -1;
 		}
 	}
 	return i ? i : rc;

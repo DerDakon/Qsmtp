@@ -382,7 +382,7 @@ main(int argc, char *argv[])
 		int flagerr = 0;
 
 		if (socketd >= 0)
-			while ((close(socketd) < 0) && (errno == EINTR));
+			close(socketd);
 		socketd = tryconn(mx, &outip, &outip6);
 		dup2(socketd, 0);
 		getrhost(mx);

@@ -43,15 +43,13 @@ test_cdb(void)
 
 	if (fstat(fd, &st) < 0) {
 		err = -errno;
-		while ((close(fd) < 0) && (errno == EINTR));
+		close(fd);
 		return err;
 	}
 	if (!st.st_size) {
 		err = 0;
-		while (close(fd) < 0) {
-			if (errno != EINTR)
-				err = -errno;
-		}
+		if (close(fd) < 0)
+			err = -errno;
 		return err;
 	}
 

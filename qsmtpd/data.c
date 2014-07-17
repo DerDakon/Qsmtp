@@ -435,7 +435,7 @@ loop_data:
 			logmail[9] = "read error}";
 		}
 	}
-	while (close(queuefd_data) && (errno == EINTR));
+	close(queuefd_data);
 	queuefd_data = -1;
 	/* eat all data until the transmission ends. But just drop it and return
 	 * an error defined before jumping here */
@@ -445,7 +445,7 @@ loop_data:
 			msgsize--;
 		net_read();
 	} while ((linein.len != 1) && (linein.s[0] != '.'));
-	while (close(queuefd_hdr) && (errno == EINTR));
+	close(queuefd_hdr);
 	ultostr(msgsize, s);
 
 	while (head.tqh_first != NULL) {
@@ -494,9 +494,6 @@ err_write:
 		return rc;
 	case EPIPE:
 		log_write(LOG_ERR, "broken pipe to qmail-queue");
-		return EDONE;
-	case EINTR:
-		log_write(LOG_ERR, "interrupt while writing to qmail-queue");
 		return EDONE;
 	case EINVAL:	/* This errors happen if client sends invalid data (e.g. bad <CRLF> sequences). */
 		return netwrite("500 5.5.2 bad <CRLF> sequence\r\n") ? errno : EBOGUS;
@@ -657,9 +654,6 @@ err_write:
 		return rc;
 	case EPIPE:
 		log_write(LOG_ERR, "broken pipe to qmail-queue");
-		return EDONE;
-	case EINTR:
-		log_write(LOG_ERR, "interrupt while writing to qmail-queue");
 		return EDONE;
 	case E2BIG:
 		return rc;

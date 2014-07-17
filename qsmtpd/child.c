@@ -21,20 +21,14 @@
 int
 pipe_move(int p[2], int target)
 {
-	while (close(p[1])) {
-		if (errno != EINTR)
-			return errno;
-	}
+	if (close(p[1]) != 0)
+		return errno;
 
 	if (p[0] != target) {
-		while (dup2(p[0], target) < 0) {
-			if (errno != EINTR)
-				return errno;
-		}
-		while (close(p[0])) {
-			if (errno != EINTR)
-				return errno;
-		}
+		if (dup2(p[0], target) < 0)
+			return errno;
+		if (close(p[0]) != 0)
+			return errno;
 	}
 
 	return 0;

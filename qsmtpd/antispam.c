@@ -265,30 +265,24 @@ lookupipbl(int fd)
 	unsigned char *map;		/* map the file here */
 	off_t flen;
 
-	while (flock(fd, LOCK_SH | LOCK_NB)) {
-		if (errno != EINTR) {
-			char errcode[ULSTRLEN];
-			const char *logmsg[] = { "cannot lock input file, error code ",
-					errcode, NULL };
+	if (flock(fd, LOCK_SH | LOCK_NB) != 0) {
+		char errcode[ULSTRLEN];
+		const char *logmsg[] = { "cannot lock input file, error code ",
+				errcode, NULL };
 
-			ultostr(errno, errcode);
-			log_writen(LOG_WARNING, logmsg);
-			do {
-				i = close(fd);
-			} while ((i == -1) && (errno == EINTR));
-			errno = ENOLCK;	/* not the right error code, but good enough */
-			return -1;
-		}
+		ultostr(errno, errcode);
+		log_writen(LOG_WARNING, logmsg);
+		close(fd);
+		errno = ENOLCK;	/* not the right error code, but good enough */
+		return -1;
 	}
 
 	map = mmap_fd(fd, &flen);
 	if (map == NULL) {
 		i = errno;
-		do {
-			rc = close(fd);
-		} while ((rc == -1) && (errno == EINTR));
+		close(fd);
 		if ((i == ENOENT) || (i == 0))
-			return rc;
+			return 0;
 		errno = i;
 		return -1;
 	}
@@ -299,9 +293,7 @@ lookupipbl(int fd)
 		rc = check_ip6(map, flen);
 	}
 	munmap(map, flen);
-	do {
-		i = close(fd);
-	} while ((i == -1) && (errno == EINTR));
+	i = close(fd);
 
 	if (i != 0)
 		return i;

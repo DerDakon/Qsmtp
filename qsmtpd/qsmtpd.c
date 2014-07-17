@@ -339,27 +339,25 @@ setup(void)
 		}
 	} else {
 		int e;
-		while (flock(rcpthfd, LOCK_SH | LOCK_NB)) {
-			if (errno != EINTR) {
-				while (close(rcpthfd) && (errno == EINTR));
-				log_write(LOG_WARNING, "cannot lock control/rcpthosts");
-				return ENOLCK; /* not the right error code, but good enough */
-			}
+		if (flock(rcpthfd, LOCK_SH | LOCK_NB) != 0) {
+			close(rcpthfd);
+			log_write(LOG_WARNING, "cannot lock control/rcpthosts");
+			return ENOLCK; /* not the right error code, but good enough */
 		}
 		if (fstat(rcpthfd, &st)) {
-			while (close(rcpthfd) && (errno == EINTR));
+			close(rcpthfd);
 			log_write(LOG_ERR, "cannot fstat() control/rcpthosts");
 			return errno;
 		}
 		if (st.st_size < 4) {
-			while (close(rcpthfd) && (errno == EINTR));
+			close(rcpthfd);
 			/* minimum length of domain name: x.yy = 4 bytes */
 			log_write(LOG_ERR, "control/rcpthosts too short");
 			return 1;
 		}
 		rcpthosts = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, rcpthfd, 0);
 		e = errno;
-		while (close(rcpthfd) && (errno == EINTR));
+		close(rcpthfd);
 		if (rcpthosts == MAP_FAILED) {
 			log_write(LOG_ERR, "cannot mmap() control/rcpthosts");
 			errno = e;
@@ -762,7 +760,7 @@ smtp_ehlo(void)
 		}
 
 		if (fd >= 0) {
-			while (close(fd) && (errno == EINTR));
+			close(fd);
 			msg[next++] = "250-STARTTLS\r\n";
 		}
 	}
@@ -1067,12 +1065,10 @@ smtp_from(void)
 	if (linein.len > validlength)
 		return E2BIG;
 
-	while ( ( i = statvfs("queue/lock/sendmutex", &sbuf)) ) {
+	if (statvfs("queue/lock/sendmutex", &sbuf) != 0) {
 		int e = errno;
 
 		switch (e) {
-		case EINTR:
-			break;
 		case ENOMEM:
 			return e;
 		case ENOENT:	/* uncritical: only means that qmail-send is not running */
@@ -1080,7 +1076,7 @@ smtp_from(void)
 		/* will happen in most cases because program runs not in group qmail */
 		case EACCES:
 			log_write(LOG_WARNING, "warning: can not get free queue disk space");
-			goto next;
+			break;
 /*		case ELOOP:
 		case ENAMETOOLONG:
 		case ENOTDIR:
@@ -1092,9 +1088,7 @@ smtp_from(void)
 			log_write(LOG_ERR, "critical: can not get free queue disk space");
 			return e;
 		}
-	}
-next:
-	if (!i) {
+	} else {
 		if (sbuf.f_flag & ST_RDONLY)
 			return EROFS;
 		/* check if the free disk in queue filesystem is at least the size of the message */
@@ -1353,8 +1347,6 @@ smtploop(void)
 			case EDONE:	badcmds = 0;	/* fallthrough */
 			case EBOGUS:	flagbogus = 0;
 					break;
-			case EINTR:	log_write(LOG_WARNING, "interrupted by signal");
-					_exit(EINTR);
 			case ECONNRESET:dieerror(flagbogus);
 			default:	log_write(LOG_ERR, "writer error. kick me.");
 					log_write(LOG_ERR, strerror(flagbogus));

@@ -140,7 +140,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 					err_confn(errmsg, NULL);
 				}
 				if (curpart == NULL) {
-					while ((close(dirfd) < 0) && (errno == EINTR));
+					close(dirfd);
 					break;
 				} else {
 					const char *dot = strchr(curpart, '.');
@@ -209,7 +209,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 
 			free(array);
 
-			while ((close(dirfd) < 0) && (errno == EINTR));
+			close(dirfd);
 			return mx;
 		}
 	}

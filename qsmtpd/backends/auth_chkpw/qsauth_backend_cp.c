@@ -68,8 +68,8 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 
 	switch (child = fork_clean()) {
 	case -1:
-		while ((close(pi[0]) < 0) && (errno == EINTR)) {}
-		while ((close(pi[1]) < 0) && (errno == EINTR)) {}
+		close(pi[0]);
+		close(pi[1]);
 		return err_fork();
 	case 0:
 		if (pipe_move(pi, 3) != 0)
@@ -82,10 +82,8 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 		execlp(auth_check, auth_check, *auth_sub, NULL);
 		_exit(1);
 	}
-	while (close(pi[0])) {
-		if (errno != EINTR)
-			return err_write();
-	}
+	if (close(pi[0]) != 0)
+		return err_write();
 
 	WRITE(user->s, user->len + 1);
 	WRITE(pass->s, pass->len + 1);
@@ -93,15 +91,11 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 		WRITE(resp->s, resp->len);
 	WRITE("", 1);
 
-	while (close(pi[1])) {
-		if (errno != EINTR)
-			return err_write();
-	}
+	if (close(pi[1]) != 0)
+		return err_write();
 
-	while (waitpid(child, &wstat, 0) == -1) {
-		if (errno != EINTR)
-			return err_child();
-	}
+	if (waitpid(child, &wstat, 0) == -1)
+		return err_child();
 	if (!WIFEXITED(wstat))
 		return err_child();
 

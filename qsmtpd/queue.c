@@ -43,11 +43,11 @@ void
 queue_reset(void)
 {
 	if (queuefd_data >= 0) {
-		while (close(queuefd_data) && (errno == EINTR));
+		close(queuefd_data);
 		queuefd_data = -1;
 	}
-	while (close(queuefd_hdr) && (errno == EINTR));
-	while ((waitpid(qpid, NULL, 0) == -1) && (errno == EINTR));
+	close(queuefd_hdr);
+	waitpid(qpid, NULL, 0);
 }
 
 int
@@ -64,8 +64,8 @@ queue_init(void)
 	}
 	if (pipe(fd1)) {
 		/* EIO on pipe operations? Shit just happens (although I don't know why this could ever happen) */
-		while (close(fd0[0]) && (errno == EINTR));
-		while (close(fd0[1]) && (errno == EINTR));
+		close(fd0[0]);
+		close(fd0[1]);
 		if ( (i = err_pipe()) )
 			return i;
 		return EDONE;
@@ -83,27 +83,29 @@ queue_init(void)
 	/* DJB uses vfork at this point (qmail.c::open_qmail) which looks broken
 	 * because he modifies data before calling execve */
 	switch (qpid = fork_clean()) {
-	case -1:	if ( (i = err_fork()) )
-				return i;
-			return EDONE;
+	case -1:
+		if ( (i = err_fork()) )
+			return i;
+		return EDONE;
 	case 0:
-			if (pipe_move(fd0, 0) != 0)
-				_exit(120);
-			if (pipe_move(fd1, 1) != 0)
-				_exit(120);
-
-			/* no chdir here, we already _are_ there (and qmail-queue does it again) */
-			execlp(qqbin, qqbin, NULL);
+		if (pipe_move(fd0, 0) != 0)
 			_exit(120);
-	default:	while (close(fd0[0]) && (errno == EINTR));
-			while (close(fd1[0]) && (errno == EINTR));
+		if (pipe_move(fd1, 1) != 0)
+			_exit(120);
+
+		/* no chdir here, we already _are_ there (and qmail-queue does it again) */
+		execlp(qqbin, qqbin, NULL);
+		_exit(120);
+	default:
+		close(fd0[0]);
+		close(fd1[0]);
 	}
 
 	/* check if the child already returned, which means something went wrong */
 	if (waitpid(qpid, NULL, WNOHANG)) {
 		/* error here may just happen, we are already in trouble */
-		while (close(fd0[1]) && (errno == EINTR));
-		while (close(fd1[1]) && (errno == EINTR));
+		close(fd0[1]);
+		close(fd1[1]);
 		if ( (i = err_fork()) )
 			return i;
 		return EDONE;
@@ -139,10 +141,8 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	int rc, e;
 
 	/* the message body is sent to qmail-queue. Close the file descriptor and send the envelope information */
-	while (close(queuefd_data)) {
-		if (errno != EINTR)
-			return -1;
-	}
+	if (close(queuefd_data) != 0)
+		return -1;
 	queuefd_data = -1;
 
 	if (ssl) {
@@ -203,14 +203,10 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	errno = 0;
 err_write:
 	e = errno;
-	while (close(queuefd_hdr) < 0) {
-		if (errno == EINTR)
-			continue;
-
+	if (close(queuefd_hdr) < 0) {
 		if (rc >= 0)
 			e = errno;
 		rc = -1;
-		break;
 	}
 	if (rc >= 0)
 		rc = 0;
@@ -226,12 +222,10 @@ queue_result(void)
 {
 	int status;
 
-	while (waitpid(qpid, &status, 0) == -1) {
+	if (waitpid(qpid, &status, 0) == -1) {
 		/* don't know why this could ever happen, but we want to be sure */
-		if (errno != EINTR) {
-			log_write(LOG_ERR, "waitpid(qmail-queue) went wrong");
-			return netwrite("451 4.3.2 error while writing mail to queue\r\n") ? errno : EDONE;
-		}
+		log_write(LOG_ERR, "waitpid(qmail-queue) went wrong");
+		return netwrite("451 4.3.2 error while writing mail to queue\r\n") ? errno : EDONE;
 	}
 	if (WIFEXITED(status)) {
 		int exitcode = WEXITSTATUS(status);

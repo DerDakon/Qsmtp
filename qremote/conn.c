@@ -44,7 +44,7 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 
 	if (bind(sd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
 		int err = errno;
-		while ((close(sd) < 0) && (errno == EINTR));
+		close(sd);
 		return -err;
 	}
 
@@ -66,7 +66,7 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 
 	if (bind(sd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
 		int err = errno;
-		while ((close(sd) < 0) && (errno == EINTR));
+		close(sd);
 		return -err;
 	}
 
@@ -78,7 +78,7 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 
 	if (rc < 0) {
 		int err = errno;
-		while ((close(sd) < 0) && (errno == EINTR));
+		close(sd);
 		return -err;
 	}
 	

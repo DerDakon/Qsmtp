@@ -59,27 +59,17 @@ mmap_name(const char *fname, off_t *len, int *fd)
 	if (*fd < 0)
 		return NULL;
 
-	while (flock(*fd, LOCK_SH | LOCK_NB)) {
-		if (errno != EINTR) {
-			int i;
-
-			do {
-				i = close(*fd);
-			} while ((i < 0) && (errno == EINTR));
-			errno = ENOLCK;	/* not the right error code, but good enough */
-			return NULL;
-		}
+	if (flock(*fd, LOCK_SH | LOCK_NB) != 0) {
+		close(*fd);
+		errno = ENOLCK;	/* not the right error code, but good enough */
+		return NULL;
 	}
 
 	buf = mmap_fd(*fd, len);
 
 	if (buf == NULL) {
-		int i;
-
 		flock(*fd, LOCK_UN);
-		do {
-			i = close(*fd);
-		} while ((i < 0) && (errno == EINTR));
+		close(*fd);
 	}
 
 	return buf;
