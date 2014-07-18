@@ -437,6 +437,7 @@ ADD_EXECUTABLE(testcase_getsetting
 		${CMAKE_SOURCE_DIR}/qsmtpd/backends/user_vpopm/getfile.c)
 TARGET_LINK_LIBRARIES(testcase_getsetting
 		qsmtp_lib
+		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
 )
 ADD_TEST(NAME "Getsetting"
