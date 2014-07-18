@@ -8,8 +8,10 @@
 #include "sstring.h"
 #include <log.h>
 #include "netio.h"
+#include <control.h>
 #include "test_io/testcase_io.h"
 
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 #include <syslog.h>
@@ -82,8 +84,12 @@ test_nocontrol(void)
 #else /* AUTHCRAM */
 	static const char *auth_expect = loginplain;
 #endif /* AUTHCRAM */
+	int r;
 
-	return check_authstr(auth_expect);
+	controldir_fd = AT_FDCWD;
+	r = check_authstr(auth_expect);
+
+	return r;
 }
 
 static int
@@ -118,8 +124,12 @@ test_controlfiles(void)
 	int errcnt = 0;
 
 	while (patterns[idx].subdir != NULL) {
-		if (chdir(patterns[idx].subdir) != 0) {
-			fprintf(stderr, "cannot chdir(%s): %s\n",
+		char fnbuf[strlen("/control") + strlen(patterns[idx].subdir) + 1];
+
+		snprintf(fnbuf, sizeof(fnbuf), "%s/control", patterns[idx].subdir);
+		controldir_fd = open(fnbuf, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+		if (controldir_fd < 0) {
+			fprintf(stderr, "cannot open(%s): %s\n",
 					patterns[idx].subdir, strerror(errno));
 			errcnt++;
 			idx++;
@@ -129,13 +139,7 @@ test_controlfiles(void)
 		if (check_authstr(patterns[idx].expect) != 0)
 			errcnt++;
 
-		if (chdir("..") != 0) {
-			fprintf(stderr, "cannot chdir(..): %s\n",
-					strerror(errno));
-			errcnt++;
-			idx++;
-			continue;
-		}
+		close(controldir_fd);
 		idx++;
 	}
 

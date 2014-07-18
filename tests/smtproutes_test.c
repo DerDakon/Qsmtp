@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 void
 test_log_writen(int priority __attribute__((unused)), const char **msg)
@@ -73,6 +74,8 @@ int main(void)
 	testcase_setup_ask_dnsaaaa(test_ask_dnsaaaa);
 	testcase_setup_log_writen(test_log_writen);
 
+	controldir_fd = open("control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+
 	if (loadintfd(fd, &expectedport, 25) != 0) {
 		fprintf(stderr, "error loading the expected port");
 		return EFAULT;
@@ -126,6 +129,7 @@ int main(void)
 
 	freeips(mx);
 	free(ipexpect);
+	close(controldir_fd);
 	printf("redirected to IP %s, port %u\n", gotip, targetport);
 
 	return 0;

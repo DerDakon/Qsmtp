@@ -65,7 +65,6 @@ int
 getfile(const struct userconf *ds, const char *fn, int *type, int useglobal)
 {
 	int fd;
-	static const char controldir[] = "control/";
 
 	if (ds->userpath.len) {
 		*type = CONFIG_USER;
@@ -91,7 +90,7 @@ getfile(const struct userconf *ds, const char *fn, int *type, int useglobal)
 	/* neither user nor domain specified how to handle this feature
 	 * now look up the global setting */
 	*type = CONFIG_GLOBAL;
-	return open_in_dir(controldir, strlen(controldir), fn);
+	return openat(controldir_fd, fn, O_RDONLY | O_CLOEXEC);
 }
 
 /**

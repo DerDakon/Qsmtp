@@ -1,11 +1,13 @@
 #include <qremote/qremote.h>
 #include <qremote/starttlsr.h>
 #include <ssl_timeoutio.h>
+#include <control.h>
 #include <tls.h>
 
 #include "test_io/testcase_io.h"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <openssl/conf.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
@@ -137,6 +139,8 @@ int main(int argc, char **argv)
 		rhost = "[192.0.2.4]";
 	}
 	rhostlen = strlen(rhost);
+
+	controldir_fd = open("control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
 
 	netnwrite_msg = "STARTTLS\r\n";
 

@@ -393,7 +393,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 int
 userbackend_init(void)
 {
-	if (lloadfilefd(open("control/vpopbounce", O_RDONLY | O_CLOEXEC), &vpopbounce, 0) == ((size_t)-1)) {
+	if (lloadfilefd(openat(controldir_fd, "vpopbounce", O_RDONLY | O_CLOEXEC), &vpopbounce, 0) == ((size_t)-1)) {
 		int e = errno;
 		err_control("control/vpopbounce");
 		return e;

@@ -214,7 +214,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 		}
 	}
 
-	if ((loadlistfd(open("control/smtproutes", O_RDONLY | O_CLOEXEC), &smtproutes, hascolon) == 0) && (smtproutes != NULL)) {
+	if ((loadlistfd(openat(controldir_fd, "smtproutes", O_RDONLY | O_CLOEXEC), &smtproutes, hascolon) == 0) && (smtproutes != NULL)) {
 		unsigned int k = 0;
 
 		while (smtproutes[k]) {

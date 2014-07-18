@@ -18,6 +18,8 @@
 #include "qdns.h"
 #include "mmap.h"
 
+int controldir_fd = -1;	/**< descriptor of the control directory */
+
 /**
  * load a text file into a buffer using locked IO
  *

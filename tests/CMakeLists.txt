@@ -698,10 +698,12 @@ TARGET_LINK_LIBRARIES(testcase_starttlsr
 )
 
 ADD_TEST(NAME "STARTTLSr"
-		COMMAND testcase_starttlsr)
+		COMMAND testcase_starttlsr
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/tlsclientciphers_good")
 
 ADD_TEST(NAME "STARTTLSr_no_partner_conf"
-		COMMAND testcase_starttlsr noconf.example.com)
+		COMMAND testcase_starttlsr noconf.example.com
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/tlsclientciphers_good")
 
 ADD_TEST(NAME "STARTTLSr_tlsciphers_good"
 		COMMAND testcase_starttlsr badconf.example.com

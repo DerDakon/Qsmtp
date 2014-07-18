@@ -284,12 +284,18 @@ setup(void)
 		return EINVAL;
 	}
 
+	controldir_fd = open(AUTOQMAIL "/control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	if (controldir_fd < 0) {
+		log_write(LOG_ERR, "cannot get a file descriptor for " AUTOQMAIL "/control");
+		return EINVAL;
+	}
+
 #ifdef DEBUG_IO
 	tmp = getenv("QSMTPD_DEBUG");
 	if ((tmp != NULL) && (*tmp != '\0')) {
 		do_debug_io = 1;
 	} else {
-		j = open("control/Qsmtpd_debug", O_RDONLY | O_CLOEXEC);
+		j = openat(controldir_fd, "Qsmtpd_debug", O_RDONLY | O_CLOEXEC);
 		do_debug_io = (j > 0);
 		if (j > 0)
 			close(j);
@@ -331,7 +337,7 @@ setup(void)
 		liphost.len = heloname.len;
 	}
 
-	rcpthfd = open("control/rcpthosts", O_RDONLY | O_CLOEXEC);
+	rcpthfd = openat(controldir_fd, "rcpthosts", O_RDONLY | O_CLOEXEC);
 	if (rcpthfd < 0) {
 		if (errno != ENOENT) {
 			log_write(LOG_ERR, "control/rcpthosts not found");
@@ -415,13 +421,13 @@ setup(void)
 	/* RfC 2821, section 4.5.3.2: "Timeouts"
 	 * An SMTP server SHOULD have a timeout of at least 5 minutes while it
 	 * is awaiting the next command from the sender. */
-	if ( (j = loadintfd(open("control/timeoutsmtpd", O_RDONLY | O_CLOEXEC), &tl, 320)) ) {
+	if ( (j = loadintfd(openat(controldir_fd, "timeoutsmtpd", O_RDONLY | O_CLOEXEC), &tl, 320)) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/timeoutsmtpd");
 		return e;
 	}
 	timeout = tl;
-	if ( (j = loadintfd(open("control/databytes", O_RDONLY | O_CLOEXEC), &databytes, 0)) ) {
+	if ( (j = loadintfd(openat(controldir_fd, "databytes", O_RDONLY | O_CLOEXEC), &databytes, 0)) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/databytes");
 		return e;
@@ -431,20 +437,20 @@ setup(void)
 	} else {
 		maxbytes = ((size_t)-1) - 1000;
 	}
-	if ( (j = loadintfd(open("control/authhide", O_RDONLY | O_CLOEXEC), &tl, 0)) ) {
+	if ( (j = loadintfd(openat(controldir_fd, "authhide", O_RDONLY | O_CLOEXEC), &tl, 0)) ) {
 		log_write(LOG_ERR, "parse error in control/authhide");
 		authhide = 0;
 	} else {
 		authhide = tl ? 1 : 0;
 	}
 
-	if ( (j = loadintfd(open("control/forcesslauth", O_RDONLY | O_CLOEXEC), &sslauth, 0)) ) {
+	if ( (j = loadintfd(openat(controldir_fd, "forcesslauth", O_RDONLY | O_CLOEXEC), &sslauth, 0)) ) {
 		int e = errno;
 		log_write(LOG_ERR, "parse error in control/forcesslauth");
 		return e;
 	}
 
-	if ( (j = loadlistfd(open("control/filterconf", O_RDONLY | O_CLOEXEC), &tmpconf, NULL)) ) {
+	if ( (j = loadlistfd(openat(controldir_fd, "filterconf", O_RDONLY | O_CLOEXEC), &tmpconf, NULL)) ) {
 		if ((errno == ENOENT) || (tmpconf == NULL)) {
 			tmpconf = NULL;
 		} else {

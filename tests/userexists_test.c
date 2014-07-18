@@ -248,8 +248,11 @@ main(void)
 {
 	unsigned int i;
 
+	controldir_fd = open("control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+
 	if (userbackend_init() != 0) {
 		fprintf(stderr, "error initializing vpopmail backend\n");
+		close(controldir_fd);
 		return 1;
 	}
 
@@ -298,6 +301,7 @@ main(void)
 	err += test_cdbdir();
 
 	userbackend_free();
+	close(controldir_fd);
 
 	if (expected_err_control != NULL) {
 		fprintf(stderr, "expected control file error about %s not received\n",

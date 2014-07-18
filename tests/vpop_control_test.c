@@ -270,9 +270,9 @@ test_getbuffer(void)
 	free(array);
 	array = NULL;
 
-	r = userconf_get_buffer(&ds, "something", &array, NULL, 1);
+	r = userconf_get_buffer(&ds, "does_not_exist", &array, NULL, 1);
 	if (r != CONFIG_NONE) {
-		fprintf(stderr, "opening nonexistent file returned %i instead of CONFIG_NONE\n",
+		fprintf(stderr, "opening non-existent file returned %i instead of CONFIG_NONE\n",
 				r);
 		ret++;
 	}
@@ -292,7 +292,7 @@ test_finddomain(void)
 	ds.domainpath.s = NULL;
 
 	/* the does not file exist */
-	r = userconf_find_domain(&ds, "something", "example.org", 0);
+	r = userconf_find_domain(&ds, "does_not_exist", "example.org", 0);
 	if (r != CONFIG_NONE) {
 		fprintf(stderr, "opening non-existing file returned %i instead of CONFIG_NONE\n",
 				r);
@@ -333,6 +333,8 @@ main(void)
 	char *slash;
 
 	create_dirs();
+
+	controldir_fd = AT_FDCWD;
 
 	userconf_init(&ds);
 

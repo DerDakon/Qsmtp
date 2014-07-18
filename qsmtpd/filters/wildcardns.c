@@ -42,7 +42,7 @@ loadjokers(struct dns_wc **wcs)
 	struct dns_wc **this = wcs;
 	char **inputs;
 
-	if (loadlistfd(open("control/wildcardns", O_RDONLY | O_CLOEXEC), &inputs, &validns))
+	if (loadlistfd(openat(controldir_fd, "wildcardns", O_RDONLY | O_CLOEXEC), &inputs, &validns))
 		return 0;
 
 	if (inputs == NULL)

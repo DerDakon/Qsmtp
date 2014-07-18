@@ -127,9 +127,12 @@ setup(void)
 	openlog("Qremote", LOG_PID, LOG_MAIL);
 #endif
 
-	if (chdir(AUTOQMAIL)) {
+	if (chdir(AUTOQMAIL))
 		err_conf("cannot chdir to qmail directory");
-	}
+
+	controldir_fd = open(AUTOQMAIL "/control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	if (controldir_fd < 0)
+		err_conf("cannot get a file descriptor for " AUTOQMAIL "/control");
 
 	if ( (j = loadoneliner("control/helohost", &heloname.s, 1) ) < 0 ) {
 		if ( ( j = loadoneliner("control/me", &heloname.s, 0) ) < 0 ) {
@@ -145,13 +148,13 @@ setup(void)
 	}
 	heloname.len = j;
 
-	if (loadintfd(open("control/timeoutremote", O_RDONLY | O_CLOEXEC), &chunk, 320) < 0) {
+	if (loadintfd(openat(controldir_fd, "timeoutremote", O_RDONLY | O_CLOEXEC), &chunk, 320) < 0) {
 		err_conf("parse error in control/timeoutremote");
 	}
 	timeout = chunk;
 
 #ifdef CHUNKING
-	if (loadintfd(open("control/chunksizeremote", O_RDONLY | O_CLOEXEC), &chunk, 32768) < 0) {
+	if (loadintfd(openat(controldir_fd, "chunksizeremote", O_RDONLY | O_CLOEXEC), &chunk, 32768) < 0) {
 		err_conf("parse error in control/chunksizeremote");
 	} else {
 		if (chunk >= ((unsigned long)1 << 31)) {
@@ -198,7 +201,7 @@ setup(void)
 		outip6 = in6addr_any;
 
 #ifdef DEBUG_IO
-	j = open("control/Qremote_debug", O_RDONLY | O_CLOEXEC);
+	j = openat(controldir_fd, "Qremote_debug", O_RDONLY | O_CLOEXEC);
 	do_debug_io = (j > 0);
 	if (j > 0)
 		close(j);

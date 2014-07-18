@@ -25,7 +25,7 @@ tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 	if (!export)
 		keylen = 512;
 	if (keylen == 512) {
-		FILE *in = fopen("control/rsa512.pem", "r");
+		FILE *in = fdopen(openat(controldir_fd, "rsa512.pem", O_RDONLY | O_CLOEXEC), "r");
 		if (in) {
 			RSA *rsa = PEM_read_RSAPrivateKey(in, NULL, NULL, NULL);
 
@@ -46,9 +46,9 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 	if (!export)
 		keylen = 1024;
 	if (keylen == 512) {
-		in = fopen("control/dh512.pem", "r");
+		in = fdopen(openat(controldir_fd, "dh512.pem", O_RDONLY | O_CLOEXEC), "r");
 	} else if (keylen == 1024) {
-		in = fopen("control/dh1024.pem", "r");
+		in = fdopen(openat(controldir_fd, "dh1024.pem", O_RDONLY | O_CLOEXEC), "r");
 	}
 	if (in) {
 		DH *dh = PEM_read_DHparams(in, NULL, NULL, NULL);
@@ -100,7 +100,7 @@ tls_verify(void)
 
 	/* request client cert to see if it can be verified by one of our CAs
 	 * and the associated email address matches an entry in tlsclients */
-	if (loadlistfd(open("control/tlsclients", O_RDONLY | O_CLOEXEC), &clients, checkaddr) < 0)
+	if (loadlistfd(openat(controldir_fd, "tlsclients", O_RDONLY | O_CLOEXEC), &clients, checkaddr) < 0)
 		return -errno;
 
 	if (clients == NULL)

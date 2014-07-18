@@ -110,9 +110,12 @@ setup(void)
 
 #undef USESYSLOG
 
-	if (chdir(AUTOQMAIL)) {
+	if (chdir(AUTOQMAIL))
 		err_conf("cannot chdir to qmail directory");
-	}
+
+	controldir_fd = open(AUTOQMAIL "/control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	if (controldir_fd < 0)
+		err_conf("cannot get a file descriptor for " AUTOQMAIL "/control");
 
 	if ( (j = loadoneliner("control/helohost", &heloname.s, 1) ) < 0 ) {
 		if ( ( j = loadoneliner("control/me", &heloname.s, 0) ) < 0 ) {
@@ -126,7 +129,7 @@ setup(void)
 			err_conf("control/helohost contains invalid name");
 		}
 	}
-	if ( (j = loadintfd(open("control/timeoutremote", O_RDONLY | O_CLOEXEC), &tmp, 320)) < 0) {
+	if ( (j = loadintfd(openat(controldir_fd, "timeoutremote", O_RDONLY | O_CLOEXEC), &tmp, 320)) < 0) {
 		err_conf("parse error in control/timeoutremote");
 	}
 	timeout = tmp;

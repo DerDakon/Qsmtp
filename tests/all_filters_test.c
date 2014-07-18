@@ -299,6 +299,8 @@ main(void)
 	globalconf = NULL;
 	memset(&xmitstat, 0, sizeof(xmitstat));
 
+	controldir_fd = AT_FDCWD;
+
 	TAILQ_INIT(&head);
 
 	thisrecip = &dummyrecip;
