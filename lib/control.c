@@ -209,8 +209,8 @@ loadintfd(int fd, unsigned long *result, const unsigned long def)
 }
 
 /**
- * read a configuration file that only may contain one line
- *
+ * @brief read a configuration file that only may contain one line
+ * @param base descriptor of a file descriptor serving as base for relative paths
  * @param filename don't know what this can ever mean ;)
  * @param buf the buffer where the contents of the file will go, memory will be malloced
  * @param optional if set to 0 write an error message to syslog if the file does not exist
@@ -218,12 +218,12 @@ loadintfd(int fd, unsigned long *result, const unsigned long def)
  * @retval -1 on error
  */
 size_t
-loadoneliner(const char *filename, char **buf, const int optional)
+loadoneliner(int base, const char *filename, char **buf, const int optional)
 {
 	size_t j;
 	int fd;
 
-	fd = open(filename, O_RDONLY | O_CLOEXEC);
+	fd = openat(base, filename, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		j = (size_t)-1;
 		*buf = NULL;

@@ -81,7 +81,7 @@ int main(void)
 		return EFAULT;
 	}
 
-	ipe_len = loadoneliner("expected_ip", &ipexpect, 1);
+	ipe_len = loadoneliner(AT_FDCWD, "expected_ip", &ipexpect, 1);
 
 	if (ipe_len == (size_t) -1) {
 		if (errno != ENOENT) {

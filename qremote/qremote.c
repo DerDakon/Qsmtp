@@ -134,8 +134,8 @@ setup(void)
 	if (controldir_fd < 0)
 		err_conf("cannot get a file descriptor for " AUTOQMAIL "/control");
 
-	if ( (j = loadoneliner("control/helohost", &heloname.s, 1) ) < 0 ) {
-		if ( ( j = loadoneliner("control/me", &heloname.s, 0) ) < 0 ) {
+	if ( (j = loadoneliner(controldir_fd, "helohost", &heloname.s, 1) ) < 0 ) {
+		if ( ( j = loadoneliner(controldir_fd, "me", &heloname.s, 0) ) < 0 ) {
 			err_conf("can open neither control/helohost nor control/me");
 		}
 		if (domainvalid(heloname.s)) {
@@ -164,7 +164,7 @@ setup(void)
 	}
 #endif
 
-	if (((ssize_t)loadoneliner("control/outgoingip", &ipbuf, 1)) >= 0) {
+	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip", &ipbuf, 1)) >= 0) {
 		int r = inet_pton(AF_INET6, ipbuf, &outip);
 
 		if (r <= 0) {
@@ -187,7 +187,7 @@ setup(void)
 	}
 
 #ifndef IPV4ONLY
-	if (((ssize_t)loadoneliner("control/outgoingip6", &ipbuf, 1)) >= 0) {
+	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip6", &ipbuf, 1)) >= 0) {
 		int r = inet_pton(AF_INET6, ipbuf, &outip6);
 
 		free(ipbuf);

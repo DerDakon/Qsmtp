@@ -298,7 +298,7 @@ setup(void)
 		do_debug_io = (faccessat(controldir_fd, "Qsmtpd_debug", R_OK, 0) == 0);
 #endif
 
-	if ( (j = loadoneliner("control/me", &heloname.s, 0)) < 0)
+	if ( (j = loadoneliner(controldir_fd, "me", &heloname.s, 0)) < 0)
 		return errno;
 	heloname.len = j;
 	if (domainvalid(heloname.s)) {
@@ -306,7 +306,7 @@ setup(void)
 		return EINVAL;
 	}
 
-	j = loadoneliner("control/msgidhost", &msgidhost.s, 1);
+	j = loadoneliner(controldir_fd, "msgidhost", &msgidhost.s, 1);
 	if (j < 0) {
 		msgidhost.s = strdup(heloname.s);
 		if (msgidhost.s == NULL)
@@ -320,7 +320,7 @@ setup(void)
 		}
 	}
 
-	if (( (j = loadoneliner("control/localiphost", &liphost.s, 1)) < 0) && (errno != ENOENT))
+	if (( (j = loadoneliner(controldir_fd, "localiphost", &liphost.s, 1)) < 0) && (errno != ENOENT))
 		return errno;
 	if (j > 0) {
 		liphost.len = j;

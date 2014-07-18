@@ -135,7 +135,7 @@ test_oneliner()
 	puts("== Running tests for loadoneliner()");
 
 	buf = &ch;
-	len = loadoneliner("oneliner_test", &buf, 0);
+	len = loadoneliner(AT_FDCWD, "oneliner_test", &buf, 0);
 	if (len != (size_t)-1) {
 		fputs("loadoneliner() for file without useful content should return -1\n", stderr);
 		err++;
@@ -152,7 +152,7 @@ test_oneliner()
 		createTestFile("oneliner_test", onelines[i]);
 
 		buf = &ch;
-		len = loadoneliner("oneliner_test", &buf, 0);
+		len = loadoneliner(AT_FDCWD, "oneliner_test", &buf, 0);
 		if ((len == (size_t)-1) != (i & 1)) {
 			fprintf(stderr, "ERROR: loadoneliner() test failed: %s\n", onelines[i]);
 			err++;
@@ -169,7 +169,7 @@ test_oneliner()
 	}
 
 	buf = &ch;
-	len = loadoneliner("nonexistent", &buf, 0);
+	len = loadoneliner(AT_FDCWD, "nonexistent", &buf, 0);
 	if ((len != (size_t)-1) || (errno != ENOENT)) {
 		fputs("loadoneliner() for nonexistent file should fail with ENOENT\n", stderr);
 		err++;
