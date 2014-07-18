@@ -1,5 +1,5 @@
 .\"TOPICS "Topics:"
-.TH Qremote 8 "November 2013" "Qremote Version @QSMTP_VERSION_MAJOR@.@QSMTP_VERSION_MINOR@@QSMTP_VERSION_EXTRAVERSION@" "Qremote"
+.TH Qremote 8 "July 2014" "Qremote Version @QSMTP_VERSION_MAJOR@.@QSMTP_VERSION_MINOR@@QSMTP_VERSION_EXTRAVERSION@" "Qremote"
 .SH NAME
 Qremote \- send mail via (E)SMTP
 .SH SYNOPSIS
@@ -349,6 +349,20 @@ you are always safe using
 .I smtproutes
 if you do not accept mail from the network.
 .RE
+
+.SH DEBUGGING
+If
+.B Qremote
+has been with the
+.I DEBUG_IO
+flag the contents of the SMTP transmissions can be recorded. They will
+be sent to the syslog daemon with facility mail and log level debug. The contents of the SMTP DATA phase will
+never be logged for privacy reasons.
+
+Logging is not enabled by default. If the file
+.I control/Qremote_debug
+is readable on startup logging will be enabled. Therefore it will usually not harm to
+compile that facility into the program.
 
 .SH "SEE ALSO"
 fstat(2),

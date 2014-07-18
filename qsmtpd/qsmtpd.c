@@ -292,14 +292,10 @@ setup(void)
 
 #ifdef DEBUG_IO
 	tmp = getenv("QSMTPD_DEBUG");
-	if ((tmp != NULL) && (*tmp != '\0')) {
+	if ((tmp != NULL) && (*tmp != '\0'))
 		do_debug_io = 1;
-	} else {
-		j = openat(controldir_fd, "Qsmtpd_debug", O_RDONLY | O_CLOEXEC);
-		do_debug_io = (j > 0);
-		if (j > 0)
-			close(j);
-	}
+	else
+		do_debug_io = (faccessat(controldir_fd, "Qsmtpd_debug", R_OK, 0) == 0);
 #endif
 
 	if ( (j = loadoneliner("control/me", &heloname.s, 0)) < 0)

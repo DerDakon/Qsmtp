@@ -201,10 +201,7 @@ setup(void)
 		outip6 = in6addr_any;
 
 #ifdef DEBUG_IO
-	j = openat(controldir_fd, "Qremote_debug", O_RDONLY | O_CLOEXEC);
-	do_debug_io = (j > 0);
-	if (j > 0)
-		close(j);
+	do_debug_io = (faccessat(controldir_fd, "Qremote_debug", R_OK, 0) == 0);
 #endif
 }
 
