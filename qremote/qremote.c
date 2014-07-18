@@ -8,6 +8,7 @@
 #include <qremote/qremote.h>
 
 #include <control.h>
+#include <diropen.h>
 #include <fmt.h>
 #include <ipme.h>
 #include <log.h>
@@ -131,7 +132,7 @@ setup(void)
 	if (chdir(AUTOQMAIL))
 		err_conf("cannot chdir to qmail directory");
 
-	controldir_fd = open(AUTOQMAIL "/control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	controldir_fd = get_dirfd(-1, AUTOQMAIL "/control");
 	if (controldir_fd < 0)
 		err_conf("cannot get a file descriptor for " AUTOQMAIL "/control");
 

@@ -8,6 +8,7 @@
 #include <qsmtpd/qsmtpd.h>
 
 #include <control.h>
+#include <diropen.h>
 #include <fmt.h>
 #include <log.h>
 #include <netio.h>
@@ -286,7 +287,7 @@ setup(void)
 		return EINVAL;
 	}
 
-	controldir_fd = open(AUTOQMAIL "/control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	controldir_fd = get_dirfd(-1, AUTOQMAIL "/control");
 	if (controldir_fd < 0) {
 		log_write(LOG_ERR, "cannot get a file descriptor for " AUTOQMAIL "/control");
 		return EINVAL;

@@ -2,6 +2,7 @@
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
 #include <qsmtpd/vpop.h>
+#include <diropen.h>
 
 #include <fcntl.h>
 #include <stdio.h>
@@ -248,7 +249,7 @@ main(void)
 {
 	unsigned int i;
 
-	controldir_fd = open("control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	controldir_fd = get_dirfd(AT_FDCWD, "control");
 
 	if (userbackend_init() != 0) {
 		fprintf(stderr, "error initializing vpopmail backend\n");

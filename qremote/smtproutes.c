@@ -5,6 +5,7 @@
 #include <qremote/qremote.h>
 
 #include <control.h>
+#include <diropen.h>
 #include <log.h>
 #include <match.h>
 #include <mmap.h>
@@ -118,11 +119,10 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 	char **smtproutes;
 	struct ips *mx = NULL;
 	char fn[320]; /* length of domain + control/smtproutes.d */
-	const char dirname[] = "control/smtproutes.d/";
 	const char *curpart = remhost;
 	/* check if the dir exists at all to avoid probing for every
 	 * subdomain if the dir does not exist. */
-	const int dirfd = open(dirname, O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	const int dirfd = get_dirfd(controldir_fd, "smtproutes.d");
 	const size_t diroffs = 0;
 
 	strcpy(fn + diroffs, remhost);
