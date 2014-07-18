@@ -1,17 +1,17 @@
 #include <qsmtpd/userfilters.h>
+
+#include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
 #include "test_io/testcase_io.h"
 
-#include <qsmtpd/qsmtpd.h>
-
+#include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <string.h>
-#include <arpa/inet.h>
+#include <unistd.h>
 
 struct xmitstat xmitstat;
 unsigned int goodrcpt;

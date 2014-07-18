@@ -1,19 +1,20 @@
 /** \file vpop.c
  * \brief function to get domain directory of vpopmail virtual domain
  */
+
 #include <qsmtpd/vpop.h>
 
+#include <cdb.h>
 #include <control.h>
 #include <qsmtpd/addrparse.h>
-#include <cdb.h>
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
 #include <qsmtpd/userfilters.h>
 #include <sstring.h>
 
 #include <errno.h>
-#include <limits.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>

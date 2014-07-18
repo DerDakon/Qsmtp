@@ -2,21 +2,21 @@
  \brief Authentication setup testcases
  */
 
+#include <control.h>
+#include <log.h>
+#include <netio.h>
 #include <qsmtpd/qsauth.h>
 #include <qsmtpd/qsauth_backend.h>
 #include <qsmtpd/qsmtpd.h>
-#include "sstring.h"
-#include <log.h>
-#include "netio.h"
-#include <control.h>
+#include <sstring.h>
 #include "test_io/testcase_io.h"
 
 #include <fcntl.h>
+#include <openssl/ssl.h>
 #include <stdio.h>
 #include <string.h>
 #include <syslog.h>
 #include <unistd.h>
-#include <openssl/ssl.h>
 
 struct xmitstat xmitstat;
 unsigned long sslauth = 0;

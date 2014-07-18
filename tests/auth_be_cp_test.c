@@ -2,11 +2,11 @@
  * \brief Testcases for checkpassword authentication backend.
  */
 
-#include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/qsauth_backend.h>
-#include <sstring.h>
 
 #include "auth_users.h"
+#include <qsmtpd/qsmtpd.h>
+#include <sstring.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>

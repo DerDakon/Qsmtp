@@ -1,16 +1,19 @@
 /** \file ssl_timeoutio.c
  \brief SSL encoding and decoding functions for network I/O
  */
-#include <sys/select.h>
+
+#include <ssl_timeoutio.h>
+
+#include <log.h>
+#include <tls.h>
+
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include "ssl_timeoutio.h"
-#include "log.h"
-#include "tls.h"
+#include <sys/select.h>
 
-#define ndelay_on(fd) fcntl(fd,F_SETFL,fcntl(fd,F_GETFL) | O_NONBLOCK)
-#define ndelay_off(fd) fcntl(fd,F_SETFL,fcntl(fd,F_GETFL) & ~O_NONBLOCK)
+#define ndelay_on(fd)  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
+#define ndelay_off(fd) fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) & ~O_NONBLOCK)
 
 static int ssl_timeoutio(int (*fun)(), time_t, char *, int) __attribute__ ((nonnull (1)));
 /**

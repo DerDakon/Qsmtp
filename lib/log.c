@@ -1,12 +1,14 @@
 /** \file log.c
  \brief syslog interface
  */
-#include <unistd.h>
-#include <stdlib.h>
-#include <syslog.h>
-#include <string.h>
+
+#include <log.h>
+
 #include <errno.h>
-#include "log.h"
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <unistd.h>
 
 /**
  * combine line and write it to syslog

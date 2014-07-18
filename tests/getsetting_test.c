@@ -1,5 +1,5 @@
-#include <qsmtpd/userfilters.h>
 #include <qsmtpd/userconf.h>
+#include <qsmtpd/userfilters.h>
 
 #include <stdio.h>
 #include <string.h>

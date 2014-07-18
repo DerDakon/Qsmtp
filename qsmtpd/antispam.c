@@ -1,28 +1,30 @@
 /** \file antispam.c
  \brief several helper functions for spam filters
  */
+
 #include <qsmtpd/antispam.h>
 
-#include <openssl/ssl.h>
+#include <control.h>
+#include <fmt.h>
+#include <libowfatconn.h>
+#include <log.h>
+#include <match.h>
+#include <mmap.h>
+#include <netio.h>
+#include <qsmtpd/qsmtpd.h>
+#include <tls.h>
+
 #include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/mman.h>
-#include <sys/file.h>
-#include <sys/stat.h>
-#include <string.h>
-#include <syslog.h>
-#include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
-#include "fmt.h"
-#include "log.h"
-#include "libowfatconn.h"
-#include <qsmtpd/qsmtpd.h>
-#include "control.h"
-#include "tls.h"
-#include "match.h"
-#include "netio.h"
-#include "mmap.h"
+#include <netinet/in.h>
+#include <openssl/ssl.h>
+#include <string.h>
+#include <sys/file.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <syslog.h>
+#include <unistd.h>
 
 /**
  * take a nibble and output it as hex to a buffer, followed by '.'

@@ -1,15 +1,18 @@
 /** \file netio.c
  \brief functions for network I/O
  */
-#include <sys/select.h>
-#include <unistd.h>
+
+#include <netio.h>
+
+#include <log.h>
+#include <ssl_timeoutio.h>
+#include <tls.h>
+
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
-#include <assert.h>
-#include "netio.h"
-#include "log.h"
-#include "ssl_timeoutio.h"
-#include "tls.h"
+#include <sys/select.h>
+#include <unistd.h>
 
 static char lineinbuf[1002];		/**< buffer for the line to read: max 1000 chars including CRLF,
 					 * leading extra '.', closing '\\0' */

@@ -4,34 +4,35 @@
  This file contains the main function, the configuration and error handling of Qremote,
  the drop-in replacement for qmail-remote.
  */
+
 #include <qremote/qremote.h>
 
-#include <qremote/conn.h>
+#include <control.h>
+#include <fmt.h>
+#include <ipme.h>
+#include <log.h>
+#include <netio.h>
+#include <qdns.h>
+#include <qmaildir.h>
 #include <qremote/client.h>
-#include <qremote/starttlsr.h>
-#include <qremote/qrdata.h>
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <stdio.h>
-#include <errno.h>
-#include <unistd.h>
-#include <syslog.h>
-#include <string.h>
-#include <fcntl.h>
+#include <qremote/conn.h>
 #include <qremote/greeting.h>
-#include "netio.h"
-#include "qdns.h"
-#include "control.h"
-#include "log.h"
-#include "sstring.h"
-#include "fmt.h"
-#include "ipme.h"
-#include "tls.h"
-#include "qmaildir.h"
+#include <qremote/qrdata.h>
+#include <qremote/starttlsr.h>
+#include <sstring.h>
+#include <tls.h>
+
+#include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <syslog.h>
+#include <unistd.h>
 
 int socketd = -1;
 string heloname;

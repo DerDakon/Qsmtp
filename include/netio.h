@@ -6,8 +6,8 @@
 
 #include "sstring.h"
 
-#include <sys/types.h>
 #include <string.h>
+#include <sys/types.h>
 #include <time.h>
 
 extern struct string linein;

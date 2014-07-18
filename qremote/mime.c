@@ -1,17 +1,18 @@
 /** @file mime.c
   \brief MIME handling functions
  */
+
 #include <qremote/mime.h>
 
-#include <qremote/qrdata.h>
-#include <qremote/qremote.h>
 #include <mime_chars.h>
 #include <netio.h>
+#include <qremote/qrdata.h>
+#include <qremote/qremote.h>
 #include <sstring.h>
 
 #include <assert.h>
-#include <strings.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 
 /**

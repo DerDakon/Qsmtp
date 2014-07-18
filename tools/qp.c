@@ -4,18 +4,20 @@
  qp converts the contents of the given filename to quoted-printable,
  using Qremotes recoding engine. The result will be written to stdout.
  */
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
+
+#include <fmt.h>
+#include <netio.h>
+#include <qremote/qrdata.h>
+#include <sstring.h>
+
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-#include <qremote/qrdata.h>
-#include "netio.h"
-#include "sstring.h"
-#include "fmt.h"
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 extern void send_qp(const char *, const off_t);
 unsigned int smtpext;

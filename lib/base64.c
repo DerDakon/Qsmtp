@@ -1,12 +1,15 @@
 /** \file base64.c
  \brief Base64 encoding and decoding functions
  */
-#include "base64.h"
+
+#include <base64.h>
+
+#include <sstring.h>
+
 #include <assert.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
-#include "sstring.h"
+#include <unistd.h>
 
 static const char *b64alpha =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

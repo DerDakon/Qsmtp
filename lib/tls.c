@@ -1,15 +1,20 @@
 /** \file tls.c
  \brief helper functions for STARTTLS
  */
+
+#include <tls.h>
+
+/* _exit is defined to ssl_exit in tls.h to be sure ssl is always freed correctly */
+#undef _exit
+
+#include <errno.h>
 #include <openssl/conf.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/ssl.h>
 #include <string.h>
-#include <errno.h>
 #include <unistd.h>
-#include "tls.h"
 
 SSL *ssl = NULL;
 
@@ -22,8 +27,6 @@ void ssl_free(SSL *myssl)
 	ssl_library_destroy();
 }
 
-/* _exit is defined to ssl_exit in tls.h to be sure ssl is always freed correctly */
-#undef _exit
 void __attribute__ ((noreturn)) ssl_exit(int status)
 {
 	if (ssl)

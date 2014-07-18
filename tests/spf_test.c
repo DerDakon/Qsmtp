@@ -1,13 +1,13 @@
 /** \file spf_test.c
  \brief SPF testcases
  */
-#include <qsmtpd/qsmtpd.h>
-#include <qsmtpd/antispam.h>
+
 #include <mime_chars.h>
-#include <sstring.h>
 #include <qremote/mime.h> /* for skipwhitespace() */
 #include <qremote/qremote.h> /* for write_status(), required by mime */
-
+#include <qsmtpd/antispam.h>
+#include <qsmtpd/qsmtpd.h>
+#include <sstring.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>

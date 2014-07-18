@@ -1,7 +1,8 @@
 /** \file dns_helpers.c
  \brief DNS helper functions that do no network actions
  */
-#include "qdns.h"
+
+#include <qdns.h>
 
 #include <stdlib.h>
 #include <string.h>

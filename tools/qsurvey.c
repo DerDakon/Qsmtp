@@ -4,32 +4,33 @@
  This file contains the main functions of Qsurvey, a simple SMTP server survey
  to check for remote SMTP server capabilities and software version.
  */
+
+#include <control.h>
+#include <fmt.h>
+#include <log.h>
+#include <match.h>
+#include <netio.h>
+#include <qdns.h>
+#include <qmaildir.h>
 #include <qremote/client.h>
 #include <qremote/conn.h>
 #include <qremote/qremote.h>
 #include <qremote/starttlsr.h>
+#include <sstring.h>
+#include <tls.h>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <stdio.h>
 #include <errno.h>
-#include <limits.h>
-#include <unistd.h>
-#include <syslog.h>
-#include <string.h>
 #include <fcntl.h>
-#include "netio.h"
-#include "qdns.h"
-#include "control.h"
-#include "log.h"
-#include "match.h"
-#include "sstring.h"
-#include "fmt.h"
-#include "qmaildir.h"
-#include "tls.h"
+#include <limits.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <syslog.h>
+#include <unistd.h>
 
 int socketd;
 string heloname;

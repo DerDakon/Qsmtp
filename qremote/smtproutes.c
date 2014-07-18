@@ -1,21 +1,24 @@
 /** \file smtproutes.c
  \brief functions for handling of control/smtproutes
  */
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <unistd.h>
-#include <string.h>
-#include <syslog.h>
-#include <fcntl.h>
-#include <assert.h>
-#include "qdns.h"
-#include "control.h"
-#include "match.h"
-#include "log.h"
+
 #include <qremote/qremote.h>
+
+#include <control.h>
+#include <log.h>
+#include <match.h>
 #include <mmap.h>
+#include <qdns.h>
+
+#include <arpa/inet.h>
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <syslog.h>
+#include <unistd.h>
 
 static const char *tags[] = {
 	"relay",

@@ -1,12 +1,14 @@
 /** \file libowfatconn.c
  \brief connector functions for libowfat DNS functions
  */
-#include <stdlib.h>
-#include <stralloc.h>
+
+#include <libowfatconn.h>
+
 #include <dns.h>
 #include <netinet/in.h>
+#include <stdlib.h>
+#include <stralloc.h>
 #include <string.h>
-#include "libowfatconn.h"
 
 /**
  * @brief handle the libowfat return codes

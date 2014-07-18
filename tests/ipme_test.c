@@ -1,5 +1,5 @@
-#include "ipme.h"
-#include "qdns.h"
+#include <ipme.h>
+#include <qdns.h>
 
 #include <arpa/inet.h>
 #include <errno.h>

@@ -1,22 +1,24 @@
 /** \file control.c
  \brief functions to load data from configuration files
  */
-#include "control.h"
 
-#include <sys/file.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <unistd.h>
+#include <control.h>
+
+#include <fmt.h>
+#include <log.h>
+#include <mmap.h>
+#include <qdns.h>
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
-#include <syslog.h>
 #include <string.h>
 #include <strings.h>
-#include "fmt.h"
-#include "log.h"
-#include "qdns.h"
-#include "mmap.h"
+#include <sys/file.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <syslog.h>
+#include <unistd.h>
 
 int controldir_fd = -1;	/**< descriptor of the control directory */
 

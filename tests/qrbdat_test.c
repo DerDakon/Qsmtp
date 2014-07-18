@@ -3,7 +3,7 @@
 #define CHUNKING
 #endif /* CHUNKING */
 
-#include "netio.h"
+#include <netio.h>
 #include <qremote/qrdata.h>
 #include <qremote/qremote.h>
 #include "test_io/testcase_io.h"

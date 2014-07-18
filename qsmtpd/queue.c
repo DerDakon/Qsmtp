@@ -2,12 +2,13 @@
  * @brief functions for communication with qmail-queue
  */
 
-#include <qsmtpd/antispam.h>
 #include <qsmtpd/queue.h>
-#include <qsmtpd/qsmtpd.h>
+
 #include <fmt.h>
 #include <log.h>
 #include <netio.h>
+#include <qsmtpd/antispam.h>
+#include <qsmtpd/qsmtpd.h>
 #include <sstring.h>
 #include <tls.h>
 

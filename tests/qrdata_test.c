@@ -1,5 +1,5 @@
 #define _ISOC99_SOURCE
-#include "netio.h"
+#include <netio.h>
 #include <qremote/qrdata.h>
 #include <qremote/qremote.h>
 #include "test_io/testcase_io.h"
@@ -13,9 +13,9 @@
 #include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/mman.h>
 #include <unistd.h>
 #include <mmap.h>
-#include <sys/mman.h>
 
 enum datastate {
 	ST_START,

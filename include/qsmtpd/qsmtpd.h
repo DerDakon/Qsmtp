@@ -3,11 +3,13 @@
  */
 #ifndef QSMTPD_H
 #define QSMTPD_H
+
+#include <qdns.h>
+#include <sstring.h>
+
 #include <netinet/in.h>
 #include <sys/queue.h>
 #include <sys/types.h>
-#include "sstring.h"
-#include "qdns.h"
 
 /*! \struct smtpcomm
  Describes a single SMTP command and it's transitions in the SMTP state machine.

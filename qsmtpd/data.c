@@ -1,22 +1,24 @@
 /** \file data.c
  \brief receive and queue message data
  */
+
 #include <qsmtpd/qsdata.h>
+
+#include <fmt.h>
+#include <log.h>
+#include <netio.h>
+#include <qsmtpd/antispam.h>
+#include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/queue.h>
+#include <qsmtpd/syntax.h>
 #include <version.h>
 
-#include <syslog.h>
-#include <unistd.h>
-#include <string.h>
 #include <errno.h>
-#include <time.h>
-#include "netio.h"
-#include "log.h"
-#include <qsmtpd/qsmtpd.h>
-#include <qsmtpd/antispam.h>
-#include "fmt.h"
-#include <qsmtpd/syntax.h>
+#include <string.h>
 #include <sys/time.h>
+#include <syslog.h>
+#include <time.h>
+#include <unistd.h>
 
 #define MAXHOPS		100		/* maximum number of "Received:" lines allowed in a mail (loop prevention) */
 

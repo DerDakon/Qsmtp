@@ -1,12 +1,16 @@
-#include "ipme.h"
+/** \file ipme.c
+ * \brief functions to filter out IP addresses of the local machine
+ */
 
-#include "qdns.h"
+#include <ipme.h>
 
-#include <sys/types.h> 
-#include <sys/socket.h> 
+#include <qdns.h>
+
 #include <ifaddrs.h> 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h> 
+#include <sys/types.h> 
 
 /**
  * remove all IP addresses of the local machine from IP list

@@ -4,6 +4,8 @@
 #ifndef QSMTP_LIBOWFAT_H
 #define QSMTP_LIBOWFAT_H
 
+#include <sys/types.h>
+
 struct in6_addr;
 
 extern int dnsip4(char **out, size_t *len, const char *host) __attribute__ ((nonnull (1,2,3)));

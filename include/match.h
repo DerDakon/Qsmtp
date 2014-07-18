@@ -4,8 +4,8 @@
 #ifndef MATCH_H
 #define MATCH_H
 
-#include <sys/types.h>
 #include <netinet/in.h>
+#include <sys/types.h>
 
 extern int ip4_matchnet(const struct in6_addr *, const struct in_addr *, const unsigned char) __attribute__ ((nonnull (1,2)));
 extern int ip6_matchnet(const struct in6_addr *, const struct in6_addr *, const unsigned char) __attribute__ ((nonnull (1,2)));

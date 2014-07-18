@@ -1,8 +1,9 @@
 /** \file control_test.c
  \brief control file testcases
  */
-#include "control.h"
-#include "log.h"
+
+#include <control.h>
+#include <log.h>
 #include "test_io/testcase_io.h"
 
 #include <errno.h>

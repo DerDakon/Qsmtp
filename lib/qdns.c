@@ -1,11 +1,14 @@
 /** \file qdns.c
  \brief DNS query functions
  */
-#include "qdns.h"
+
+#include <qdns.h>
+
+#include <libowfatconn.h>
+
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#include "libowfatconn.h"
 
 /**
  * \brief get info out of the DNS

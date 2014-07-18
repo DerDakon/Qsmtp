@@ -1,6 +1,7 @@
 /** @file status.c
  * @brief functions to write delivery status information to qmail-rspawn
  */
+
 #include <qremote/qremote.h>
 #include <netio.h>
 

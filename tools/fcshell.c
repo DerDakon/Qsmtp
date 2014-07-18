@@ -1,18 +1,19 @@
 /** \file fcshell.c
  \brief shell program to allow a user to modify his filterconf setting from remote host
  */
-#include <sys/queue.h>
-#include <netinet/in.h>
+
 #include <arpa/inet.h>
-#include <sys/stat.h>
-#include <sys/file.h>
-#include <stdio.h>
-#include <syslog.h>
 #include <errno.h>
-#include <unistd.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
+#include <sys/file.h>
+#include <sys/queue.h>
+#include <sys/stat.h>
+#include <syslog.h>
+#include <unistd.h>
 
 #define VERSION "0.02"
 

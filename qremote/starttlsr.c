@@ -1,19 +1,22 @@
 /** \file starttlsr.c
  \brief functions for SSL encoding and decoding of network I/O
  */
+
+#include <qremote/starttlsr.h>
+
+#include <control.h>
+#include <netio.h>
+#include <qremote/qremote.h>
+#include <ssl_timeoutio.h>
+#include <sstring.h>
+#include <tls.h>
+
+#include <fcntl.h>
 #include <openssl/x509v3.h>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <string.h>
 #include <strings.h>
-#include <fcntl.h>
-#include "tls.h"
-#include "ssl_timeoutio.h"
-#include <qremote/qremote.h>
-#include "control.h"
-#include "netio.h"
-#include "sstring.h"
-#include <qremote/starttlsr.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 static int
 match_partner(const char *s, size_t len)

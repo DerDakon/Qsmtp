@@ -1,21 +1,21 @@
 #include <qsmtpd/userfilters.h>
+
+#include <control.h>
+#include <libowfatconn.h>
+#include <qsmtpd/addrparse.h>
+#include <qsmtpd/antispam.h>
+#include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
 #include "test_io/testcase_io.h"
 
-#include <qsmtpd/antispam.h>
-#include "control.h"
-#include "libowfatconn.h"
-#include <qsmtpd/qsmtpd.h>
-#include <qsmtpd/addrparse.h>
-
+#include <arpa/inet.h> 
 #include <assert.h>
 #include <errno.h>
-#include <limits.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h> 
 
 struct xmitstat xmitstat;
 unsigned int goodrcpt;

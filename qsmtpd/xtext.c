@@ -1,12 +1,13 @@
 /** \file xtext.c
  * \brief functions for xtext parsing
  */
+
 #include <qsmtpd/xtext.h>
 
 #include <qsmtpd/addrparse.h>
 
-#include <sys/types.h>
 #include <string.h>
+#include <sys/types.h>
 
 static unsigned char
 hexchar(const char ch)

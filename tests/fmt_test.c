@@ -2,7 +2,7 @@
  \brief testcase for printing numbers to a buffer
  */
 
-#include "fmt.h"
+#include <fmt.h>
 #include "test_io/testcase_io.h"
 
 #include <stdio.h>

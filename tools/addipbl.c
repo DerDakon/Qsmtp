@@ -1,17 +1,18 @@
 /** \file addipbl.c
  \brief helper program to an an IPv4 or IPv6 host or net address to a IP list for Qsmtp's filters
  */
-#include <netinet/in.h>
+
 #include <arpa/inet.h>
-#include <sys/stat.h>
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <string.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <netinet/in.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 static void err_mixed(void) __attribute__ ((noreturn));
 static void err_syntax(const char *arg) __attribute__ ((noreturn));

@@ -1,7 +1,7 @@
 #include <qremote/client.h>
-#include <qremote/qremote.h>
-#include <qdns.h>
 
+#include <qdns.h>
+#include <qremote/qremote.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>

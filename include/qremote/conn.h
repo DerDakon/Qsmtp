@@ -4,8 +4,9 @@
 #ifndef CONN_H
 #define CONN_H
 
+#include <qdns.h>
+
 #include <netinet/in.h>
-#include "qdns.h"
 
 unsigned int targetport;	/**< the port on the destination host to connect to */
 

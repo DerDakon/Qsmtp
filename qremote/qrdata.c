@@ -5,22 +5,25 @@
  Both DATA and BDAT modes are supported. In DATA mode the message will be recoded
  to quoted-printable if neccessary.
  */
+
 #include <qremote/qrdata.h>
+
+#include <fmt.h>
+#include <log.h>
+#include <netio.h>
 #include <qremote/client.h>
 #include <qremote/mime.h>
 #include <qremote/qremote.h>
-#include <sys/types.h>
-#include <sys/mman.h>
+#include <version.h>
+
 #include <assert.h>
 #include <errno.h>
-#include <unistd.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/types.h>
 #include <syslog.h>
-#include "netio.h"
-#include "version.h"
-#include "log.h"
-#include "fmt.h"
+#include <unistd.h>
 
 const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "", "./Remote host said: ", NULL};
 const char *msgdata;		/* message will be mmaped here */

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdlib.h>
+
 static struct {
 	const char *testname;
 	const char *username;

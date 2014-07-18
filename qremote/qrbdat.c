@@ -1,12 +1,14 @@
 #include <qremote/qrdata.h>
+
+#include <fmt.h>
+#include <log.h>
+#include <netio.h>
 #include <qremote/client.h>
 #include <qremote/qremote.h>
+
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
-#include "fmt.h"
-#include "log.h"
-#include "netio.h"
 
 size_t chunksize;	/**< the maximum allowed size for an outgoing send buffer in BDAT mode */
 

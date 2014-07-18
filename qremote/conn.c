@@ -1,20 +1,24 @@
 /** \file conn.c
  \brief functions for establishing connection to remote SMTP server
  */
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <errno.h>
-#include <unistd.h>
-#include <string.h>
-#include <syslog.h>
-#include <fcntl.h>
-#include <assert.h>
-#include "qdns.h"
-#include "control.h"
-#include "netio.h"
-#include "log.h"
+
+#include <qremote/conn.h>
+
+#include <control.h>
+#include <log.h>
+#include <netio.h>
+#include <qdns.h>
 #include <qremote/qremote.h>
+
+#include <arpa/inet.h>
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <netinet/in.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <syslog.h>
+#include <unistd.h>
 
 unsigned int targetport = 25;
 

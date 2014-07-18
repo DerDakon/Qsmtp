@@ -4,7 +4,7 @@
 #ifndef ADDRPARSE_H
 #define ADDRPARSE_H
 
-#include "sstring.h"
+#include <sstring.h>
 
 struct userconf;
 

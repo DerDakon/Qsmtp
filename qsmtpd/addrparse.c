@@ -1,11 +1,12 @@
 /** \file addrparse.c
  \brief validate email addresses
  */
+
 #include <qsmtpd/addrparse.h>
 
-#include <qsmtpd/antispam.h>
 #include <control.h>
 #include <netio.h>
+#include <qsmtpd/antispam.h>
 #include <qsmtpd/qsmtpd.h>
 
 /**

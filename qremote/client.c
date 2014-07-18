@@ -3,10 +3,11 @@
  */
 
 #include <qremote/client.h>
-#include <qremote/qremote.h>
-#include <qremote/statuscodes.h>
+
 #include <netio.h>
 #include <qdns.h>
+#include <qremote/qremote.h>
+#include <qremote/statuscodes.h>
 
 #include <arpa/inet.h>
 #include <errno.h>

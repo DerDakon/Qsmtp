@@ -1,23 +1,27 @@
 /** \file qsmtpd/spf.c
  \brief functions to query and parse SPF entries
  */
-#include <netinet/in.h>
+
+#define _GNU_SOURCE /* for strcasestr() */
+
+#include <qsmtpd/antispam.h>
+
+#include <fmt.h>
+#include <libowfatconn.h>
+#include <match.h>
+#include <mime_chars.h>
+#include <netio.h>
+#include <qsmtpd/qsmtpd.h>
+#include <sstring.h>
+
 #include <arpa/inet.h>
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#define __USE_GNU
+#include <netinet/in.h>
 #include <string.h>
-#include <unistd.h>
 #include <time.h>
-#include <qsmtpd/qsmtpd.h>
-#include <qsmtpd/antispam.h>
-#include "sstring.h"
-#include "libowfatconn.h"
-#include "match.h"
-#include "netio.h"
-#include "fmt.h"
-#include "mime_chars.h"
+#include <unistd.h>
 
 static const char spf_delimiters[] = ".-+,/_=";
 

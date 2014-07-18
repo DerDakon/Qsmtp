@@ -1,6 +1,7 @@
 /** \file qsauth_backend_cp.c
  \brief checkpassword AUTH backend
  */
+
 #include <qsmtpd/qsauth_backend.h>
 
 #include <log.h>
@@ -10,8 +11,8 @@
 #include <errno.h>
 #include <signal.h>
 #include <syslog.h>
-#include <unistd.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 const char *auth_check;			/**< checkpassword or one of his friends for auth */
 const char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */

@@ -1,7 +1,8 @@
 /** \file fmt.c
  \brief functions for output formatting
  */
-#include "fmt.h"
+
+#include <fmt.h>
 
 /**
  * print unsigned long into a given buffer

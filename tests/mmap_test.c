@@ -1,4 +1,4 @@
-#include "mmap.h"
+#include <mmap.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>
@@ -6,9 +6,9 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/file.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 static const char pattern1[] = "this is the first test pattern";
 static const char pattern2[] = "this is the second test pattern";

@@ -1,16 +1,19 @@
 /** \file auth.c
  \brief functions for SMTP AUTH
  */
+
 #include <qsmtpd/qsauth.h>
 #include <qsmtpd/qsauth_backend.h>
 
-#include "fmt.h"
-#include "sstring.h"
-#include "netio.h"
-#include "base64.h"
-#include "log.h"
-#include "tls.h"
-#include "control.h"
+#include <base64.h>
+#include <control.h>
+#include <fmt.h>
+#include <log.h>
+#include <netio.h>
+#include <qsmtpd/antispam.h>
+#include <qsmtpd/qsmtpd.h>
+#include <sstring.h>
+#include <tls.h>
 
 #include <ctype.h>
 #include <errno.h>
@@ -21,8 +24,6 @@
 #include <syslog.h>
 #include <time.h>
 #include <unistd.h>
-#include <qsmtpd/antispam.h>
-#include <qsmtpd/qsmtpd.h>
 
 const char *tempnoauth = "454 4.5.0 AUTH temporaryly not available\r\n";
 static const char *auth_host;			/**< hostname for auth */

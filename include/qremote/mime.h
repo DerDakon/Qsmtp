@@ -4,9 +4,10 @@
 #ifndef MIME_H
 #define MIME_H
 
+#include "qrdata.h"
+#include <sstring.h>
+
 #include <sys/types.h>
-#include "sstring.h"
-#include <qremote/qrdata.h>
 
 extern const char *skipwhitespace(const char *line, const size_t len) __attribute__ ((pure)) __attribute__ ((nonnull(1)));
 extern int is_multipart(const cstring *, cstring *) __attribute__ ((pure)) __attribute__ ((nonnull(1,2)));

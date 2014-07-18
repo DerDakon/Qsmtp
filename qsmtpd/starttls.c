@@ -1,21 +1,21 @@
 /** \file starttls.c
  \brief functions for STARTTLS SMTP command
  */
+
 #include <qsmtpd/starttls.h>
 
+#include <control.h>
+#include <netio.h>
+#include <qdns.h>
 #include <qsmtpd/addrparse.h>
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/syntax.h>
-
-#include "tls.h"
-#include "netio.h"
-#include "control.h"
-#include "qdns.h"
-#include "ssl_timeoutio.h"
+#include <ssl_timeoutio.h>
+#include <tls.h>
 #include <version.h>
 
-#include <fcntl.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
 

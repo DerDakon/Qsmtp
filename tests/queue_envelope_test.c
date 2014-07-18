@@ -1,8 +1,6 @@
 #include <qsmtpd/queue.h>
-
 #include <qsmtpd/qsmtpd.h>
 #include <tls.h>
-
 #include "test_io/testcase_io.h"
 
 #include <errno.h>

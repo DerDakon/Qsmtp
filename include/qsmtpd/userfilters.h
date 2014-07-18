@@ -3,10 +3,12 @@
  */
 #ifndef USERFILTERS_H
 #define USERFILTERS_H
-#include <sys/types.h>
+
+#include "qsmtpd.h"
+#include <sstring.h>
+
 #include <sys/queue.h>
-#include "sstring.h"
-#include <qsmtpd/qsmtpd.h>
+#include <sys/types.h>
 
 struct userconf;
 

@@ -1,14 +1,16 @@
 /** \file cdb.c
  * \brief functions to read from CDB database
  */
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+
+#include <cdb.h>
+
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include "cdb.h"
 
 #define CDB_HASHSTART 5381
 

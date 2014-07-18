@@ -2,8 +2,8 @@
  \brief BASE64 testcases
  */
 
-#include "base64.h"
-#include "sstring.h"
+#include <base64.h>
+#include <sstring.h>
 #include "test_io/testcase_io.h"
 
 #include <stdio.h>
