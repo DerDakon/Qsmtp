@@ -58,9 +58,8 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 			continue;
 
 		if (strncmp("220 ", linein.s, 4) != 0) {
-			const char *dropmsg[] = {"invalid greeting from ", NULL, NULL};
+			const char *dropmsg[] = {"invalid greeting from ", rhost, NULL};
 
-			dropmsg[1] = rhost;
 			log_writen(LOG_WARNING, dropmsg);
 			quitmsg();
 		} else {
