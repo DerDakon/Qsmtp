@@ -3,6 +3,7 @@
  */
 
 #include <control.h>
+#include <diropen.h>
 #include <log.h>
 #include <netio.h>
 #include <qsmtpd/qsauth.h>
@@ -146,9 +147,47 @@ test_controlfiles(void)
 	return errcnt;
 }
 
+static const char **log_multi_expect;
+static int log_prio_expect;
+
+void
+test_log_writen(int priority, const char **msg)
+{
+	unsigned int c;
+
+	if (priority != log_prio_expect) {
+		fprintf(stderr, "log_writen(%i, ...) called, but expected priority is %i\n",
+				priority, log_prio_expect);
+		exit(1);
+	}
+
+	for (c = 0; msg[c] != NULL; c++) {
+		if (log_multi_expect[c] == NULL) {
+			fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is NULL\n",
+					priority, c);
+			exit(1);
+		}
+		if (strcmp(log_multi_expect[c], msg[c]) != 0) {
+			fprintf(stderr, "log_writen(%i, ...) called, but parameter at position %u is '%s' instead of '%s'\n",
+					priority, c, msg[c], log_multi_expect[c]);
+			exit(1);
+		}
+	}
+
+	if (log_multi_expect[c] != NULL) {
+		fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is not NULL, but %s\n",
+				priority, c, log_multi_expect[c]);
+		exit(1);
+	}
+
+	log_multi_expect = NULL;
+}
+
 static int
 test_nonexistent(void)
 {
+	const char *found_garbage[] = {"error: unknown auth type \"", "garbage",
+			"\" found in control/authtypes\n", NULL};
 	char *auth_str;
 
 	if (chdir("nonexistent") != 0) {
@@ -156,7 +195,15 @@ test_nonexistent(void)
 		return 1;
 	}
 
+	controldir_fd = get_dirfd(AT_FDCWD, "control");
+
+	testcase_setup_log_writen(test_log_writen);
+	log_multi_expect = found_garbage;
+	log_prio_expect = LOG_ERR;
+
 	auth_str = smtp_authstring();
+
+	close(controldir_fd);
 
 	if (auth_str != NULL) {
 		fprintf(stderr, "smtp_authstring() returned \"%s\" but is should have returned NULL\n",
@@ -204,39 +251,6 @@ test_no_auth_yet(void)
 	return ret;
 }
 
-const char **log_multi_expect;
-
-void
-test_log_writen(int priority, const char **msg)
-{
-	unsigned int c;
-
-	if (priority != LOG_WARNING) {
-		fprintf(stderr, "log_writen(%i, ...) called, but expected priority is LOG_WARNING\n",
-				priority);
-		exit(1);
-	}
-
-	for (c = 0; msg[c] != NULL; c++) {
-		if (log_multi_expect[c] == NULL) {
-			fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is NULL\n",
-					priority, c);
-			exit(1);
-		}
-		if (strcmp(log_multi_expect[c], msg[c]) != 0) {
-			fprintf(stderr, "log_writen(%i, ...) called, but parameter at position %u is '%s' instead of '%s'\n",
-					priority, c, msg[c], log_multi_expect[c]);
-			exit(1);
-		}
-	}
-
-	if (log_multi_expect[c] != NULL) {
-		fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is not NULL, but %s\n",
-				priority, c, log_multi_expect[c]);
-		exit(1);
-	}
-}
-
 const char *log_single_expect;
 
 void
@@ -281,6 +295,7 @@ test_setup_errors(void)
 	testcase_setup_log_writen(test_log_writen);
 
 	log_multi_expect = err_invalid_domain;
+	log_prio_expect = LOG_WARNING;
 	auth_setup(3, args_invalid_domain);
 	log_multi_expect = NULL;
 
