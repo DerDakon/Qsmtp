@@ -210,7 +210,7 @@ is_multipart(const cstring *line, cstring *boundary)
 			return -1;
 		}
 		i++;
-		for (;;) {
+		while (1) {
 			ch += i;
 			ch = skipwhitespace(ch, line->len - (ch - line->s));
 			/* multipart/(*) without boundary is invalid */

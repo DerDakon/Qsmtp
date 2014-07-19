@@ -229,7 +229,7 @@ netget(void)
 				const char *tmp[] = { "Z4.3.0 ", strerror(errno) };
 
 				write_status_m(tmp, 2);
-				net_conn_shutdown(shutdown_clean);;
+				net_conn_shutdown(shutdown_clean);
 			}
 		}
 	}
@@ -254,7 +254,7 @@ syntax:
 	 * hope that this is just a hiccup on the other side and will get
 	 * fixed soon. */
 	write_status("Z5.5.2 syntax error in server reply");
-	net_conn_shutdown(shutdown_clean);;
+	net_conn_shutdown(shutdown_clean);
 }
 
 /**
@@ -446,7 +446,7 @@ main(int argc, char *argv[])
 
 		if (i < 0) {
 			write_status("ZEHLO failed after STARTTLS");
-			net_conn_shutdown(shutdown_clean);;
+			net_conn_shutdown(shutdown_clean);
 		} else {
 			smtpext = i;
 			successmsg[3] = "message ";
@@ -502,7 +502,7 @@ main(int argc, char *argv[])
 		if (checkreply(" ZD", mailerrmsg, 6) >= 300) {
 			for (i = rcptcount; i > 0; i--)
 				checkreply(NULL, NULL, 0);
-			net_conn_shutdown(shutdown_clean);;
+			net_conn_shutdown(shutdown_clean);
 		}
 /* RCPT TO: replies */
 		for (i = rcptcount; i > 0; i--) {
@@ -512,7 +512,7 @@ main(int argc, char *argv[])
 			}
 		}
 		if (rcptstat)
-			net_conn_shutdown(shutdown_clean);;
+			net_conn_shutdown(shutdown_clean);
 	} else {
 		int i;
 
@@ -521,7 +521,7 @@ main(int argc, char *argv[])
 		net_writen(netmsg);
 
 		if (checkreply(" ZD", mailerrmsg, 6) >= 300)
-			net_conn_shutdown(shutdown_clean);;
+			net_conn_shutdown(shutdown_clean);
 
 		netmsg[0] = "RCPT TO:<";
 		netmsg[2] = ">";
@@ -536,7 +536,7 @@ main(int argc, char *argv[])
 			}
 		}
 		if (rcptstat)
-			net_conn_shutdown(shutdown_clean);;
+			net_conn_shutdown(shutdown_clean);
 	}
 	successmsg[0] = rhost;
 #ifdef CHUNKING
@@ -548,5 +548,5 @@ main(int argc, char *argv[])
 #endif
 		send_data(recodeflag);
 	}
-	net_conn_shutdown(shutdown_clean);;
+	net_conn_shutdown(shutdown_clean);
 }
