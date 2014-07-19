@@ -258,15 +258,16 @@ syntax:
 }
 
 /**
- * greet the server, try ehlo and fall back to helo if needed
- *
- * @return 0 if greeting succeeded, 1 on error
+ * @brief greet the server, try EHLO and fall back to HELO if needed
+ * @return the SMTP extensions supported
+ * @retval <0 error code
  */
 static int
 greeting(void)
 {
 	const char *cmd[3];
 	int s;			/* SMTP status */
+	int ret = 0;
 
 	cmd[0] = "EHLO ";
 	cmd[1] = heloname.s;
@@ -283,7 +284,7 @@ greeting(void)
 
 				log_writen(LOG_WARNING, logmsg);
 			} else {
-				smtpext |= ext;
+				ret |= ext;
 			}
 		}
 	} while (linein.s[3] == '-');
@@ -296,12 +297,12 @@ greeting(void)
 			s = netget();
 		} while (linein.s[3] == '-');
 		if (s == 250) {
-			smtpext = 0;
+			ret = 0;
 		} else {
-			return 1;
+			return -EINVAL;
 		}
 	}
-	return 0;
+	return ret;
 }
 
 void
@@ -417,25 +418,37 @@ main(int argc, char *argv[])
 		if (flagerr)
 			continue;
 
-		if (strncmp("220 ", linein.s, 4)) {
+		if (strncmp("220 ", linein.s, 4) != 0) {
 			const char *dropmsg[] = {"invalid greeting from ", NULL, NULL};
 
 			dropmsg[1] = rhost;
 			log_writen(LOG_WARNING, dropmsg);
 			quitmsg();
+		} else {
+			flagerr = greeting();
+			if (flagerr < 0)
+				quitmsg();
+			else
+				smtpext = flagerr;
 		}
-	} while ((socketd < 0) || greeting());
+	} while (socketd < 0);
 
 	freeips(mx);
 	mailerrmsg[1] = rhost;
 
 	if (smtpext & esmtp_starttls) {
-		if (tls_init() != 0) {
+		int i;
+
+		if (tls_init() != 0)
 			net_conn_shutdown(shutdown_clean);
-		} else if (greeting()) {
+
+		i = greeting();
+
+		if (i < 0) {
 			write_status("ZEHLO failed after STARTTLS");
 			net_conn_shutdown(shutdown_clean);;
 		} else {
+			smtpext = i;
 			successmsg[3] = "message ";
 			successmsg[4] = SSL_get_cipher(ssl);
 			successmsg[5] = " encrypted";
