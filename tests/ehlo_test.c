@@ -1,10 +1,15 @@
 #include <qremote/greeting.h>
 
+#include <netio.h>
+#include <qremote/qremote.h>
 #include <sstring.h>
+#include "test_io/testcase_io.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 
 struct string heloname;
 
@@ -223,11 +228,257 @@ testcase_auth(void)
 	return ret;
 }
 
+#define MAX_NETGET 3
+static struct {
+	int ret;
+	const char *line;
+} netget_results[MAX_NETGET];
+
 int
 netget(void)
 {
-	fprintf(stderr, "unexpected call to %s()\n", __func__);
-	abort();
+	int i, r;
+
+	if (netget_results[0].line == NULL) {
+		fprintf(stderr, "unexpected call to %s()\n", __func__);
+		abort();
+	}
+
+	strncpy(linein.s, netget_results[0].line, TESTIO_MAX_LINELEN);
+	r  = netget_results[0].ret;
+
+	for (i = 0; i < MAX_NETGET - 1; i++)
+		netget_results[i] = netget_results[i + 1];
+	netget_results[MAX_NETGET - 1].line = NULL;
+
+	return r;
+}
+
+static unsigned int nw_flags;
+static const char helonm[] = "HELONAME";
+
+int
+test_net_writen(const char *const *msg)
+{
+	if (nw_flags & 2) {
+		nw_flags ^= 2;
+		if (strcmp(msg[0], "EHLO ") != 0) {
+			fprintf(stderr, "first argument to net_writen() was '%s', but expected 'EHLO '\n",
+					msg[0]);
+			abort();
+		}
+	} else {
+		assert(nw_flags == 1);
+		nw_flags = 0;
+		if (strcmp(msg[0], "HELO ") != 0) {
+			fprintf(stderr, "first argument to net_writen() was '%s', but expected 'HELO '\n",
+				msg[0]);
+			abort();
+		}
+	}
+
+	/* yes, pointer compare */
+	if (msg[1] != helonm) {
+		fprintf(stderr, "second argument to net_writen() was '%s', but expected '%s'\n",
+			msg[1], helonm);
+		abort();
+	}
+
+	if (msg[2] != NULL) {
+		fprintf(stderr, "third argument to net_writen() was '%s', but expected NULL\n",
+			msg[2]);
+		abort();
+	}
+
+	return 0;
+}
+
+static int
+check_calls(int gresult)
+{
+	int ret = greeting();
+
+	if (ret != gresult) {
+		fprintf(stderr, "%s: greeting() returned %i instead of %i\n",
+			__func__, ret, gresult);
+		ret = 1;
+	} else {
+		ret = 0;
+	}
+	
+	if (netget_results[0].line != NULL) {
+		fprintf(stderr, "%s: greeting() did not call netget() often enough\n",
+			__func__);
+		ret++;
+	}
+	
+	if (nw_flags != 0) {
+		fprintf(stderr, "%s: greeting() did not call net_writen() often enough\n",
+			__func__);
+		ret++;
+	}
+
+	return ret;
+}
+
+static int
+test_greeting_helo(void)
+{
+	nw_flags = 3;
+
+	netget_results[0].line = "503 5.5.1 Bad sequence of commands";
+	netget_results[0].ret = 503;
+	netget_results[1].line = "250 nice to meet you";
+	netget_results[1].ret = 250;
+
+	return check_calls(0);
+}
+
+static int
+test_greeting_ehlo(void)
+{
+	nw_flags = 2;
+
+	netget_results[0].line = "250-nice to meet you";
+	netget_results[0].ret = 250;
+	netget_results[1].line = "250 X-FOO";
+	netget_results[1].ret = 250;
+
+	return check_calls(0);
+}
+
+static int
+test_greeting_helo_fail(void)
+{
+	nw_flags = 3;
+
+	netget_results[0].line = "503 5.5.1 Bad sequence of commands";
+	netget_results[0].ret = 503;
+	netget_results[1].line = "503 5.5.1 Bad sequence of commands";
+	netget_results[1].ret = 503;
+
+	return check_calls(-EDONE);
+}
+
+static int
+test_greeting_helo_mixed(void)
+{
+	nw_flags = 3;
+
+	netget_results[0].line = "503 5.5.1 Bad sequence of commands";
+	netget_results[0].ret = 503;
+	netget_results[1].line = "251-nice to meet you";
+	netget_results[1].ret = 251;
+	netget_results[2].line = "250 X-FOO";
+	netget_results[2].ret = 250;
+
+	return check_calls(-EINVAL);
+}
+
+static int
+test_greeting_ehlo_mixed(void)
+{
+	nw_flags = 2;
+
+	netget_results[0].line = "251-nice to meet you";
+	netget_results[0].ret = 251;
+	netget_results[1].line = "250 X-FOO";
+	netget_results[1].ret = 250;
+
+	return check_calls(-EINVAL);
+}
+
+static int
+test_greeting_ehlo_multi(void)
+{
+	int r;
+
+	nw_flags = 2;
+
+	netget_results[0].line = "250-nice to meet you";
+	netget_results[0].ret = 250;
+	netget_results[1].line = "250-SIZE 42";
+	netget_results[1].ret = 250;
+	netget_results[2].line = "250 STARTTLS";
+	netget_results[2].ret = 250;
+
+	remotesize = 0;
+
+	r = check_calls(esmtp_size | esmtp_starttls);
+
+	if (remotesize != 42) {
+		fprintf(stderr, "%s: remotesize is %lu, but it should be 42\n",
+				__func__, remotesize);
+		r++;
+	}
+
+	remotesize = 0;
+
+	return r;
+}
+
+void
+test_log_writen(int priority, const char **msg)
+{
+	unsigned int c;
+	const int log_prio_expect = LOG_WARNING;
+	const char *log_multi_expect[] = { "syntax error in EHLO response \"",
+		"SIZE JUNK", "\"", NULL };
+
+	if (priority != log_prio_expect) {
+		fprintf(stderr, "log_writen(%i, ...) called, but expected priority is %i\n",
+				priority, log_prio_expect);
+		abort();
+	}
+
+	for (c = 0; msg[c] != NULL; c++) {
+		if ((log_multi_expect == NULL) || (log_multi_expect[c] == NULL)) {
+			fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is NULL\n",
+					priority, c);
+			abort();
+		}
+		if (strcmp(log_multi_expect[c], msg[c]) != 0) {
+			fprintf(stderr, "log_writen(%i, ...) called, but parameter at position %u is '%s' instead of '%s'\n",
+					priority, c, msg[c], log_multi_expect[c]);
+			abort();
+		}
+	}
+
+	if (log_multi_expect[c] != NULL) {
+		fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is not NULL, but %s\n",
+				priority, c, log_multi_expect[c]);
+		abort();
+	}
+}
+
+static int
+test_greeting_ehlo_invalid(void)
+{
+	int r;
+
+	nw_flags = 2;
+
+	netget_results[0].line = "250-nice to meet you";
+	netget_results[0].ret = 250;
+	netget_results[1].line = "250-SIZE JUNK";
+	netget_results[1].ret = 250;
+	netget_results[2].line = "250 STARTTLS";
+	netget_results[2].ret = 250;
+
+	remotesize = 0;
+
+	testcase_setup_log_writen(test_log_writen);
+
+	r = check_calls(-EINVAL);
+
+	if (remotesize != 0) {
+		fprintf(stderr, "%s: remotesize is %lu, but it should be 0\n",
+			__func__, remotesize);
+		r++;
+		remotesize = 0;
+	}
+
+	return r;
 }
 
 int
@@ -240,6 +491,19 @@ main(void)
 	ret += testcase_size();
 	ret += testcase_invalid();
 	ret += testcase_auth();
+
+	heloname.s = (char *)helonm;
+	heloname.len = strlen(heloname.s);
+
+	testcase_setup_net_writen(test_net_writen);
+
+	ret += test_greeting_helo();
+	ret += test_greeting_ehlo();
+	ret += test_greeting_helo_fail();
+	ret += test_greeting_helo_mixed();
+	ret += test_greeting_ehlo_mixed();
+	ret += test_greeting_ehlo_multi();
+	ret += test_greeting_ehlo_invalid();
 
 	return ret;
 }

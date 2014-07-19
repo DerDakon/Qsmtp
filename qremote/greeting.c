@@ -21,10 +21,10 @@ static int
 cb_size(const char *more)
 {
 	char *s;
-	
+
 	if (!*more)
 		return 0;
-	
+
 	remotesize = strtoul(more, &s, 10);
 	return *s;
 }
@@ -106,23 +106,23 @@ esmtp_check_extension(const char *input)
 int
 greeting(void)
 {
-	const char *cmd[3];
-	int s;			/* SMTP status */
+	const char *cmd[] = { "EHLO ", heloname.s, NULL };
+	int s = -1;			/* SMTP status */
 	int ret = 0;
 	int err = 0;
 
-	cmd[0] = "EHLO ";
-	cmd[1] = heloname.s;
-	cmd[2] = NULL;
 	net_writen(cmd);
 	do {
-		s = netget();
+		int t = netget();
+		if ((s >= 0) && (s != t))
+			err = 1;
+		s = t;
 		if (s == 250) {
 			int ext = esmtp_check_extension(linein.s + 4);
 
 			if (ext < 0) {
-				const char *logmsg[4] = {"syntax error in EHLO response \"",
-						linein.s + 4, "\"", NULL};
+				const char *logmsg[4] = { "syntax error in EHLO response \"",
+						linein.s + 4, "\"", NULL };
 
 				log_writen(LOG_WARNING, logmsg);
 				err = 1;
@@ -140,14 +140,16 @@ greeting(void)
 	/* EHLO failed, try HELO */
 	cmd[0] = "HELO ";
 	net_writen(cmd);
-	do {
-		s = netget();
-		if (s != 250)
+	s = netget();
+	while (linein.s[3] == '-') {
+		if (netget() != s)
 			err++;
-	} while (linein.s[3] == '-');
+	}
 
-	if ((s == 250) && (err == 0))
+	if (err != 0)
+		return -EINVAL;
+	else if (s == 250)
 		return 0;
 	else
-		return -EINVAL;
+		return -EDONE;
 }
