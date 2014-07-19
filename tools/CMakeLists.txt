@@ -6,6 +6,7 @@ ADD_EXECUTABLE(Qsurvey
 	qsurvey.c
 	${CMAKE_SOURCE_DIR}/qremote/client.c
 	${CMAKE_SOURCE_DIR}/qremote/conn.c
+	${CMAKE_SOURCE_DIR}/qremote/greeting.c
 	${CMAKE_SOURCE_DIR}/qremote/starttlsr.c
 	${CMAKE_SOURCE_DIR}/qremote/status.c
 )

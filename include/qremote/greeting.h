@@ -28,4 +28,11 @@ extern const char *auth_mechs;	/**< the AUTH mechanisms supported by the remote 
  */
 int esmtp_check_extension(const char *input) __attribute__ ((nonnull (1)));
 
+/**
+ * @brief greet the server, try EHLO and fall back to HELO if needed
+ * @return the SMTP extensions supported
+ * @retval <0 error code
+ */
+int greeting(void);
+
 #endif /* GREETING_H */

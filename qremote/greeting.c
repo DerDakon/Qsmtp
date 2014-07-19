@@ -4,8 +4,14 @@
 
 #include <qremote/greeting.h>
 
+#include <log.h>
+#include <netio.h>
+#include <qremote/qremote.h>
+
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>
 
 unsigned long remotesize;
 const char *auth_mechs;
@@ -95,4 +101,53 @@ esmtp_check_extension(const char *input)
 	}
 
 	return 0;
+}
+
+int
+greeting(void)
+{
+	const char *cmd[3];
+	int s;			/* SMTP status */
+	int ret = 0;
+	int err = 0;
+
+	cmd[0] = "EHLO ";
+	cmd[1] = heloname.s;
+	cmd[2] = NULL;
+	net_writen(cmd);
+	do {
+		s = netget();
+		if (s == 250) {
+			int ext = esmtp_check_extension(linein.s + 4);
+
+			if (ext < 0) {
+				const char *logmsg[4] = {"syntax error in EHLO response \"",
+						linein.s + 4, "\"", NULL};
+
+				log_writen(LOG_WARNING, logmsg);
+				err = 1;
+			} else {
+				ret |= ext;
+			}
+		}
+	} while (linein.s[3] == '-');
+
+	if (err != 0)
+		return -EINVAL;
+	if (s == 250)
+		return ret;
+
+	/* EHLO failed, try HELO */
+	cmd[0] = "HELO ";
+	net_writen(cmd);
+	do {
+		s = netget();
+		if (s != 250)
+			err++;
+	} while (linein.s[3] == '-');
+
+	if ((s == 250) && (err == 0))
+		return 0;
+	else
+		return -EINVAL;
 }

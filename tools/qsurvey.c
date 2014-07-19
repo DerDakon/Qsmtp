@@ -40,6 +40,7 @@ unsigned int smtpext;
 char *rhost;
 size_t rhostlen;
 char *partner_fqdn;
+unsigned long remotesize;
 static int logfd;
 static int logdirfd = -1;
 static struct ips *mx;
@@ -241,98 +242,6 @@ syntax:
 	/* if this fails we're already in bad trouble */
 	write_status("Z5.5.2 syntax error in server reply");
 	net_conn_shutdown(shutdown_clean);
-}
-
-unsigned long remotesize;
-
-static int
-cb_size(void)
-{
-	char *s;
-
-	if (!linein.s[8])
-		return 0;
-
-	remotesize = strtoul(linein.s + 8, &s, 10);
-	return *s;
-}
-
-/**
- * greet the server, try ehlo and fall back to helo if needed
- *
- * @return 0 if greeting succeeded, 1 on error
- */
-static int
-greeting(void)
-{
-	struct smtpexts {
-		const char *name;
-		unsigned int len;	/* strlen(name) */
-		int (*func)(void);	/* used to handle arguments to this extension, NULL if no arguments allowed */
-	} extensions[] = {
-		{ .name = "SIZE",	.len = 4,	.func = cb_size	}, /* 0x01 */
-		{ .name = "PIPELINING",	.len = 10,	.func = NULL	}, /* 0x02 */
-		{ .name = "STARTTLS",	.len = 8,	.func = NULL	}, /* 0x04 */
-		{ .name = "8BITMIME",	.len = 8,	.func = NULL	}, /* 0x08 */
-		{ .name = "CHUNKING",	.len = 8,	.func = NULL	}, /* 0x10 */
-		{ .name = NULL }
-	};
-	const char *cmd[3];
-	int s;			/* SMTP status */
-
-	cmd[0] = "EHLO ";
-	cmd[1] = heloname.s;
-	cmd[2] = NULL;
-	net_writen(cmd);
-	do {
-		s = netget();
-		if (s == 250) {
-			int j = 0;
-
-			while (extensions[j].name) {
-				if (!strncasecmp(linein.s + 4, extensions[j].name, extensions[j].len)) {
-					if (extensions[j].func) {
-						int r;
-
-						r = extensions[j].func();
-						if (!r) {
-							smtpext |= (1 << j);
-							break;
-/*						} else if (r < 0) {
-							return r;
-*/						} else {
-							const char *logmsg[4] = {"syntax error in EHLO response \"",
-									    extensions[j].name,
-									    "\"", NULL};
-
-							log_writen(LOG_WARNING, logmsg);
-						}
-					} else {
-						if (!*(linein.s + 4 + extensions[j].len)) {
-							smtpext |= (1 << j);
-							break;
-						}
-					}
-				}
-				j++;
-			}
-		}
-	} while (linein.s[3] == '-');
-
-	if (s != 250) {
-/* EHLO failed, try HELO */
-		cmd[0] = "HELO ";
-		net_writen(cmd);
-		do {
-			s = netget();
-		} while (linein.s[3] == '-');
-		if (s == 250) {
-			smtpext = 0;
-		} else {
-			return 1;
-		}
-	}
-	return 0;
 }
 
 void
@@ -588,8 +497,10 @@ work:
 
 	makelog("ehlo");
 
-	if (greeting())
+	i = greeting();
+	if (i < 0)
 		net_conn_shutdown(shutdown_clean);
+	smtpext = i;
 
 	getrhost(cur);
 	freeips(mx);

@@ -1,7 +1,12 @@
 #include <qremote/greeting.h>
 
+#include <sstring.h>
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
+struct string heloname;
 
 /**
  * @brief pass EHLO lines that should be ignored because they are unknown
@@ -216,6 +221,13 @@ testcase_auth(void)
 	}
 
 	return ret;
+}
+
+int
+netget(void)
+{
+	fprintf(stderr, "unexpected call to %s()\n", __func__);
+	abort();
 }
 
 int

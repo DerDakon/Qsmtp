@@ -257,54 +257,6 @@ syntax:
 	net_conn_shutdown(shutdown_clean);
 }
 
-/**
- * @brief greet the server, try EHLO and fall back to HELO if needed
- * @return the SMTP extensions supported
- * @retval <0 error code
- */
-static int
-greeting(void)
-{
-	const char *cmd[3];
-	int s;			/* SMTP status */
-	int ret = 0;
-
-	cmd[0] = "EHLO ";
-	cmd[1] = heloname.s;
-	cmd[2] = NULL;
-	net_writen(cmd);
-	do {
-		s = netget();
-		if (s == 250) {
-			int ext = esmtp_check_extension(linein.s + 4);
-
-			if (ext < 0) {
-				const char *logmsg[4] = {"syntax error in EHLO response \"",
-						linein.s + 4, "\"", NULL};
-
-				log_writen(LOG_WARNING, logmsg);
-			} else {
-				ret |= ext;
-			}
-		}
-	} while (linein.s[3] == '-');
-
-	if (s != 250) {
-/* EHLO failed, try HELO */
-		cmd[0] = "HELO ";
-		net_writen(cmd);
-		do {
-			s = netget();
-		} while (linein.s[3] == '-');
-		if (s == 250) {
-			ret = 0;
-		} else {
-			return -EINVAL;
-		}
-	}
-	return ret;
-}
-
 void
 dieerror(int error)
 {

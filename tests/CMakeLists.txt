@@ -645,6 +645,7 @@ ADD_EXECUTABLE(testcase_ehlo_parsing
 )
 TARGET_LINK_LIBRARIES(testcase_ehlo_parsing
 		${MEMCHECK_LIBRARIES}
+		testcase_io_lib
 )
 ADD_TEST(NAME "EHLO_parsing"
 		COMMAND testcase_ehlo_parsing)
