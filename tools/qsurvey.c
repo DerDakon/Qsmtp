@@ -15,6 +15,7 @@
 #include <qmaildir.h>
 #include <qremote/client.h>
 #include <qremote/conn.h>
+#include <qremote/greeting.h>
 #include <qremote/qremote.h>
 #include <qremote/starttlsr.h>
 #include <sstring.h>
@@ -242,7 +243,7 @@ syntax:
 	net_conn_shutdown(shutdown_clean);
 }
 
-static unsigned long remotesize;
+unsigned long remotesize;
 
 static int
 cb_size(void)
@@ -594,7 +595,7 @@ work:
 	freeips(mx);
 	mx = NULL;
 
-	if (smtpext & 0x04) {
+	if (smtpext & esmtp_starttls) {
 		makelog("tls-init");
 		if (tls_init() != 0) {
 			net_conn_shutdown(shutdown_clean);

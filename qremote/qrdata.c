@@ -12,6 +12,7 @@
 #include <log.h>
 #include <netio.h>
 #include <qremote/client.h>
+#include <qremote/greeting.h>
 #include <qremote/mime.h>
 #include <qremote/qremote.h>
 #include <version.h>
@@ -678,7 +679,7 @@ send_qp(const char *buf, const off_t len)
 			off_t partlen = nextoff - boundary.len - 2;
 
 			nr = need_recode(buf + off, partlen);
-			if ((!(smtpext & 0x008) && (nr & 1)) || (nr & 6)) {
+			if ((!(smtpext & esmtp_8bitmime) && (nr & 1)) || (nr & 6)) {
 				send_qp(buf + off, partlen);
 			} else {
 				send_plain(buf + off, partlen);
@@ -745,7 +746,7 @@ send_data(unsigned int recodeflag)
 	in_data = 1;
 #endif
 
-	if ((!(smtpext & 0x008) && (recodeflag & 1)) || (recodeflag & 6)) {
+	if ((!(smtpext & esmtp_8bitmime) && (recodeflag & 1)) || (recodeflag & 6)) {
 		successmsg[2] = "(qp recoded) ";
 		send_qp(msgdata, msgsize);
 	} else {
