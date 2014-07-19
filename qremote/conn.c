@@ -22,6 +22,10 @@
 
 unsigned int targetport = 25;
 
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC 0
+#endif /* SOCK_CLOEXEC */
+
 /**
  * @brief create a socket and connect to the given ip
  * @param remoteip the target address
@@ -37,7 +41,7 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 #ifdef IPV4ONLY
 	struct sockaddr_in sock;
 
-	sd = socket(PF_INET, SOCK_STREAM, 0);
+	sd = socket(PF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
 	if (sd < 0)
 		return -errno;
@@ -57,7 +61,7 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 #else
 	struct sockaddr_in6 sock;
 
-	sd = socket(PF_INET6, SOCK_STREAM, 0);
+	sd = socket(PF_INET6, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
 	if (sd < 0)
 		return -errno;
