@@ -189,6 +189,7 @@ test_nonexistent(void)
 	const char *found_garbage[] = {"error: unknown auth type \"", "garbage",
 			"\" found in control/authtypes\n", NULL};
 	char *auth_str;
+	int ret = 0;
 
 	if (chdir("nonexistent") != 0) {
 		fputs("cannot chdir() to \"nonexistent\"\n", stderr);
@@ -206,19 +207,24 @@ test_nonexistent(void)
 	close(controldir_fd);
 
 	if (auth_str != NULL) {
-		fprintf(stderr, "smtp_authstring() returned \"%s\" but is should have returned NULL\n",
-				auth_str);
+		fprintf(stderr, "%s: smtp_authstring() returned \"%s\" but is should have returned NULL\n",
+				__func__, auth_str);
 		free(auth_str);
-		return 1;
+		ret++;
+	}
+
+	if (log_multi_expect != NULL) {
+		fprintf(stderr, "%s: smtp_authstring() did not write the expected error message\n", __func__);
+		ret++;
 	}
 
 	if (chdir("..") != 0) {
 		fprintf(stderr, "cannot chdir(..): %s\n",
 				strerror(errno));
-		return 1;
+		ret++;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int
@@ -310,6 +316,11 @@ test_setup_errors(void)
 		return ++ret;
 	}
 
+	if (log_multi_expect != NULL) {
+		fprintf(stderr, "%s: smtp_authstring() did not write the expected error message\n", __func__);
+		ret++;
+	}
+
 	/* this will cause auth_backend_setup() to return with failure */
 	testcase_setup_log_write(test_log_write);
 	log_single_expect = backend_setup_errmsg;
@@ -317,6 +328,11 @@ test_setup_errors(void)
 
 	if (auth_permitted()) {
 		fprintf(stderr, "auth_permitted() after incorrect auth_setup() returned 1\n");
+		ret++;
+	}
+
+	if (log_multi_expect != NULL) {
+		fprintf(stderr, "%s: smtp_authstring() did not write the expected error message\n", __func__);
 		ret++;
 	}
 
