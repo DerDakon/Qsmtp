@@ -162,7 +162,7 @@ test_log_writen(int priority, const char **msg)
 	}
 
 	for (c = 0; msg[c] != NULL; c++) {
-		if (log_multi_expect[c] == NULL) {
+		if ((log_multi_expect == NULL) || (log_multi_expect[c] == NULL)) {
 			fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is NULL\n",
 					priority, c);
 			exit(1);
@@ -221,6 +221,35 @@ test_nonexistent(void)
 	if (chdir("..") != 0) {
 		fprintf(stderr, "cannot chdir(..): %s\n",
 				strerror(errno));
+		ret++;
+	}
+
+	return ret;
+}
+
+static int
+test_loaderror(void)
+{
+	char *auth_str;
+	int ret = 0;
+
+	controldir_fd = -1;
+
+	/* no message expected, but this will bail out if one comes */
+	testcase_setup_log_writen(test_log_writen);
+
+	auth_str = smtp_authstring();
+
+	if (errno != EBADF) {
+		fprintf(stderr, "%s: smtp_authstring() returned error %i but is should have returned %i (EBADF)\n",
+			__func__, errno, EBADF);
+		ret++;
+	}
+
+	if (auth_str != NULL) {
+		fprintf(stderr, "%s: smtp_authstring() returned \"%s\" but is should have returned NULL\n",
+				__func__, auth_str);
+		free(auth_str);
 		ret++;
 	}
 
@@ -367,6 +396,7 @@ int main(int argc, char **argv)
 
 	errcnt += test_controlfiles();
 	errcnt += test_nonexistent();
+	errcnt += test_loaderror();
 	errcnt += test_no_auth_yet();
 	errcnt += test_setup_errors();
 
