@@ -9,6 +9,7 @@ SET(QREMOTE_SRCS
 	qremote.c
 	client.c
 	conn.c
+	conn_mx.c
 	mime.c
 	qrdata.c
 	smtproutes.c

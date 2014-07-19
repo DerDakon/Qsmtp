@@ -47,8 +47,6 @@ static struct ips *mx;
 static struct in6_addr outip;
 static struct in6_addr outip6;
 
-static void quitmsg(void);
-
 void
 err_mem(const int doquit)
 {
@@ -178,7 +176,7 @@ setup(void)
 
 }
 
-static void
+void
 quitmsg(void)
 {
 	netwrite("QUIT\r\n");

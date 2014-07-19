@@ -47,6 +47,7 @@ extern size_t chunksize;
 #endif
 
 struct ips *smtproute(const char *, const size_t, unsigned int *);
+void quitmsg(void);
 
 #define EDONE 1003
 

@@ -44,7 +44,13 @@ char *partner_fqdn;	/**< the DNS name of the remote server, or NULL if no revers
 static struct in6_addr outip;
 static struct in6_addr outip6;
 
-static void
+/**
+ * @brief send QUIT to the remote server and close the connection
+ *
+ * This will properly shut down the connection to the remote server but will
+ * not terminate the program.
+ */
+void
 quitmsg(void)
 {
 	netwrite("QUIT\r\n");
@@ -57,6 +63,11 @@ quitmsg(void)
 	} while ((linein.len >= 4) && (linein.s[3] == '-'));
 	close(socketd);
 	socketd = -1;
+
+	free(partner_fqdn);
+	partner_fqdn = NULL;
+	free(rhost);
+	rhost = NULL;
 }
 
 void
@@ -67,6 +78,8 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 	} else if (socketd >= 0) {
 		close(socketd);
 		socketd = -1;
+		free(partner_fqdn);
+		free(rhost);
 	}
 
 	if (ssl != NULL) {
@@ -79,8 +92,6 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 #endif
 
 	free(heloname.s);
-	free(partner_fqdn);
-	free(rhost);
 
 	exit(0);
 }
@@ -331,59 +342,7 @@ main(int argc, char *argv[])
 	}
 	dup2(0, 42);
 
-/* for all MX entries we got: try to enable connection, check if the SMTP server wants us
- * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
-	do {
-		int flagerr = 0;
-
-		if (socketd >= 0)
-			close(socketd);
-		socketd = tryconn(mx, &outip, &outip6);
-		dup2(socketd, 0);
-		getrhost(mx);
-		if (netget() != 220) {
-			quitmsg();
-			continue;
-		}
-		while (strncmp("220-", linein.s, 4) == 0) {
-			if (net_read() == 0)
-				continue;
-
-			flagerr = 1;
-			switch (errno) {
-			case ENOMEM:
-					err_mem(1);
-			case EINVAL:
-			case E2BIG:
-					write_status("Z5.5.2 syntax error in server reply");
-					quitmsg();
-					break;
-			default:
-				{
-					const char *tmp[] = { "Z4.3.0 ", strerror(errno) };
-
-					write_status_m(tmp, 2);
-					quitmsg();
-				}
-			}
-		}
-		if (flagerr)
-			continue;
-
-		if (strncmp("220 ", linein.s, 4) != 0) {
-			const char *dropmsg[] = {"invalid greeting from ", NULL, NULL};
-
-			dropmsg[1] = rhost;
-			log_writen(LOG_WARNING, dropmsg);
-			quitmsg();
-		} else {
-			flagerr = greeting();
-			if (flagerr < 0)
-				quitmsg();
-			else
-				smtpext = flagerr;
-		}
-	} while (socketd < 0);
+	connect_mx(mx, &outip, &outip6);
 
 	freeips(mx);
 	mailerrmsg[1] = rhost;
