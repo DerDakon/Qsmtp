@@ -10,6 +10,7 @@
 #include <qremote/client.h>
 #include <qremote/greeting.h>
 #include <qremote/qremote.h>
+#include <qremote/starttlsr.h>
 
 #include <errno.h>
 #include <syslog.h>
@@ -57,9 +58,28 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		}
 
 		flagerr = greeting();
-		if (flagerr < 0)
+		if (flagerr < 0) {
 			quitmsg();
-		else
-			smtpext = flagerr;
+			continue;
+		}
+
+		smtpext = flagerr;
+
+		if (smtpext & esmtp_starttls) {
+			if (tls_init() != 0) {
+				quitmsg();
+				continue;
+			}
+
+			flagerr = greeting();
+
+			if (flagerr < 0) {
+				quitmsg();
+				continue;
+			} else {
+				smtpext = flagerr;
+			}
+		}
+		
 	} while (socketd < 0);
 }

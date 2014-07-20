@@ -350,23 +350,10 @@ main(int argc, char *argv[])
 	freeips(mx);
 	mailerrmsg[1] = rhost;
 
-	if (smtpext & esmtp_starttls) {
-		int i;
-
-		if (tls_init() != 0)
-			net_conn_shutdown(shutdown_clean);
-
-		i = greeting();
-
-		if (i < 0) {
-			write_status("ZEHLO failed after STARTTLS");
-			net_conn_shutdown(shutdown_clean);
-		} else {
-			smtpext = i;
-			successmsg[3] = "message ";
-			successmsg[4] = SSL_get_cipher(ssl);
-			successmsg[5] = " encrypted";
-		}
+	if (ssl) {
+		successmsg[3] = "message ";
+		successmsg[4] = SSL_get_cipher(ssl);
+		successmsg[5] = " encrypted";
 	}
 
 /* check if message is plain ASCII or not */

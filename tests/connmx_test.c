@@ -12,8 +12,9 @@
 char *rhost;
 static int wpipe = -1;
 unsigned int smtpext;
-static int greet_result;
-static unsigned int quitcnt = 5;
+static int greet_result, next_greet_result;
+static int quitnext;
+static int tls_result = -1;
 
 void
 quitmsg(void)
@@ -24,16 +25,22 @@ quitmsg(void)
 	socketd = -1;
 	close(wpipe);
 	wpipe = -1;
-	if (quitcnt-- == 0) {
+	if (!quitnext) {
 		fprintf(stderr, "unexpected call to %s\n", __func__);
 		abort();
 	}
+	quitnext = 0;
 }
 
 int
 greeting(void)
 {
-	return greet_result;
+	int ret = greet_result;
+
+	greet_result = next_greet_result;
+	next_greet_result = -1;
+
+	return ret;
 }
 
 void
@@ -53,6 +60,18 @@ write_status_m(const char **strs __attribute__ ((unused)), const unsigned int co
 }
 
 int
+tls_init(void)
+{
+	int ret = tls_result;
+	if (tls_result < 0)
+		abort();
+
+	tls_result = -1;
+
+	return ret;
+}
+
+int
 netget(const unsigned int terminate __attribute__ ((unused)))
 {
 	static unsigned int state;
@@ -60,36 +79,76 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 
 	greet_result = 0;
 
+	if (quitnext)
+		abort();
+
 	/* sequence */
 	switch (state++) {
 	case 0:
 		msg = 550;
+		quitnext = 1;
 		break;
 	case 1:
-	case 5:
-	case 8:
-	case 10:
 		msg = -220;
 		break;
 	case 2:
-	case 7:
 		greet_result = -1;
 		msg = 220;
+		quitnext = 1;
 		break;
 	case 3:
-	case 6:
 		msg = -440;
 		break;
 	case 4:
 		msg = 440;
+		quitnext = 1;
+		break;
+	case 5:
+		msg = -220;
+		break;
+	case 6:
+		msg = -440;
+		break;
+	case 7:
+		greet_result = -1;
+		msg = 220;
+		quitnext = 1;
+		break;
+	case 8:
+		msg = -220;
 		break;
 	case 9:
 		snprintf(linein.s, TESTIO_MAX_LINELEN, "2xxxxx");
 		printf("linein: %s\n", linein.s);
+		quitnext = 1;
 		return -EINVAL;
+	case 10:
+		msg = -220;
+		break;
 	case 11:
-		greet_result = esmtp_8bitmime;
+		greet_result = esmtp_8bitmime | esmtp_starttls;
 		msg = 220;
+		tls_result = 0;
+		next_greet_result = -1;
+		quitnext = 1;
+		break;
+	case 12:
+		msg = -220;
+		break;
+	case 13:
+		greet_result = esmtp_8bitmime | esmtp_starttls;
+		msg = 220;
+		tls_result = 1;
+		quitnext = 1;
+		break;
+	case 14:
+		msg = -220;
+		break;
+	case 15:
+		greet_result = esmtp_8bitmime | esmtp_starttls;
+		msg = 220;
+		tls_result = 0;
+		next_greet_result = esmtp_8bitmime;
 		break;
 	default:
 		abort();
@@ -150,8 +209,8 @@ main(void)
 		fprintf(stderr, "smtpext was %x instead of %x\n", smtpext, esmtp_8bitmime);
 		ret++;
 	}
-	if (quitcnt != 0) {
-		fprintf(stderr, "quitcnt was %i instead of 0\n", quitcnt);
+	if (quitnext) {
+		fprintf(stderr, "expected call to quitmsg() missing\n");
 		ret++;
 	}
 
