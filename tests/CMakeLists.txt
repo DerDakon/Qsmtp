@@ -759,11 +759,23 @@ SET_TESTS_PROPERTIES(STARTTLSr_matching_tlshost PROPERTIES
 		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: STARTTLS failed at testcert.example.org: 421 <content of linein>\nRETURN VALUE: 1\n$")
 
 ADD_TEST(NAME "STARTTLSr_conn_failure"
-		COMMAND testcase_starttlsr testcert.example.org 220
+		COMMAND testcase_starttlsr testcert.example.org "220 "
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
 
-SET_TESTS_PROPERTIES(STARTTLSr_conn_failure PROPERTIES
+ADD_TEST(NAME "STARTTLSr_conn_failure_multiline"
+		COMMAND testcase_starttlsr testcert.example.org "220-;220 "
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
+
+SET_TESTS_PROPERTIES(STARTTLSr_conn_failure STARTTLSr_conn_failure_multiline PROPERTIES
 		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: TLS connection failed at : testcert\\.example\\.org: expected error case\nRETURN VALUE: 1\n$")
+
+# the last 220 should never be read, the tests checks that the 221 line will be shown
+ADD_TEST(NAME "STARTTLSr_invalid_multiline"
+		COMMAND testcase_starttlsr testcert.example.org "220-;221-;220 "
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
+
+SET_TESTS_PROPERTIES(STARTTLSr_invalid_multiline PROPERTIES
+		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: STARTTLS failed at testcert.example.org: 221-<content of linein>\nRETURN VALUE: 1\n$")
 
 ADD_EXECUTABLE(testcase_queue_envelope
 		queue_envelope_test.c

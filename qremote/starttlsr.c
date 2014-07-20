@@ -156,6 +156,13 @@ tls_init(void)
 
 	/* read the response to STARTTLS */
 	i = netget(0);
+	while ((i > 0) && (linein.s[3] == '-')) {
+		int k = netget(0);
+		if (i != k) {
+			i = -1;
+			break;
+		}
+	}
 	if (i != 220) {
 		const char *msg[] = { "STARTTLS failed at ",
 				rhost, ": ", linein.s, NULL };

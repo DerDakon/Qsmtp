@@ -6,6 +6,7 @@
 
 #include "test_io/testcase_io.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <openssl/conf.h>
@@ -21,7 +22,7 @@ char *partner_fqdn;
 unsigned int smtpext;
 string heloname;
 static unsigned int conf_error_expected;
-static int netget_result = 421;
+static const char *netget_result = "421 ";
 
 void
 err_conf(const char *errmsg)
@@ -56,8 +57,21 @@ write_status(const char *str)
 int
 netget(const unsigned int terminate __attribute__ ((unused)))
 {
-	snprintf(linein.s, TESTIO_MAX_LINELEN, "%i <content of linein>", netget_result);
-	return netget_result;
+	const char *s = strchr(netget_result, ';');
+	size_t l;
+
+	if (s == NULL)
+		l = strlen(netget_result);
+	else
+		l = s - netget_result;
+
+	assert(l == 4);
+
+	snprintf(linein.s, TESTIO_MAX_LINELEN, "%.4s<content of linein>", netget_result);
+
+	netget_result = s ? s + 1 : NULL;
+
+	return strtoul(linein.s, NULL, 10);
 }
 
 void
@@ -74,7 +88,7 @@ write_status_m(const char **strs, const unsigned int count)
 int
 ssl_timeoutconn(time_t t __attribute__((unused)))
 {
-	if (netget_result == 220)
+	if (strncmp(linein.s, "220", 3) == 0)
 		return -1;
 	exit(EFAULT);
 }
@@ -144,7 +158,7 @@ int main(int argc, char **argv)
 		if (strstr(partner_fqdn, "conferror.") != NULL)
 			conf_error_expected = 1;
 		if (argc > 2) {
-			netget_result = atoi(argv[2]);
+			netget_result = argv[2];
 			testcase_setup_ssl_strerror(test_ssl_strerror);
 		}
 	} else {
