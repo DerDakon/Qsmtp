@@ -66,7 +66,13 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		smtpext = flagerr;
 
 		if (smtpext & esmtp_starttls) {
-			if (tls_init() != 0) {
+			flagerr = tls_init();
+			/* Local error, this would likely happen on the next host again.
+			 * Since it's a local fault stop trying and hope it gets fixed. */
+			if (flagerr < 0)
+				net_conn_shutdown(shutdown_clean);
+
+			if (flagerr != 0) {
 				quitmsg();
 				continue;
 			}

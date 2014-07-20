@@ -5,6 +5,7 @@
 #include <qremote/starttlsr.h>
 
 #include <control.h>
+#include <log.h>
 #include <netio.h>
 #include <qremote/qremote.h>
 #include <ssl_timeoutio.h>
@@ -15,6 +16,7 @@
 #include <openssl/x509v3.h>
 #include <string.h>
 #include <strings.h>
+#include <syslog.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -42,7 +44,10 @@ match_partner(const char *s, size_t len)
  * @brief send STARTTLS and handle the connection setup
  * @return if connection was successfully established
  * @retval 0 SSL mode successfully set up
- * @retval 1 SSL setup failed, transmission should be terminated
+ * @retval 1 SSL setup failed (non-local fault, e.g. network or reply error)
+ * @retval <0 SSL setup failed (local fault, e.g. unable to load file)
+ *
+ * If the return value is <0 a status code for qmail-rspawn was already written.
  */
 int
 tls_init(void)
@@ -80,7 +85,7 @@ tls_init(void)
 
 		write_status_m(msg, 4);
 		free(servercert);
-		return 1;
+		return -1;
 	}
 
 	if (servercert) {
@@ -92,7 +97,7 @@ tls_init(void)
 			SSL_CTX_free(ctx);
 			free(servercert);
 			ssl_library_destroy();
-			return 1;
+			return -1;
 		}
 	}
 
@@ -109,7 +114,7 @@ tls_init(void)
 		free(servercert);
 		write_status_m(msg, 4);
 		ssl_library_destroy();
-		return 1;
+		return -1;
 	}
 	SSL_set_verify(myssl, SSL_VERIFY_NONE, NULL);
 
@@ -146,38 +151,27 @@ tls_init(void)
 		free(servercert);
 		write_status_m(msg, 4);
 		ssl_free(myssl);
-		return 1;
+		return -1;
 	}
 
 	/* read the response to STARTTLS */
-	if (netget(1) != 220) {
-		const char *msg[] = { NULL, NULL, NULL,  "; connecting to ",
-				rhost, ": ", linein.s };
-		unsigned int first;
+	i = netget(0);
+	if (i != 220) {
+		const char *msg[] = { "STARTTLS failed at ",
+				rhost, ": ", linein.s, NULL };
 
 		ssl_free(myssl);
+		log_writen(LOG_ERR, msg);
 
-		if (!servercert) {
-			first = 2;
-			msg[2] = "Z4.5.0 STARTTLS rejected";
-		} else {
-			first = 0;
-			msg[0] = "Z4.5.0 STARTTLS rejected while ";
-			msg[1] = servercert;
-			msg[2] = " exists";
-		}
-		write_status_m(msg + first, 7 - first);
-		free(servercert);
 		return 1;
 	}
 
 	ssl = myssl;
 	if (ssl_timeoutconn(timeout) <= 0) {
-		const char *msg[] = { "Z4.5.0 TLS connect failed: ", ssl_strerror(), "; connecting to ",
-				rhost };
+		const char *msg[] = { "TLS connection failed at : ", rhost, ": ", ssl_strerror(), NULL };
 
 		free(servercert);
-		write_status_m(msg, 4);
+		log_writen(LOG_ERR, msg);
 		return 1;
 	}
 
@@ -187,10 +181,10 @@ tls_init(void)
 		long r = SSL_get_verify_result(ssl);
 
 		if (r != X509_V_OK) {
-			const char *msg[] = { "Z4.5.0 TLS unable to verify server with ", servercert,
-					": ", X509_verify_cert_error_string(r), "; connected to ", rhost };
+			const char *msg[] = { "unable to verify ", rhost, " with ", servercert,
+					": ", X509_verify_cert_error_string(r), NULL };
 
-			write_status_m(msg, 6);
+			log_writen(LOG_ERR, msg);
 			free(servercert);
 			return 1;
 		}
@@ -198,10 +192,10 @@ tls_init(void)
 
 		peercert = SSL_get_peer_certificate(ssl);
 		if (!peercert) {
-			const char *msg[] = { "Z4.5.0 TLS unable to verify server ", partner_fqdn,
-					": no certificate provided; connected to ", rhost };
+			const char *msg[] = { "unable to verify ", rhost,
+					": no certificate provided", NULL };
 
-			write_status_m(msg, 4);
+			log_writen(LOG_ERR, msg);
 			return 1;
 		}
 
@@ -235,17 +229,17 @@ tls_init(void)
 				}
 			}
 			if (!peer.len) {
-				const char *msg[] = { "Z4.5.0 TLS unable to verify server ", partner_fqdn,
-						": certificate contains no valid commonName; connected to ", rhost };
-					
-				write_status_m(msg, 4);
+				const char *msg[] = { "unable to verify ", rhost,
+						": certificate contains no valid commonName", NULL };
+
 				X509_free(peercert);
+				log_writen(LOG_ERR, msg);
 				return 1;
 			}
 			if (!match_partner(peer.s, peer.len)) {
 				char buf[peer.len + 1];
-				const char *msg[] = { "Z4.5.0 TLS unable to verify server ", partner_fqdn,
-					": received certificate for ", buf, "; connected to ", rhost };
+				const char *msg[] = { "unable to verify ", rhost,
+					": received certificate for ", buf, NULL};
 				size_t j;
 
 				for (j = 0; j < peer.len; ++j) {
@@ -256,7 +250,7 @@ tls_init(void)
 				}
 				buf[peer.len] = '\0';
 				X509_free(peercert);
-				write_status_m(msg, 6);
+				log_writen(LOG_ERR, msg);
 				return 1;
 			}
 		}

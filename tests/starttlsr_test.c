@@ -117,6 +117,18 @@ test_ssl_error(void)
 	return "expected SSL testcase error";
 }
 
+void
+test_log_writen(int priority, const char **msg)
+{
+	int i;
+
+	printf("LOG OUTPUT[%i]: ", priority);
+
+	for (i = 0; msg[i] != NULL; i++)
+		printf("%s", msg[i]);
+	printf("\n");
+}
+
 int main(int argc, char **argv)
 {
 	int r;
@@ -147,10 +159,13 @@ int main(int argc, char **argv)
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 	testcase_setup_ssl_free(test_ssl_free);
 	testcase_setup_net_conn_shutdown(test_net_conn_shutdown);
+	testcase_setup_log_writen(test_log_writen);
 
 	r = tls_init();
 
 	test_net_conn_shutdown(shutdown_clean);
+
+	printf("RETURN VALUE: %i\n", r);
 
 	return r;
 }

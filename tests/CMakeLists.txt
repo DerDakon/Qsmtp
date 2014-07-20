@@ -713,16 +713,22 @@ ADD_TEST(NAME "STARTTLSr"
 		COMMAND testcase_starttlsr
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/tlsclientciphers_good")
 
+SET_TESTS_PROPERTIES(STARTTLSr PROPERTIES
+		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: STARTTLS failed at \\[192.0.2.4\\]: 421 <content of linein>\nRETURN VALUE: 1\n")
+
 ADD_TEST(NAME "STARTTLSr_no_partner_conf"
 		COMMAND testcase_starttlsr noconf.example.com
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/tlsclientciphers_good")
+
+SET_TESTS_PROPERTIES(STARTTLSr_no_partner_conf PROPERTIES
+		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: STARTTLS failed at noconf\\.example\\.com: 421 <content of linein>\nRETURN VALUE: 1\n")
 
 ADD_TEST(NAME "STARTTLSr_tlsciphers_good"
 		COMMAND testcase_starttlsr badconf.example.com
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/tlsclientciphers_good")
 
-SET_TESTS_PROPERTIES(STARTTLSr STARTTLSr_no_partner_conf STARTTLSr_tlsciphers_good PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 STARTTLS rejected\\; connecting to (\\[[0-9\\.]+\\]|[-\\.a-z]+): 421 <content of linein>\n")
+SET_TESTS_PROPERTIES(STARTTLSr_tlsciphers_good PROPERTIES
+		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: STARTTLS failed at badconf\\.example\\.com: 421 <content of linein>\nRETURN VALUE: 1\n")
 
 ADD_TEST(NAME "STARTTLSr_tlsciphers_bad"
 		COMMAND testcase_starttlsr badconf.example.com
@@ -736,7 +742,7 @@ ADD_TEST(NAME "STARTTLSr_bad_partner_certs"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/invalid_pem")
 
 SET_TESTS_PROPERTIES(STARTTLSr_bad_partner_certs PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 TLS unable to load control/tlshosts/badconf\\.example\\.com.\\pem: expected SSL testcase error\\; connecting to badconf\\.example\\.com\n$")
+		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 TLS unable to load control/tlshosts/badconf\\.example\\.com.\\pem: expected SSL testcase error\\; connecting to badconf\\.example\\.com\nRETURN VALUE: -1\n$")
 
 ADD_TEST(NAME "STARTTLSr_tlsciphers_dir"
 		COMMAND testcase_starttlsr badconf.example.com
@@ -750,14 +756,14 @@ ADD_TEST(NAME "STARTTLSr_matching_tlshost"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
 
 SET_TESTS_PROPERTIES(STARTTLSr_matching_tlshost PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 STARTTLS rejected while control/tlshosts/testcert\\.example\\.org\\.pem exists\\; connecting to testcert\\.example\\.org: 421 <content of linein>\n$")
+		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: STARTTLS failed at testcert.example.org: 421 <content of linein>\nRETURN VALUE: 1\n$")
 
 ADD_TEST(NAME "STARTTLSr_conn_failure"
 		COMMAND testcase_starttlsr testcert.example.org 220
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
 
 SET_TESTS_PROPERTIES(STARTTLSr_conn_failure PROPERTIES
-		PASS_REGULAR_EXPRESSION "^Z4\\.5\\.0 TLS connect failed: expected error case\\; connecting to testcert\\.example\\.org\n$")
+		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: TLS connection failed at : testcert\\.example\\.org: expected error case\nRETURN VALUE: 1\n$")
 
 ADD_EXECUTABLE(testcase_queue_envelope
 		queue_envelope_test.c
