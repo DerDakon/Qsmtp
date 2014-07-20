@@ -168,6 +168,7 @@ tls_init(void)
 				rhost, ": ", linein.s, NULL };
 
 		ssl_free(myssl);
+		free(servercert);
 		log_writen(LOG_ERR, msg);
 
 		return 1;
