@@ -139,7 +139,7 @@ tc_ignore_net_conn_shutdown(const enum conn_shutdown_type sd_type __attribute__ 
 }
 
 time_t timeout;
-int socketd;
+int socketd = -1;
 
 #ifdef DEBUG_IO
 int do_debug_io;

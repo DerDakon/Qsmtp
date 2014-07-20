@@ -21,7 +21,6 @@ const char **globalconf;
 string heloname;
 string msgidhost;
 string liphost;
-int socketd = 1;
 long comstate = 0x001;
 int authhide;
 int submission_mode;
@@ -621,6 +620,8 @@ int main()
 	memset(&xmitstat, 0, sizeof(xmitstat));
 
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
+
+	socketd = 1;
 
 	ret += check_twodigit();
 	ret += check_date822();
