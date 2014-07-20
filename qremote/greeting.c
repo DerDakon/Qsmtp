@@ -112,12 +112,12 @@ greeting(void)
 	int err = 0;
 
 	net_writen(cmd);
-	do {
+	s = netget();
+	while (linein.s[3] == '-') {
 		int t = netget();
-		if ((s >= 0) && (s != t))
+		if (s != t) {
 			err = 1;
-		s = t;
-		if (s == 250) {
+		} else if ((s == 250) && (err == 0)) {
 			int ext = esmtp_check_extension(linein.s + 4);
 
 			if (ext < 0) {
@@ -130,7 +130,7 @@ greeting(void)
 				ret |= ext;
 			}
 		}
-	} while (linein.s[3] == '-');
+	}
 
 	if (err != 0)
 		return -EINVAL;

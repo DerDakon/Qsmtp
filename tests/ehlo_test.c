@@ -417,6 +417,36 @@ test_greeting_ehlo_multi(void)
 	return r;
 }
 
+/**
+ * @brief testcase to check that the first line is not parsed for ESMTP extensions
+ */
+static int
+test_greeting_ehlo_skip_first_line(void)
+{
+	int r;
+
+	nw_flags = 2;
+
+	netget_results[0].line = "250-STARTTLS";
+	netget_results[0].ret = 250;
+	netget_results[1].line = "250 SIZE 42";
+	netget_results[1].ret = 250;
+
+	remotesize = 0;
+
+	r = check_calls(esmtp_size);
+
+	if (remotesize != 42) {
+		fprintf(stderr, "%s: remotesize is %lu, but it should be 42\n",
+				__func__, remotesize);
+		r++;
+	}
+
+	remotesize = 0;
+
+	return r;
+}
+
 void
 test_log_writen(int priority, const char **msg)
 {
@@ -504,6 +534,7 @@ main(void)
 	ret += test_greeting_ehlo_mixed();
 	ret += test_greeting_ehlo_multi();
 	ret += test_greeting_ehlo_invalid();
+	ret += test_greeting_ehlo_skip_first_line();
 
 	return ret;
 }
