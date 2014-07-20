@@ -32,6 +32,7 @@ int esmtp_check_extension(const char *input) __attribute__ ((nonnull (1)));
  * @brief greet the server, try EHLO and fall back to HELO if needed
  * @return the SMTP extensions supported
  * @retval <0 error code
+ * @retval -EDONE the server reply was syntactically correct, but an error response
  */
 int greeting(void);
 

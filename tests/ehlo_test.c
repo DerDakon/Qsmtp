@@ -511,6 +511,19 @@ test_greeting_ehlo_invalid(void)
 	return r;
 }
 
+static int
+test_greeting_helo_invalid_code(void)
+{
+	nw_flags = 3;
+
+	netget_results[0].line = "503 5.5.1 Bad sequence of commands";
+	netget_results[0].ret = 503;
+	netget_results[1].line = "300 stuff";
+	netget_results[1].ret = 300;
+
+	return check_calls(-EINVAL);
+}
+
 int
 main(void)
 {
@@ -535,6 +548,7 @@ main(void)
 	ret += test_greeting_ehlo_multi();
 	ret += test_greeting_ehlo_invalid();
 	ret += test_greeting_ehlo_skip_first_line();
+	ret += test_greeting_helo_invalid_code();
 
 	return ret;
 }

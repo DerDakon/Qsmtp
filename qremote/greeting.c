@@ -146,10 +146,10 @@ greeting(void)
 			err++;
 	}
 
-	if (err != 0)
-		return -EINVAL;
-	else if (s == 250)
+	if ((err == 0) && (s == 250))
 		return 0;
-	else
+	else if ((err == 0) && (s >= 400) && (s <= 599))
 		return -EDONE;
+	else
+		return -EINVAL;
 }
