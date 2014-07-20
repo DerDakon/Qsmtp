@@ -244,9 +244,9 @@ netget(void)
 			}
 		}
 	}
-	if (linein.len < 3)
+	if (linein.len <= 3)
 		goto syntax;
-	if ((linein.len > 3) && ((linein.s[3] != ' ') && (linein.s[3] != '-')))
+	if ((linein.s[3] != ' ') && (linein.s[3] != '-'))
 		goto syntax;
 	r = linein.s[0] - '0';
 	if ((r < 2) || (r > 5))
