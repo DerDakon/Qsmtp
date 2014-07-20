@@ -22,17 +22,18 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 	 * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
 	do {
 		int flagerr = 0;
+		int s;
 
 		if (socketd >= 0)
 			close(socketd);
 		socketd = tryconn(mx, outip4, outip6);
 		dup2(socketd, 0);
 		getrhost(mx);
-		if (netget() != 220) {
-			quitmsg();
-			continue;
-		}
-		while (strncmp("220-", linein.s, 4) == 0) {
+
+		s = netget();
+
+		/* consume the rest of the replies */
+		while (linein.s[3] == '-') {
 			if (net_read() == 0)
 				continue;
 
@@ -53,6 +54,10 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 					quitmsg();
 				}
 			}
+		}
+		if (s != 220) {
+			quitmsg();
+			continue;
 		}
 		if (flagerr)
 			continue;

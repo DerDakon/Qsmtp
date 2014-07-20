@@ -13,6 +13,7 @@ char *rhost;
 static int wpipe = -1;
 unsigned int smtpext;
 static int greet_result;
+static unsigned int quitcnt;
 
 void
 quitmsg(void)
@@ -21,6 +22,7 @@ quitmsg(void)
 	socketd = -1;
 	close(wpipe);
 	wpipe = -1;
+	quitcnt++;
 }
 
 int
@@ -59,7 +61,7 @@ netget(void)
 		msg = 550;
 		break;
 	case 2:
-	case 3:
+	case 6:
 		msg = -220;
 		break;
 	case 1:
@@ -67,6 +69,12 @@ netget(void)
 		msg = 220;
 		break;
 	case 4:
+		msg = -440;
+		break;
+	case 5:
+		msg = 440;
+		break;
+	case 7:
 		greet_result = esmtp_8bitmime;
 		msg = 220;
 		break;
@@ -131,8 +139,14 @@ main(void)
 		ret++;
 	if (close(wpipe) != 0)
 		ret++;
-	if (smtpext != esmtp_8bitmime)
+	if (smtpext != esmtp_8bitmime) {
+		fprintf(stderr, "smtpext was %x instead of %x\n", smtpext, esmtp_8bitmime);
 		ret++;
+	}
+	if (quitcnt != 4) {
+		fprintf(stderr, "quitcnt was %i instead of 4\n", quitcnt);
+		ret++;
+	}
 
 	return ret;
 }
