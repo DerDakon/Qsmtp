@@ -675,7 +675,7 @@ checkcrlf(const char *msg, const size_t len)
 }
 
 int
-netget(void)
+netget(const unsigned int terminate)
 {
 	switch (state) {
 	case ST_DATA:
@@ -688,7 +688,7 @@ netget(void)
 		state = ST_DATADONE;
 		return 250;
 	default:
-		fputs("netget() called unexpected\n", stderr);
+		fprintf(stderr, "%s(%u) called unexpected\n", __func__, terminate);
 		exit(EFAULT);
 	}
 }

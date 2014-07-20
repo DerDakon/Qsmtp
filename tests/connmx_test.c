@@ -13,16 +13,21 @@ char *rhost;
 static int wpipe = -1;
 unsigned int smtpext;
 static int greet_result;
-static unsigned int quitcnt;
+static unsigned int quitcnt = 5;
 
 void
 quitmsg(void)
 {
+	printf("QUIT\n");
+
 	close(socketd);
 	socketd = -1;
 	close(wpipe);
 	wpipe = -1;
-	quitcnt++;
+	if (quitcnt-- == 0) {
+		fprintf(stderr, "unexpected call to %s\n", __func__);
+		abort();
+	}
 }
 
 int
@@ -48,7 +53,7 @@ write_status_m(const char **strs __attribute__ ((unused)), const unsigned int co
 }
 
 int
-netget(void)
+netget(const unsigned int terminate __attribute__ ((unused)))
 {
 	static unsigned int state;
 	int msg;
@@ -56,31 +61,39 @@ netget(void)
 	greet_result = 0;
 
 	/* sequence */
-	switch (state) {
+	switch (state++) {
 	case 0:
 		msg = 550;
 		break;
-	case 2:
-	case 6:
+	case 1:
+	case 5:
+	case 8:
+	case 10:
 		msg = -220;
 		break;
-	case 1:
+	case 2:
+	case 7:
 		greet_result = -1;
 		msg = 220;
 		break;
-	case 4:
+	case 3:
+	case 6:
 		msg = -440;
 		break;
-	case 5:
+	case 4:
 		msg = 440;
 		break;
-	case 7:
+	case 9:
+		snprintf(linein.s, TESTIO_MAX_LINELEN, "2xxxxx");
+		printf("linein: %s\n", linein.s);
+		return -EINVAL;
+	case 11:
 		greet_result = esmtp_8bitmime;
 		msg = 220;
 		break;
+	default:
+		abort();
 	}
-
-	state++;
 
 	if (msg < 0) {
 		snprintf(linein.s, TESTIO_MAX_LINELEN, "%3u-", -msg);
@@ -89,14 +102,9 @@ netget(void)
 		snprintf(linein.s, TESTIO_MAX_LINELEN, "%3u ", msg);
 	}
 
-	return msg;
-}
+	printf("linein: %s\n", linein.s);
 
-int
-test_net_read(void)
-{
-	netget();
-	return 0;
+	return msg;
 }
 
 int
@@ -128,7 +136,6 @@ main(void)
 	mx[0].next = mx + 1;
 	mx[1].next = mx + 2;
 
-	testcase_setup_net_read(test_net_read);
 	testcase_ignore_log_writen();
 
 	connect_mx(mx, NULL, NULL);
@@ -143,8 +150,8 @@ main(void)
 		fprintf(stderr, "smtpext was %x instead of %x\n", smtpext, esmtp_8bitmime);
 		ret++;
 	}
-	if (quitcnt != 4) {
-		fprintf(stderr, "quitcnt was %i instead of 4\n", quitcnt);
+	if (quitcnt != 0) {
+		fprintf(stderr, "quitcnt was %i instead of 0\n", quitcnt);
 		ret++;
 	}
 

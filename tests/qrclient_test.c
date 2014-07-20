@@ -30,14 +30,14 @@ err_mem(const int k __attribute__((unused)))
 }
 
 int
-netget(void)
+netget(const unsigned int terminate)
 {
 	char num[4];
 	const char *lf;
 
 	if (netget_input == NULL) {
+		fprintf(stderr, "unexpected call to %s(%u)\n", __func__, terminate);
 		exit(EFAULT);
-		return -1;
 	}
 
 	lf = strchr(netget_input, '\n');

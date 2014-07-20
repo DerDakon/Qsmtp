@@ -736,7 +736,7 @@ send_data(unsigned int recodeflag)
 
 	successmsg[2] = "";
 	netwrite("DATA\r\n");
-	if ( (num = netget()) != 354) {
+	if ( (num = netget(1)) != 354) {
 		const char *msg[] = { num >= 500 ? "D5" : "Z4", ".3.0 remote host rejected DATA command: ",
 				linein.s + 4 };
 		write_status_m(msg, 3);

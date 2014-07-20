@@ -218,13 +218,8 @@ setup(void)
 #endif
 }
 
-/**
- * get one line from the network, handle all error cases
- *
- * @return SMTP return code of the message
- */
 int
-netget(void)
+netget(const unsigned int terminate)
 {
 	int q, r;
 
@@ -236,11 +231,15 @@ netget(void)
 		case E2BIG:
 			goto syntax;
 		default:
-			{
+			if (terminate) {
 				const char *tmp[] = { "Z4.3.0 ", strerror(errno) };
 
 				write_status_m(tmp, 2);
 				net_conn_shutdown(shutdown_clean);
+			} else {
+				r = -errno;
+				quitmsg();
+				return r;
 			}
 		}
 	}
@@ -260,12 +259,16 @@ netget(void)
 		goto syntax;
 	return r * 10 + q;
 syntax:
-	/* if this fails we're already in bad trouble */
-	/* Even if 5.5.2 is a permanent error don't use 'D' return code here,
-	 * hope that this is just a hiccup on the other side and will get
-	 * fixed soon. */
-	write_status("Z5.5.2 syntax error in server reply");
-	net_conn_shutdown(shutdown_clean);
+	if (terminate) {
+		/* if this fails we're already in bad trouble */
+		/* Even if 5.5.2 is a permanent error don't use 'D' return code here,
+		 * hope that this is just a hiccup on the other side and will get
+		 * fixed soon. */
+		write_status("Z5.5.2 syntax error in server reply");
+		net_conn_shutdown(shutdown_clean);
+	} else {
+		return -EINVAL;
+	}
 }
 
 void

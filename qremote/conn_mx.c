@@ -30,49 +30,36 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		dup2(socketd, 0);
 		getrhost(mx);
 
-		s = netget();
+		s = netget(1);
 
 		/* consume the rest of the replies */
 		while (linein.s[3] == '-') {
-			if (net_read() == 0)
+			int t = netget(0);
+
+			flagerr |= (s != t);
+			if (t > 0)
 				continue;
 
-			flagerr = 1;
-			switch (errno) {
-			case ENOMEM:
-				err_mem(1);
-			case EINVAL:
-			case E2BIG:
-				write_status("Z5.5.2 syntax error in server reply");
-				quitmsg();
-				break;
-			default:
-				{
-					const char *tmp[] = { "Z4.3.0 ", strerror(errno) };
+			/* if the reply was invalid in itself (i.e. parse error or such)
+			 * we can't know what the remote server will do next, so break out
+			 * and immediately send quit. Since the initial result of netget()
+			 * must have been positive flagerr will always be set here. */
+			break;
+		}
+		if ((s != 220) || (flagerr != 0)) {
+			if (flagerr) {
+				const char *dropmsg[] = {"invalid greeting from ", rhost, NULL};
 
-					write_status_m(tmp, 2);
-					quitmsg();
-				}
+				log_writen(LOG_WARNING, dropmsg);
 			}
-		}
-		if (s != 220) {
 			quitmsg();
 			continue;
 		}
-		if (flagerr)
-			continue;
 
-		if (strncmp("220 ", linein.s, 4) != 0) {
-			const char *dropmsg[] = {"invalid greeting from ", rhost, NULL};
-
-			log_writen(LOG_WARNING, dropmsg);
+		flagerr = greeting();
+		if (flagerr < 0)
 			quitmsg();
-		} else {
-			flagerr = greeting();
-			if (flagerr < 0)
-				quitmsg();
-			else
-				smtpext = flagerr;
-		}
+		else
+			smtpext = flagerr;
 	} while (socketd < 0);
 }

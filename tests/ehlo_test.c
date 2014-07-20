@@ -235,12 +235,12 @@ static struct {
 } netget_results[MAX_NETGET];
 
 int
-netget(void)
+netget(const unsigned int terminate)
 {
 	int i, r;
 
 	if (netget_results[0].line == NULL) {
-		fprintf(stderr, "unexpected call to %s()\n", __func__);
+		fprintf(stderr, "unexpected call to %s(%u)\n", __func__, terminate);
 		abort();
 	}
 

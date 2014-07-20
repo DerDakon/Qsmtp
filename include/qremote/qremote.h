@@ -9,7 +9,19 @@
 extern void err_mem(const int) __attribute__ ((noreturn));
 extern void err_conf(const char *) __attribute__ ((noreturn)) __attribute__ ((nonnull (1)));
 extern void err_confn(const char **, void *) __attribute__ ((noreturn)) __attribute__ ((nonnull (1)));
-extern int netget(void);
+/**
+ * @brief get one line from the network
+ * @param terminate if the program should be terminated on errors
+ * @return SMTP return code of the message or negative error code
+ * @retval -EINVAL the server send a reply that was syntactically invalid
+ *
+ * If an out of memory condition occurs the program will be terminated regardless of
+ * the terminate parameter.
+ *
+ * If an error occurs and terminate is not set the connection will be shut down
+ * before the function returns unless the return code is -EINVAL.
+ */
+extern int netget(const unsigned int terminate);
 
 /**
  * @brief write raw status message to qmail-rspawn

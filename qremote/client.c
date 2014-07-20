@@ -81,7 +81,7 @@ checkreply(const char *status, const char **pre, const int mask)
 	int res;
 	int ignore = (status == NULL);
 
-	res = netget();
+	res = netget(1);
 	if (status) {
 		unsigned int m;	// mask bit
 
@@ -120,7 +120,7 @@ checkreply(const char *status, const char **pre, const int mask)
 			write_status_raw(linein.s, linein.len + 1);
 		}
 		/* ignore the SMTP code sent here, if it's different from the one before the server is broken */
-		(void) netget();
+		(void) netget(1);
 	}
 
 	if (!ignore)

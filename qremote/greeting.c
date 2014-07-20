@@ -112,9 +112,9 @@ greeting(void)
 	int err = 0;
 
 	net_writen(cmd);
-	s = netget();
+	s = netget(1);
 	while (linein.s[3] == '-') {
-		int t = netget();
+		int t = netget(1);
 		if (s != t) {
 			err = 1;
 		} else if ((s == 250) && (err == 0)) {
@@ -140,9 +140,9 @@ greeting(void)
 	/* EHLO failed, try HELO */
 	cmd[0] = "HELO ";
 	net_writen(cmd);
-	s = netget();
+	s = netget(1);
 	while (linein.s[3] == '-') {
-		if (netget() != s)
+		if (netget(1) != s)
 			err++;
 	}
 

@@ -197,7 +197,7 @@ quitmsg(void)
  * @return SMTP return code of the message
  */
 int
-netget(void)
+netget(const unsigned int terminate __attribute__ ((unused)))
 {
 	int q, r;
 
@@ -486,12 +486,12 @@ work:
 
 	socketd = tryconn(cur, &outip, &outip6);
 	dup2(socketd, 0);
-	if (netget() != 220)
+	if (netget(1) != 220)
 		net_conn_shutdown(shutdown_clean);
 
 	/* AOL and others */
 	while (linein.s[3] == '-')
-		netget();
+		netget(1);
 
 	makelog("ehlo");
 
@@ -534,22 +534,22 @@ work:
 	makelog("vrfy");
 	netwrite("VRFY postmaster\r\n");
 	do {
-		netget();
+		netget(1);
 	} while (linein.s[3] == '-');
 	makelog("noop");
 	netwrite("NOOP\r\n");
 	do {
-		netget();
+		netget(1);
 	} while (linein.s[3] == '-');
 	makelog("rset");
 	netwrite("RSET\r\n");
 	do {
-		netget();
+		netget(1);
 	} while (linein.s[3] == '-');
 	makelog("help");
 	netwrite("HELP\r\n");
 	do {
-		netget();
+		netget(1);
 	} while (linein.s[3] == '-');
 	net_conn_shutdown(shutdown_clean);
 }

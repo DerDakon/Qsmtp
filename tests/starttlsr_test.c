@@ -54,7 +54,7 @@ write_status(const char *str)
 }
 
 int
-netget(void)
+netget(const unsigned int terminate __attribute__ ((unused)))
 {
 	snprintf(linein.s, TESTIO_MAX_LINELEN, "%i <content of linein>", netget_result);
 	return netget_result;
