@@ -503,6 +503,17 @@ SET_TARGET_PROPERTIES(testcase_getmxlistv4only PROPERTIES
 ADD_TEST(NAME "getmxlist_IPv4_only"
 		COMMAND testcase_getmxlistv4only)
 
+ADD_EXECUTABLE(testcase_connmx
+		connmx_test.c
+		${CMAKE_SOURCE_DIR}/qremote/conn_mx.c)
+
+TARGET_LINK_LIBRARIES(testcase_connmx
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
+
+ADD_TEST(NAME "Qremote_connect_mx"
+		COMMAND testcase_connmx)
+
 # This is a brute force test just to get some "real" coverage on the file.
 # It will always fail, either because ${AUTOQMAIL} doesn't exist or doesn't
 # have the proper configuration files or simply because we do not pass it
