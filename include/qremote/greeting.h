@@ -33,6 +33,8 @@ int esmtp_check_extension(const char *input) __attribute__ ((nonnull (1)));
  * @return the SMTP extensions supported
  * @retval <0 error code
  * @retval -EDONE the server reply was syntactically correct, but an error response
+ *
+ * In case of incoming syntax errors the faulting line will be written to log.
  */
 int greeting(void);
 

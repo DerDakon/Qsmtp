@@ -103,6 +103,15 @@ esmtp_check_extension(const char *input)
 	return 0;
 }
 
+static void
+errmsg_syntax(const char *phase)
+{
+	const char *logmsg[] = { "syntax error in ", phase, "response \"",
+			linein.s, "\" from ", rhost, NULL };
+
+	log_writen(LOG_WARNING, logmsg);
+}
+
 int
 greeting(void)
 {
@@ -112,19 +121,24 @@ greeting(void)
 	int err = 0;
 
 	net_writen(cmd);
-	s = netget(1);
+	s = netget(0);
+	if (s < 0)
+		return s;
 	while (linein.s[3] == '-') {
-		int t = netget(1);
+		int t = netget(0);
 		if (s != t) {
+			if (t < 0) {
+				/* only log one error per connection */
+				if (err == 0)
+					errmsg_syntax(cmd[0]);
+				return t;
+			}
 			err = 1;
 		} else if ((s == 250) && (err == 0)) {
 			int ext = esmtp_check_extension(linein.s + 4);
 
 			if (ext < 0) {
-				const char *logmsg[4] = { "syntax error in EHLO response \"",
-						linein.s + 4, "\"", NULL };
-
-				log_writen(LOG_WARNING, logmsg);
+				errmsg_syntax(cmd[0]);
 				err = 1;
 			} else {
 				ret |= ext;
@@ -140,9 +154,18 @@ greeting(void)
 	/* EHLO failed, try HELO */
 	cmd[0] = "HELO ";
 	net_writen(cmd);
-	s = netget(1);
+	s = netget(0);
+	if (s < 0) {
+		errmsg_syntax(cmd[0]);
+		return s;
+	}
 	while (linein.s[3] == '-') {
-		if (netget(1) != s)
+		int t = netget(0);
+		if (t < 0) {
+			errmsg_syntax(cmd[0]);
+			return t;
+		}
+		if (t != s)
 			err++;
 	}
 

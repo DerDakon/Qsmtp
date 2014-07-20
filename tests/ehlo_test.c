@@ -12,6 +12,7 @@
 #include <syslog.h>
 
 struct string heloname;
+char *rhost = "remote.host.name";
 
 /**
  * @brief pass EHLO lines that should be ignored because they are unknown
@@ -245,6 +246,7 @@ netget(const unsigned int terminate)
 	}
 
 	strncpy(linein.s, netget_results[0].line, TESTIO_MAX_LINELEN);
+	linein.len = strlen(linein.s);
 	r  = netget_results[0].ret;
 
 	for (i = 0; i < MAX_NETGET - 1; i++)
@@ -447,13 +449,13 @@ test_greeting_ehlo_skip_first_line(void)
 	return r;
 }
 
+static const char **log_multi_expect;
+
 void
 test_log_writen(int priority, const char **msg)
 {
 	unsigned int c;
 	const int log_prio_expect = LOG_WARNING;
-	const char *log_multi_expect[] = { "syntax error in EHLO response \"",
-		"SIZE JUNK", "\"", NULL };
 
 	if (priority != log_prio_expect) {
 		fprintf(stderr, "log_writen(%i, ...) called, but expected priority is %i\n",
@@ -479,14 +481,19 @@ test_log_writen(int priority, const char **msg)
 				priority, c, log_multi_expect[c]);
 		abort();
 	}
+
+	log_multi_expect = NULL;
 }
 
 static int
 test_greeting_ehlo_invalid(void)
 {
 	int r;
+	const char *logmsg[] = { "syntax error in ", "EHLO ", "response \"",
+			"250-SIZE JUNK", "\" from ", rhost, NULL };
 
 	nw_flags = 2;
+	log_multi_expect = logmsg;
 
 	netget_results[0].line = "250-nice to meet you";
 	netget_results[0].ret = 250;
@@ -524,6 +531,74 @@ test_greeting_helo_invalid_code(void)
 	return check_calls(-EINVAL);
 }
 
+static int
+test_greeting_ehlo_syntax_first(void)
+{
+	const char *logmsg[] = { "syntax error in ", "EHLO ", "response \"",
+			"junk", "\" from ", rhost, NULL };
+
+	nw_flags = 2;
+	log_multi_expect = logmsg;
+
+	netget_results[0].line = "junk";
+	netget_results[0].ret = -EINVAL;
+
+	return check_calls(-EINVAL);
+}
+
+static int
+test_greeting_ehlo_syntax_second(void)
+{
+	const char *logmsg[] = { "syntax error in ", "EHLO ", "response \"",
+			"junk", "\" from ", rhost, NULL };
+
+	nw_flags = 2;
+	log_multi_expect = logmsg;
+
+	netget_results[0].line = "250-nice to meet you";
+	netget_results[0].ret = 250;
+	netget_results[1].line = "junk";
+	netget_results[1].ret = -EINVAL;
+
+	return check_calls(-EINVAL);
+}
+
+static int
+test_greeting_helo_syntax_first(void)
+{
+	const char *logmsg[] = { "syntax error in ", "HELO ", "response \"",
+			"junk", "\" from ", rhost, NULL };
+
+	nw_flags = 3;
+	log_multi_expect = logmsg;
+
+	netget_results[0].line = "503 5.5.1 Bad sequence of commands";
+	netget_results[0].ret = 503;
+	netget_results[1].line = "junk";
+	netget_results[1].ret = -EINVAL;
+
+	return check_calls(-EINVAL);
+}
+
+static int
+test_greeting_helo_syntax_second(void)
+{
+	const char *logmsg[] = { "syntax error in ", "HELO ", "response \"",
+			"junk", "\" from ", rhost, NULL };
+
+	nw_flags = 3;
+	log_multi_expect = logmsg;
+
+	netget_results[0].line = "503 5.5.1 Bad sequence of commands";
+	netget_results[0].ret = 503;
+	netget_results[1].line = "250-nice to meet you";
+	netget_results[1].ret = 250;
+	netget_results[2].line = "junk";
+	netget_results[2].ret = -EINVAL;
+
+	return check_calls(-EINVAL);
+}
+
 int
 main(void)
 {
@@ -549,6 +624,10 @@ main(void)
 	ret += test_greeting_ehlo_invalid();
 	ret += test_greeting_ehlo_skip_first_line();
 	ret += test_greeting_helo_invalid_code();
+	ret += test_greeting_ehlo_syntax_first();
+	ret += test_greeting_ehlo_syntax_second();
+	ret += test_greeting_helo_syntax_first();
+	ret += test_greeting_helo_syntax_second();
 
 	return ret;
 }
