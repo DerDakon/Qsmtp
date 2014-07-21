@@ -61,6 +61,8 @@ test_tryconn(void)
 	if (i != -ENOENT) {
 		fprintf(stderr, "tryconn() on exhausted MX list did return %i instead of %i (-ENOENT)\n",
 				i, -ENOENT);
+		if (i >= 0)
+			close(i);
 		ret++;
 	}
 
