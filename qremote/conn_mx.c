@@ -28,6 +28,10 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		if (socketd >= 0)
 			close(socketd);
 		socketd = tryconn(mx, outip4, outip6);
+		if (socketd < 0) {
+			write_status("Z4.4.2 can't connect to any server");
+			exit(0);
+		}
 		dup2(socketd, 0);
 		getrhost(mx);
 

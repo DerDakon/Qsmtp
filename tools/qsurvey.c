@@ -485,6 +485,12 @@ work:
 	makelog("conn");
 
 	socketd = tryconn(cur, &outip, &outip6);
+	if (socketd < 0) {
+		fprintf(stderr, "can't connect to any server\n");
+		close(logdirfd);
+		close(dirfd);
+		net_conn_shutdown(shutdown_abort);
+	}
 	dup2(socketd, 0);
 	if (netget(1) != 220)
 		net_conn_shutdown(shutdown_clean);

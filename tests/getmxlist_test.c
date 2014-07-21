@@ -43,6 +43,38 @@ err_mem(const int doquit __attribute__ ((unused)))
 	exit(ENOMEM);
 }
 
+static int
+test_tryconn(void)
+{
+	int ret = 0;
+	struct ips mx[3];
+	int i;
+
+	memset(mx, 0, sizeof(mx));
+	mx[0].next = mx + 1;
+	mx[0].priority = 65537;
+	mx[1].next = mx + 2;
+	mx[1].priority = 65537;
+	mx[2].priority = 65538;
+
+	i = tryconn(mx, NULL, NULL);
+	if (i != -ENOENT) {
+		fprintf(stderr, "tryconn() on exhausted MX list did return %i instead of %i (-ENOENT)\n",
+				i, -ENOENT);
+		ret++;
+	}
+
+	for (i = 0; i < (int)(sizeof(mx) / sizeof(mx[0])); i++) {
+		if (mx[i].priority != 65537) {
+			fprintf(stderr, "mx[%i].priority == %u, expected was 65537\n", i,
+					mx[i].priority);
+			ret++;
+		}
+	}
+
+	return ret;
+}
+
 int
 main(void)
 {
@@ -119,6 +151,8 @@ main(void)
 
 		freeips(mx);
 	}
+
+	ret += test_tryconn();
 
 	return ret;
 }

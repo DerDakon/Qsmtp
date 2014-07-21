@@ -100,6 +100,7 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
  * @param outip4 local IPv4 to bind
  * @param outip6 local IPv6 to bind
  * @return the socket descriptor of the open connection
+ * @retval -ENOENT no IP address left to connect to
  *
  * Every entry where a connection attempt was made is marked with a priority of 65537,
  * the last one tried with 65538
@@ -118,10 +119,8 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 			if (thisip->priority <= 65536)
 				break;
 		}
-		if (!thisip) {
-			write_status("Z4.4.2 can't connect to any server");
-			exit(0);
-		}
+		if (!thisip)
+			return -ENOENT;
 
 #ifndef IPV4ONLY
 		if (!IN6_IS_ADDR_V4MAPPED(&thisip->addr))
