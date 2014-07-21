@@ -580,7 +580,15 @@ fork_clean()
 	if (ret != 0)
 		return ret;
 
+	userbackend_free();
 	munmap(rcpthosts, rcpthsize);
+
+#ifdef USESYSLOG
+	closelog();
+#endif /* USESYSLOG */
+
+	if (ssl)
+		ssl_free(ssl);
 
 	return 0;
 }
