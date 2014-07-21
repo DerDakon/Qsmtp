@@ -9,8 +9,7 @@
 extern SSL *ssl;
 
 void ssl_free(SSL *myssl);
-void __attribute__ ((noreturn)) ssl_exit(int status);
-# define _exit ssl_exit
+void ssl_exit(int status) __attribute__ ((noreturn));
 
 void ssl_library_destroy();
 

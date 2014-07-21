@@ -54,7 +54,7 @@ err_mem(const int doquit)
 		quitmsg();
 /* write text including 0 byte */
 	write_status("Z4.3.0 Out of memory.");
-	_exit(0);
+	ssl_exit(0);
 }
 
 void
@@ -64,7 +64,7 @@ err_confn(const char **errmsg, void *freebuf)
 	free(freebuf);
 	/* write text including 0 byte */
 	write_status("Z4.3.0 Configuration error.");
-	_exit(0);
+	ssl_exit(0);
 }
 
 void
@@ -255,7 +255,7 @@ dieerror(int error)
 		log_write(LOG_WARNING, "connection died");
 		break;
 	}
-	_exit(0);
+	ssl_exit(0);
 }
 
 static void

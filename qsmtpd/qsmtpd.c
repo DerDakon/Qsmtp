@@ -196,7 +196,7 @@ dieerror(int error)
 		break;
 	}
 	log_writen(LOG_WARNING, logmsg);
-	_exit(error);
+	exit(error);
 }
 
 static void

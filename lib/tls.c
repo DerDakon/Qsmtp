@@ -4,9 +4,6 @@
 
 #include <tls.h>
 
-/* _exit is defined to ssl_exit in tls.h to be sure ssl is always freed correctly */
-#undef _exit
-
 #include <errno.h>
 #include <openssl/conf.h>
 #include <openssl/crypto.h>
@@ -27,7 +24,7 @@ void ssl_free(SSL *myssl)
 	ssl_library_destroy();
 }
 
-void __attribute__ ((noreturn)) ssl_exit(int status)
+void ssl_exit(int status)
 {
 	if (ssl)
 		ssl_free(ssl);
