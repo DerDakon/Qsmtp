@@ -16,7 +16,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
-void
+int
 connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *outip6)
 {
 	/* for all MX entries we got: try to enable connection, check if the SMTP server wants us
@@ -28,10 +28,8 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		if (socketd >= 0)
 			close(socketd);
 		socketd = tryconn(mx, outip4, outip6);
-		if (socketd < 0) {
-			write_status("Z4.4.2 can't connect to any server");
-			exit(0);
-		}
+		if (socketd < 0)
+			return socketd;
 		dup2(socketd, 0);
 		getrhost(mx);
 
@@ -92,4 +90,6 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		}
 		
 	} while (socketd < 0);
+
+	return 0;
 }

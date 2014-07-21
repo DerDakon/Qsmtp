@@ -304,6 +304,7 @@ main(int argc, char *argv[])
 	char sizebuf[ULSTRLEN];
 	unsigned int lastmsg;	/* last message in array */
 	unsigned int recodeflag;
+	int i;
 
 	setup();
 
@@ -345,9 +346,14 @@ main(int argc, char *argv[])
 	}
 	dup2(0, 42);
 
-	connect_mx(mx, &outip, &outip6);
-
+	i = connect_mx(mx, &outip, &outip6);
 	freeips(mx);
+
+	if (i < 0) {
+		write_status("Z4.4.2 can't connect to any server");
+		net_conn_shutdown(shutdown_abort);
+	}
+
 	mailerrmsg[1] = rhost;
 
 	if (ssl) {
@@ -375,8 +381,6 @@ main(int argc, char *argv[])
 		netmsg[lastmsg++] = (recodeflag & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
 	}
 	if (smtpext & esmtp_pipelining) {
-		int i;
-
 /* server allows PIPELINING: first send all the messages, then check the replies.
  * This allows to hide network latency. */
 		/* batch the first recipient with the from */
@@ -415,8 +419,6 @@ main(int argc, char *argv[])
 		if (rcptstat)
 			net_conn_shutdown(shutdown_clean);
 	} else {
-		int i;
-
 /* server does not allow pipelining: we must do this one by one */
 		netmsg[lastmsg] = NULL;
 		net_writen(netmsg);

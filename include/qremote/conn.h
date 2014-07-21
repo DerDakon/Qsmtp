@@ -17,12 +17,15 @@ extern int tryconn(struct ips *mx, const struct in6_addr *outip4, const struct i
  * @param mx list of MX ips
  * @param outip4 address to use when making outgoing IPv4 connections
  * @param outip6 address to use when making outgoing IPv6 connections
+ * @return if the connection was established
+ * @retval 0 a connection has been set up
+ * @retval -ENOENT no IPs were left to try
  *
  * This will return once a connection to a remote host has been successfully
  * established and the greeting of the remote server has been parsed. If no
- * connection can be made this function will not return.
+ * connection can be made this function return -ENOENT.
  */
-extern void connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *outip6);
+extern int connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *outip6);
 extern void getmxlist(char *, struct ips **);
 
 #endif
