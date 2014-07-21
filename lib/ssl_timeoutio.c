@@ -15,7 +15,6 @@
 #define ndelay_on(fd)  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
 #define ndelay_off(fd) fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) & ~O_NONBLOCK)
 
-static int ssl_timeoutio(int (*fun)(), time_t, char *, int) __attribute__ ((nonnull (1)));
 /**
  * call SSL function for given data buffer
  *
@@ -27,7 +26,7 @@ static int ssl_timeoutio(int (*fun)(), time_t, char *, int) __attribute__ ((nonn
  *
  * on timeout program is terminated
  */
-static int
+static int __attribute__ ((nonnull (1)))
 ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 {
 	int n = 0;
@@ -116,9 +115,11 @@ ssl_timeoutconn(time_t t)
 	r = ssl_timeoutio(SSL_connect, t, NULL, 0);
 
 	if (r <= 0) {
-		r = ndelay_off(ssl_rfd);
-		if (!r)
-			r = ndelay_off(ssl_wfd);
+		int j, k;
+		j = ndelay_off(ssl_rfd);
+		k = ndelay_off(ssl_wfd);
+		if (r == 0)
+			r = j ? j : k;
 	} else {
 		SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
 	}
