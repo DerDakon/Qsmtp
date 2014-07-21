@@ -357,11 +357,13 @@ test_log_messages(void)
 
 		if (queuefd_data != -1) {
 			fprintf(stderr, "%s[%u]: queue_envelope() did not reset queuefd_data\n", __func__, i);
+			close(queuefd_data);
 			ret++;
 		}
 
 		if (queuefd_hdr != -1) {
 			fprintf(stderr, "%s[%u]: queue_envelope() did not reset queuefd_hdr\n", __func__, i);
+			close(queuefd_hdr);
 			ret++;
 		}
 

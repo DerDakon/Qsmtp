@@ -276,6 +276,11 @@ test_getbuffer(void)
 				r);
 		ret++;
 	}
+	if (array != NULL) {
+		fprintf(stderr, "opening non-existent file returned a data buffer\n");
+		ret++;
+		free(array);
+	}
 
 	return ret;
 }

@@ -198,13 +198,14 @@ test_cdbdir(void)
 	int fd;
 	char buffer[4096];
 
-	if (getcwd(buffer, sizeof(buffer)) == NULL) {
-		fprintf(stderr, "can't get current directory name, error %i\n", errno);
+	if (olddir < 0) {
+		fprintf(stderr, "can't open(.), error %i\n", errno);
 		return 1;
 	}
 
-	if (olddir < 0) {
-		fprintf(stderr, "can't open(.), error %i\n", errno);
+	if (getcwd(buffer, sizeof(buffer)) == NULL) {
+		fprintf(stderr, "can't get current directory name, error %i\n", errno);
+		close(olddir);
 		return 1;
 	}
 
