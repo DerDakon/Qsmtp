@@ -31,7 +31,7 @@ ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 {
 	int n = 0;
 	const time_t end = t + time(NULL);
-	int fd = -1;
+	int rfd = -1, wfd = -1;
 
 	do {
 		fd_set fds;
@@ -50,20 +50,20 @@ ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 		FD_ZERO(&fds);
 		switch (SSL_get_error(ssl, r)) {
 		case SSL_ERROR_WANT_READ:
-			if (fd < 0) {
-				fd = SSL_get_rfd(ssl);
-				assert(fd >= 0);
+			if (rfd < 0) {
+				rfd = SSL_get_rfd(ssl);
+				assert(rfd >= 0);
 			}
-			FD_SET(fd, &fds);
-			n = select(fd + 1, &fds, NULL, NULL, &tv);
+			FD_SET(rfd, &fds);
+			n = select(rfd + 1, &fds, NULL, NULL, &tv);
 			break;
 		case SSL_ERROR_WANT_WRITE:
-			if (fd < 0) {
-				fd = SSL_get_wfd(ssl);
-				assert(fd >= 0);
+			if (wfd < 0) {
+				wfd = SSL_get_wfd(ssl);
+				assert(wfd >= 0);
 			}
-			FD_SET(fd, &fds);
-			n = select(fd + 1, NULL, &fds, NULL, &tv);
+			FD_SET(wfd, &fds);
+			n = select(wfd + 1, NULL, &fds, NULL, &tv);
 			break;
 		default:
 			return r; /* some other error */
