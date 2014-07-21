@@ -587,8 +587,21 @@ fork_clean()
 	closelog();
 #endif /* USESYSLOG */
 
-	if (ssl)
+	if (ssl) {
+		int rfd = SSL_get_rfd(ssl);
+		int wfd = SSL_get_wfd(ssl);
+
+		/* the fds need to be removed from SSL first, otherwise
+		 * destroying the SSL object will terminate the SSL connection
+		 * to the remote host. */
+		SSL_set_wfd(ssl, -1);
+		SSL_set_rfd(ssl, -1);
+		close(wfd);
+		if (rfd != wfd)
+			close(rfd);
+
 		ssl_free(ssl);
+	}
 
 	return 0;
 }
