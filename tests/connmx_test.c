@@ -167,10 +167,15 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 }
 
 int
-tryconn(struct ips *mx __attribute__ ((unused)), const struct in6_addr *outip4 __attribute__ ((unused)),
+tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 		const struct in6_addr *outip6 __attribute__ ((unused)))
 {
 	int p[2];
+
+	if (mx->priority == 0)
+		return -ENOENT;
+
+	mx->priority--;
 
 	if (pipe(p) != 0)
 		exit(errno);
@@ -190,14 +195,32 @@ main(void)
 {
 	struct ips mx[3];
 	int ret = 0;
+	int i;
 
+	// run the first 7 subtests
 	memset(mx, 0, sizeof(mx));
+	mx[0].priority = 7;
 	mx[0].next = mx + 1;
 	mx[1].next = mx + 2;
 
 	testcase_ignore_log_writen();
 
-	connect_mx(mx, NULL, NULL);
+	i = connect_mx(mx, NULL, NULL);
+	if (i != -ENOENT) {
+		fprintf(stderr, "connect_mx() returned %i instead of %i (-ENOENT)\n", i, -ENOENT);
+		ret++;
+	}
+
+	if (socketd >= 0)
+		close(socketd);
+
+	mx[0].priority = 1;
+
+	i = connect_mx(mx, NULL, NULL);
+	if (i != 0) {
+		fprintf(stderr, "connect_mx() returned %i instead of 0\n", i);
+		ret++;
+	}
 
 	if (close(socketd) != 0)
 		ret++;
@@ -211,6 +234,10 @@ main(void)
 	}
 	if (quitnext) {
 		fprintf(stderr, "expected call to quitmsg() missing\n");
+		ret++;
+	}
+	if (mx[0].priority != 0) {
+		fprintf(stderr, "mx[0].priority is %u instead of 0\n", mx[0].priority);
 		ret++;
 	}
 
