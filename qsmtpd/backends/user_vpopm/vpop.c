@@ -234,6 +234,8 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	struct string userdirtmp;	/* temporary storage of the pointer for userdir */
 	int res;
 	struct userconf *ds = (dsp == NULL) ? &uconf : dsp;
+	int fd;
+	char *p;
 
 	/* '/' is a valid character for localparts but we don't want it because
 	 * it could be abused to check the existence of files */
@@ -262,42 +264,63 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	userdirtmp.s[userdirtmp.len - 1] = '/';
 
 	userdirfd = open(userdirtmp.s, O_RDONLY | O_CLOEXEC);
-	if (userdirfd < 0) {
+	if (userdirfd >= 0) {
+		close(userdirfd);
+		ds->userpath.s = userdirtmp.s;
+		ds->userpath.len = userdirtmp.len;
+		return 1;
+	}
+
+	if (errno == EACCES) {
+		/* The directory itself is not readable. It may still be possible to 
+		 * accees specific files in it (e.g. if the mode is 0751), so keep it. */
+		ds->userpath.s = userdirtmp.s;
+		ds->userpath.len = userdirtmp.len;
+		return 1;
+	} else if ((errno != ENOENT) && (errno != ENOTDIR)) {
 		int e = errno;
-		int fd;
-
-		if (e == EACCES) {
-			/* The directory itself is not readable. It may still be possible to 
-			 * accees specific files in it (e.g. if the mode is 0751), so keep it. */
-			ds->userpath.s = userdirtmp.s;
-			ds->userpath.len = userdirtmp.len;
-			return 1;
-		} else if ((e != ENOENT) && (errno != ENOTDIR)) {
-			/* if e.g. a file with the given name exists that is no error,
-			 * it just means that it is not a user directory with that name. */
-			if (err_control(userdirtmp.s) != 0) {
-				errno = e;
-			} else {
-				errno = EDONE;
-			}
-			free(userdirtmp.s);
-			userconf_free(ds);
-			return -1;
+		/* if e.g. a file with the given name exists that is no error,
+		 * it just means that it is not a user directory with that name. */
+		if (err_control(userdirtmp.s) != 0) {
+			errno = e;
+		} else {
+			errno = EDONE;
 		}
-
 		free(userdirtmp.s);
+		userconf_free(ds);
+		return -1;
+	}
 
-		/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
-		fd = qmexists(ds, localpart->s, localpart->len, 2);
-		/* try .qmail-user-default instead */
-		if ((fd < 0) && (errno == ENOENT))
-			fd = qmexists(ds, localpart->s, localpart->len, 3);
+	free(userdirtmp.s);
 
+	/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
+	fd = qmexists(ds, localpart->s, localpart->len, 2);
+	/* try .qmail-user-default instead */
+	if ((fd < 0) && (errno == ENOENT))
+		fd = qmexists(ds, localpart->s, localpart->len, 3);
+
+	if (fd >= 0) {
+		close(fd);
+		return 1;
+	}
+
+	if (errno == EACCES) {
+		/* User exists */
+		return 1;
+	} else if (errno == ENOMEM) {
+		userconf_free(ds);
+		return fd;
+	} else if (errno != ENOENT) {
+		userconf_free(ds);
+		return -1;
+	}
+	/* if username contains '-' there may be
+	 * .qmail-partofusername-default */
+	p = memchr(localpart->s, '-', localpart->len);
+	while (p) {
+		fd = qmexists(ds, localpart->s, (p - localpart->s), 3);
 		if (fd < 0) {
-			char *p;
-
 			if (errno == EACCES) {
-				/* User exists */
 				return 1;
 			} else if (errno == ENOMEM) {
 				userconf_free(ds);
@@ -306,89 +329,60 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 				userconf_free(ds);
 				return -1;
 			}
-			/* if username contains '-' there may be
-			 .qmail-partofusername-default */
-			p = memchr(localpart->s, '-', localpart->len);
-			while (p) {
-				fd = qmexists(ds, localpart->s, (p - localpart->s), 3);
-				if (fd < 0) {
-					if (errno == EACCES) {
-						return 1;
-					} else if (errno == ENOMEM) {
-						userconf_free(ds);
-						return fd;
-					} else if (errno != ENOENT) {
-						userconf_free(ds);
-						return -1;
-					}
-				} else {
-					if (close(fd) != 0)
-						return -1;
-					return 4;
-				}
-				p = strchr(p + 1, '-');
-			}
-
-			/* does USERPATH/DOMAIN/.qmail-default exist ? */
-			fd = qmexists(ds, NULL, 0, 1);
-			if (fd < 0) {
-				/* no local user with that address */
-				if (errno == EACCES) {
-					return 1;
-				} else if (errno == ENOENT) {
-					userconf_free(ds);
-					return 0;
-				} else {
-					userconf_free(ds);
-					return -1;
-				}
-			} else if (vpopbounce) {
-				char buff[2*strlen(vpopbounce)+1];
-				ssize_t r;
-				int err = 0;
-
-				r = read(fd, buff, sizeof(buff) - 1);
-				if (r == -1) {
-					
-					if (err_control2(ds->domainpath.s, ".qmail-default") == 0)
-						err = EDONE;
-					else
-						err = errno;
-				}
-				if ((close(fd) != 0) && (err == 0))
-					err = errno;
-				if (err != 0) {
-					userconf_free(ds);
-					errno = err;
-					return -1;
-				}
-
-				buff[r] = 0;
-
-				/* mail would be bounced or catched by .qmail-default */
-				if (strcmp(buff, vpopbounce) == 0) {
-					userconf_free(ds);
-					return 0;
-				} else {
-					return 2;
-				}
-			} else {
-				/* we can't tell if this is a bounce .qmail-default -> accept the mail */
-				return 2;
-			}
 		} else {
-			if (close(fd) != 0) {
-				userconf_free(ds);
+			if (close(fd) != 0)
 				return -1;
-			}
+			return 4;
 		}
-	} else {
-		close(userdirfd);
-		ds->userpath.s = userdirtmp.s;
-		ds->userpath.len = userdirtmp.len;
+		p = strchr(p + 1, '-');
 	}
 
-	return 1;
+	/* does USERPATH/DOMAIN/.qmail-default exist ? */
+	fd = qmexists(ds, NULL, 0, 1);
+	if (fd < 0) {
+		/* no local user with that address */
+		if (errno == EACCES) {
+			return 1;
+		} else if (errno == ENOENT) {
+			userconf_free(ds);
+			return 0;
+		} else {
+			userconf_free(ds);
+			return -1;
+		}
+	} else if (vpopbounce) {
+		char buff[2*strlen(vpopbounce)+1];
+		ssize_t r;
+		int err = 0;
+
+		r = read(fd, buff, sizeof(buff) - 1);
+		if (r == -1) {
+			if (err_control2(ds->domainpath.s, ".qmail-default") == 0)
+				err = EDONE;
+			else
+				err = errno;
+		}
+		if ((close(fd) != 0) && (err == 0))
+			err = errno;
+		if (err != 0) {
+			userconf_free(ds);
+			errno = err;
+			return -1;
+		}
+
+		buff[r] = 0;
+
+		/* mail would be bounced or catched by .qmail-default */
+		if (strcmp(buff, vpopbounce) == 0) {
+			userconf_free(ds);
+			return 0;
+		} else {
+			return 2;
+		}
+	} else {
+		/* we can't tell if this is a bounce .qmail-default -> accept the mail */
+		return 2;
+	}
 }
 
 int
