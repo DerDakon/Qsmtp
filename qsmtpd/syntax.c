@@ -83,8 +83,11 @@ wait_for_quit(void)
 void
 sync_pipelining(void)
 {
-	if (!data_pending())
+	int i = data_pending();
+	if (i == 0)
 		return;
+	if (i < 0)
+		dieerror(errno);
 
 	/* if we are not using ESMTP PIPELINING isn't allowed. Use a different
 	 * error code. */

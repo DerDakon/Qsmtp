@@ -710,11 +710,14 @@ net_readline(size_t num, char *buf)
 }
 
 /**
- * check if there is data ready to be read without blocking
- *
+ * @brief check if there is data ready to be read without blocking
+ * @returns if there is data available
  * @retval 0 if no data
  * @retval 1 if data
  * @retval -1 on error
+ *
+ * This will return -1 and errno set to ECONNRESET if the connection has
+ * been closed by the remote end.
  */
 int
 data_pending(void)
@@ -729,10 +732,25 @@ data_pending(void)
 			.tv_sec = 0,
 			.tv_usec = 0,
 		};
+		int i;
 
 		FD_ZERO(&rfds);
 		FD_SET(0, &rfds);
 
-		return select(1, &rfds, NULL, NULL, &tv);
+		i = select(1, &rfds, NULL, NULL, &tv);
+		if (i <= 0)
+			return i;
+
+		/* verify that there is really data available and that the
+		 * connection was not simply closed. */
+		i = read(0, lineinn, 1);
+		if (i < 0)
+			return i;
+		if (i > 0) {
+			linenlen = i;
+			return 1;
+		}
+		errno = ECONNRESET;
+		return -1;
 	}
 }

@@ -185,7 +185,7 @@ lookupipbl_name(const char *filename)
 void
 dieerror(int error)
 {
-	const char *logmsg[] = {"connection from [", xmitstat.remoteip, NULL, NULL};
+	const char *logmsg[] = { "connection from [", xmitstat.remoteip, NULL, NULL, NULL };
 
 	switch (error) {
 	case ETIMEDOUT:
@@ -193,6 +193,10 @@ dieerror(int error)
 		break;
 	case ECONNRESET:
 		logmsg[2] = "] died";
+		break;
+	default:
+		logmsg[2] = "] failed, error: ";
+		logmsg[3] = strerror(error);
 		break;
 	}
 	log_writen(LOG_WARNING, logmsg);

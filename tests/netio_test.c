@@ -4,9 +4,11 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <netinet/in.h>
 #include <openssl/ssl.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/socket.h>
 
 #ifdef DEBUG_IO
 #include "log.h"
@@ -888,6 +890,47 @@ test_net_write_multiline(void)
 	return ret;
 }
 
+/**
+ * @brief test using a socketpair if a socket closed by the remote end is properly detected
+ */
+static int
+test_pending_socketpair(void)
+{
+	int sfd[2];
+	int i;
+	int ret = 0;
+
+	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sfd) != 0) {
+		fprintf(stderr, "cannot create socket pair: %i\n", errno);
+		return 1;
+	}
+
+	if ((sfd[0] != 0) && (sfd[1] != 0)) {
+		if (dup2(sfd[0], 0) != 0) {
+			fprintf(stderr, "cannot move socket to fd 0: %i\n", errno);
+			close(sfd[0]);
+			close(sfd[1]);
+			return 1;
+		}
+		close(sfd[1]);
+		close(sfd[0]);
+	} else if (sfd[0] == 0) {
+		close(sfd[1]);
+	} else {
+		close(sfd[0]);
+	}
+
+	i = data_pending();
+	if ((i != -1) || (errno != ECONNRESET)) {
+		fprintf(stderr, "data_pending() on closed socket returned %i/%i instead of -1/%i (ECONNRESET)\n", i, errno, ECONNRESET);
+		ret++;
+	}
+
+	close(0);
+
+	return ret;
+}
+
 int main(void)
 {
 	int ret = 0;
@@ -952,6 +995,8 @@ int main(void)
 		fprintf(stderr, "data_pending() on closed fd returned %i/%i instead of -1/%i (EBADF)\n", i, errno, EBADF);
 		ret++;
 	}
+
+	ret += test_pending_socketpair();
 
 	return ret;
 }
