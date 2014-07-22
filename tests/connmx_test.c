@@ -13,6 +13,7 @@ char *rhost;
 static int wpipe = -1;
 unsigned int smtpext;
 static int greet_result, next_greet_result;
+static int pending_result;
 static int quitnext;
 static int tls_result = -1;
 
@@ -172,8 +173,13 @@ tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 {
 	int p[2];
 
-	if (mx->priority == 0)
+	switch (mx->priority) {
+	case 5:
+		pending_result = -ECONNRESET;
+		break;
+	case 0:
 		return -ENOENT;
+	}
 
 	mx->priority--;
 
@@ -183,6 +189,18 @@ tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 	wpipe = p[0];
 
 	return p[1];
+}
+
+int
+test_data_pending(void)
+{
+	if (pending_result < 0) {
+		errno = -pending_result;
+		pending_result = 0;
+		return -1;
+	}
+
+	return 0;
 }
 
 void
@@ -197,13 +215,14 @@ main(void)
 	int ret = 0;
 	int i;
 
-	// run the first 7 subtests
+	// run the first 7 subtests (one more because of the data_pending() failure in between */
 	memset(mx, 0, sizeof(mx));
-	mx[0].priority = 7;
+	mx[0].priority = 8;
 	mx[0].next = mx + 1;
 	mx[1].next = mx + 2;
 
 	testcase_ignore_log_writen();
+	testcase_setup_data_pending(test_data_pending);
 
 	i = connect_mx(mx, NULL, NULL);
 	if (i != -ENOENT) {

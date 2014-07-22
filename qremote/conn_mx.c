@@ -25,13 +25,36 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		int flagerr = 0;
 		int s;
 
-		if (socketd >= 0)
-			close(socketd);
 		socketd = tryconn(mx, outip4, outip6);
 		if (socketd < 0)
 			return socketd;
 		dup2(socketd, 0);
 		getrhost(mx);
+
+		/* This is only an intermediate solution: check if the remote server accepts
+		 * the connection and then closes it. The proper check would be to let the
+		 * ECONNRESET/ETIMEDOUT cases go through in the netget calls and then react
+		 * to them. */
+		s = data_pending();
+		if (s < 0) {
+			switch (errno) {
+			case ENOMEM:
+				err_mem(0);
+			case ECONNRESET:
+				{
+				const char *logmsg[] = { "connection to ", rhost, " died", NULL };
+
+				close(socketd);
+				socketd = -1;
+				log_writen(LOG_WARNING, logmsg);
+				continue;
+				}
+			default:
+				/* something unexpected went wrong, assume that this is a local
+				 * problem that will eventually go away. */
+				net_conn_shutdown(shutdown_abort);
+			}
+		}
 
 		s = netget(1);
 
