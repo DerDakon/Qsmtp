@@ -430,6 +430,12 @@ test_long_lines(void)
 		send_all_test_data(digits);
 	send_all_test_data(valid);
 
+	i = data_pending();
+	if (i != 1) {
+		fprintf(stderr, "data_pending() with available data returned %i instead of 1\n", i);
+		ret++;
+	}
+
 	if (read_check_error(E2BIG))
 		ret++;
 
