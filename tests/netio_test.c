@@ -938,8 +938,18 @@ int main(void)
 	ret += test_net_writen();
 	ret += test_net_write_multiline();
 
-	if (data_pending()) {
-		fprintf(stderr, "data pending at end of tests\n");
+	i = data_pending();
+	if (i != 0) {
+		fprintf(stderr, "data pending at end of tests: %i\n", i);
+		ret++;
+	}
+
+	close(0);
+	close(socketd);
+
+	i = data_pending();
+	if ((i != -1) || (errno != EBADF)) {
+		fprintf(stderr, "data_pending() on closed fd returned %i/%i instead of -1/%i (EBADF)\n", i, errno, EBADF);
 		ret++;
 	}
 
