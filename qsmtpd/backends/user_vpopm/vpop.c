@@ -169,13 +169,18 @@ vget_dir(const char *domain, struct userconf *ds)
  * @param def which suffixes to use (logically or'ed)
  *            @arg @c 1: append "default"
  *            @arg @c 2: append suff1
+ * @param fd file descriptor of .qmail file is returned here if argument is not NULL
+ * @return if the file exists
+ * @retval 0 file does not exist
+ * @retval 1 file exists
+ * @retval -1 error opening the file (errno is set)
  */
 static int
-qmexists(const struct userconf *ds, const char *suff1, const size_t len, const int def)
+qmexists(const struct userconf *ds, const char *suff1, const size_t len, const int def, int *fd)
 {
 	static const char dotqm[] = ".qmail-";
 	char filetmp[PATH_MAX];
-	int fd;
+	int tmpfd;
 	size_t l = ds->domainpath.len + strlen(dotqm);
 
 	errno = ENOENT;
@@ -216,16 +221,34 @@ qmexists(const struct userconf *ds, const char *suff1, const size_t len, const i
 
 	/* these files should not be open long enough to reach a fork, but
 	 * make sure it is not accidentially leaked. */
-	fd = open(filetmp, O_RDONLY | O_CLOEXEC);
-	if (fd == -1) {
-		if ((errno == ENOMEM) || (errno == ENFILE) || (errno == EMFILE)) {
+	tmpfd = open(filetmp, O_RDONLY | O_CLOEXEC);
+	if (tmpfd <= 0) {
+		switch (errno) {
+		case ENOMEM:
+		case ENFILE:
+		case EMFILE:
 			errno = ENOMEM;
-		} else if ((errno != ENOENT) && (errno != EACCES)) {
+			return -1;
+		case EACCES:
+			return 1;
+		case ENOENT:
+		case EISDIR:
+			return 0;
+		default:
+			tmpfd = errno;
 			if (err_control(filetmp) == 0)
 				errno = EDONE;
+			else
+				errno = tmpfd;
+			return -1;
 		}
+	} else {
+		if (fd == NULL)
+			close(tmpfd);
+		else
+			*fd = tmpfd;
+		return 1;
 	}
-	return fd;
 }
 
 int
@@ -296,69 +319,54 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	free(userdirtmp.s);
 
 	/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
-	fd = qmexists(ds, localpart->s, localpart->len, 2);
+	res = qmexists(ds, localpart->s, localpart->len, 2, NULL);
 	/* try .qmail-user-default instead */
-	if ((fd < 0) && (errno == ENOENT))
-		fd = qmexists(ds, localpart->s, localpart->len, 3);
+	if (res == 0)
+		res = qmexists(ds, localpart->s, localpart->len, 3, NULL);
 
-	if (fd >= 0) {
-		close(fd);
+	if (res > 0) {
 		return 1;
-	}
-
-	if (errno == EACCES) {
-		/* User exists */
-		return 1;
-	} else if (errno == ENOMEM) {
+	} else if (res < 0) {
+		res = errno;
 		userconf_free(ds);
-		return fd;
-	} else if (errno != ENOENT) {
-		userconf_free(ds);
+		errno = res;
 		return -1;
 	}
+
 	/* if username contains '-' there may be
 	 * .qmail-partofusername-default */
 	p = memchr(localpart->s, '-', localpart->len);
 	while (p) {
-		fd = qmexists(ds, localpart->s, (p - localpart->s), 3);
-		if (fd < 0) {
-			if (errno == EACCES) {
-				return 1;
-			} else if (errno == ENOMEM) {
-				userconf_free(ds);
-				return fd;
-			} else if (errno != ENOENT) {
-				userconf_free(ds);
-				return -1;
-			}
-		} else {
-			if (close(fd) != 0)
-				return -1;
+		res = qmexists(ds, localpart->s, (p - localpart->s), 3, NULL);
+		if (res > 0)
 			return 4;
+		else if (res < 0) {
+			res = errno;
+			userconf_free(ds);
+			errno = res;
+			return -1;
 		}
 		p = strchr(p + 1, '-');
 	}
 
 	/* does USERPATH/DOMAIN/.qmail-default exist ? */
-	fd = qmexists(ds, NULL, 0, 1);
-	if (fd < 0) {
+	res = qmexists(ds, NULL, 0, 1, &fd);
+	if (res == 0) {
 		/* no local user with that address */
-		if (errno == EACCES) {
-			return 1;
-		} else if (errno == ENOENT) {
-			userconf_free(ds);
-			return 0;
-		} else {
-			userconf_free(ds);
-			return -1;
-		}
+		userconf_free(ds);
+		return 0;
+	} else if (res < 0) {
+		res = errno;
+		userconf_free(ds);
+		errno = res;
+		return -1;
 	} else if (vpopbounce) {
 		char buff[2*strlen(vpopbounce)+1];
 		ssize_t r;
 		int err = 0;
 
 		r = read(fd, buff, sizeof(buff) - 1);
-		if (r == -1) {
+		if (r < 0) {
 			if (err_control2(ds->domainpath.s, ".qmail-default") == 0)
 				err = EDONE;
 			else
@@ -372,7 +380,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 			return -1;
 		}
 
-		buff[r] = 0;
+		buff[r] = '\0';
 
 		/* mail would be bounced or catched by .qmail-default */
 		if (strcmp(buff, vpopbounce) == 0) {
