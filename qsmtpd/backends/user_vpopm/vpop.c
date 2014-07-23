@@ -163,7 +163,7 @@ vget_dir(const char *domain, struct userconf *ds)
 
 /**
  * @brief check if a .qmail file exists for the user
- * @param ds description of the domain directory
+ * @param domaindirfd descriptor of the domain directory
  * @param suff1 the suffix to test (e.g. localpart), may be NULL when def is 1
  * @param len length of suff1
  * @param def which suffixes to use (logically or'ed)
@@ -176,18 +176,18 @@ vget_dir(const char *domain, struct userconf *ds)
  * @retval -1 error opening the file (errno is set)
  */
 static int
-qmexists(const struct userconf *ds, const char *suff1, const size_t len, const int def, int *fd)
+qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, int *fd)
 {
 	static const char dotqm[] = ".qmail-";
 	char filetmp[PATH_MAX];
 	int tmpfd;
-	size_t l = ds->domainpath.len + strlen(dotqm);
+	size_t l = strlen(dotqm);
 
 	errno = ENOENT;
 	if (l >= sizeof(filetmp))
 		return -1;
-	memcpy(filetmp, ds->domainpath.s, ds->domainpath.len);
-	memcpy(filetmp + ds->domainpath.len, dotqm, strlen(dotqm));
+	memcpy(filetmp, dotqm, l);
+
 	if (def & 2) {
 		char *p;
 
@@ -221,7 +221,7 @@ qmexists(const struct userconf *ds, const char *suff1, const size_t len, const i
 
 	/* these files should not be open long enough to reach a fork, but
 	 * make sure it is not accidentially leaked. */
-	tmpfd = open(filetmp, O_RDONLY | O_CLOEXEC);
+	tmpfd = openat(domaindirfd, filetmp, O_RDONLY | O_CLOEXEC);
 	if (tmpfd <= 0) {
 		switch (errno) {
 		case ENOMEM:
@@ -256,9 +256,9 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 {
 	int userdirfd;
 	struct string userdirtmp;	/* temporary storage of the pointer for userdir */
-	int res;
+	int res, e;
 	struct userconf *ds = (dsp == NULL) ? &uconf : dsp;
-	int fd;
+	int dfd, fd;
 	char *p;
 
 	/* '/' is a valid character for localparts but we don't want it because
@@ -276,13 +276,46 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 		return 5;
 	}
 
-	/* does directory (ds->domainpath.s)+'/'+localpart exist? */
+	/* check if the domain directory exists */
+	dfd = open(ds->domainpath.s, O_RDONLY | O_CLOEXEC | O_DIRECTORY);
+	if (dfd < 0) {
+		e = errno;
+
+		switch (e) {
+		case EMFILE:
+		case ENFILE:
+		case ENOMEM:
+			userconf_free(ds);
+			errno = e;
+			return -1;
+		case ENOENT:
+		case ENOTDIR:
+			userconf_free(ds);
+			return 0;
+		case EACCES:
+			/* The directory exists, but we can not look into it. Assume the
+			 * user exists. */
+			return 1;
+		default:
+			if (err_control(ds->domainpath.s) == 0)
+				e = EDONE;
+			userconf_free(ds);
+			errno = e;
+			return -1;
+		}
+	}
+
 	if (newstr(&userdirtmp, ds->domainpath.len + 2 + localpart->len) != 0) {
 		userconf_free(ds);
+		close(dfd);
+		errno = ENOMEM;
 		return -1;
 	}
 
 	memcpy(userdirtmp.s, ds->domainpath.s, ds->domainpath.len);
+	userdirtmp.s[ds->domainpath.len] = '\0';
+
+	/* does directory (ds->domainpath.s)+'/'+localpart exist? */
 	memcpy(userdirtmp.s + ds->domainpath.len, localpart->s, localpart->len);
 	userdirtmp.s[--userdirtmp.len] = '\0';
 	userdirtmp.s[userdirtmp.len - 1] = '/';
@@ -290,6 +323,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	/* FIXME: use -1 to enforce absolute path */
 	userdirfd = get_dirfd(AT_FDCWD, userdirtmp.s);
 	if (userdirfd >= 0) {
+		close(dfd);
 		close(userdirfd);
 		ds->userpath.s = userdirtmp.s;
 		ds->userpath.len = userdirtmp.len;
@@ -297,38 +331,39 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	}
 
 	if (errno == EACCES) {
-		/* The directory itself is not readable. It may still be possible to 
-		 * accees specific files in it (e.g. if the mode is 0751), so keep it. */
-		ds->userpath.s = userdirtmp.s;
-		ds->userpath.len = userdirtmp.len;
+		/* The directory itself is not readable, so user configuration files
+		 * inside it can't be accessed. */
+		free(userdirtmp.s);
+		close(dfd);
 		return 1;
 	} else if ((errno != ENOENT) && (errno != ENOTDIR)) {
-		int e = errno;
+		e = errno;
 		/* if e.g. a file with the given name exists that is no error,
 		 * it just means that it is not a user directory with that name. */
-		if (err_control(userdirtmp.s) != 0) {
-			errno = e;
-		} else {
-			errno = EDONE;
-		}
+		close(dfd);
+		if (err_control(userdirtmp.s) == 0)
+			e = EDONE;
 		free(userdirtmp.s);
 		userconf_free(ds);
+		errno = e;
 		return -1;
 	}
 
 	free(userdirtmp.s);
 
 	/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
-	res = qmexists(ds, localpart->s, localpart->len, 2, NULL);
+	res = qmexists(dfd, localpart->s, localpart->len, 2, NULL);
 	/* try .qmail-user-default instead */
 	if (res == 0)
-		res = qmexists(ds, localpart->s, localpart->len, 3, NULL);
+		res = qmexists(dfd, localpart->s, localpart->len, 3, NULL);
 
 	if (res > 0) {
+		close(dfd);
 		return 1;
 	} else if (res < 0) {
 		res = errno;
 		userconf_free(ds);
+		close(dfd);
 		errno = res;
 		return -1;
 	}
@@ -337,12 +372,14 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	 * .qmail-partofusername-default */
 	p = memchr(localpart->s, '-', localpart->len);
 	while (p) {
-		res = qmexists(ds, localpart->s, (p - localpart->s), 3, NULL);
-		if (res > 0)
+		res = qmexists(dfd, localpart->s, (p - localpart->s), 3, NULL);
+		if (res > 0) {
+			close(dfd);
 			return 4;
-		else if (res < 0) {
+		} else if (res < 0) {
 			res = errno;
 			userconf_free(ds);
+			close(dfd);
 			errno = res;
 			return -1;
 		}
@@ -350,33 +387,35 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	}
 
 	/* does USERPATH/DOMAIN/.qmail-default exist ? */
-	res = qmexists(ds, NULL, 0, 1, &fd);
+	res = qmexists(dfd, NULL, 0, 1, &fd);
+	e = errno;
+	close(dfd);
 	if (res == 0) {
 		/* no local user with that address */
 		userconf_free(ds);
 		return 0;
 	} else if (res < 0) {
-		res = errno;
 		userconf_free(ds);
-		errno = res;
+		close(dfd);
+		errno = e;
 		return -1;
 	} else if (vpopbounce) {
 		char buff[2*strlen(vpopbounce)+1];
 		ssize_t r;
-		int err = 0;
 
+		e = 0;
 		r = read(fd, buff, sizeof(buff) - 1);
 		if (r < 0) {
 			if (err_control2(ds->domainpath.s, ".qmail-default") == 0)
-				err = EDONE;
+				e = EDONE;
 			else
-				err = errno;
+				e = errno;
 		}
-		if ((close(fd) != 0) && (err == 0))
-			err = errno;
-		if (err != 0) {
+		if ((close(fd) != 0) && (e == 0))
+			e = errno;
+		if (e != 0) {
 			userconf_free(ds);
-			errno = err;
+			errno = e;
 			return -1;
 		}
 
