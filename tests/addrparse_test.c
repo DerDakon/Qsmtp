@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
+#include <unistd.h>
 
 static struct {
 	char inpattern[128];	/* the input pattern to addrparse() */
@@ -117,7 +118,7 @@ void
 userconf_init(struct userconf *ds)
 {
 	STREMPTY(ds->domainpath);
-	STREMPTY(ds->userpath);
+	ds->userdirfd = -1;
 	ds->userconf = NULL;
 	ds->domainconf = NULL;
 }
@@ -126,9 +127,10 @@ void
 userconf_free(struct userconf *ds)
 {
 	assert((ds->domainpath.s == NULL) || (ds->domainpath.s == domaindirbuffer));
-	free(ds->userpath.s);
 	free(ds->userconf);
 	free(ds->domainconf);
+	if (ds->userdirfd >= 0)
+		close(ds->userdirfd);
 
 	userconf_init(ds);
 }
@@ -171,8 +173,7 @@ int
 user_exists(const string *localpart, const char *domain, struct userconf *ds)
 {
 	if (ds != NULL) {
-		assert(ds->userpath.s == NULL);
-		assert(ds->userpath.len == 0);
+		assert(ds->userdirfd == -1);
 		assert(ds->domainpath.s == NULL);
 		assert(ds->domainpath.len == 0);
 	}

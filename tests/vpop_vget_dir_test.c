@@ -74,8 +74,9 @@ test_vpop(void)
 			errcnt++;
 		}
 
-		if ((ds.userpath.s != NULL) || (ds.userpath.len != 0) || (ds.userconf != NULL)) {
-			printf("a successful call to vget_dir() did not clear the user entries\n");
+		if ((ds.userdirfd >= 0) || (ds.userconf != NULL)) {
+			printf("a successful call to vget_dir() did not clear the user entries, fd is %i, buffer is %p\n",
+					ds.userdirfd, ds.userconf);
 			errcnt++;
 		}
 

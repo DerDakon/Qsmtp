@@ -51,6 +51,7 @@ static const char badcc_foo[] = "nonexistent@invalid.example.net\0@example.com\0
 static const char badcc_domain[] = "foo@example.com\0\0";
 
 #define RCPT_PATTERNS 5
+#define VALID_USERDIRFD (420 + 42)
 
 static struct userconf ds;
 
@@ -59,24 +60,19 @@ setup_userconf()
 {
 	if (strstr(thisrecip->to.s, "@example.net") != NULL) {
 		ds.domainpath.s = "example.net/";
-		if (strcmp(thisrecip->to.s, "foo@example.net") == 0) {
-			ds.userpath.s = "example.net/foo/";
-		} else {
-			ds.userpath.s = NULL;
-		}
+		if (strcmp(thisrecip->to.s, "foo@example.net") == 0)
+			ds.userdirfd = VALID_USERDIRFD;
+		else
+			ds.userdirfd = -1;
 	} else {
 		ds.domainpath.s = NULL;
-		ds.userpath.s = NULL;
+		ds.userdirfd = -1;
 	}
 
 	if (ds.domainpath.s == NULL)
 		ds.domainpath.len = 0;
 	else
 		ds.domainpath.len = strlen(ds.domainpath.s);
-	if (ds.userpath.s == NULL)
-		ds.userpath.len = 0;
-	else
-		ds.userpath.len = strlen(ds.userpath.s);
 }
 
 static void
@@ -131,7 +127,7 @@ userconf_get_buffer(const struct userconf *uc, const char *key, char ***values, 
 		exit(1);
 	}
 
-	if ((uc->userpath.s != NULL) && (strcmp(uc->userpath.s, "example.net/foo/") == 0)) {
+	if (uc->userdirfd == VALID_USERDIRFD) {
 		res = badcc_foo;
 		type = CONFIG_USER;
 	} else if ((uc->domainpath.s != NULL) && (strcmp(uc->domainpath.s, "example.net/") == 0)) {

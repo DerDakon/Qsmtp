@@ -1,6 +1,7 @@
 #include <qsmtpd/userfilters.h>
 
 #include <control.h>
+#include <diropen.h>
 #include <libowfatconn.h>
 #include <qsmtpd/addrparse.h>
 #include <qsmtpd/antispam.h>
@@ -293,7 +294,7 @@ main(void)
 	char confpath[PATH_MAX];
 
 	STREMPTY(uc.domainpath);
-	STREMPTY(uc.userpath);
+	uc.userdirfd = -1;
 	uc.userconf = NULL;
 	uc.domainconf = NULL;
 	globalconf = NULL;
@@ -401,15 +402,7 @@ main(void)
 		xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
 		snprintf(userpath, sizeof(userpath), "%u/user/", testindex);
-		basedirfd = open(userpath, O_RDONLY | O_CLOEXEC);
-		if (basedirfd < 0) {
-			uc.userpath.s = NULL;
-			uc.userpath.len = 0;
-		} else {
-			close(basedirfd);
-			uc.userpath.s = userpath;
-			uc.userpath.len = strlen(uc.userpath.s);
-		}
+		uc.userdirfd = get_dirfd(AT_FDCWD, userpath);
 
 		if (testdata[testindex].userconf == NULL)
 			uc.userconf = NULL;

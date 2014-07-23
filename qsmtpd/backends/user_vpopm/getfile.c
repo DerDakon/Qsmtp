@@ -68,10 +68,10 @@ getfile(const struct userconf *ds, const char *fn, int *type, int useglobal)
 {
 	int fd;
 
-	if (ds->userpath.len) {
+	if (ds->userdirfd >= 0) {
 		*type = CONFIG_USER;
 
-		fd = open_in_dir(ds->userpath.s, ds->userpath.len, fn);
+		fd = openat(ds->userdirfd, fn, O_RDONLY | O_CLOEXEC);
 
 		if ((fd >= 0) || (errno != ENOENT))
 			return fd;

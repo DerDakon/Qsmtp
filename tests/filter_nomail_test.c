@@ -1,5 +1,6 @@
 #include <qsmtpd/userfilters.h>
 
+#include <diropen.h>
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
 #include "test_io/testcase_io.h"
@@ -55,13 +56,17 @@ int main()
 	memset(&ds, 0, sizeof(ds));
 	globalconf = NULL;
 
-	ds.userpath.s = "./";
-	ds.userpath.len = 2;
+	ds.userdirfd = get_dirfd(AT_FDCWD, ".");
+	if (ds.userdirfd < 0) {
+		fprintf(stderr, "cannot open current directory: %i\n", errno);
+		return -1;
+	}
 
 	for (i = 0; rejectmsg[i] != NULL; i++) {
 		fd = creat("nomail", 0600);
 		if (fd == -1) {
-			fprintf(stderr, "cannot create file 'nomail'\n");
+			fprintf(stderr, "cannot create file 'nomail': %i\n", errno);
+			close(ds.userdirfd);
 			return -1;
 		}
 		write(fd, rejectmsg[i], strlen(rejectmsg[i]));
@@ -78,7 +83,8 @@ int main()
 
 	fd = creat("nomail", 0600);
 	if (fd == -1) {
-		fprintf(stderr, "cannot create file 'nomail'\n");
+		fprintf(stderr, "cannot create file 'nomail': %i\n", errno);
+		close(ds.userdirfd);
 		return -1;
 	}
 	close(fd);
@@ -97,6 +103,8 @@ int main()
 		fprintf(stderr, "nomail filter should not reject without nomail file, but r was %i\n", r);
 		err++;
 	}
+
+	close(ds.userdirfd);
 
 	return err;
 }

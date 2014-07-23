@@ -287,11 +287,11 @@ check_ue(const char *email, const unsigned int dirs, const int result, const int
 		ret++;
 	}
 
-	if ((dirs & 2) && (ds.userpath.len == 0)) {
+	if ((dirs & 2) && (ds.userdirfd < 0)) {
 		fprintf(stderr, "index %u email %s: no userpath found\n",
 				i, email);
 		ret++;
-	} else if (!(dirs & 2) && (ds.userpath.len != 0)) {
+	} else if (!(dirs & 2) && (ds.userdirfd >= 0)) {
 		fprintf(stderr, "index %u email %s: userpath found but not expected\n",
 				i, email);
 		ret++;

@@ -151,8 +151,10 @@ vget_dir(const char *domain, struct userconf *ds)
 		ds->domainpath.s[len + 1] = '\0';
 	} else {
 		/* the domainpath is the same as already in ds, keep it. Just wipe the user config. */
-		free(ds->userpath.s);
-		STREMPTY(ds->userpath);
+		if (ds->userdirfd >= 0) {
+			close(ds->userdirfd);
+			ds->userdirfd = -1;
+		}
 		free(ds->userconf);
 		ds->userconf = NULL;
 	}
@@ -254,8 +256,6 @@ qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, in
 int
 user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 {
-	int userdirfd;
-	struct string userdirtmp;	/* temporary storage of the pointer for userdir */
 	int res, e;
 	struct userconf *ds = (dsp == NULL) ? &uconf : dsp;
 	int dfd, fd;
@@ -303,53 +303,39 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 			errno = e;
 			return -1;
 		}
-	}
+	} else {
+		/* this else isn't strictly neccessary, it's here to limit the lifetime
+		 * of buf */
+		char fnbuf[localpart->len + 1];
 
-	if (newstr(&userdirtmp, ds->domainpath.len + 2 + localpart->len) != 0) {
-		userconf_free(ds);
-		close(dfd);
-		errno = ENOMEM;
-		return -1;
-	}
+		memcpy(fnbuf, localpart->s, localpart->len);
+		fnbuf[localpart->len] = '\0';
 
-	memcpy(userdirtmp.s, ds->domainpath.s, ds->domainpath.len);
-	userdirtmp.s[ds->domainpath.len] = '\0';
+		/* does directory (ds->domainpath.s)+'/'+localpart exist? */
+		ds->userdirfd = get_dirfd(dfd, fnbuf);
+		if (ds->userdirfd >= 0) {
+			close(dfd);
+			return 1;
+		} else if ((errno != ENOENT) && (errno != ENOTDIR)) {
+			/* if e.g. a file with the given name exists that is no error,
+			 * it just means that it is not a user directory with that name. */
+			e = errno;
 
-	/* does directory (ds->domainpath.s)+'/'+localpart exist? */
-	memcpy(userdirtmp.s + ds->domainpath.len, localpart->s, localpart->len);
-	userdirtmp.s[--userdirtmp.len] = '\0';
-	userdirtmp.s[userdirtmp.len - 1] = '/';
-
-	/* FIXME: use -1 to enforce absolute path */
-	userdirfd = get_dirfd(AT_FDCWD, userdirtmp.s);
-	if (userdirfd >= 0) {
-		close(dfd);
-		close(userdirfd);
-		ds->userpath.s = userdirtmp.s;
-		ds->userpath.len = userdirtmp.len;
-		return 1;
+			close(dfd);
+			if (err_control2(ds->domainpath.s, fnbuf) == 0)
+				e = EDONE;
+			userconf_free(ds);
+			errno = e;
+			return -1;
+		}
 	}
 
 	if (errno == EACCES) {
 		/* The directory itself is not readable, so user configuration files
 		 * inside it can't be accessed. */
-		free(userdirtmp.s);
 		close(dfd);
 		return 1;
-	} else if ((errno != ENOENT) && (errno != ENOTDIR)) {
-		e = errno;
-		/* if e.g. a file with the given name exists that is no error,
-		 * it just means that it is not a user directory with that name. */
-		close(dfd);
-		if (err_control(userdirtmp.s) == 0)
-			e = EDONE;
-		free(userdirtmp.s);
-		userconf_free(ds);
-		errno = e;
-		return -1;
 	}
-
-	free(userdirtmp.s);
 
 	/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
 	res = qmexists(dfd, localpart->s, localpart->len, 2, NULL);
@@ -396,7 +382,6 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 		return 0;
 	} else if (res < 0) {
 		userconf_free(ds);
-		close(dfd);
 		errno = e;
 		return -1;
 	} else if (vpopbounce) {
@@ -461,18 +446,19 @@ void
 userconf_init(struct userconf *ds)
 {
 	STREMPTY(ds->domainpath);
-	STREMPTY(ds->userpath);
 	ds->userconf = NULL;
 	ds->domainconf = NULL;
+	ds->userdirfd = -1;
 }
 
 void
 userconf_free(struct userconf *ds)
 {
 	free(ds->domainpath.s);
-	free(ds->userpath.s);
 	free(ds->userconf);
 	free(ds->domainconf);
+	if (ds->userdirfd >= 0)
+		close(ds->userdirfd);
 
 	userconf_init(ds);
 }
@@ -481,7 +467,7 @@ int
 userconf_load_configs(struct userconf *ds)
 {
 	int type, r;
-	const size_t l = ds->userpath.len;
+	const int ufd = ds->userdirfd;
 
 	/* load user and domain "filterconf" file */
 	/* if the file is empty there is no problem, NULL is a legal value for the buffers */
@@ -496,10 +482,10 @@ userconf_load_configs(struct userconf *ds)
 	}
 
 	/* make sure this one opens the domain file: just set user path length to 0 */
-	ds->userpath.len = 0;
+	ds->userdirfd = -1;
 	r = loadlistfd(getfile(ds, "filterconf", &type, 0), &(ds->domainconf), NULL);
 
-	ds->userpath.len = l;
+	ds->userdirfd = ufd;
 
 	return r ? errno : 0;
 }

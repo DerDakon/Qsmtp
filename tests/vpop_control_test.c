@@ -2,6 +2,7 @@
 #include <qsmtpd/userconf.h>
 
 #include <control.h>
+#include <diropen.h>
 
 #include <fcntl.h>
 #include <limits.h>
@@ -127,17 +128,16 @@ test_notdir(void)
 {
 	int r = 0;
 
-	ds.userpath.s = fnbuffer;
-	ds.userpath.len = strlen(fnbuffer);
-	fnbuffer[ds.userpath.len++] = '/';
-	fnbuffer[ds.userpath.len] = '\0';
+	ds.userdirfd = open(fnbuffer, O_RDONLY | O_CLOEXEC);
 
 	r += check_open_fail("user", "filename as path", ENOTDIR);
 
-	ds.domainpath.len = ds.userpath.len;
-	ds.domainpath.s = ds.userpath.s;
-	ds.userpath.len = 0;
-	ds.userpath.s = NULL;
+	ds.domainpath.s = fnbuffer;
+	ds.domainpath.len = strlen(fnbuffer);
+	fnbuffer[ds.domainpath.len++] = '/';
+	fnbuffer[ds.domainpath.len] = '\0';
+	close(ds.userdirfd);
+	ds.userdirfd = -1;
 
 	r += check_open_fail("domain", "filename as path", ENOTDIR);
 
@@ -171,8 +171,7 @@ test_found(void)
 	int type = -1;
 
 	/* first: check with only user directory set */
-	ds.userpath.s = fnbuffer;
-	ds.userpath.len = strlen(fnbuffer);
+	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
 	ds.domainpath.len = 0;
 	ds.domainpath.s = NULL;
 
@@ -180,15 +179,15 @@ test_found(void)
 	r += test_found_internal("user", fd, type, CONFIG_USER);
 
 	/* set both, but user information should still be used */
-	ds.domainpath.len = ds.userpath.len;
-	ds.domainpath.s = ds.userpath.s;
+	ds.domainpath.s = fnbuffer;
+	ds.domainpath.len = strlen(fnbuffer);
 
 	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
 	r += test_found_internal("user", fd, type, CONFIG_USER);
 
 	/* now only with domain information */
-	ds.userpath.len = 0;
-	ds.userpath.s = NULL;
+	close(ds.userdirfd);
+	ds.userdirfd = -1;
 
 	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
 	r += test_found_internal("domain", fd, type, CONFIG_DOMAIN);
@@ -210,22 +209,21 @@ test_notfound(void)
 	int r = 0;
 
 	/* first: check with only user directory set */
-	ds.userpath.s = fnbuffer;
-	ds.userpath.len = strlen(fnbuffer);
+	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
 	ds.domainpath.len = 0;
 	ds.domainpath.s = NULL;
 
 	r += check_open_fail("user", "nonexistent file", ENOENT);
 
 	/* set both, but user information should still be used */
-	ds.domainpath.len = ds.userpath.len;
-	ds.domainpath.s = ds.userpath.s;
+	ds.domainpath.s = fnbuffer;
+	ds.domainpath.len = strlen(fnbuffer);
 
 	r += check_open_fail("user", "nonexistent file", ENOENT);
 
 	/* now only with domain information */
-	ds.userpath.len = 0;
-	ds.userpath.s = NULL;
+	close(ds.userdirfd);
+	ds.userdirfd = -1;
 
 	r += check_open_fail("domain", "nonexistent file", ENOENT);
 
@@ -239,8 +237,7 @@ test_getbuffer(void)
 	int r;
 	char **array = NULL;
 
-	ds.userpath.s = fnbuffer;
-	ds.userpath.len = strlen(fnbuffer);
+	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
 	ds.domainpath.len = 0;
 	ds.domainpath.s = NULL;
 
@@ -282,6 +279,8 @@ test_getbuffer(void)
 		free(array);
 	}
 
+	close(ds.userdirfd);
+
 	return ret;
 }
 
@@ -291,8 +290,7 @@ test_finddomain(void)
 	int ret = 0;
 	int r;
 
-	ds.userpath.s = fnbuffer;
-	ds.userpath.len = strlen(fnbuffer);
+	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
 	ds.domainpath.len = 0;
 	ds.domainpath.s = NULL;
 
@@ -327,6 +325,8 @@ test_finddomain(void)
 				r);
 		ret++;
 	}
+
+	close(ds.userdirfd);
 
 	return ret;
 }
