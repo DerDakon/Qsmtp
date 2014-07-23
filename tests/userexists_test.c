@@ -103,6 +103,13 @@ struct {
 		.email = "bar@example.net",
 		.result = 5
 	},
+	/* The domain exists in users/cdb, but no domain directory.
+	 * Delivery would fail, so reject the mail. */
+	{
+		.email = "user@bad.example.org",
+		.result = 0,
+		.dirs = 0
+	},
 	{
 		.email = NULL
 	}
