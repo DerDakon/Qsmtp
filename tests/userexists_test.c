@@ -20,6 +20,12 @@ struct {
 	int result;
 	unsigned int dirs; /* 1 = domainpath, 2 = userpath */
 } users[] = {
+	/* the .qmail-default file for this domain is equal to vpopbounce */
+	/* keep this one first, it is used for another test, too */
+	{
+		.email = "foo@bounce.example.org",
+		.result = 0
+	},
 	{
 		.email = "user@example.org",
 		.result = 1,
@@ -47,7 +53,7 @@ struct {
 		.dirs = 1
 	},
 	/* catched by .qmail-abc-def-default, this tests the case
-	 * where it's not the first hyphen is the place to split */
+	 * where it the first hyphen is not the place to split */
 	{
 		.email = "abc-def-ghi@example.org",
 		.result = 4,
@@ -85,11 +91,6 @@ struct {
 	 * it is forbidden. */
 	{
 		.email = "baz-bar/foo@example.org",
-		.result = 0
-	},
-	/* the .qmail-default file for this domain is equal to vpopbounce */
-	{
-		.email = "foo@bounce.example.org",
 		.result = 0
 	},
 	/* the .qmail-default file for this domain is not equal to vpopbounce */
@@ -255,6 +256,74 @@ test_cdbdir(void)
 	return ret;
 }
 
+static int
+check_ue(const char *email, const unsigned int dirs, const int result, const int i)
+{
+	struct userconf ds;
+	const struct string localpart = {
+		.s = (char*)email,
+		.len = strchr(email, '@') - email
+	};
+	int r;
+	int ret = 0;
+
+	userconf_init(&ds);
+
+	r = user_exists(&localpart, strchr(email, '@') + 1, &ds);
+
+	if (r != result) {
+		fprintf(stderr, "index %u email %s: got result %i, expected %i\n",
+				i, email, r, result);
+		ret++;
+	}
+
+	if ((dirs & 1) && (ds.domainpath.len == 0)) {
+		fprintf(stderr, "index %u email %s: no domainpath found\n",
+				i, email);
+		ret++;
+	} else if (!(dirs & 1) && (ds.domainpath.len != 0)) {
+		fprintf(stderr, "index %u email %s: domainpath found but not expected\n",
+				i, email);
+		ret++;
+	}
+
+	if ((dirs & 2) && (ds.userpath.len == 0)) {
+		fprintf(stderr, "index %u email %s: no userpath found\n",
+				i, email);
+		ret++;
+	} else if (!(dirs & 2) && (ds.userpath.len != 0)) {
+		fprintf(stderr, "index %u email %s: userpath found but not expected\n",
+				i, email);
+		ret++;
+	}
+
+	userconf_free(&ds);
+
+	return ret;
+}
+
+static int
+test_no_vpopbounce(void)
+{
+	int ret;
+
+	/* set control directory so that "vpopbounce" file does not exist in it */
+	controldir_fd = get_dirfd(AT_FDCWD, ".");
+
+	if (userbackend_init() != 0) {
+		fprintf(stderr, "%s: error initializing vpopmail backend\n", __func__);
+		close(controldir_fd);
+		return 1;
+	}
+
+	ret = check_ue(users[0].email, 1, 2, -1);
+
+	userbackend_free();
+	close(controldir_fd);
+
+	return ret;
+}
+
 int
 main(void)
 {
@@ -268,46 +337,8 @@ main(void)
 		return 1;
 	}
 
-	for (i = 0; users[i].email != NULL; i++) {
-		struct userconf ds;
-		const struct string localpart = {
-			.s = (char*)users[i].email,
-			.len = strchr(users[i].email, '@') - users[i].email
-		};
-		int r;
-
-		userconf_init(&ds);
-
-		r = user_exists(&localpart, strchr(users[i].email, '@') + 1, &ds);
-
-		if (r != users[i].result) {
-			fprintf(stderr, "index %u email %s: got result %i, expected %i\n",
-					i, users[i].email, r, users[i].result);
-			err++;
-		}
-
-		if ((users[i].dirs & 1) && (ds.domainpath.len == 0)) {
-			fprintf(stderr, "index %u email %s: no domainpath found\n",
-					i, users[i].email);
-			err++;
-		} else if (!(users[i].dirs & 1) && (ds.domainpath.len != 0)) {
-			fprintf(stderr, "index %u email %s: domainpath found but not expected\n",
-					i, users[i].email);
-			err++;
-		}
-
-		if ((users[i].dirs & 2) && (ds.userpath.len == 0)) {
-			fprintf(stderr, "index %u email %s: no userpath found\n",
-					i, users[i].email);
-			err++;
-		} else if (!(users[i].dirs & 2) && (ds.userpath.len != 0)) {
-			fprintf(stderr, "index %u email %s: userpath found but not expected\n",
-					i, users[i].email);
-			err++;
-		}
-
-		userconf_free(&ds);
-	}
+	for (i = 0; users[i].email != NULL; i++)
+		err += check_ue(users[i].email, users[i].dirs, users[i].result, i);
 
 	err += test_no_cdb();
 	err += test_cdbdir();
@@ -320,6 +351,9 @@ main(void)
 				expected_err_control);
 		err++;
 	}
+
+	/* this test will set up controldir_fd itself */
+	err += test_no_vpopbounce();
 
 	return err;
 }

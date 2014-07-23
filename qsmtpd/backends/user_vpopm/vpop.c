@@ -381,6 +381,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 		}
 	} else {
 		/* we can't tell if this is a bounce .qmail-default -> accept the mail */
+		close(fd);
 		return 2;
 	}
 }
