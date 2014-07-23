@@ -1,5 +1,6 @@
 #include <qremote/mime.h>
 #include <qremote/qremote.h>
+#include <sstring.h>
 #include "test_io/testcase_io.h"
 
 #include <assert.h>
@@ -13,7 +14,52 @@ write_status(const char *str)
 }
 
 static int
-test_ws()
+test_sst(void)
+{
+	struct string st;
+	int ret = 0, i;
+	char ch;
+
+	st.len = 1;
+	st.s = &ch;
+
+	i = newstr(&st, 0);
+	if (i != 0) {
+		fprintf(stderr, "initializing a new sstring with length 0 returned %i\n", i);
+		ret++;
+	}
+	if (st.len != 0) {
+		fprintf(stderr, "initializing a new sstring with length 0 did not clear len\n");
+		ret++;
+	}
+	if (st.len != 0) {
+		fprintf(stderr, "initializing a new sstring with length 0 did not clear s\n");
+		ret++;
+	}
+
+	i = newstr(&st, 10);
+	if ((i < 0) && (errno == ENOMEM))
+		exit(ENOMEM);
+
+	if (st.len != 10) {
+		fprintf(stderr, "initializing a new sstring with length 10 set len to %zu\n", st.len);
+		ret++;
+	}
+
+	if ((st.s == NULL) || (st.s == &ch)) {
+		fprintf(stderr, "initializing a new sstring with length 10 did not properly set s\n");
+		return ++ret;
+	}
+
+	/* write to the memory, this allows valgrind and friends to catch errors */
+	memset(st.s, '.', 10);
+	free(st.s);
+
+	return ret;
+}
+	
+static int
+test_ws(void)
 {
 	int err = 0;
 	const struct {
@@ -363,6 +409,7 @@ main(void)
 {
 	int err = 0;
 
+	err += test_sst();
 	err += test_ws();
 	err += test_multipart_bad();
 	err += test_multipart_boundary();
