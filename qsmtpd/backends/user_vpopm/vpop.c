@@ -6,6 +6,7 @@
 
 #include <cdb.h>
 #include <control.h>
+#include <diropen.h>
 #include <qsmtpd/addrparse.h>
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
@@ -263,7 +264,8 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	userdirtmp.s[--userdirtmp.len] = '\0';
 	userdirtmp.s[userdirtmp.len - 1] = '/';
 
-	userdirfd = open(userdirtmp.s, O_RDONLY | O_CLOEXEC);
+	/* FIXME: use -1 to enforce absolute path */
+	userdirfd = get_dirfd(AT_FDCWD, userdirtmp.s);
 	if (userdirfd >= 0) {
 		close(userdirfd);
 		ds->userpath.s = userdirtmp.s;
