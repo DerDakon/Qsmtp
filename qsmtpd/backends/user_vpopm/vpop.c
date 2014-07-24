@@ -232,6 +232,7 @@ qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, in
 			errno = ENOMEM;
 			return -1;
 		case EACCES:
+			*fd = -1;
 			return 1;
 		case ENOENT:
 		case EISDIR:
@@ -385,7 +386,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 		userconf_free(ds);
 		errno = e;
 		return -1;
-	} else if (vpopbounce) {
+	} else if ((vpopbounce != NULL) && (fd != -1)) {
 		char buff[2*strlen(vpopbounce)+1];
 		ssize_t r;
 
