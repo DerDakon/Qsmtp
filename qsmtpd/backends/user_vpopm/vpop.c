@@ -277,7 +277,8 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	}
 
 	/* check if the domain directory exists */
-	dfd = open(ds->domainpath.s, O_RDONLY | O_CLOEXEC | O_DIRECTORY);
+	/* FIXME: change this to -1 to enforce absolute path */
+	dfd = get_dirfd(AT_FDCWD, ds->domainpath.s);
 	if (dfd < 0) {
 		e = errno;
 
