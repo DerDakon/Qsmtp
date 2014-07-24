@@ -27,6 +27,8 @@ static struct userconf ds;
 /* to satisfy the linker */
 const char **globalconf;
 
+static const char *expect_err_control;
+
 int
 pipe_move(int p[2] __attribute__((unused)), int target __attribute__((unused)))
 {
@@ -36,6 +38,11 @@ pipe_move(int p[2] __attribute__((unused)), int target __attribute__((unused)))
 int
 err_control(const char *fn)
 {
+	if ((expect_err_control != NULL) && (strcmp(expect_err_control, fn) == 0)) {
+		expect_err_control = NULL;
+		return 0;
+	}
+
 	fprintf(stderr, "unexpected call to %s(%s)\n",
 		__func__, fn);
 	exit(1);
@@ -338,6 +345,17 @@ main(void)
 	char *slash;
 
 	create_dirs();
+
+	controldir_fd = -1;
+	expect_err_control = "control/vpopbounce";
+	r = userbackend_init();
+	if (r != EBADF) {
+		fprintf(stderr, "userbackend_init() with invalid controldir_fd returned %i instead of %i (EBADF)\n",
+				r, EBADF);
+		r = 1;
+	} else {
+		r = 0;
+	}
 
 	controldir_fd = AT_FDCWD;
 
