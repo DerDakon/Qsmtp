@@ -477,14 +477,14 @@ userconf_load_configs(struct userconf *ds)
 	if (loadlistfd(getfile(ds, "filterconf", &type, 0), &(ds->userconf), NULL))
 		return errno;
 
-	if (type) {
+	if (type == CONFIG_DOMAIN) {
 		/* the domain buffer was loaded because there is no user buffer */
 		ds->domainconf = ds->userconf;
 		ds->userconf = NULL;
 		return 0;
 	}
 
-	/* make sure this one opens the domain file: just set user path length to 0 */
+	/* make sure this one opens the domain file: just set user fd to -1 */
 	ds->userdirfd = -1;
 	r = loadlistfd(getfile(ds, "filterconf", &type, 0), &(ds->domainconf), NULL);
 
