@@ -15,7 +15,7 @@
  * 2) not beginning with '.': helo is blocked if it matches this string
  */
 int
-cb_helo(const struct userconf *ds, const char **logmsg, int *t)
+cb_helo(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	if (xmitstat.helostatus) {
 		/* see qdns.h for the meaning of helostatus */
@@ -31,7 +31,7 @@ cb_helo(const struct userconf *ds, const char **logmsg, int *t)
 	}
 
 	*t = userconf_find_domain(ds, "badhelo", HELOSTR, 1);
-	if (*t < 0) {
+	if (((int)*t) < 0) {
 		errno = -*t;
 		return -1;
 	} else if (*t == CONFIG_NONE) {

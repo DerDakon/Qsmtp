@@ -11,7 +11,7 @@
 #include <syslog.h>
 
 int
-cb_boolean(const struct userconf *ds, const char **logmsg, int *t)
+cb_boolean(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	int rc;
 

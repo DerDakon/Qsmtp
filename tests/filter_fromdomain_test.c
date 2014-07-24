@@ -18,7 +18,7 @@ unsigned int goodrcpt;
 struct recip *thisrecip;
 const char **globalconf;
 
-extern int cb_fromdomain(const struct userconf *ds, char **logmsg, int *t);
+extern int cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain *t);
 
 static int err;
 
@@ -46,8 +46,8 @@ static int
 check_expect(const int r_expect, const char *errmsg)
 {
 	int r;
-	int t = -1;
-	char *logmsg = NULL;
+	enum config_domain t = -1;
+	const char *logmsg = NULL;
 
 	r = cb_fromdomain(&ds, &logmsg, &t);
 	if (r == r_expect)
@@ -82,7 +82,8 @@ setup_ip(const char *ip)
 	xmitstat.frommx->next = NULL;
 }
 
-int main()
+int
+main(void)
 {
 	char configline[32];
 	char *configarray[] = {

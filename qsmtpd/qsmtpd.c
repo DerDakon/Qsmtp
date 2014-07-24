@@ -821,7 +821,7 @@ smtp_rcpt(void)
 	char *more = NULL;
 	struct userconf ds;
 	const char *errmsg;
-	int bt;			/* which policy matched */
+	enum config_domain bt;			/* which policy matched */
 	const char *logmsg[] = {"rejected message to <", NULL, "> from <", MAILFROM,
 					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL};
 	const char *okmsg[] = {"250 2.1.0 recipient <", NULL, "> OK", NULL};
@@ -897,7 +897,7 @@ smtp_rcpt(void)
 	while (rcpt_cbs[j]) {
 		errmsg = NULL;
 		if ( (i = rcpt_cbs[j](&ds, &errmsg, &bt)) ) {
-			int t;
+			enum config_domain t;
 
 			if (i == 5)
 				break;

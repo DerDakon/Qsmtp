@@ -314,7 +314,7 @@ main(void)
 
 	for (i = 0; rcpt_cbs[i] != NULL; i++) {
 		const char *errmsg;
-		int bt = 0;
+		enum config_domain bt = CONFIG_NONE;
 		int r = rcpt_cbs[i](&uc, &errmsg, &bt);
 
 		if (r != 0) {
@@ -337,7 +337,7 @@ main(void)
 
 	for (i = 0; rcpt_cbs[i] != NULL; i++) {
 		const char *errmsg;
-		int bt = 0;
+		enum config_domain bt = CONFIG_NONE;
 		int r = rcpt_cbs[i](&uc, &errmsg, &bt);
 
 		if (r != 0) {
@@ -424,7 +424,7 @@ main(void)
 				blocktype[testdata[testindex].conf]);
 
 		for (j = 0; (rcpt_cbs[j] != NULL) && (r == 0); j++) {
-			int bt = 0;
+			enum config_domain bt = CONFIG_NONE;
 			fmsg = NULL;
 			r = rcpt_cbs[j](&uc, &fmsg, &bt);
 		}

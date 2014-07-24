@@ -26,7 +26,7 @@
  *    must be '.' or '@' so "aol.com" would reject "foo@aol.com" and "foo@bar.aol.com" but not "foo@no-aol.com"
  */
 int
-cb_badcc(const struct userconf *ds, const char **logmsg, int *t)
+cb_badcc(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	char **a;		/* array of domains and/or mailaddresses to block */
 	int rc;			/* return code */
@@ -37,7 +37,7 @@ cb_badcc(const struct userconf *ds, const char **logmsg, int *t)
 		return 0;
 
 	*t = userconf_get_buffer(ds, "badcc", &a, checkaddr, 1);
-	if (*t < 0) {
+	if (((int)*t) < 0) {
 		errno = -*t;
 		return -1;
 	} else if (*t == CONFIG_NONE) {

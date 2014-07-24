@@ -10,7 +10,7 @@
 #include <qsmtpd/userconf.h>
 
 int
-cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)
+cb_forceesmtp(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	char **a;		/* array of domains and/or mailaddresses to block */
 	int i;			/* counter of the array position */
@@ -27,7 +27,7 @@ cb_forceesmtp(const struct userconf *ds, const char **logmsg, int *t)
 	}
 
 	*t = userconf_get_buffer(ds, fnb, &a, domainvalid, 1);
-	if (*t < 0) {
+	if (((int)*t) < 0) {
 		errno = -*t;
 		return -1;
 	} else if (*t == CONFIG_NONE) {

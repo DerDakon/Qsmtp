@@ -18,7 +18,7 @@ unsigned int goodrcpt;
 struct recip *thisrecip;
 const char **globalconf;
 
-extern int cb_nomail(const struct userconf *ds, char **logmsg, int *t);
+extern int cb_nomail(const struct userconf *ds, const char **logmsg, enum config_domain *t);
 
 static int err;
 
@@ -42,10 +42,11 @@ static const char *rejectmsg[] = {
 	NULL
 };
 
-int main()
+int
+main(void)
 {
-	char *logmsg;
-	int t;
+	const char *logmsg;
+	enum config_domain t;
 	struct userconf ds;
 	int i;
 	int r;

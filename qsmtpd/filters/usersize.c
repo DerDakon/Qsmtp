@@ -3,7 +3,7 @@
 #include "netio.h"
 
 int
-cb_usersize(const struct userconf *ds, const char **logmsg, int *t)
+cb_usersize(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	long usize;
 	int rc;

@@ -17,7 +17,7 @@ unsigned int goodrcpt;
 struct recip *thisrecip;
 const char **globalconf;
 
-extern int cb_badcc(const struct userconf *ds, char **logmsg, int *t);
+extern int cb_badcc(const struct userconf *ds, const char **logmsg, enum config_domain *t);
 
 static struct recip recips[] = {
 	{
@@ -159,8 +159,8 @@ userconf_get_buffer(const struct userconf *uc, const char *key, char ***values, 
 int
 main(void)
 {
-	char *logmsg;
-	int t;
+	const char *logmsg;
+	enum config_domain t;
 	int r;
 	int err = 0;
 

@@ -65,7 +65,7 @@ lookupbmf(char *at, char **a)
 }
 
 int
-cb_badmailfrom(const struct userconf *ds, const char **logmsg, int *t)
+cb_badmailfrom(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	int u;		/* if it is the user or domain policy */
 	char **a;	/* array of domains and/or mailaddresses to block */
@@ -77,7 +77,7 @@ cb_badmailfrom(const struct userconf *ds, const char **logmsg, int *t)
 
 	/* don't check syntax of entries here: there might be things like ".cn" and so on that would fail the test */
 	*t = userconf_get_buffer(ds, "badmailfrom", &a, NULL, 1);
-	if (*t < 0) {
+	if (((int)*t) < 0) {
 		errno = -*t;
 		return -1;
 	} else if (*t == CONFIG_NONE) {

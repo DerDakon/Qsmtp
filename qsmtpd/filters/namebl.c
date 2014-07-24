@@ -13,7 +13,7 @@
 #include <qsmtpd/userconf.h>
 
 int
-cb_namebl(const struct userconf *ds, const char **logmsg, int *t)
+cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	char **a;		/* array of blacklists to check */
 	int i = 0;		/* counter of the array position */
@@ -31,7 +31,7 @@ cb_namebl(const struct userconf *ds, const char **logmsg, int *t)
 		return 0;
 
 	*t = userconf_get_buffer(ds, "namebl", &a, domainvalid, 1);
-	if (*t < 0) {
+	if (((int)*t) < 0) {
 		errno = -*t;
 		return -1;
 	} else if (*t == CONFIG_NONE) {

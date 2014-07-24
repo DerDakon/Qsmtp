@@ -12,7 +12,7 @@
  * SoberG's MAIL FROM: foo@bar.com would lead to HELO foo.com
  */
 int
-cb_soberg(const struct userconf *ds, const char **logmsg, int *t)
+cb_soberg(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	int rc = 0;		/* return code */
 	char *at;		/* '@' in the mailfrom */

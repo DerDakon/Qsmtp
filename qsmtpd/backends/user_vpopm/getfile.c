@@ -58,13 +58,13 @@ open_in_dir(const char *dirname, const size_t dirlen, const char *fn)
  *
  * @param ds strings of user and domain directory
  * @param fn filename to search
- * @param type if user (0), domain (1) or global (2) directory matched, ignore this if (result == -1)
+ * @param type if user, domain or global directory matched, undefined if result != 1
  * @param useglobal if a global configuration lookup should be performed
  * @return file descriptor of opened file
  * @retval -1 on error (errno is set)
  */
 int
-getfile(const struct userconf *ds, const char *fn, int *type, int useglobal)
+getfile(const struct userconf *ds, const char *fn, enum config_domain *type, int useglobal)
 {
 	int fd;
 
@@ -138,12 +138,12 @@ checkconfig(const char * const *config, const char *flag, const size_t l)
 }
 
 static long
-getsetting_internal(const struct userconf *ds, const char *flag, int *type, const int useglobal)
+getsetting_internal(const struct userconf *ds, const char *flag, enum config_domain *type, const int useglobal)
 {
 	size_t l = strlen(flag);
 	long r;
 
-	*type = 0;
+	*type = CONFIG_USER;
 	r = checkconfig((const char **)ds->userconf, flag, l);
 	if (r > 0) {
 		return r;
@@ -153,7 +153,7 @@ getsetting_internal(const struct userconf *ds, const char *flag, int *type, cons
 			return r;
 		return 0;
 	}
-	*type = 1;
+	*type = CONFIG_DOMAIN;
 	r = checkconfig((const char **)ds->domainconf, flag, l);
 	if (r > 0) {
 		return r;
@@ -166,7 +166,7 @@ getsetting_internal(const struct userconf *ds, const char *flag, int *type, cons
 	if (!useglobal)
 		return 0;
 
-	*type = 2;
+	*type = CONFIG_GLOBAL;
 	r = checkconfig(globalconf, flag, l);
 	if ((r < 0) && !errno)
 		return 0;
@@ -178,14 +178,14 @@ getsetting_internal(const struct userconf *ds, const char *flag, int *type, cons
  *
  * @param ds struct with the user/domain config info
  * @param flag name of the setting to find (case sensitive)
- * @param type if user (0) or domain (1) directory matched, ignore this if (result == -1)
+ * @param type if user or domain directory matched, undefined if result != 1)
  * @return value of setting
  * @retval 1 boolean setting or no number given
  * @retval 0 setting not found
  * @retval -1 on syntax error
  */
 long
-getsetting(const struct userconf *ds, const char *flag, int *type)
+getsetting(const struct userconf *ds, const char *flag, enum config_domain *type)
 {
 	return getsetting_internal(ds, flag, type, 0);
 }
@@ -195,14 +195,14 @@ getsetting(const struct userconf *ds, const char *flag, int *type)
  *
  * @param ds struct with the user/domain config info
  * @param flag name of the setting to find (case sensitive)
- * @param type if user (0), domain (1) or global (2) file matched, ignore this if (result == -1)
+ * @param type if user, domain or global file matched, undefined if result != 1
  * @return value of setting
  * @retval 1 boolean setting or no number given
  * @retval 0 setting not found
  * @retval -1 on syntax error
  */
 long
-getsettingglobal(const struct userconf *ds, const char *flag, int *type)
+getsettingglobal(const struct userconf *ds, const char *flag, enum config_domain *type)
 {
 	return getsetting_internal(ds, flag, type, 1);
 }

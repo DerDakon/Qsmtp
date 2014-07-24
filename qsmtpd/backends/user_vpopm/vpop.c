@@ -468,7 +468,8 @@ userconf_free(struct userconf *ds)
 int
 userconf_load_configs(struct userconf *ds)
 {
-	int type, r;
+	enum config_domain type;
+	int r;
 	const int ufd = ds->userdirfd;
 
 	/* load user and domain "filterconf" file */
@@ -495,7 +496,7 @@ userconf_load_configs(struct userconf *ds)
 int
 userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, checkfunc cf, const int useglobal)
 {
-	int type;
+	enum config_domain type;
 	int fd;
 	int r;
 
@@ -521,7 +522,7 @@ userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, 
 int
 userconf_find_domain(const struct userconf *ds, const char *key, char *domain, const int useglobal)
 {
-	int type;
+	enum config_domain type;
 	int fd;
 	int r;
 

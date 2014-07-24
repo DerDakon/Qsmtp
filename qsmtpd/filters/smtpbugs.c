@@ -18,7 +18,7 @@ enum spacebug_filter {
 };
 
 int
-cb_smtpbugs(const struct userconf *ds, const char **logmsg __attribute__ ((unused)), int *t)
+cb_smtpbugs(const struct userconf *ds, const char **logmsg __attribute__ ((unused)), enum config_domain *t)
 {
 	int rc;
 	int filter;

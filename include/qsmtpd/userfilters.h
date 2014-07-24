@@ -12,11 +12,18 @@
 
 struct userconf;
 
+enum config_domain {
+	CONFIG_NONE = 0,		/**< no entry was returned */
+	CONFIG_USER = 1,		/**< the config entry was found in the user specific configuration */
+	CONFIG_DOMAIN = 2,		/**< the config entry was found in the domain specific configuration */
+	CONFIG_GLOBAL = 4		/**< the config entry was found in the global configuration */
+};
+
 extern const char **globalconf;
 
-extern int getfile(const struct userconf *, const char *, int *, int);
-extern long getsetting(const struct userconf *, const char *, int *);
-extern long getsettingglobal(const struct userconf *, const char *, int *);
+extern int getfile(const struct userconf *, const char *, enum config_domain *, int);
+extern long getsetting(const struct userconf *, const char *, enum config_domain  *);
+extern long getsettingglobal(const struct userconf *, const char *, enum config_domain *);
 
 /** \var rcpt_cb
  * \brief this is a function for a user filter
@@ -33,7 +40,7 @@ extern long getsettingglobal(const struct userconf *, const char *, int *);
  *         \arg \c 4: policy denied, calling function should announce temporary error
  *         \arg \c 5: policy passed, mail is whitelisted (do not call other functions)
  */
-typedef int (*rcpt_cb)(const struct userconf *ds, const char **logmsg, int *t);
+typedef int (*rcpt_cb)(const struct userconf *ds, const char **logmsg, enum config_domain *t);
 
 extern rcpt_cb rcpt_cbs[];
 extern rcpt_cb late_rcpt_cbs[];

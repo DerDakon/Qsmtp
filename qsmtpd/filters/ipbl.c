@@ -10,7 +10,7 @@
 #include <qsmtpd/qsmtpd.h>
 
 int
-cb_ipbl(const struct userconf *ds, const char **logmsg, int *t)
+cb_ipbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	int i;			/* counter of the array position */
 	int rc;			/* return code */
@@ -34,7 +34,7 @@ cb_ipbl(const struct userconf *ds, const char **logmsg, int *t)
 		return 0;
 	}
 	if (i > 0) {
-		int u;
+		enum config_domain u;
 
 		if ( (fd = getfile(ds, fnw, &u, 1)) < 0) {
 			if (errno != ENOENT)

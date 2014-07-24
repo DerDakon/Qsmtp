@@ -32,7 +32,7 @@
  * a secondary SPF record for domains often abused for phishing.
  */
 int
-cb_spf(const struct userconf *ds, const char **logmsg, int *t)
+cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	int r = 0, rc = 1;		/* return code */
 	long p;				/* spf policy */
@@ -52,7 +52,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, int *t)
 		char **a;
 
 		*t = userconf_get_buffer(ds, "rspf", &a, domainvalid, 1);
-		if (*t < 0) {
+		if (((int)*t) < 0) {
 			errno = -*t;
 			return -1;
 		} else if (*t == CONFIG_NONE) {
@@ -128,7 +128,7 @@ strict:
 		}
 	}
 	*t = userconf_find_domain(ds, "spfstrict", fromdomain, 1);
-	if (*t < 0) {
+	if (((int)*t) < 0) {
 		errno = -*t;
 		return -1;
 	} else if (*t == CONFIG_NONE) {
