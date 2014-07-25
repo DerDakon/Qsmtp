@@ -25,7 +25,7 @@ extern int addrparse(char *in, const int flags, string *addr, char **more, struc
  * @retval 3 domain is not filtered (use for domains not local)
  * @retval 4 mail would be catched by .qmail-foo-default (i.e. mailinglist)
  * @retval 5 domain is not local
- * @retval -1 error, errno is set.
+ * @retval <0 error code
  *
  * If the user has it's own mail directory ds->userpath will be filled with
  * the correct values.

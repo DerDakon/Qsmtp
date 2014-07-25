@@ -182,8 +182,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 			fprintf(stderr, "index %u: domain '%s' passed to %s, but expected '%s'\n",
 					testindex, domain, __func__, liphost.s);
 			errcounter++;
-			errno = EINVAL;
-			return -1;
+			return -EINVAL;
 		}
 	} else {
 		const char *at = strchr(testdata[testindex].inpattern, '@');
@@ -191,25 +190,18 @@ user_exists(const string *localpart, const char *domain, struct userconf *ds)
 			fprintf(stderr, "index %u: domain '%s' passed to %s, but no @ found in mail address\n",
 					testindex, domain, __func__);
 			errcounter++;
-			errno = EINVAL;
-			return -1;
+			return -EINVAL;
 		}
 		if (strncmp(domain, at + 1, strlen(domain)) != 0) {
 			fprintf(stderr, "index %u: domain '%s' passed to %s\n",
 					testindex, domain, __func__);
 			errcounter++;
-			errno = EINVAL;
-			return -1;
+			return -EINVAL;
 		}
 	}
 	assert(strncmp(testdata[testindex].inpattern, localpart->s, localpart->len) == 0);
 
-	if (testdata[testindex].userexists_result < 0) {
-		errno = -testdata[testindex].userexists_result;
-		return -1;
-	} else {
-		return testdata[testindex].userexists_result;
-	}
+	return testdata[testindex].userexists_result;
 }
 
 int

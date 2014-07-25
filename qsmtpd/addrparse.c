@@ -89,10 +89,9 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	if (lookupdomain != NULL)
 		j = user_exists(&localpart, lookupdomain, ds);
 	if (j < 0) {
-		result = errno;
 		free(addr->s);
 		STREMPTY(*addr);
-		return result;
+		return -j;
 	} else if (!j) {
 		const char *logmsg[] = {"550 5.1.1 no such user <", addr->s, ">", NULL};
 

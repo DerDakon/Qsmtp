@@ -175,7 +175,7 @@ vget_dir(const char *domain, struct userconf *ds)
  * @return if the file exists
  * @retval 0 file does not exist
  * @retval 1 file exists
- * @retval -1 error opening the file (errno is set)
+ * @retval <0 error code from opening the file
  *
  * The contents of fd are undefined if the return value is not 1.
  */
@@ -187,16 +187,15 @@ qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, in
 	int tmpfd;
 	size_t l = strlen(dotqm);
 
-	errno = ENOENT;
 	if (l >= sizeof(filetmp))
-		return -1;
+		return -ENOENT;
 	memcpy(filetmp, dotqm, l);
 
 	if (def & 2) {
 		char *p;
 
 		if (l + len >= sizeof(filetmp))
-			return -1;
+			return -ENOENT;
 		memcpy(filetmp + l, suff1, len);
 
 		/* this scans the head of the username multiple times, but it's not
@@ -210,14 +209,14 @@ qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, in
 		l += len;
 		if (def & 1) {
 			if (l + 1 >= sizeof(filetmp))
-				return -1;
+				return -ENOENT;
 			*(filetmp + l) = '-';
 			l++;
 		}
 	}
 	if (def & 1) {
 		if (l + 7 >= sizeof(filetmp))
-			return -1;
+			return -ENOENT;
 		memcpy(filetmp + l, "default", 7);
 		l += 7;
 	}
@@ -231,8 +230,7 @@ qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, in
 		case ENOMEM:
 		case ENFILE:
 		case EMFILE:
-			errno = ENOMEM;
-			return -1;
+			return -ENOMEM;
 		case EACCES:
 			if (fd != NULL)
 				*fd = -1;
@@ -243,10 +241,9 @@ qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, in
 		default:
 			tmpfd = errno;
 			if (err_control(filetmp) == 0)
-				errno = EDONE;
+				return -EDONE;
 			else
-				errno = tmpfd;
-			return -1;
+				return -tmpfd;
 		}
 	} else {
 		if (fd == NULL)
@@ -260,7 +257,7 @@ qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, in
 int
 user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 {
-	int res, e;
+	int res;
 	struct userconf *ds = (dsp == NULL) ? &uconf : dsp;
 	int dfd, fd;
 	char *p;
@@ -273,8 +270,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 /* get the domain directory from "users/cdb" */
 	res = vget_dir(domain, ds);
 	if (res < 0) {
-		errno = -res;
-		return -1;
+		return res;
 	} else if (res == 0) {
 		/* the domain is not local or at least no vpopmail domain */
 		return 5;
@@ -284,15 +280,14 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	/* FIXME: change this to -1 to enforce absolute path */
 	dfd = get_dirfd(AT_FDCWD, ds->domainpath.s);
 	if (dfd < 0) {
-		e = errno;
+		res = errno;
 
-		switch (e) {
+		switch (res) {
 		case EMFILE:
 		case ENFILE:
 		case ENOMEM:
 			userconf_free(ds);
-			errno = e;
-			return -1;
+			return -res;
 		case ENOENT:
 		case ENOTDIR:
 			userconf_free(ds);
@@ -303,10 +298,9 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 			return 1;
 		default:
 			if (err_control(ds->domainpath.s) == 0)
-				e = EDONE;
+				res = EDONE;
 			userconf_free(ds);
-			errno = e;
-			return -1;
+			return -res;
 		}
 	} else {
 		/* this else isn't strictly neccessary, it's here to limit the lifetime
@@ -324,14 +318,13 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 		} else if ((errno != ENOENT) && (errno != ENOTDIR)) {
 			/* if e.g. a file with the given name exists that is no error,
 			 * it just means that it is not a user directory with that name. */
-			e = errno;
+			res = errno;
 
 			close(dfd);
 			if (err_control2(ds->domainpath.s, fnbuf) == 0)
-				e = EDONE;
+				res = EDONE;
 			userconf_free(ds);
-			errno = e;
-			return -1;
+			return -res;
 		}
 	}
 
@@ -352,11 +345,9 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 		close(dfd);
 		return 1;
 	} else if (res < 0) {
-		res = errno;
 		userconf_free(ds);
 		close(dfd);
-		errno = res;
-		return -1;
+		return res;
 	}
 
 	/* if username contains '-' there may be
@@ -368,18 +359,15 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 			close(dfd);
 			return 4;
 		} else if (res < 0) {
-			res = errno;
 			userconf_free(ds);
 			close(dfd);
-			errno = res;
-			return -1;
+			return res;
 		}
 		p = strchr(p + 1, '-');
 	}
 
 	/* does USERPATH/DOMAIN/.qmail-default exist ? */
 	res = qmexists(dfd, NULL, 0, 1, &fd);
-	e = errno;
 	close(dfd);
 	if (res == 0) {
 		/* no local user with that address */
@@ -387,26 +375,23 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 		return 0;
 	} else if (res < 0) {
 		userconf_free(ds);
-		errno = e;
-		return -1;
+		return res;
 	} else if ((vpopbounce != NULL) && (fd != -1)) {
 		char buff[2*strlen(vpopbounce)+1];
 		ssize_t r;
 
-		e = 0;
+		res = 0;
 		r = read(fd, buff, sizeof(buff) - 1);
 		if (r < 0) {
+			res = -errno;
 			if (err_control2(ds->domainpath.s, ".qmail-default") == 0)
-				e = EDONE;
-			else
-				e = errno;
+				res = -EDONE;
 		}
-		if ((close(fd) != 0) && (e == 0))
-			e = errno;
-		if (e != 0) {
+		if ((close(fd) != 0) && (res == 0))
+			res = -errno;
+		if (res != 0) {
 			userconf_free(ds);
-			errno = e;
-			return -1;
+			return res;
 		}
 
 		buff[r] = '\0';
