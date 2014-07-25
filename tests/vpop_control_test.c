@@ -12,10 +12,6 @@
 #include <sys/types.h> 
 #include <unistd.h>
 
-/* keep the product of those 2 great enough to overflow the buffer in getfile.c::open_in_dir() */
-#define DIR_DEPTH 10
-#define COMPONENT_LENGTH 64
-
 /* name of the dummy files created */
 #define EXISTING_FILENAME "filename"
 #define EXISTING_FILENAME_CONTENT "content"
@@ -23,7 +19,7 @@
 #define EXISTING_FILTERCONF "filterconf"
 #define EXISTING_FILTERCONF_CONTENT "helovalid="
 
-static char fnbuffer[(COMPONENT_LENGTH + 1) * DIR_DEPTH + 20];
+static char fnbuffer[256];
 static struct userconf ds;
 
 /* to satisfy the linker */
@@ -61,18 +57,14 @@ err_control2(const char *msg, const char *fn)
 static void
 create_dirs(void)
 {
-	char dirname[COMPONENT_LENGTH + 2];
+	const char *dirnames[] = { "vp_control_test", "domain", "user" };
 	unsigned int i;
 	int r;
 	int dfd;
 
-	for (i = 0; i < sizeof(dirname) - 2; i++)
-		dirname[i] = '0' + (i % 10);
-	dirname[sizeof(dirname) - 2] = '/';
-	dirname[sizeof(dirname) - 1] = '\0';
-
-	for (i = 0; i < DIR_DEPTH; i++) {
-		strcat(fnbuffer, dirname);
+	for (i = 0; i < 3; i++) {
+		strcat(fnbuffer, dirnames[i]);
+		strcat(fnbuffer, "/");
 		r = mkdir(fnbuffer, 0755);
 		if ((r != 0) && (errno != EEXIST)) {
 			fprintf(stderr, "creating directory at level %u failed with error %i\n",
@@ -369,8 +361,16 @@ test_getsetting(void)
 	ds.userconf = NULL;
 
 	/* set both, but user information should still be used */
-	ds.domainpath.s = strchr(fnbuffer, '/') + 1;
-	ds.domainpath.len = strlen(ds.domainpath.s);
+	ds.domainpath.s = malloc(strlen(fnbuffer));
+	if (ds.domainpath.s == NULL) {
+		userconf_free(&ds);
+		exit(ENOMEM);
+	}
+	ds.domainpath.len = strlen(fnbuffer) - 1;
+	memcpy(ds.domainpath.s, fnbuffer, ds.domainpath.len);
+	while (ds.domainpath.s[ds.domainpath.len - 1] != '/')
+		ds.domainpath.len--;
+	ds.domainpath.s[ds.domainpath.len] = '\0';
 
 	if (userconf_load_configs(&ds) != 0) {
 		fprintf(stderr, "cannot load config settings (user+domain)\n");
@@ -418,8 +418,6 @@ test_getsetting(void)
 		ret++;
 	}
 
-	/* static buffer, must not be freed */
-	ds.domainpath.s = NULL;
 	/* free this one */
 	ds.userdirfd = fd;
 

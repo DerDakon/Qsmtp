@@ -5,6 +5,7 @@
 #include <qsmtpd/userfilters.h>
 
 #include <control.h>
+#include <diropen.h>
 #include <qsmtpd/userconf.h>
 
 #include <errno.h>
@@ -25,32 +26,26 @@
  * dirname has to end in a '/'.
  */
 static int
-open_in_dir(const char *dirname, const size_t dirlen, const char *fn)
+open_in_dir(const char *dirname, const char *fn)
 {
-	int fd;
+	int dfd, fd;
 
-	char sbuf[512];		/* a static buffer, should be long enough for most cases */
-	char *dbuf = NULL;	/* in case sbuf is too short */
-	char *buf;		/* pointer to the one actually used */
-	const size_t pathlen = dirlen + strlen(fn) + 1;
+	/* FIXME: change this to -1 to enforce absolute path */
+	dfd = get_dirfd(AT_FDCWD, dirname);
 
-	if (pathlen < sizeof(sbuf)) {
-		buf = sbuf;
+	if (dfd < 0)
+		return dfd;
+
+	fd = openat(dfd, fn, O_RDONLY | O_CLOEXEC);
+	if (fd < 0) {
+		fd = errno;
+		close(dfd);
+		errno = fd;
+		return -1;
 	} else {
-		dbuf = malloc(pathlen);
-		if (dbuf == NULL)
-			return -1;
-		buf = dbuf;
+		close(dfd);
+		return fd;
 	}
-
-	memcpy(buf, dirname, dirlen);
-	memcpy(buf + dirlen, fn, pathlen - dirlen);
-
-	fd = open(buf, O_RDONLY |  O_CLOEXEC);
-
-	free(dbuf);
-
-	return fd;
 }
 
 /**
@@ -77,17 +72,17 @@ getfile(const struct userconf *ds, const char *fn, enum config_domain *type, int
 			return fd;
 	}
 
-	if (!ds->domainpath.len && !useglobal) {
+	if (ds->domainpath.len > 0) {
+		*type = CONFIG_DOMAIN;
+
+		fd = open_in_dir(ds->domainpath.s, fn);
+
+		if (!useglobal || (fd != -1) || (errno != ENOENT))
+			return fd;
+	} else if (!useglobal) {
 		errno = ENOENT;
 		return -1;
 	}
-
-	*type = CONFIG_DOMAIN;
-
-	fd = open_in_dir(ds->domainpath.s, ds->domainpath.len, fn);
-
-	if ((useglobal == 0) || (fd != -1) || (errno != ENOENT))
-		return fd;
 
 	/* neither user nor domain specified how to handle this feature
 	 * now look up the global setting */
