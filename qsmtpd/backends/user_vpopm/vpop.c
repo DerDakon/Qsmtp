@@ -176,6 +176,8 @@ vget_dir(const char *domain, struct userconf *ds)
  * @retval 0 file does not exist
  * @retval 1 file exists
  * @retval -1 error opening the file (errno is set)
+ *
+ * The contents of fd are undefined if the return value is not 1.
  */
 static int
 qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, int *fd)
@@ -232,7 +234,8 @@ qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, in
 			errno = ENOMEM;
 			return -1;
 		case EACCES:
-			*fd = -1;
+			if (fd != NULL)
+				*fd = -1;
 			return 1;
 		case ENOENT:
 		case EISDIR:
@@ -417,7 +420,8 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 		}
 	} else {
 		/* we can't tell if this is a bounce .qmail-default -> accept the mail */
-		close(fd);
+		if (fd >= 0)
+			close(fd);
 		return 2;
 	}
 }
