@@ -20,6 +20,8 @@
 #define EXISTING_FILENAME "filename"
 #define EXISTING_FILENAME_CONTENT "content"
 #define EXISTING_FILE_CONTENT "example.net"
+#define EXISTING_FILTERCONF "filterconf"
+#define EXISTING_FILTERCONF_CONTENT "helovalid="
 
 static char fnbuffer[(COMPONENT_LENGTH + 1) * DIR_DEPTH + 20];
 static struct userconf ds;
@@ -62,7 +64,7 @@ create_dirs(void)
 	char dirname[COMPONENT_LENGTH + 2];
 	unsigned int i;
 	int r;
-	char *fnstart;
+	int dfd;
 
 	for (i = 0; i < sizeof(dirname) - 2; i++)
 		dirname[i] = '0' + (i % 10);
@@ -79,9 +81,13 @@ create_dirs(void)
 		}
 	}
 
-	fnstart = fnbuffer + strlen(fnbuffer);
-	strcat(fnstart, EXISTING_FILENAME);
-	r = creat(fnbuffer, 0644);
+	dfd = get_dirfd(AT_FDCWD, fnbuffer);
+	if (dfd < 0) {
+		fprintf(stderr, "cannot open target directory, error %i\n", errno);
+		exit(1);
+	}
+
+	r = openat(dfd, EXISTING_FILENAME, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0644);
 	if (r < 0) {
 		fprintf(stderr, "cannot create target file, error %i\n",
 				errno);
@@ -89,21 +95,58 @@ create_dirs(void)
 	}
 	close(r);
 
-	*fnstart = '\0';
-	strcat(fnstart, EXISTING_FILENAME_CONTENT);
-	r = creat(fnbuffer, 0644);
+	r = openat(dfd, EXISTING_FILENAME_CONTENT, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0644);
 	if (r < 0) {
 		fprintf(stderr, "cannot create target file, error %i\n",
 				errno);
+		close(dfd);
 		exit(1);
 	} else {
 		if (write(r, EXISTING_FILE_CONTENT "\n", strlen(EXISTING_FILE_CONTENT) + 1) != strlen(EXISTING_FILE_CONTENT) + 1) {
 			fprintf(stderr, "cannot write into target file, error %i\n",
 					errno);
 			close(r);
+			close(dfd);
 			exit(1);
 		}
 	}
+	strcat(fnbuffer, EXISTING_FILENAME_CONTENT);
+	close(r);
+
+	r = openat(dfd, EXISTING_FILTERCONF, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0644);
+	if (r < 0) {
+		fprintf(stderr, "cannot create filterconf file, error %i\n",
+				errno);
+		close(dfd);
+		exit(1);
+	} else {
+		if (write(r, EXISTING_FILTERCONF_CONTENT "7\n", strlen(EXISTING_FILTERCONF_CONTENT) + 2) != strlen(EXISTING_FILTERCONF_CONTENT) + 2) {
+			fprintf(stderr, "cannot write into filterconf file, error %i\n",
+					errno);
+			close(r);
+			close(dfd);
+			exit(1);
+		}
+	}
+	close(r);
+
+	r = openat(dfd, "../" EXISTING_FILTERCONF, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0644);
+	if (r < 0) {
+		fprintf(stderr, "cannot create filterconf file, error %i\n",
+				errno);
+		close(dfd);
+		exit(1);
+	} else {
+		if (write(r, EXISTING_FILTERCONF_CONTENT "3\n", strlen(EXISTING_FILTERCONF_CONTENT) + 2) != strlen(EXISTING_FILTERCONF_CONTENT) + 2) {
+			fprintf(stderr, "cannot write into filterconf file, error %i\n",
+					errno);
+			close(r);
+			close(dfd);
+			exit(1);
+		}
+	}
+
+	close(dfd);
 	close(r);
 }
 
@@ -292,6 +335,100 @@ test_getbuffer(void)
 }
 
 static int
+test_getsetting(void)
+{
+	int ret = 0;
+	long r;
+	enum config_domain t = CONFIG_NONE;
+	int fd;
+
+	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
+	ds.domainpath.len = 0;
+	ds.domainpath.s = NULL;
+
+	if (userconf_load_configs(&ds) != 0) {
+		fprintf(stderr, "cannot load config settings (user only)\n");
+		return ++ret;
+	}
+
+	if ((ds.userconf == NULL) || (ds.domainconf != NULL)) {
+		fprintf(stderr, "expected userconf != NULL, domainconf == NULL, but got u %p d %p\n",
+				ds.userconf, ds.domainconf);
+		ret++;
+	}
+
+	/* should be the user setting */
+	r = getsetting(&ds, "helovalid", &t);
+	if ((r != 7) || (t != CONFIG_USER)) {
+		fprintf(stderr, "loading entry from user config returned %li type %i instead of 3/%i\n",
+				r, t, CONFIG_USER);
+		ret++;
+	}
+
+	free(ds.userconf);
+	ds.userconf = NULL;
+
+	/* set both, but user information should still be used */
+	ds.domainpath.s = strchr(fnbuffer, '/') + 1;
+	ds.domainpath.len = strlen(ds.domainpath.s);
+
+	if (userconf_load_configs(&ds) != 0) {
+		fprintf(stderr, "cannot load config settings (user+domain)\n");
+		return ++ret;
+	}
+
+	if ((ds.userconf == NULL) || (ds.domainconf == NULL)) {
+		fprintf(stderr, "expected userconf != NULL, domainconf != NULL, but got u %p d %p\n",
+				ds.userconf, ds.domainconf);
+		ret++;
+	}
+
+	/* should be the user setting */
+	r = getsetting(&ds, "helovalid", &t);
+	if ((r != 7) || (t != CONFIG_USER)) {
+		fprintf(stderr, "loading entry from user config returned %li type %i instead of 3/%i\n",
+				r, t, CONFIG_USER);
+		ret++;
+	}
+
+	/* now only with domain information */
+	fd = ds.userdirfd;
+	ds.userdirfd = -1;
+	free(ds.userconf);
+	ds.userconf = NULL;
+	free(ds.domainconf);
+	ds.domainconf = NULL;
+
+	if (userconf_load_configs(&ds) != 0) {
+		fprintf(stderr, "cannot load config settings (domain only)\n");
+		return ++ret;
+	}
+
+	if ((ds.userconf != NULL) || (ds.domainconf == NULL)) {
+		fprintf(stderr, "expected userconf == NULL, domainconf != NULL, but got u %p d %p\n",
+				ds.userconf, ds.domainconf);
+		ret++;
+	}
+
+	/* should be the user setting */
+	r = getsetting(&ds, "helovalid", &t);
+	if ((r != 3) || (t != CONFIG_DOMAIN)) {
+		fprintf(stderr, "loading entry from user config returned %li type %i instead of 3/%i\n",
+				r, t, CONFIG_USER);
+		ret++;
+	}
+
+	/* static buffer, must not be freed */
+	ds.domainpath.s = NULL;
+	/* free this one */
+	ds.userdirfd = fd;
+
+	userconf_free(&ds);
+
+	return ret;
+}
+
+static int
 test_finddomain(void)
 {
 	int ret = 0;
@@ -373,6 +510,7 @@ main(void)
 	r += test_found();
 	r += test_getbuffer();
 	r += test_finddomain();
+	r += test_getsetting();
 
 	/* now test nonexisting */
 	while (slash != NULL) {
