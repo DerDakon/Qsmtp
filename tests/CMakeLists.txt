@@ -447,9 +447,12 @@ ADD_EXECUTABLE(testcase_netio
 		netio_test.c)
 TARGET_LINK_LIBRARIES(testcase_netio
 		qsmtp_io_lib)
-ADD_TEST(NAME "NetIO"
-		COMMAND testcase_netio)
 
+ADD_EXECUTABLE(test_netio_client
+		netio_test_client.c)
+
+ADD_TEST(NAME "NetIO"
+		COMMAND testcase_netio $<TARGET_FILE:test_netio_client>)
 
 SET(ROUTES_TESTS nomatch complete_match with_port port_0 port_100k port_char port_char_no_relay
 		no_colon port_only unresolved

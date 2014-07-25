@@ -1,3 +1,5 @@
+#include "netio_test_messages.h"
+
 #include <log.h>
 #include <netio.h>
 #include <tls.h>
@@ -9,6 +11,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <signal.h>
 
 #ifdef DEBUG_IO
 #include "log.h"
@@ -937,23 +941,114 @@ test_pending_socketpair(void)
 	return ret;
 }
 
-int main(void)
+/**
+ * @brief test reading network data sent in arbitrary chunks
+ */
+static int
+test_chunks(char *exe)
+{
+	int pipefd[2];
+	int ret = 0;
+	pid_t child;
+	int stat;
+	unsigned int i = 0;
+
+	if (socketpair(AF_UNIX, SOCK_STREAM, 0, pipefd) != 0) {
+		fprintf(stderr, "%s: cannot create socket pair\n", __func__);
+		return 1;
+	}
+
+	child = fork();
+
+	if (child < 0) {
+		close(pipefd[0]);
+		close(pipefd[1]);
+		fprintf(stderr, "%s: cannot fork()\n", __func__);
+		return 1;
+	}
+
+	if (child == 0) {
+		char *args[] = { exe, NULL };
+
+		close(pipefd[0]);
+
+		if (dup2(pipefd[1], 1) != 1) {
+			close(pipefd[1]);
+			fprintf(stderr, "%s: cannot move write pipe to fd 1\n", __func__);
+			exit(1);
+		}
+
+		execve(args[0], args, NULL);
+		abort();
+	}
+
+	close(pipefd[1]);
+
+	if (pipefd[0] != 0) {
+		if (dup2(pipefd[0], 0) != 0) {
+			close(pipefd[0]);
+			kill(child, SIGTERM);
+			fprintf(stderr, "%s: cannot move read pipe to fd 0\n", __func__);
+			return 1;
+		}
+	}
+
+	timeout = 2;
+	while (read_chunks[i] != NULL) {
+		int k = net_read();
+
+		if (k != 0) {
+			fprintf(stderr, "%s: read %u returned %i\n", __func__, i, k);
+			ret++;
+			i++;
+			continue;
+		}
+
+		if (strcmp(linein.s, read_chunks[i]) != 0) {
+			fprintf(stderr, "%s: read '%s' but expected chunk %u: '%s'\n",
+				__func__, linein.s, i, read_chunks[i]);
+			ret++;
+		}
+		i++;
+	}
+
+	if (waitpid(child, &stat, 0) != child) {
+		fprintf(stderr, "%s: waiting for child failed\n", __func__);
+		return ++ret;
+	}
+
+	if (!WIFEXITED(stat) || (WEXITSTATUS(stat) != 0)) {
+		fprintf(stderr, "%s: child failed: exited %i status %i\n",
+			__func__, WIFEXITED(stat), WEXITSTATUS(stat));
+		return ++ret;
+	}
+
+	return ret;
+}
+
+int
+main(int argc, char **argv)
 {
 	int ret = 0;
 	int pipefd[2];
 	int i;
 
+	if (argc != 2) {
+		fprintf(stderr, "Usage: %s /path/to/client\n", argv[0]);
+		return 1;
+	}
+
 	/* Replace stdin. We don't really read from it, but we need to provide
 	 * a virtual input pipe for later reads. */
 	if (pipe(pipefd) != 0) {
-		fprintf(stderr, "cannot create pipe pair\n");
+		fprintf(stderr, "%s: cannot create pipe pair\n", __func__);
 		return 1;
 	}
 
 	if (dup2(pipefd[0], 0) != 0) {
 		close(pipefd[0]);
 		close(pipefd[1]);
-		fprintf(stderr, "cannot move read pipe to fd 0\n");
+		fprintf(stderr, "%s: cannot move read pipe to fd 0\n", __func__);
 		return 1;
 	}
 
@@ -1003,6 +1098,7 @@ int main(void)
 	}
 
 	ret += test_pending_socketpair();
+	ret += test_chunks(argv[1]);
 
 	return ret;
 }
