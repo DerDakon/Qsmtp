@@ -314,16 +314,8 @@ net_read(void)
 		 * to see if the next byte would be just the missing LF */
 		if (!valid && (p == lineinbuf + readoffset) && (readoffset < sizeof(lineinbuf) - 1) &&
 				(*(p - 1) == '\r')) {
-			datain = readinput(lineinbuf + readoffset, 2);
-			if (datain == 1) {
-				/* check if it is the missing \n */
-				valid = (*p == '\n');
-				/* if it is, we must also skip that of course */
-				if (valid) {
-					readoffset++;
-					p++;
-				}
-			}
+			p = NULL;
+			continue;
 		}
 	} while ((p == NULL) && (readoffset < sizeof(lineinbuf) - 1));
 
