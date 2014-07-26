@@ -290,11 +290,11 @@ main(void)
 	struct userconf uc;
 	struct recip dummyrecip;
 	struct recip firstrecip;
-	int basedirfd;
 	char confpath[PATH_MAX];
 
 	STREMPTY(uc.domainpath);
 	uc.userdirfd = -1;
+	uc.domaindirfd = -1;
 	uc.userconf = NULL;
 	uc.domainconf = NULL;
 	globalconf = NULL;
@@ -410,12 +410,11 @@ main(void)
 			uc.userconf = map_from_list(testdata[testindex].userconf);
 
 		snprintf(confpath, sizeof(confpath), "%u/domain/", testindex);
-		basedirfd = open(confpath, O_RDONLY | O_CLOEXEC);
-		if (basedirfd < 0) {
+		uc.domaindirfd = open(confpath, O_RDONLY | O_CLOEXEC);
+		if (uc.domaindirfd < 0) {
 			uc.domainpath.s = NULL;
 			uc.domainpath.len = 0;
 		} else {
-			close(basedirfd);
 			uc.domainpath.s = confpath;
 			uc.domainpath.len = strlen(uc.domainpath.s);
 		}
@@ -458,6 +457,10 @@ main(void)
 		testindex++;
 		snprintf(confpath, sizeof(confpath), "%u/", testindex);
 		free(uc.userconf);
+		if (uc.userdirfd >= 0)
+			close(uc.userdirfd);
+		if (uc.domaindirfd >= 0)
+			close(uc.domaindirfd);
 		free(b);
 	}
 

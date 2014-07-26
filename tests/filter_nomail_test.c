@@ -55,6 +55,7 @@ main(void)
 	testcase_setup_net_writen(test_net_writen);
 
 	memset(&ds, 0, sizeof(ds));
+	ds.domaindirfd = -1;
 	globalconf = NULL;
 
 	ds.userdirfd = get_dirfd(AT_FDCWD, ".");

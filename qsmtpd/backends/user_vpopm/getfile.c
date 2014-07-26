@@ -16,39 +16,6 @@
 #include <unistd.h>
 
 /**
- * @brief open a file in the given directory
- * @param dirname the path of the directory
- * @param dirlen strlen(dirname)
- * @param fn the name of the file
- * @return the file descriptor of the opened file
- * @retval -1 no file descriptor could be opened (errno is set)
- *
- * dirname has to end in a '/'.
- */
-static int
-open_in_dir(const char *dirname, const char *fn)
-{
-	int dfd, fd;
-
-	/* FIXME: change this to -1 to enforce absolute path */
-	dfd = get_dirfd(AT_FDCWD, dirname);
-
-	if (dfd < 0)
-		return dfd;
-
-	fd = openat(dfd, fn, O_RDONLY | O_CLOEXEC);
-	if (fd < 0) {
-		fd = errno;
-		close(dfd);
-		errno = fd;
-		return -1;
-	} else {
-		close(dfd);
-		return fd;
-	}
-}
-
-/**
  * check in user and domain directory if a file with given filename exists
  *
  * @param ds strings of user and domain directory
@@ -72,10 +39,10 @@ getfile(const struct userconf *ds, const char *fn, enum config_domain *type, int
 			return fd;
 	}
 
-	if (ds->domainpath.len > 0) {
+	if (ds->domaindirfd >= 0) {
 		*type = CONFIG_DOMAIN;
 
-		fd = open_in_dir(ds->domainpath.s, fn);
+		fd = openat(ds->domaindirfd, fn, O_RDONLY | O_CLOEXEC);
 
 		if (!useglobal || (fd != -1) || (errno != ENOENT))
 			return fd;

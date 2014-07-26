@@ -178,10 +178,12 @@ test_notdir(void)
 	ds.domainpath.len = strlen(fnbuffer);
 	fnbuffer[ds.domainpath.len++] = '/';
 	fnbuffer[ds.domainpath.len] = '\0';
-	close(ds.userdirfd);
+	ds.domaindirfd = ds.userdirfd;
 	ds.userdirfd = -1;
 
 	r += check_open_fail("domain", "filename as path", ENOTDIR);
+
+	close(ds.domaindirfd);
 
 	return r;
 }
@@ -223,6 +225,7 @@ test_found(void)
 	/* set both, but user information should still be used */
 	ds.domainpath.s = fnbuffer;
 	ds.domainpath.len = strlen(fnbuffer);
+	ds.domaindirfd = get_dirfd(AT_FDCWD, fnbuffer);
 
 	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
 	r += test_found_internal("user", fd, type, CONFIG_USER);
@@ -242,6 +245,8 @@ test_found(void)
 		return r++;
 	}
 
+	close(ds.domaindirfd);
+
 	return r;
 }
 
@@ -250,24 +255,26 @@ test_notfound(void)
 {
 	int r = 0;
 
+	userconf_init(&ds);
+
 	/* first: check with only user directory set */
 	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
-	ds.domainpath.len = 0;
-	ds.domainpath.s = NULL;
 
 	r += check_open_fail("user", "nonexistent file", ENOENT);
 
 	/* set both, but user information should still be used */
 	ds.domainpath.s = fnbuffer;
 	ds.domainpath.len = strlen(fnbuffer);
+	ds.domaindirfd = ds.userdirfd;
 
 	r += check_open_fail("user", "nonexistent file", ENOENT);
 
 	/* now only with domain information */
-	close(ds.userdirfd);
 	ds.userdirfd = -1;
 
 	r += check_open_fail("domain", "nonexistent file", ENOENT);
+
+	close(ds.domaindirfd);
 
 	return r;
 }
@@ -279,9 +286,9 @@ test_getbuffer(void)
 	int r;
 	char **array = NULL;
 
+	userconf_init(&ds);
+
 	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
-	ds.domainpath.len = 0;
-	ds.domainpath.s = NULL;
 
 	/* the file exists, but has no content */
 	r = userconf_get_buffer(&ds, EXISTING_FILENAME, &array, NULL, 0);
@@ -334,12 +341,13 @@ test_getsetting(void)
 	enum config_domain t = CONFIG_NONE;
 	int fd;
 
+	userconf_init(&ds);
+
 	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
-	ds.domainpath.len = 0;
-	ds.domainpath.s = NULL;
 
 	if (userconf_load_configs(&ds) != 0) {
 		fprintf(stderr, "cannot load config settings (user only)\n");
+		close(ds.userdirfd);
 		return ++ret;
 	}
 
@@ -371,9 +379,11 @@ test_getsetting(void)
 	while (ds.domainpath.s[ds.domainpath.len - 1] != '/')
 		ds.domainpath.len--;
 	ds.domainpath.s[ds.domainpath.len] = '\0';
+	ds.domaindirfd = get_dirfd(AT_FDCWD, ds.domainpath.s);
 
 	if (userconf_load_configs(&ds) != 0) {
 		fprintf(stderr, "cannot load config settings (user+domain)\n");
+		userconf_free(&ds);
 		return ++ret;
 	}
 
@@ -401,6 +411,8 @@ test_getsetting(void)
 
 	if (userconf_load_configs(&ds) != 0) {
 		fprintf(stderr, "cannot load config settings (domain only)\n");
+		ds.userdirfd = fd;
+		userconf_free(&ds);
 		return ++ret;
 	}
 
@@ -432,9 +444,9 @@ test_finddomain(void)
 	int ret = 0;
 	int r;
 
+	userconf_init(&ds);
+
 	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
-	ds.domainpath.len = 0;
-	ds.domainpath.s = NULL;
 
 	/* the does not file exist */
 	r = userconf_find_domain(&ds, "does_not_exist", "example.org", 0);

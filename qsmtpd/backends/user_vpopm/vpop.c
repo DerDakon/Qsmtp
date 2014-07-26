@@ -259,7 +259,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 {
 	int res;
 	struct userconf *ds = (dsp == NULL) ? &uconf : dsp;
-	int dfd, fd;
+	int fd;
 	char *p;
 
 	/* '/' is a valid character for localparts but we don't want it because
@@ -278,8 +278,8 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 
 	/* check if the domain directory exists */
 	/* FIXME: change this to -1 to enforce absolute path */
-	dfd = get_dirfd(AT_FDCWD, ds->domainpath.s);
-	if (dfd < 0) {
+	ds->domaindirfd = get_dirfd(AT_FDCWD, ds->domainpath.s);
+	if (ds->domaindirfd < 0) {
 		res = errno;
 
 		switch (res) {
@@ -311,16 +311,14 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 		fnbuf[localpart->len] = '\0';
 
 		/* does directory (ds->domainpath.s)+'/'+localpart exist? */
-		ds->userdirfd = get_dirfd(dfd, fnbuf);
+		ds->userdirfd = get_dirfd(ds->domaindirfd, fnbuf);
 		if (ds->userdirfd >= 0) {
-			close(dfd);
 			return 1;
 		} else if ((errno != ENOENT) && (errno != ENOTDIR)) {
 			/* if e.g. a file with the given name exists that is no error,
 			 * it just means that it is not a user directory with that name. */
 			res = errno;
 
-			close(dfd);
 			if (err_control2(ds->domainpath.s, fnbuf) == 0)
 				res = EDONE;
 			userconf_free(ds);
@@ -331,22 +329,19 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	if (errno == EACCES) {
 		/* The directory itself is not readable, so user configuration files
 		 * inside it can't be accessed. */
-		close(dfd);
 		return 1;
 	}
 
 	/* does USERPATH/DOMAIN/.qmail-LOCALPART exist? */
-	res = qmexists(dfd, localpart->s, localpart->len, 2, NULL);
+	res = qmexists(ds->domaindirfd, localpart->s, localpart->len, 2, NULL);
 	/* try .qmail-user-default instead */
 	if (res == 0)
-		res = qmexists(dfd, localpart->s, localpart->len, 3, NULL);
+		res = qmexists(ds->domaindirfd, localpart->s, localpart->len, 3, NULL);
 
 	if (res > 0) {
-		close(dfd);
 		return 1;
 	} else if (res < 0) {
 		userconf_free(ds);
-		close(dfd);
 		return res;
 	}
 
@@ -354,21 +349,18 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 	 * .qmail-partofusername-default */
 	p = memchr(localpart->s, '-', localpart->len);
 	while (p) {
-		res = qmexists(dfd, localpart->s, (p - localpart->s), 3, NULL);
+		res = qmexists(ds->domaindirfd, localpart->s, (p - localpart->s), 3, NULL);
 		if (res > 0) {
-			close(dfd);
 			return 4;
 		} else if (res < 0) {
 			userconf_free(ds);
-			close(dfd);
 			return res;
 		}
 		p = strchr(p + 1, '-');
 	}
 
 	/* does USERPATH/DOMAIN/.qmail-default exist ? */
-	res = qmexists(dfd, NULL, 0, 1, &fd);
-	close(dfd);
+	res = qmexists(ds->domaindirfd, NULL, 0, 1, &fd);
 	if (res == 0) {
 		/* no local user with that address */
 		userconf_free(ds);
@@ -439,6 +431,7 @@ userconf_init(struct userconf *ds)
 	STREMPTY(ds->domainpath);
 	ds->userconf = NULL;
 	ds->domainconf = NULL;
+	ds->domaindirfd = -1;
 	ds->userdirfd = -1;
 }
 
@@ -448,6 +441,8 @@ userconf_free(struct userconf *ds)
 	free(ds->domainpath.s);
 	free(ds->userconf);
 	free(ds->domainconf);
+	if (ds->domaindirfd >= 0)
+		close(ds->domaindirfd);
 	if (ds->userdirfd >= 0)
 		close(ds->userdirfd);
 
