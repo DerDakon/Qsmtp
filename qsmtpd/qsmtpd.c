@@ -775,25 +775,23 @@ smtp_ehlo(void)
 					sizeof(certfilename) - iplen - 1);
 		}
 
-		fd = openat(controldir_fd, certfilename + diroffs, O_RDONLY | O_CLOEXEC);
+		fd = faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
 		if ((fd < 0) && (localport != NULL)) {
 			/* if we know the port, but no file with the port exists
 			 * try without the port now */
 			certfilename[iplen] = '\0';
-			fd = openat(controldir_fd, certfilename + diroffs, O_RDONLY | O_CLOEXEC);
+			fd = faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
 		}
 
 		if (fd < 0) {
 			/* the certificate has not been found with ip, try the
 			 * general name. */
 			certfilename[oldlen] = '\0';
-			fd = openat(controldir_fd, certfilename + diroffs, O_RDONLY | O_CLOEXEC);
+			fd = faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
 		}
 
-		if (fd >= 0) {
-			close(fd);
+		if (fd == 0)
 			msg[next++] = "250-STARTTLS\r\n";
-		}
 	}
 
 /* this must stay last: it begins with "250 " */
