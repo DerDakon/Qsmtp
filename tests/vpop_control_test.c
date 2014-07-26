@@ -171,6 +171,10 @@ test_notdir(void)
 	int r = 0;
 
 	ds.userdirfd = open(fnbuffer, O_RDONLY | O_CLOEXEC);
+	if (ds.userdirfd < 0) {
+		fprintf(stderr, "cannot open %s: %i\n", fnbuffer, errno);
+		return ++r;
+	}
 
 	r += check_open_fail("user", "filename as path", ENOTDIR);
 
