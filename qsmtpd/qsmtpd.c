@@ -104,7 +104,7 @@ int socketd = 1;			/**< the descriptor where messages to network are written to 
 long comstate = 0x001;			/**< status of the command state machine, initialized to noop */
 int authhide;				/**< hide source of authenticated mail */
 int submission_mode;			/**< if we should act as message submission agent */
-char certfilename[24 + INET6_ADDRSTRLEN + 6] = "control/servercert.pem";		/**< path to SSL certificate filename */
+char certfilename[17 + INET6_ADDRSTRLEN + 6] = "servercert.pem";		/**< path to SSL certificate filename */
 
 struct recip *thisrecip;
 
@@ -162,11 +162,11 @@ err_control2(const char *msg, const char *fn)
 static int
 lookupipbl_name(const char *filename)
 {
-	int fd = open(filename, O_RDONLY | O_CLOEXEC);
+	int fd = openat(controldir_fd, filename, O_RDONLY | O_CLOEXEC);
 
 	if (fd < 0) {
 		if (errno != ENOENT)
-			return err_control(filename) ? -errno : -EDONE;
+			return err_control2("control/", filename) ? -errno : -EDONE;
 		return 0;
 	}
 
@@ -243,7 +243,7 @@ is_authenticated(void)
 	/* check if client is allowed to relay by IP */
 	if (!relayclient) {
 		const int ipbl = lookupipbl_name(connection_is_ipv4() ?
-				"control/relayclients" : "control/relayclients6");
+				"relayclients" : "relayclients6");
 
 		/* reject everything on parse error, else this
 		 * would turn into an open relay by accident */
@@ -774,19 +774,19 @@ smtp_ehlo(void)
 					sizeof(certfilename) - iplen - 1);
 		}
 
-		fd = open(certfilename, O_RDONLY | O_CLOEXEC);
+		fd = openat(controldir_fd, certfilename, O_RDONLY | O_CLOEXEC);
 		if ((fd < 0) && (localport != NULL)) {
 			/* if we know the port, but no file with the port exists
 			 * try without the port now */
 			certfilename[iplen] = '\0';
-			fd = open(certfilename, O_RDONLY | O_CLOEXEC);
+			fd = openat(controldir_fd, certfilename, O_RDONLY | O_CLOEXEC);
 		}
 
 		if (fd < 0) {
 			/* the certificate has not been found with ip, try the
 			 * general name. */
 			certfilename[oldlen] = '\0';
-			fd = open(certfilename, O_RDONLY | O_CLOEXEC);
+			fd = openat(controldir_fd, certfilename, O_RDONLY | O_CLOEXEC);
 		}
 
 		if (fd >= 0) {
@@ -1139,7 +1139,7 @@ smtp_from(void)
 		s = HELOSTR;
 	}
 
-	i = lookupipbl_name(connection_is_ipv4() ? "control/spffriends" : "control/spffriends6");
+	i = lookupipbl_name(connection_is_ipv4() ? "spffriends" : "spffriends6");
 	if (i < 0) {
 		return -i;
 	} else if (i > 0) {

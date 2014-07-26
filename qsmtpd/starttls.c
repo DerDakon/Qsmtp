@@ -200,7 +200,7 @@ tls_init()
 	X509_STORE *store;
 	X509_LOOKUP *lookup;
 	char *newprot;
-	const char ciphfn[] = "control/tlsserverciphers";
+	const char ciphfn[] = "tlsserverciphers";
 	int j;
 
 	SSL_library_init();
@@ -226,12 +226,12 @@ tls_init()
 						X509_V_FLAG_CRL_CHECK_ALL);
 
 
-	saciphers.len = lloadfilefd(open(ciphfn, O_RDONLY | O_CLOEXEC), &(saciphers.s), 1);
+	saciphers.len = lloadfilefd(openat(controldir_fd, ciphfn, O_RDONLY | O_CLOEXEC), &(saciphers.s), 1);
 	if (saciphers.len == (size_t)-1) {
 		if (errno != ENOENT) {
 			int e = errno;
 			SSL_CTX_free(ctx);
-			err_control(ciphfn);
+			err_control2("control/", ciphfn);
 			errno = e;
 			return -1;
 		}
