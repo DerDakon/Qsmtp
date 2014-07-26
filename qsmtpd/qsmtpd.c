@@ -104,7 +104,7 @@ int socketd = 1;			/**< the descriptor where messages to network are written to 
 long comstate = 0x001;			/**< status of the command state machine, initialized to noop */
 int authhide;				/**< hide source of authenticated mail */
 int submission_mode;			/**< if we should act as message submission agent */
-char certfilename[17 + INET6_ADDRSTRLEN + 6] = "servercert.pem";		/**< path to SSL certificate filename */
+char certfilename[24 + INET6_ADDRSTRLEN + 6] = "control/servercert.pem";		/**< path to SSL certificate filename */
 
 struct recip *thisrecip;
 
@@ -758,6 +758,7 @@ smtp_ehlo(void)
 /* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
 	if (!ssl && ((localport == NULL) || (strcmp(localport, "465") != 0))) {
 		const size_t oldlen = strlen(certfilename);
+		const size_t diroffs = strlen("control/");
 		size_t iplen;
 		int fd;
 
@@ -774,19 +775,19 @@ smtp_ehlo(void)
 					sizeof(certfilename) - iplen - 1);
 		}
 
-		fd = openat(controldir_fd, certfilename, O_RDONLY | O_CLOEXEC);
+		fd = openat(controldir_fd, certfilename + diroffs, O_RDONLY | O_CLOEXEC);
 		if ((fd < 0) && (localport != NULL)) {
 			/* if we know the port, but no file with the port exists
 			 * try without the port now */
 			certfilename[iplen] = '\0';
-			fd = openat(controldir_fd, certfilename, O_RDONLY | O_CLOEXEC);
+			fd = openat(controldir_fd, certfilename + diroffs, O_RDONLY | O_CLOEXEC);
 		}
 
 		if (fd < 0) {
 			/* the certificate has not been found with ip, try the
 			 * general name. */
 			certfilename[oldlen] = '\0';
-			fd = openat(controldir_fd, certfilename, O_RDONLY | O_CLOEXEC);
+			fd = openat(controldir_fd, certfilename + diroffs, O_RDONLY | O_CLOEXEC);
 		}
 
 		if (fd >= 0) {
