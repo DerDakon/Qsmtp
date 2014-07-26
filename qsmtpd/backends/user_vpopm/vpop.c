@@ -187,8 +187,6 @@ qmexists(int domaindirfd, const char *suff1, const size_t len, const int def, in
 	int tmpfd;
 	size_t l = strlen(dotqm);
 
-	if (l >= sizeof(filetmp))
-		return -ENOENT;
 	memcpy(filetmp, dotqm, l);
 
 	if (def & 2) {
