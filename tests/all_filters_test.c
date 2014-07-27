@@ -236,7 +236,7 @@ default_session_config(void)
 	xmitstat.check2822 = 2; /* no decision yet */
 	xmitstat.helostatus = 1; /* HELO is my name */
 	xmitstat.spf = SPF_NONE;
-	xmitstat.fromdomain = 3; /* permanent error */
+	xmitstat.fromdomain = DNS_ERROR_PERM; /* permanent error */
 	xmitstat.spacebug = 1; /* yes */
 	xmitstat.mailfrom.s = "user@invalid";
 	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);

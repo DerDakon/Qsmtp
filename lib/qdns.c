@@ -37,18 +37,18 @@ ask_dnsmx(const char *name, struct ips **result)
 		switch (errno) {
 		case ETIMEDOUT:
 		case EAGAIN:
-			return 2;
+			return DNS_ERROR_TEMP;
 		case ENFILE:
 		case EMFILE:
 		case ENOBUFS:
 			errno = ENOMEM;
 			/* fallthrough */
 		case ENOMEM:
-			return -1;
+			return DNS_ERROR_LOCAL;
 		case ENOENT:
 			return 1;
 		default:
-			return 3;
+			return DNS_ERROR_PERM;
 		}
 	}
 
@@ -76,12 +76,12 @@ ask_dnsmx(const char *name, struct ips **result)
 		int rc;
 
 		rc = ask_dnsaaaa(s + 2, &p);
-		if (rc < 0) {
+		if (rc == DNS_ERROR_LOCAL) {
 			freeips(*result);
 			free(r);
 			if (errno == ENOMEM)
-				return -1;
-			return 2;
+				return DNS_ERROR_LOCAL;
+			return DNS_ERROR_TEMP;
 		} else if (!rc) {
 			struct ips *u;
 			unsigned int pri = ntohs(*((unsigned short *) s));
@@ -95,7 +95,7 @@ ask_dnsmx(const char *name, struct ips **result)
 			}
 			q = &(p->next);
 		} else {
-			errtype = (1 << rc);
+			errtype = (1 << -rc);
 		}
 		s += 3 + strlen(s + 2);
 	}
@@ -105,11 +105,11 @@ ask_dnsmx(const char *name, struct ips **result)
 	if (*result)
 		return 0;
 	else if (errtype & 4)
-		return 2;
+		return DNS_ERROR_TEMP;
 	else if (errtype & 2)
 		return 1;
 	else
-		return 3;
+		return DNS_ERROR_PERM;
 }
 
 /**
@@ -140,18 +140,18 @@ ask_dnsaaaa(const char *name, struct ips **result)
 		switch (errno) {
 		case ETIMEDOUT:
 		case EAGAIN:
-			return 2;
+			return DNS_ERROR_TEMP;
 		case ENFILE:
 		case EMFILE:
 		case ENOBUFS:
 			errno = ENOMEM;
 			/* fallthrough */
 		case ENOMEM:
-			return -1;
+			return DNS_ERROR_LOCAL;
 		case ENOENT:
 			return 1;
 		default:
-			return 3;
+			return DNS_ERROR_PERM;
 		}
 	}
 
@@ -166,7 +166,7 @@ ask_dnsaaaa(const char *name, struct ips **result)
 		if (!p) {
 			freeips(*result);
 			free(r);
-			return -1;
+			return DNS_ERROR_LOCAL;
 		}
 		*q = p;
 		p->next = NULL;
@@ -181,15 +181,15 @@ ask_dnsaaaa(const char *name, struct ips **result)
 }
 
 /**
- * \brief get A record from of the DNS
- *
- * \param name the name to look up
- * \param result first element of a list of results will be placed, or NULL if only return code is of interest
- * \retval  0 on success
- * \retval  1 if host is not existent
- * \retval  2 if temporary DNS error
- * \retval  3 if permanent DNS error
- * \retval -1 on error
+ * @brief get A record from of the DNS
+ * @param name the name to look up
+ * @param result first element of a list of results will be placed, or NULL if only return code is of interest
+ * @return if records have been found
+ * @retval 0 on success
+ * @retval 1 host does not exist
+ * @retval -1 on error (errno is set)
+ * @retval -2 temporary DNS error
+ * @retval -3 permanent DNS error
  */
 int
 ask_dnsa(const char *name, struct ips **result)
@@ -203,18 +203,18 @@ ask_dnsa(const char *name, struct ips **result)
 		switch (errno) {
 		case ETIMEDOUT:
 		case EAGAIN:
-			return 2;
+			return DNS_ERROR_TEMP;
 		case ENFILE:
 		case EMFILE:
 		case ENOBUFS:
 			errno = ENOMEM;
 			/* fallthrough */
 		case ENOMEM:
-			return -1;
+			return DNS_ERROR_LOCAL;
 		case ENOENT:
 			return 1;
 		default:
-			return 3;
+			return DNS_ERROR_PERM;
 		}
 	}
 
@@ -233,7 +233,7 @@ ask_dnsa(const char *name, struct ips **result)
 			if (!p) {
 				freeips(*result);
 				free(r);
-				return -1;
+				return DNS_ERROR_LOCAL;
 			}
 			*q = p;
 			p->next = NULL;
@@ -275,17 +275,17 @@ ask_dnsname(const struct in6_addr *ip, char **result)
 	switch (errno) {
 	case ETIMEDOUT:
 	case EAGAIN:
-		return -2;
+		return DNS_ERROR_TEMP;
 	case ENFILE:
 	case EMFILE:
 	case ENOBUFS:
 		errno = ENOMEM;
 		/* fallthrough */
 	case ENOMEM:
-		return -1;
+		return DNS_ERROR_LOCAL;
 	case ENOENT:
 		return 0;
 	default:
-		return -3;
+		return DNS_ERROR_PERM;
 	}
 }

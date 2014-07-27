@@ -173,7 +173,7 @@ test_ask_dnsa(const char *a, struct ips **b)
 		if (strcmp(dnsentries[i], a) == 0) {
 			/* found a match, now use the rbl name to get the result */
 			if (strstr(a, "timeout") != NULL)
-				return 2;
+				return DNS_ERROR_TEMP;
 			return 0;
 		}
 	}

@@ -527,7 +527,7 @@ connsetup(void)
 #endif /* IPV4ONLY */
 
 	j = ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s);
-	if (j == -1) {
+	if (j == DNS_ERROR_LOCAL) {
 		log_write(LOG_ERR, "can't look up remote host name");
 		return -1;
 	} else if (j <= 0) {
@@ -1129,7 +1129,7 @@ smtp_from(void)
 	if (xmitstat.mailfrom.len) {
 		/* strchr can't return NULL here, we have checked xmitstat.mailfrom.s before */
 		xmitstat.fromdomain = ask_dnsmx(strchr(xmitstat.mailfrom.s, '@') + 1, &xmitstat.frommx);
-		if (xmitstat.fromdomain < 0)
+		if (xmitstat.fromdomain == DNS_ERROR_LOCAL)
 			return errno;
 		s = strchr(xmitstat.mailfrom.s, '@') + 1;
 	} else {

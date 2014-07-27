@@ -39,4 +39,10 @@ extern void sortmx(struct ips **p) __attribute__ ((nonnull (1)));
 #define INET_ADDRSTRLEN 16
 #endif
 
+enum DNS_ERRORS {
+	DNS_ERROR_LOCAL = -1,	/**< a local error during DNS lookup, errno is set */
+	DNS_ERROR_TEMP = -2,	/**< a temporary DNS error */
+	DNS_ERROR_PERM = -3	/**< a permanent DNS error */
+};
+
 #endif

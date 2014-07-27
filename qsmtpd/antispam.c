@@ -112,15 +112,16 @@ check_rbl(char *const *rbls, char **txt)
 
 			strcpy(lookup + l, rbls[i]);
 			j = ask_dnsa(lookup, NULL);
-			if (j < 0) {
+			switch (j) {
+			case DNS_ERROR_LOCAL:
 				return j;
-			} else if (!j) {
+			case 0:
 				/* if there is any error here we just write the generic message to the client
 				 * so that's no real problem for us */
 				if (txt != NULL)
-					dnstxt(txt, lookup);
+					(void) dnstxt(txt, lookup);
 				return i;
-			} else if (j == 2) {
+			case DNS_ERROR_TEMP:
 				/* This lookup failed with temporary error. We continue and check the other RBLs first, if
 				 * one matches we can block permanently, only if no other matches we block mail with 4xx */
 				again = 1;

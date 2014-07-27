@@ -177,7 +177,7 @@ test_ask_dnsa(const char *domain, struct ips **ips)
 
 	if (value == NULL) {
 		if (dnsentry_search(DNSTYPE_TIMEOUT, domain) != NULL)
-			return 2;
+			return DNS_ERROR_TEMP;
 
 		return 1;
 	}

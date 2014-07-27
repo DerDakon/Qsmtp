@@ -9,8 +9,6 @@
 #include "match.h"
 #include <qsmtpd/qsmtpd.h>
 
-char *logmess[] = {"no MX", "temporary DNS error on from domain lookup", "NXDOMAIN"};
-
 /*
  * contents of fromdomain (binary or'ed)
  *
@@ -34,12 +32,24 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 	if (u & 1) {
 /* check if domain exists in DNS */
 		if (!xmitstat.frommx) {
-			const char *errmsg[] = {"501 5.1.8 Sorry, can't find a mail exchanger for sender address\r\n",
-						"451 4.4.3 temporary DNS failure\r\n",
-						"501 5.1.8 Domain of sender address does not exist\r\n"};
+			const char *errmsg;
 
-			*logmsg = logmess[xmitstat.fromdomain - 1];
-			return netwrite(errmsg[xmitstat.fromdomain - 1]) ? -1 : 1;
+			switch (xmitstat.fromdomain) {
+			case DNS_ERROR_TEMP:
+				*logmsg = "temporary DNS error on from domain lookup";
+				errmsg = "451 4.4.3 temporary DNS failure\r\n";
+				break;
+			case DNS_ERROR_PERM:
+				*logmsg = "NXDOMAIN";
+				errmsg = "501 5.1.8 Domain of sender address does not exist\r\n";
+				break;
+			case 1:
+				*logmsg = "no MX";
+				errmsg = "501 5.1.8 Sorry, can't find a mail exchanger for sender address\r\n";
+				break;
+			}
+
+			return netwrite(errmsg) ? -1 : 1;
 		}
 	}
 	if (u & 2) {

@@ -34,9 +34,8 @@ getrhost(const struct ips *m)
 
 	r = ask_dnsname(&m->addr, &partner_fqdn);
 	if (r <= 0) {
-		if ((r == 0) || (errno != ENOMEM)) {
+		if ((r == 0) || (errno != ENOMEM))
 			rhost = malloc(INET6_ADDRSTRLEN + 2);
-		}
 		if (errno == ENOMEM)
 			err_mem(1);
 

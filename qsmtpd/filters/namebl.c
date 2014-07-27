@@ -56,13 +56,15 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 				memcpy(blname + dlen, a[i], alen);
 
 				rc = ask_dnsa(blname, NULL);
-				if (rc < 0) {
+				switch (rc) {
+				case DNS_ERROR_LOCAL:
 					goto out;
-				} else if (!rc) {
+				case 0:
 					/* if there is any error here we just write the generic message to the client
-					* so that's no real problem for us */
-					dnstxt(&txt, blname);
-				} else if (rc == 2) {
+					 * so that's no real problem for us */
+					(void) dnstxt(&txt, blname);
+					break;
+				case DNS_ERROR_TEMP:
 					flagtemp = 1;
 				}
 				/* ask_dnsa returns 0 on success, that means we have a match */

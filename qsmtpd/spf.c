@@ -1095,11 +1095,11 @@ spfmx(const char *domain, const char *token)
 	switch (i) {
 	case 1:
 		return SPF_NONE;
-	case 2:
+	case DNS_ERROR_TEMP:
 		return SPF_TEMP_ERROR;
-	case 3:
+	case DNS_ERROR_PERM:
 		return SPF_HARD_ERROR;
-	case -1:
+	case DNS_ERROR_LOCAL:
 		return -1;
 	}
 	if (!mx) {
@@ -1184,9 +1184,9 @@ spfa(const char *domain, const char *token)
 		break;
 	case 1:
 		return SPF_NONE;
-	case 2:
+	case DNS_ERROR_TEMP:
 		return SPF_TEMP_ERROR;
-	case -1:
+	case DNS_ERROR_LOCAL:
 		return -1;
 	default:
 		return SPF_HARD_ERROR;
@@ -1238,10 +1238,10 @@ spfexists(const char *domain, const char *token)
 	case 1:
 		r = SPF_NONE;
 		break;
-	case 2:
+	case DNS_ERROR_TEMP:
 		r = SPF_TEMP_ERROR;
 		break;
-	case -1:
+	case DNS_ERROR_LOCAL:
 		r = -1;
 		break;
 	default:
