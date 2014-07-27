@@ -33,7 +33,7 @@ err_confn(const char **msg, void *freebuf)
 
 
 int
-test_ask_dnsaaaa(const char *domain, struct ips **ips)
+test_ask_dnsaaaa(const char *domain, struct in6_addr **ips)
 {
 	const char *ipv6;
 
@@ -50,14 +50,12 @@ test_ask_dnsaaaa(const char *domain, struct ips **ips)
 	if (*ips == NULL)
 		return -1;
 
-	memset(*ips, 0, sizeof(**ips));
-
-	if (inet_pton(AF_INET6, ipv6, &(*ips)->addr) != 1) {
+	if (inet_pton(AF_INET6, ipv6, *ips) != 1) {
 		fprintf(stderr, "cannot parse example IPv6 address\n");
 		exit(EFAULT);
 	}
 
-	return 0;
+	return 1;
 }
 
 int main(void)

@@ -174,20 +174,21 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			if (tagmask & 1) {
 				/* find host */
 				const char *val = tagvalue(array, 0);
+				struct in6_addr *a;
+				int cnt;
 
 				target = val;
-				if (ask_dnsaaaa(val, &mx)) {
+				cnt = ask_dnsaaaa(val, &a);
+				if (cnt <= 0) {
 					const char *logmsg[] = {"cannot find IP address for static route \"",
 							target, "\" given as target for \"",
 							remhost, "\"", NULL};
 
 					err_confn(logmsg, array);
 				} else {
-					struct ips *m = mx;
-					while (m) {
-						m->priority = 0;
-						m = m->next;
-					}
+					mx = in6_to_ips(a, cnt, 0);
+					if (mx == NULL)
+						return NULL;
 				}
 			}
 
@@ -247,19 +248,22 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 
 				if (!*target) {
 					/* do nothing, let the normal DNS search happen */
-				} else if (ask_dnsaaaa(target, &mx)) {
-					const char *logmsg[] = {"cannot find IP address for static route \"",
-									target, "\" given as target for \"",
-									remhost, "\"", NULL};
-
-					err_confn(logmsg, smtproutes);
 				} else {
-					struct ips *m = mx;
-					while (m) {
-						m->priority = 0;
-						m = m->next;
+					struct in6_addr *a;
+					int cnt = ask_dnsaaaa(target, &a);
+					if (cnt <= 0) {
+						const char *logmsg[] = {"cannot find IP address for static route \"",
+										target, "\" given as target for \"",
+										remhost, "\"", NULL};
+
+						err_confn(logmsg, smtproutes);
+					} else {
+						mx = in6_to_ips(a, cnt, 0);
+
+						if (mx == NULL)
+							return NULL;
+						break;
 					}
-					break;
 				}
 			}
 			k++;

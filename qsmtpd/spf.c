@@ -435,23 +435,22 @@ validate_domain(char ***domainlist)
 
 	d = rnames;
 	for (i = 0; i < r; i++) {
-		struct ips *ptrs = NULL, *tmp;
-		int k;
+		struct in6_addr *ptrs;
+		int j, k;
 
 		if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
 			k = ask_dnsa(d, &ptrs);
 		else
 			k = ask_dnsaaaa(d, &ptrs);
-		if (k < 0) {
+		if (k <= 0) {
 			/* If a DNS error occurs while doing an A RR lookup, then
 			 * that domain name is skipped and the search continues. */
 			d += strlen(d) + 1;
 			continue;
 		}
 
-		tmp = ptrs;
-		while (tmp != NULL) {
-			if (IN6_ARE_ADDR_EQUAL(&tmp->addr, &xmitstat.sremoteip)) {
+		for (j = 0; j < k; j++) {
+			if (IN6_ARE_ADDR_EQUAL(ptrs + j, &xmitstat.sremoteip)) {
 				(*domainlist)[cnt] = strdup(d);
 				if ((*domainlist)[cnt] == NULL) {
 					while (cnt > 0) {
@@ -459,17 +458,16 @@ validate_domain(char ***domainlist)
 					}
 					free(*domainlist);
 					free(rnames);
-					freeips(ptrs);
+					free(ptrs);
 					errno = ENOMEM;
 					return -1;
 				}
 				cnt++;
 				break;
 			}
-			tmp = tmp->next;
 		}
 
-		freeips(ptrs);
+		free(ptrs);
 
 		d += strlen(d) + 1;
 	}
@@ -1140,9 +1138,9 @@ spfa(const char *domain, const char *token)
 {
 	int ip6l = -1;
 	int ip4l = -1;
-	int i;
+	int i, j;
 	int r = 0;
-	struct ips *ip, *thisip;
+	struct in6_addr *ip;
 	char *domainspec = NULL;
 	const int v4 = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip);
 	const char *lookup;
@@ -1181,36 +1179,33 @@ spfa(const char *domain, const char *token)
 
 	switch (i) {
 	case 0:
-		break;
-	case 1:
 		return SPF_NONE;
 	case DNS_ERROR_TEMP:
 		return SPF_TEMP_ERROR;
 	case DNS_ERROR_LOCAL:
 		return -1;
 	default:
-		return SPF_HARD_ERROR;
+		if (i < 0)
+			return SPF_HARD_ERROR;
 	}
 
-	thisip = ip;
 	r = SPF_NONE;
-	while (thisip) {
+	for (j = 0; j < i; j++) {
 		int match = 0;
 		if (v4) {
-			if (IN6_IS_ADDR_V4MAPPED(&thisip->addr))
-				match = ip4_matchnet(&xmitstat.sremoteip, (struct in_addr *)&(thisip->addr.s6_addr32[3]), ip4l);
+			if (IN6_IS_ADDR_V4MAPPED(ip + j))
+				match = ip4_matchnet(&xmitstat.sremoteip, (struct in_addr *)&(ip[j].s6_addr32[3]), ip4l);
 		} else {
-			if (!IN6_IS_ADDR_V4MAPPED(&thisip->addr))
-				match = ip6_matchnet(&xmitstat.sremoteip, &thisip->addr, ip6l);
+			if (!IN6_IS_ADDR_V4MAPPED(ip + j))
+				match = ip6_matchnet(&xmitstat.sremoteip, ip + j, ip6l);
 		}
 
 		if (match) {
 			r = SPF_PASS;
 			break;
 		}
-		thisip = thisip->next;
 	}
-	freeips(ip);
+	free(ip);
 
 	return r;
 }
@@ -1233,9 +1228,6 @@ spfexists(const char *domain, const char *token)
 
 	switch (i) {
 	case 0:
-		r = SPF_PASS;
-		break;
-	case 1:
 		r = SPF_NONE;
 		break;
 	case DNS_ERROR_TEMP:
@@ -1245,7 +1237,10 @@ spfexists(const char *domain, const char *token)
 		r = -1;
 		break;
 	default:
-		r = SPF_HARD_ERROR;
+		if (r < 0)
+			r = SPF_HARD_ERROR;
+		else
+			r = SPF_PASS;
 	}
 	return r;
 }

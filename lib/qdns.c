@@ -7,6 +7,7 @@
 #include <libowfatconn.h>
 
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -56,45 +57,53 @@ ask_dnsmx(const char *name, struct ips **result)
 
 	/* there is no MX record, so we look for an AAAA record */
 	if (!l) {
-		int rc = ask_dnsaaaa(name, result);
+		struct in6_addr *a;
+		/* the DNS priority is 2 bytes long so 65536 can
+		 * never be returned from a real DNS_MX lookup */
+		int rc = ask_dnsaaaa(name, &a);
 
-		if (!rc) {
-			struct ips *a = *result;
+		if (rc < 0)
+			return rc;
+		else if (rc == 0)
+			return 1;
 
-			while (a) {
-				/* the DNS priority is 2 bytes long so 65536 can
-					never be returned from a real DNS_MX lookup */
-				a->priority = 65536;
-				a = a->next;
-			}
-		}
-		return rc;
+		*result = in6_to_ips(a, rc, 65536);
+		if (*result == NULL)
+			return DNS_ERROR_LOCAL;
+
+		return 0;
 	}
 
 	while (r + l > s) {
-		struct ips *p;
+		struct in6_addr *a;
 		int rc;
 
-		rc = ask_dnsaaaa(s + 2, &p);
+		rc = ask_dnsaaaa(s + 2, &a);
 		if (rc == DNS_ERROR_LOCAL) {
 			freeips(*result);
 			free(r);
 			if (errno == ENOMEM)
 				return DNS_ERROR_LOCAL;
 			return DNS_ERROR_TEMP;
-		} else if (!rc) {
-			struct ips *u;
-			unsigned int pri = ntohs(*((unsigned short *) s));
+		} else if (rc > 0) {
+			struct ips *u = in6_to_ips(a, rc, ntohs(*((uint16_t *) s)));
+			struct ips *p = *q;
 
 			/* add the new results to the list */
-			*q = p;
-			/* set priority for each of the new entries */
-			for (u = p; u; u = p->next) {
-				u->priority = pri;
-				p = u;
+			if (u == NULL) {
+				freeips(*result);
+				free(r);
+				return DNS_ERROR_LOCAL;
 			}
-			q = &(p->next);
-		} else {
+
+			while ((p != NULL) && (p->next != NULL))
+				p = p->next;
+
+			if (p == NULL)
+				*q = u;
+			else
+				p->next = u;
+		} else if (rc != 0) {
 			errtype = (1 << -rc);
 		}
 		s += 3 + strlen(s + 2);
@@ -117,20 +126,20 @@ ask_dnsmx(const char *name, struct ips **result)
  *
  * \param name the name to look up
  * \param result first element of a list of results will be placed
- * \retval  0 on success
- * \retval  1 if host is not existent
- * \retval  2 if temporary DNS error
- * \retval  3 if permanent DNS error
+ * \retval  0 no entries found
+ * \retval >0 how many entries were returned in result
+ * \retval -2 if temporary DNS error
+ * \retval -3 if permanent DNS error
  * \retval -1 on error
  */
 int
-ask_dnsaaaa(const char *name, struct ips **result)
+ask_dnsaaaa(const char *name, struct in6_addr **result)
 {
 	int i;
 	char *r;
 	size_t l;
 	char *s;
-	struct ips **q = result;
+	unsigned int cnt = 0;
 
 	*result = NULL;
 
@@ -149,7 +158,7 @@ ask_dnsaaaa(const char *name, struct ips **result)
 		case ENOMEM:
 			return DNS_ERROR_LOCAL;
 		case ENOENT:
-			return 1;
+			return 0;
 		default:
 			return DNS_ERROR_PERM;
 		}
@@ -158,26 +167,19 @@ ask_dnsaaaa(const char *name, struct ips **result)
 	s = r;
 
 	if (!l)
-		return 1;
+		return 0;
 
-	while (r + l > s) {
-		struct ips *p = malloc(sizeof(*p));
-
-		if (!p) {
-			freeips(*result);
-			free(r);
-			return DNS_ERROR_LOCAL;
-		}
-		*q = p;
-		p->next = NULL;
-		memcpy(&(p->addr), s, 16);
-
-		q = &(p->next);
-		s += 16;
+	*result = malloc(((l + 15) / 16) * sizeof(**result));
+	if (*result == NULL) {
+		free(r);
+		return DNS_ERROR_LOCAL;
 	}
 
+	for (cnt = 0; r + l > s; s += sizeof(**result))
+		memcpy(*result + cnt++, s, 16);
+
 	free(r);
-	return 0;
+	return cnt;
 }
 
 /**
@@ -185,18 +187,19 @@ ask_dnsaaaa(const char *name, struct ips **result)
  * @param name the name to look up
  * @param result first element of a list of results will be placed, or NULL if only return code is of interest
  * @return if records have been found
- * @retval 0 on success
- * @retval 1 host does not exist
+ * \retval  0 no entries found
+ * \retval >0 how many entries were returned in result
  * @retval -1 on error (errno is set)
  * @retval -2 temporary DNS error
  * @retval -3 permanent DNS error
  */
 int
-ask_dnsa(const char *name, struct ips **result)
+ask_dnsa(const char *name, struct in6_addr **result)
 {
 	int i;
 	char *r;
 	size_t l;
+	unsigned int idx = 0;
 
 	i = dnsip4(&r, &l, name);
 	if (i < 0) {
@@ -212,43 +215,35 @@ ask_dnsa(const char *name, struct ips **result)
 		case ENOMEM:
 			return DNS_ERROR_LOCAL;
 		case ENOENT:
-			return 1;
+			return 0;
 		default:
 			return DNS_ERROR_PERM;
 		}
 	}
 
+	if (l == 0)
+		return 0;
+
 	if (result) {
 		char *s = r;
-		struct ips **q = result;
-
-		if (!l) {
-			*result = NULL;
-			return 1;
+		*result = malloc(((l + 3) / 4) * sizeof(**result));
+		if (*result == NULL) {
+			free(r);
+			return DNS_ERROR_LOCAL;
 		}
+		memset(*result, 0, ((l + 3) / 4) * sizeof(**result));
 
 		while (r + l > s) {
-			struct ips *p = malloc(sizeof(*p));
+			(*result)[idx].s6_addr32[2] = htonl(0xffff);
+			memcpy(&((*result)[idx].s6_addr32[3]), s, 4);
 
-			if (!p) {
-				freeips(*result);
-				free(r);
-				return DNS_ERROR_LOCAL;
-			}
-			*q = p;
-			p->next = NULL;
-			p->addr.s6_addr32[0] = 0;
-			p->addr.s6_addr32[1] = 0;
-			p->addr.s6_addr32[2] = htonl(0xffff);
-			memcpy(&(p->addr.s6_addr32[3]), s, 4);
-
-			q = &(p->next);
 			s += 4;
+			idx++;
 		}
 	}
 
 	free(r);
-	return l ? 0 : 1;
+	return idx;
 }
 
 /**

@@ -71,10 +71,10 @@ DECLARE_TC_SETUP(ssl_strerror);
 typedef int (func_ask_dnsmx)(const char *, struct ips **);
 DECLARE_TC_SETUP(ask_dnsmx);
 
-typedef int (func_ask_dnsaaaa)(const char *, struct ips **);
+typedef int (func_ask_dnsaaaa)(const char *, struct in6_addr **);
 DECLARE_TC_SETUP(ask_dnsaaaa);
 
-typedef int (func_ask_dnsa)(const char *, struct ips **);
+typedef int (func_ask_dnsa)(const char *, struct in6_addr **);
 DECLARE_TC_SETUP(ask_dnsa);
 
 typedef int (func_ask_dnsname)(const struct in6_addr *, char **);

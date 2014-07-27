@@ -115,16 +115,19 @@ check_rbl(char *const *rbls, char **txt)
 			switch (j) {
 			case DNS_ERROR_LOCAL:
 				return j;
-			case 0:
-				/* if there is any error here we just write the generic message to the client
-				 * so that's no real problem for us */
-				if (txt != NULL)
-					(void) dnstxt(txt, lookup);
-				return i;
 			case DNS_ERROR_TEMP:
 				/* This lookup failed with temporary error. We continue and check the other RBLs first, if
 				 * one matches we can block permanently, only if no other matches we block mail with 4xx */
 				again = 1;
+				break;
+			default:
+				/* if there is any error here we just write the generic message to the client
+				 * so that's no real problem for us */
+				if (j > 0) {
+					if (txt != NULL)
+						(void) dnstxt(txt, lookup);
+					return i;
+				}
 			}
 		}
 		i++;

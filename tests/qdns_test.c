@@ -263,20 +263,21 @@ test_fwdrev(void)
 {
 	int err = 0;
 	unsigned int idx = 0;
-	struct ips *res;
 
 	while (dns_entries[idx].name != NULL) {
-		struct ips *cur;
+		struct in6_addr *cur;
+		struct in6_addr *res = NULL;
+		int cnt;
 
 		if ((idx > 0) && (strcmp(dns_entries[idx - 1].name, dns_entries[idx].name) == 0)) {
 			idx++;
 			continue;
 		}
 
-		res = NULL;
-
-		if (ask_dnsa(dns_entries[idx].name, &res) != 0) {
-			if (ask_dnsaaaa(dns_entries[idx].name, &res) != 0) {
+		cnt = ask_dnsa(dns_entries[idx].name, &res);
+		if (cnt <= 0) {
+			cnt = ask_dnsaaaa(dns_entries[idx].name, &res);
+			if (cnt <= 0) {
 				fprintf(stderr, "%s has returned neither IPv4 nor IPv6 address\n", dns_entries[idx].name);
 				err++;
 				idx++;
@@ -285,10 +286,10 @@ test_fwdrev(void)
 		}
 
 		cur = res;
-		while (cur != NULL) {
+		while (cnt > 0) {
 			char *nname = NULL;
 
-			if (ask_dnsname(&cur->addr, &nname) <= 0) {
+			if (ask_dnsname(cur, &nname) <= 0) {
 				fprintf(stderr, "no reverse lookup found for IP of %s\n", dns_entries[idx].name);
 				err++;
 			} else {
@@ -299,10 +300,11 @@ test_fwdrev(void)
 				free(nname);
 			}
 
-			cur = cur->next;
+			cur++;
+			cnt--;
 		}
 
-		freeips(res);
+		free(res);
 		idx++;
 	}
 

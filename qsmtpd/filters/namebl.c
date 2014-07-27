@@ -17,7 +17,7 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	char **a;		/* array of blacklists to check */
 	int i = 0;		/* counter of the array position */
-	int rc;			/* return code */
+	int rc = 0;		/* return code */
 	char *txt = NULL;	/* TXT record of the rbl entry */
 	const char *netmsg[] = {"501 5.7.1 message rejected, you are listed in ",
 				NULL, NULL, NULL, NULL};
@@ -40,13 +40,11 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 
 	fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
 
-	rc = 1;
-	/* Beware: rc has opposite meaning (0 == match) ! */
-	while (a[i] && rc) {
+	while (a[i] && (rc <= 0)) {
 		char *d = fromdomain;
 		size_t alen = strlen(a[i]) + 1;
 
-		while (d && rc) {
+		while (d && (rc <= 0)) {
 			size_t dlen = strlen(d);
 			char blname[256];
 
@@ -59,15 +57,16 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 				switch (rc) {
 				case DNS_ERROR_LOCAL:
 					goto out;
-				case 0:
-					/* if there is any error here we just write the generic message to the client
-					 * so that's no real problem for us */
-					(void) dnstxt(&txt, blname);
-					break;
 				case DNS_ERROR_TEMP:
 					flagtemp = 1;
+				default:
+					/* if there is any error here we just write the generic message to the client
+					 * so that's no real problem for us */
+					if (rc > 0)
+						(void) dnstxt(&txt, blname);
+					break;
 				}
-				/* ask_dnsa returns 0 on success, that means we have a match */
+				/* ask_dnsa() returns >0 on success, that means we have a match */
 			}
 			if ( (d = strchr(d, '.')) )
 				d++;
@@ -75,7 +74,7 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		i++;
 	}
 
-	if (!rc) {
+	if (rc > 0) {
 		logmess[7] = a[--i];
 		log_writen(LOG_INFO, logmess);
 		netmsg[1] = a[i];

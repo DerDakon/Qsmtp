@@ -108,6 +108,50 @@ parseips(const char *list)
 	return ret;
 }
 
+static struct in6_addr *
+parsein6(const char *list, int *cnt)
+{
+	const char *next = list;
+	struct in6_addr *ret = NULL;
+
+	*cnt = 0;
+
+	while (next != NULL) {
+		char curbuf[INET6_ADDRSTRLEN];
+		const char *parsep;
+		char *end = strchr(next, ';');
+		struct in6_addr *n;
+
+		*cnt += 1;
+		n = realloc(ret, *cnt * sizeof(*n));
+
+		if (n == NULL) {
+			free(ret);
+			exit(ENOMEM);
+		}
+		ret = n;
+
+		if (end == NULL) {
+			parsep = next;
+		} else {
+			assert((size_t)(end - next) < sizeof(curbuf));
+			strncpy(curbuf, next, end - next);
+			curbuf[end - next] = '\0';
+			         parsep = curbuf;
+			end++;
+		}
+
+		if (inet_pton(AF_INET6, parsep, n + (*cnt - 1)) != 1) {
+			fprintf(stderr, "%s can not be parsed as IPv6 address\n", parsep);
+			exit(EINVAL);
+		}
+
+		next = end;
+	}
+
+	return ret;
+}
+
 int
 test_ask_dnsmx(const char *domain, struct ips **ips)
 {
@@ -115,34 +159,38 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 
 	*ips = NULL;
 	if (value == NULL) {
-		int r = ask_dnsa(domain, ips);
-		struct ips *ip6addr = NULL;
+		struct in6_addr *a;
+		int r = ask_dnsa(domain, &a);
+		struct in6_addr *ip6addr;
 		int q = ask_dnsaaaa(domain, &ip6addr);
-		struct ips *cur = *ips;
+		struct ips *cur;
 
 		if (dnsentry_search(DNSTYPE_TIMEOUT, domain) != NULL)
-			return 2;
+			return DNS_ERROR_TEMP;
 
-		while (cur != NULL) {
-			cur->priority = 65536;
-			cur = cur->next;
-		}
-		cur = ip6addr;
-		while (cur != NULL) {
-			cur->priority = 65536;
-			cur = cur->next;
+		if (r > 0) {
+			cur = in6_to_ips(a, r, 65536);
+			if (cur == NULL) {
+				free(ip6addr);
+				return DNS_ERROR_LOCAL;
+			}
+
+			if (q > 0) {
+				*ips = cur;
+				while (cur->next != NULL)
+					cur = cur->next;
+				cur = in6_to_ips(ip6addr, q, 65536);
+			}
+		} else if (q > 0) {
+			cur = in6_to_ips(ip6addr, q, 65536);
 		}
 
-		if (q != 0) {
+		if ((q >= 0) && (r >= 0))
+			return q + r;
+		else if (q >= 0)
+			return q;
+		else
 			return r;
-		} else {
-			cur = ip6addr;
-			while (cur->next != NULL)
-				cur = cur->next;
-			cur->next = *ips;
-			*ips = cur;
-			return 0;
-		}
 	}
 
 	*ips = parseips(value);
@@ -151,41 +199,57 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 }
 
 int
-test_ask_dnsaaaa(const char *domain, struct ips **ips)
+test_ask_dnsaaaa(const char *domain, struct in6_addr **ips)
 {
 	const char *value = dnsentry_search(DNSTYPE_AAAA, domain);
-	struct ips *cur;
+	struct in6_addr *cur, *n;
+	int r;
+	int m;
 
 	if (value == NULL)
 		return ask_dnsa(domain, ips);
 
-	*ips = parseips(value);
-	cur = *ips;
+	*ips = parsein6(value, &r);
 
-	while (cur->next != NULL)
-		cur = cur->next;
+	m = ask_dnsa(domain, &cur);
 
-	ask_dnsa(domain, &cur->next);
+	if (m > 0) {
+		n = realloc(*ips, (r + m) * sizeof(*n));
+		if (n == NULL) {
+			free(*ips);
+			free(cur);
+			return DNS_ERROR_LOCAL;
+		}
 
-	return 0;
+		memcpy(n + r, cur, m * sizeof(*n));
+		free(cur);
+		*ips = n;
+	}
+
+	return r + m;
 }
 
 int
-test_ask_dnsa(const char *domain, struct ips **ips)
+test_ask_dnsa(const char *domain, struct in6_addr **ips)
 {
 	const char *value = dnsentry_search(DNSTYPE_A, domain);
+	int r;
+	struct in6_addr *q;
 
 	if (value == NULL) {
 		if (dnsentry_search(DNSTYPE_TIMEOUT, domain) != NULL)
 			return DNS_ERROR_TEMP;
 
-		return 1;
+		return 0;
 	}
 
+	q = parsein6(value, &r);
 	if (ips != NULL)
-		*ips = parseips(value);
+		*ips = q;
+	else
+		free(q);
 
-	return 0;
+	return r;
 }
 
 int

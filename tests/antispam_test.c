@@ -159,12 +159,12 @@ void test_log_writen(int priority __attribute__ ((unused)), const char **msg __a
 }
 
 int
-test_ask_dnsa(const char *a, struct ips **b)
+test_ask_dnsa(const char *a, struct in6_addr **b)
 {
 	unsigned int i;
 
 	if (dnsentries == NULL)
-		return 1;
+		return 0;
 
 	if (b != NULL)
 		*b = NULL;
@@ -174,11 +174,11 @@ test_ask_dnsa(const char *a, struct ips **b)
 			/* found a match, now use the rbl name to get the result */
 			if (strstr(a, "timeout") != NULL)
 				return DNS_ERROR_TEMP;
-			return 0;
+			return 1;
 		}
 	}
 
-	return 1;
+	return 0;
 }
 
 int

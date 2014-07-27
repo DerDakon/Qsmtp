@@ -4,6 +4,7 @@
 
 #include <qdns.h>
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -121,4 +122,42 @@ sortmx(struct ips **p)
 	}
 
 	*p = res;
+}
+
+/**
+ * @brief convert an array of in6_addr structs to a list of struct ips
+ * @param a the input array
+ * @param cnt the address count in a (must be >0)
+ * @param priority priority of the new records
+ * @return list of struct ips
+ * @retval NULL an allocation error happened during conversion
+ *
+ * a will always be free.
+ */
+struct ips *
+in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
+{
+	struct ips *res = NULL;
+
+	assert(cnt > 0);
+
+	while (cnt > 0) {
+		struct ips *n = malloc(sizeof(*n));
+
+		if (n == NULL) {
+			freeips(res);
+			free(a);
+			return NULL;
+		}
+
+		cnt--;
+
+		memcpy(&n->addr, a + cnt, sizeof(*a));
+
+		n->next = res;
+		n->priority = priority;
+		res = n;
+	}
+
+	return res;
 }

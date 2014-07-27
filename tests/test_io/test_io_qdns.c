@@ -21,7 +21,7 @@ tc_ignore_ask_dnsmx(const char *a __attribute__ ((unused)), struct ips **b __att
 }
 
 int
-ask_dnsaaaa(const char *a, struct ips **b)
+ask_dnsaaaa(const char *a, struct in6_addr **b)
 {
 	ASSERT_CALLBACK(testcase_ask_dnsaaaa);
 
@@ -29,13 +29,13 @@ ask_dnsaaaa(const char *a, struct ips **b)
 }
 
 int
-tc_ignore_ask_dnsaaaa(const char *a __attribute__ ((unused)), struct ips **b __attribute__ ((unused)))
+tc_ignore_ask_dnsaaaa(const char *a __attribute__ ((unused)), struct in6_addr **b __attribute__ ((unused)))
 {
-	return 1;
+	return 0;
 }
 
 int
-ask_dnsa(const char *a, struct ips **b)
+ask_dnsa(const char *a, struct in6_addr **b)
 {
 	ASSERT_CALLBACK(testcase_ask_dnsa);
 
@@ -43,9 +43,9 @@ ask_dnsa(const char *a, struct ips **b)
 }
 
 int
-tc_ignore_ask_dnsa(const char *a __attribute__ ((unused)), struct ips **b __attribute__ ((unused)))
+tc_ignore_ask_dnsa(const char *a __attribute__ ((unused)), struct in6_addr **b __attribute__ ((unused)))
 {
-	return 1;
+	return 0;
 }
 
 int
