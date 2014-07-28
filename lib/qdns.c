@@ -87,7 +87,7 @@ ask_dnsmx(const char *name, struct ips **result)
 			return DNS_ERROR_TEMP;
 		} else if (rc > 0) {
 			struct ips *u = in6_to_ips(a, rc, ntohs(*((uint16_t *) s)));
-			struct ips *p = *q;
+			struct ips *p;
 
 			/* add the new results to the list */
 			if (u == NULL) {
@@ -96,6 +96,17 @@ ask_dnsmx(const char *name, struct ips **result)
 				return DNS_ERROR_LOCAL;
 			}
 
+			for (p = u; p != NULL; p = p->next) {
+				p->name = strdup(name);
+				if (p->name == NULL) {
+					freeips(*result);
+					freeips(u);
+					free(r);
+					return DNS_ERROR_LOCAL;
+				}
+			}
+
+			p = *q;
 			while ((p != NULL) && (p->next != NULL))
 				p = p->next;
 

@@ -371,6 +371,7 @@ test_mx(void)
 	int err = 0;
 	struct ips *res = NULL;
 	struct ips *cur;
+	unsigned int idx = 0;
 
 	if (ask_dnsmx(mxname, &res) != 0) {
 		fprintf(stderr, "lookup of %s did not return MX entries\n", mxname);
@@ -380,6 +381,14 @@ test_mx(void)
 	cur = res;
 	while (cur != NULL) {
 		char *nname = NULL;
+
+		if (cur->name == NULL) {
+			fprintf(stderr, "MX lookup %u for %s has no name set\n", idx, mxname);
+			err++;
+		} else if (strcmp(cur->name, mxname) != 0) {
+			fprintf(stderr, "MX lookup %u for %s has wrong name %s set\n", idx, mxname, cur->name);
+			err++;
+		}
 
 		if (ask_dnsname(&cur->addr, &nname) <= 0) {
 			fprintf(stderr, "no reverse lookup found for MX IP\n");
