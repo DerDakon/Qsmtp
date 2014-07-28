@@ -179,16 +179,16 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 				*ips = cur;
 				while (cur->next != NULL)
 					cur = cur->next;
-				cur = in6_to_ips(ip6addr, q, 65536);
+				cur->next = in6_to_ips(ip6addr, q, 65536);
 			}
 		} else if (q > 0) {
 			cur = in6_to_ips(ip6addr, q, 65536);
 		}
 
 		if ((q >= 0) && (r >= 0))
-			return q + r;
+			return 0;
 		else if (q >= 0)
-			return q;
+			return 0;
 		else
 			return r;
 	}
