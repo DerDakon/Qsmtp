@@ -77,6 +77,7 @@ freeips(struct ips *p)
 		struct ips *thisip = p;
 
 		p = thisip->next;
+		free(thisip->name);
 		free(thisip);
 	}
 }
@@ -154,6 +155,7 @@ in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 
 		memcpy(&n->addr, a + cnt, sizeof(*a));
 
+		n->name = NULL;
 		n->next = res;
 		n->priority = priority;
 		res = n;

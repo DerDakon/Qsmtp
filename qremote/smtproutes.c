@@ -127,10 +127,35 @@ parse_route_params(struct ips **mx, const char *remhost, unsigned int *targetpor
 
 			err_confn(logmsg, buf);
 		} else {
+			int is_ip;
+
 			*mx = in6_to_ips(a, cnt, 0);
 
 			if (*mx == NULL)
 				return -ENOMEM;
+
+			/* decide if the name of the MX should be copied: copy it
+				* it it doesn't look like an IPv4 or IPv6 address */
+			if (IN6_IS_ADDR_V4MAPPED(&(*mx)->addr)) {
+				struct in6_addr ad;
+				is_ip = (inet_pton(AF_INET6, host, &ad) > 0);
+			} else {
+				struct in_addr ad;
+				is_ip = (inet_pton(AF_INET, host, &ad) > 0);
+			}
+
+			if (!is_ip) {
+				struct ips *m = *mx;
+
+				while (m != NULL) {
+					m->name = strdup(host);
+					if (m->name == NULL) {
+						freeips(*mx);
+						return -ENOMEM;
+					}
+					m = m->next;
+				}
+			}
 		}
 	}
 

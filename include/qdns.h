@@ -18,6 +18,7 @@
  */
 struct ips {
 	struct in6_addr addr;	/**< IPv6 address */
+	char *name;		/**< name of the MX */
 	unsigned int priority;	/**< MX priority, undefined for A or AAAA */
 	struct ips *next;	/**< pointer to next list entry */
 };

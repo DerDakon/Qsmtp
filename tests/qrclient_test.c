@@ -94,9 +94,11 @@ testcase_valid_return(void)
 	memset(&mx, 0, sizeof(mx));
 	mx[0].next = mx + 1;
 	mx[0].priority = 42;
+	mx[0].name = NULL;
 
 	inet_pton(AF_INET6, ipstr_example, &(mx[1].addr));
 	mx[1].priority = 65538;
+	mx[1].name = name_example;
 
 	getrhost(mx);
 

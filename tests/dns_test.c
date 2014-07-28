@@ -143,6 +143,7 @@ test_sort_ipv6(void)
 		}
 		ipa->next = ipb;
 		ipa->priority = 42;
+		ipa->name = NULL;
 		ipb = ipa;
 	}
 

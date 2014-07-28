@@ -100,6 +100,7 @@ parseips(const char *list)
 		}
 		n->priority = 42;
 		n->next = ret;
+		n->name = NULL;
 		ret = n;
 
 		next = end;
