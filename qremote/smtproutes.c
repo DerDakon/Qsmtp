@@ -102,6 +102,59 @@ tagvalue(char **lines, const unsigned int idx)
 }
 
 /**
+ * @brief parse the parts of an smtproute
+ * @param mx MX result list is stored here
+ * @param remhost original remote host
+ * @param targetport targetport will be stored here
+ * @param buf additional buffer, will be freed in case of fatal error
+ * @param host host name of smtproute or NULL
+ * @param port port string of smtproute of NULL
+ * @retval 0 values were successfully parsed
+ * @retval <0 error code during setup
+ *
+ * The function will abort the program if a parse error occurs.
+ */
+static int __attribute__ ((nonnull(1, 2, 3, 4)))
+parse_route_params(struct ips **mx, const char *remhost, unsigned int *targetport, void *buf, const char *host, const char *port)
+{
+	if (host != NULL) {
+		struct in6_addr *a;
+		int cnt = ask_dnsaaaa(host, &a);
+		if (cnt <= 0) {
+			const char *logmsg[] = {"cannot find IP address for static route \"",
+					host, "\" given as target for \"",
+					remhost, "\"", NULL};
+
+			err_confn(logmsg, buf);
+		} else {
+			*mx = in6_to_ips(a, cnt, 0);
+
+			if (*mx == NULL)
+				return -ENOMEM;
+		}
+	}
+
+	if (port != NULL) {
+		char *more;
+
+		*targetport = strtoul(port, &more, 10);
+		if ((*more != '\0') || (*targetport >= 65536) || (*targetport == 0)) {
+			const char *logmsg[] = {"invalid port number '", port,
+					"' given for \"",
+					host ? host : "",
+					"\" given as target for \"", remhost, "\"", NULL};
+
+			freeips(*mx);
+			err_confn(logmsg, buf);
+		}
+	} else {
+		*targetport = 25;
+	}
+
+	return 0;
+}
+
+/**
  * @brief get static route for domain
  *
  * @param remhost target to look up
@@ -133,7 +186,8 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 		while (1) {
 			char **array;
 			int fd = openat(dirfd, fn, O_RDONLY | O_CLOEXEC);
-			const char *target = NULL;
+			const char *hv;
+			const char *pv;
 
 			if (fd < 0) {
 				if (errno != ENOENT) {
@@ -163,6 +217,8 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 
 			tagmask = 0;
 
+			close(dirfd);
+
 			/* no error */
 			if (loadlistfd(fd, &array, validroute) != 0) {
 				const char *errmsg[] = {
@@ -171,50 +227,22 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 				err_confn(errmsg, NULL);
 			}
 
-			if (tagmask & 1) {
+			if (tagmask & 1)
 				/* find host */
-				const char *val = tagvalue(array, 0);
-				struct in6_addr *a;
-				int cnt;
+				hv = tagvalue(array, 0);
+			else
+				hv = NULL;
 
-				target = val;
-				cnt = ask_dnsaaaa(val, &a);
-				if (cnt <= 0) {
-					const char *logmsg[] = {"cannot find IP address for static route \"",
-							target, "\" given as target for \"",
-							remhost, "\"", NULL};
+			if (tagmask & 2)
+				pv = tagvalue(array, 1);
+			else
+				pv = NULL;
 
-					err_confn(logmsg, array);
-				} else {
-					mx = in6_to_ips(a, cnt, 0);
-					if (mx == NULL)
-						return NULL;
-				}
-			}
-
-			if (tagmask & 2) {
-				char *more;
-				const char *val = tagvalue(array, 1);
-
-				*targetport = strtoul(val, &more, 10);
-				if ((*more != '\0') || (*targetport >= 65536) || (*targetport == 0)) {
-					const char *logmsg[] = {"invalid port number '", val,
-							"' given for \"",
-							target ? target : "",
-							"\" given as target for \"", remhost, "\"", NULL};
-
-					freeips(mx);
-					err_confn(logmsg, array);
-				}
-				
-			} else {
-				*targetport = 25;
-			}
+			fd = parse_route_params(&mx, remhost, targetport, array, hv, pv);
 
 			free(array);
 
-			close(dirfd);
-			return mx;
+			return (fd == 0) ? mx : NULL;
 		}
 	}
 
@@ -229,42 +257,16 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 				char *port;
 
 				port = strchr(target, ':');
-				if (port) {
+				if (port != NULL) {
 					/* overwrite the colon ending the hostname so the code
 					 * below will not take this as part of the host name */
 					*port++ = '\0';
-					*targetport = strtoul(port, NULL, 10);
-					if ((*targetport >= 65536) || (*targetport == 0)) {
-						const char *logmsg[] = {"invalid port number '", port,
-									"' given for \"",
-									target, "\" given as target for \"",
-									remhost, "\"", NULL};
-
-						err_confn(logmsg, smtproutes);
-					}
-				} else {
-					*targetport = 25;
 				}
 
-				if (!*target) {
-					/* do nothing, let the normal DNS search happen */
-				} else {
-					struct in6_addr *a;
-					int cnt = ask_dnsaaaa(target, &a);
-					if (cnt <= 0) {
-						const char *logmsg[] = {"cannot find IP address for static route \"",
-										target, "\" given as target for \"",
-										remhost, "\"", NULL};
+				if (parse_route_params(&mx, remhost, targetport, smtproutes, *target ? target : NULL, port) != 0)
+					return NULL;
 
-						err_confn(logmsg, smtproutes);
-					} else {
-						mx = in6_to_ips(a, cnt, 0);
-
-						if (mx == NULL)
-							return NULL;
-						break;
-					}
-				}
+				break;
 			}
 			k++;
 		}
