@@ -71,7 +71,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 			thisip = thisip->next;
 		}
 		if (flaghit) {
-			*logmsg = "DNS loop";
+			*logmsg = "MX in loopback net";
 			return netwrite("501 5.4.0 all your mail exchangers have loopback addresses\r\n") ? -1 : 1;
 		}
 	}
