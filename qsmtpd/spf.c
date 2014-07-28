@@ -1061,7 +1061,7 @@ spfmx(const char *domain, const char *token)
 	int ip6l = -1;
 	int ip4l = -1;
 	int i;
-	struct ips *mx, *allmx;
+	struct ips *mx;
 	char *domainspec = NULL;
 
 	switch (may_have_domainspec(token)) {
@@ -1078,12 +1078,11 @@ spfmx(const char *domain, const char *token)
 		return SPF_FAIL_MALF;
 	}
 
-	if (ip4l < 0) {
+	if (ip4l < 0)
 		ip4l = 32;
-	}
-	if (ip6l < 0) {
+	if (ip6l < 0)
 		ip6l = 128;
-	}
+
 	if (domainspec) {
 		i = ask_dnsmx(domainspec, &mx);
 		free(domainspec);
@@ -1100,36 +1099,36 @@ spfmx(const char *domain, const char *token)
 	case DNS_ERROR_LOCAL:
 		return -1;
 	}
-	if (!mx) {
+	if (!mx)
 		return SPF_NONE;
-	}
-/* Don't use the implicit MX for this. There are either all MX records
- * implicit or none so we only have to look at the first one */
+	/* Don't use the implicit MX for this. There are either all MX records
+	 * implicit or none so we only have to look at the first one */
 	if (mx->priority >= 65536) {
 		freeips(mx);
 		return SPF_NONE;
 	}
-	allmx = mx;
 	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
-		while (mx) {
-			if (IN6_IS_ADDR_V4MAPPED(&(mx->addr)) &&
+		struct ips *cur;
+		for (cur = mx; cur != NULL; cur = cur->next) {
+			if (IN6_IS_ADDR_V4MAPPED(&cur->addr) &&
 					ip4_matchnet(&xmitstat.sremoteip,
-							(struct in_addr *) &(mx->addr.s6_addr32[3]), ip4l)) {
-				freeips(allmx);
+							(struct in_addr *) &(cur->addr.s6_addr32[3]), ip4l)) {
+				freeips(mx);
 				return SPF_PASS;
 			}
-			mx = mx->next;
 		}
+#ifndef IPV4ONLY
 	} else {
-		while (mx) {
-			if (ip6_matchnet(&xmitstat.sremoteip, &mx->addr, ip6l)) {
-				freeips(allmx);
+		struct ips *cur;
+		for (cur = mx; cur != NULL; cur = cur->next) {
+			if (ip6_matchnet(&xmitstat.sremoteip, &cur->addr, ip6l)) {
+				freeips(mx);
 				return SPF_PASS;
 			}
-			mx = mx->next;
 		}
+#endif /* IPV4ONLY */
 	}
-	freeips(allmx);
+	freeips(mx);
 	return SPF_NONE;
 }
 
