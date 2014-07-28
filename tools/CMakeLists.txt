@@ -52,12 +52,7 @@ INCLUDE_DIRECTORIES(
 		${OWFAT_INCLUDE_DIRS}
 )
 
-ADD_EXECUTABLE(dnsdane dnsdane.c)
-
-TARGET_LINK_LIBRARIES(dnsdane ${OWFAT_LIBRARIES})
-
 INSTALL(TARGETS
-		dnsdane
 		testspf
 		qpencode
 		clearpass
