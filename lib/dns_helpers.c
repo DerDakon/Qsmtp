@@ -146,8 +146,8 @@ in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 
 		if (n == NULL) {
 			freeips(res);
-			free(a);
-			return NULL;
+			res = NULL;
+			break;
 		}
 
 		cnt--;
@@ -158,6 +158,8 @@ in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 		n->priority = priority;
 		res = n;
 	}
+
+	free(a);
 
 	return res;
 }
