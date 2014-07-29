@@ -9,6 +9,8 @@
 #include "match.h"
 #include <qsmtpd/qsmtpd.h>
 
+#include <assert.h>
+
 /*
  * contents of fromdomain (binary or'ed)
  *
@@ -47,6 +49,9 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 				*logmsg = "no MX";
 				errmsg = "501 5.1.8 Sorry, can't find a mail exchanger for sender address\r\n";
 				break;
+			default:
+				assert(xmitstat.fromdomain == 1);
+				return 0;
 			}
 
 			return netwrite(errmsg) ? -1 : 1;
