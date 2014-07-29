@@ -50,7 +50,10 @@ extern struct ips *in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsign
 #define INET_ADDRSTRLEN 16
 #endif
 
-enum DNS_ERRORS {
+/** @enum dns_errors
+ * @brief error codes returned by the DNS lookup functions
+ */
+enum dns_errors {
 	DNS_ERROR_LOCAL = -1,	/**< a local error during DNS lookup, errno is set */
 	DNS_ERROR_TEMP = -2,	/**< a temporary DNS error */
 	DNS_ERROR_PERM = -3	/**< a permanent DNS error */
