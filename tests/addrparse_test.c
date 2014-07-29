@@ -118,9 +118,10 @@ void
 userconf_init(struct userconf *ds)
 {
 	STREMPTY(ds->domainpath);
-	ds->userdirfd = -1;
 	ds->userconf = NULL;
 	ds->domainconf = NULL;
+	ds->domaindirfd = -1;
+	ds->userdirfd = -1;
 }
 
 void
@@ -129,6 +130,7 @@ userconf_free(struct userconf *ds)
 	assert((ds->domainpath.s == NULL) || (ds->domainpath.s == domaindirbuffer));
 	free(ds->userconf);
 	free(ds->domainconf);
+	assert(ds->domaindirfd == -1);
 	if (ds->userdirfd >= 0)
 		close(ds->userdirfd);
 
@@ -173,9 +175,10 @@ int
 user_exists(const string *localpart, const char *domain, struct userconf *ds)
 {
 	if (ds != NULL) {
-		assert(ds->userdirfd == -1);
 		assert(ds->domainpath.s == NULL);
 		assert(ds->domainpath.len == 0);
+		assert(ds->domaindirfd == -1);
+		assert(ds->userdirfd == -1);
 	}
 	if (strchr(testdata[testindex].inpattern, '[') != NULL) {
 		if (strcmp(domain, liphost.s) != 0) {
