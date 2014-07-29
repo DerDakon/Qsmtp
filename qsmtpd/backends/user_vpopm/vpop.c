@@ -301,7 +301,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 			return -res;
 		}
 	} else {
-		/* this else isn't strictly neccessary, it's here to limit the lifetime
+		/* this else isn't strictly necessary, it's here to limit the lifetime
 		 * of buf */
 		char fnbuf[localpart->len + 1];
 

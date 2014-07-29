@@ -3,7 +3,7 @@
 
  This file contains the functions to send the message body to the remote host.
  Both DATA and BDAT modes are supported. In DATA mode the message will be recoded
- to quoted-printable if neccessary.
+ to quoted-printable if necessary.
  */
 
 #include <qremote/qrdata.h>
