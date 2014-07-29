@@ -218,10 +218,10 @@ test_found(void)
 	int fd;
 	enum config_domain type = -1;
 
+	userconf_init(&ds);
+
 	/* first: check with only user directory set */
 	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
-	ds.domainpath.len = 0;
-	ds.domainpath.s = NULL;
 
 	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
 	r += test_found_internal("user", fd, type, CONFIG_USER);
@@ -229,13 +229,12 @@ test_found(void)
 	/* set both, but user information should still be used */
 	ds.domainpath.s = fnbuffer;
 	ds.domainpath.len = strlen(fnbuffer);
-	ds.domaindirfd = get_dirfd(AT_FDCWD, fnbuffer);
+	ds.domaindirfd = ds.userdirfd;
 
 	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
 	r += test_found_internal("user", fd, type, CONFIG_USER);
 
 	/* now only with domain information */
-	close(ds.userdirfd);
 	ds.userdirfd = -1;
 
 	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
@@ -246,7 +245,7 @@ test_found(void)
 		fprintf(stderr, "opening global file 'something' succeeded, type %i\n",
 				type);
 		close(fd);
-		return r++;
+		r++;
 	}
 
 	close(ds.domaindirfd);
