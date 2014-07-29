@@ -133,7 +133,7 @@ sortmx(struct ips **p)
  * @return list of struct ips
  * @retval NULL an allocation error happened during conversion
  *
- * a will always be free.
+ * a will always be freed.
  */
 struct ips *
 in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
