@@ -410,7 +410,7 @@ main(void)
 			uc.userconf = map_from_list(testdata[testindex].userconf);
 
 		snprintf(confpath, sizeof(confpath), "%u/domain/", testindex);
-		uc.domaindirfd = open(confpath, O_RDONLY | O_CLOEXEC);
+		uc.domaindirfd = get_dirfd(AT_FDCWD, confpath);
 		if (uc.domaindirfd < 0) {
 			uc.domainpath.s = NULL;
 			uc.domainpath.len = 0;
