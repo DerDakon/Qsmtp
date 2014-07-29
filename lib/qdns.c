@@ -18,9 +18,9 @@
  * \param result first element of a list of results will be placed
  * \retval  0 on success
  * \retval  1 if host is not existent
- * \retval  2 if temporary DNS error
- * \retval  3 if permanent DNS error
- * \retval -1 on error
+ * \retval DNS_ERROR_TEMP if temporary DNS error
+ * \retval DNS_ERROR_PERM if permanent DNS error
+ * \retval DNS_ERROR_LOCAL on error (errno is set)
  */
 int
 ask_dnsmx(const char *name, struct ips **result)
@@ -140,9 +140,9 @@ ask_dnsmx(const char *name, struct ips **result)
  * \param result first element of a list of results will be placed
  * \retval  0 no entries found
  * \retval >0 how many entries were returned in result
- * \retval -2 if temporary DNS error
- * \retval -3 if permanent DNS error
- * \retval -1 on error
+ * \retval DNS_ERROR_TEMP if temporary DNS error
+ * \retval DNS_ERROR_PERM if permanent DNS error
+ * \retval DNS_ERROR_LOCAL on error (errno is set)
  */
 int
 ask_dnsaaaa(const char *name, struct in6_addr **result)
@@ -201,9 +201,9 @@ ask_dnsaaaa(const char *name, struct in6_addr **result)
  * @return if records have been found
  * \retval  0 no entries found
  * \retval >0 how many entries were returned in result
- * @retval -1 on error (errno is set)
- * @retval -2 temporary DNS error
- * @retval -3 permanent DNS error
+ * @retval DNS_ERROR_LOCAL on error (errno is set)
+ * @retval DNS_ERROR_TEMP temporary DNS error
+ * @retval DNS_ERROR_PERM permanent DNS error
  */
 int
 ask_dnsa(const char *name, struct in6_addr **result)
@@ -265,9 +265,9 @@ ask_dnsa(const char *name, struct in6_addr **result)
  * @param result name will be stored here
  * @return how many names were found, negative on error
  * @retval 0 host not found
- * @retval -1 local error (e.g. ENOMEM)
- * @retval -2 temporary DNS error
- * @retval -3 permanent DNS error
+ * @retval DNS_ERROR_LOCAL local error (errno is set)
+ * @retval DNS_ERROR_TEMP temporary DNS error
+ * @retval DNS_ERROR_PERM permanent DNS error
  */
 int
 ask_dnsname(const struct in6_addr *ip, char **result)
