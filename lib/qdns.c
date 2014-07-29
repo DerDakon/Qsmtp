@@ -77,8 +77,9 @@ ask_dnsmx(const char *name, struct ips **result)
 	while (r + l > s) {
 		struct in6_addr *a;
 		int rc;
+		const char *mxname = s + 2;
 
-		rc = ask_dnsaaaa(s + 2, &a);
+		rc = ask_dnsaaaa(mxname, &a);
 		if (rc == DNS_ERROR_LOCAL) {
 			freeips(*result);
 			free(r);
@@ -97,7 +98,7 @@ ask_dnsmx(const char *name, struct ips **result)
 			}
 
 			for (p = u; p != NULL; p = p->next) {
-				p->name = strdup(name);
+				p->name = strdup(mxname);
 				if (p->name == NULL) {
 					freeips(*result);
 					freeips(u);

@@ -191,29 +191,143 @@ int dnstxt(char **out __attribute__((unused)), const char *host __attribute__((u
 	return -1;
 }
 
-static const char mxname[] = "mx.example.com";
+#define MAX_MX_PER_DOMAIN 3
+static struct {
+	const char *name;
+	struct {
+		unsigned int dnsindex; /* index into dns_entries */
+		uint16_t priority;
+	} entries[MAX_MX_PER_DOMAIN];
+} mxentries[] = {
+	/* one host, three hosts */
+	{
+		.name = "mx.example.com",
+		.entries = {
+			{
+				.dnsindex = 0,
+				.priority = 10
+			},
+			{
+				.dnsindex = 3,
+				.priority = 20
+			}
+		}
+	},
+	/* two hosts, three hosts */
+	{
+		.name = "mx2.example.com",
+		.entries = {
+			{
+				.dnsindex = 1,
+				.priority = 10
+			},
+			{
+				.dnsindex = 3,
+				.priority = 20
+			}
+		}
+	},
+	/* one single host */
+	{
+		.name = "mx3.example.com",
+		.entries = {
+			{
+				.dnsindex = 0,
+				.priority = 10
+			}
+		}
+	},
+	/* three hosts, one host */
+	{
+		.name = "mx4.example.com",
+		.entries = {
+			{
+				.dnsindex = 3,
+				.priority = 10
+			},
+			{
+				.dnsindex = 0,
+				.priority = 20
+			}
+		}
+	},
+	/* two single host */
+	{
+		.name = "mx5.example.com",
+		.entries = {
+			{
+				.dnsindex = 0,
+				.priority = 10
+			},
+			{
+				.dnsindex = 6,
+				.priority = 20
+			}
+		}
+	},
+	/* 3-3-2 */
+	{
+		.name = "mx6.example.com",
+		.entries = {
+			{
+				.dnsindex = 3,
+				.priority = 10
+			},
+			{
+				.dnsindex = 9,
+				.priority = 20
+			},
+			{
+				.dnsindex = 0,
+				.priority = 30
+			}
+		}
+	},
+	{
+		.name = NULL
+	}
+};
 
 int dnsmx(char **out, size_t *len, const char *host)
 {
+	unsigned int mxidx;
+
 	*len = 0;
 
-	if (strcmp(host, mxname) == 0) {
-		unsigned short *alsoout;
+	for (mxidx = 0; mxentries[mxidx].name != NULL; mxidx++) {
+		if (strcmp(host, mxentries[mxidx].name) == 0) {
+			char *o;
+			unsigned int k;
 
-		*len = 4 + strlen(dns_entries[0].name) + strlen(dns_entries[4].name) + 2;
-		*out = malloc(*len);
-		if (*out == NULL)
-			return -1;
+#define has_entry(m, i) \
+	((mxentries[m].entries[i].dnsindex != 0) || \
+			(mxentries[m].entries[i].priority != 0))
 
-		alsoout = (unsigned short *)*out;
-		*alsoout = htons(10);
-		memcpy(*out + 2, dns_entries[0].name, strlen(dns_entries[0].name) + 1);
-		alsoout = (unsigned short *)(*out + strlen(dns_entries[0].name) + 3);
-		*alsoout = htons(20);
-		memcpy(*out + 5 + strlen(dns_entries[0].name), dns_entries[4].name, strlen(dns_entries[4].name) + 1);
+			for (k = 0; k < MAX_MX_PER_DOMAIN; k++)
+				if (has_entry(mxidx, k))
+					*len += strlen(dns_entries[mxentries[mxidx].entries[k].dnsindex].name) + 3;
 
-		return 0;
-	} else if (strcmp(host, timeouthost) == 0) {
+			*out = malloc(*len);
+			if (*out == NULL)
+				return -1;
+
+			o = *out;
+			for (k = 0; k < MAX_MX_PER_DOMAIN; k++)
+				if (has_entry(mxidx, k)) {
+					size_t namelen = strlen(dns_entries[mxentries[mxidx].entries[k].dnsindex].name);
+					uint16_t p = htons(mxentries[mxidx].entries[k].priority);
+					memcpy(o, &p, sizeof(p));
+					o += sizeof(p);
+					memcpy(o, dns_entries[mxentries[mxidx].entries[k].dnsindex].name, namelen + 1);
+					o += namelen + 1;
+				}
+
+			return 0;
+#undef has_entry
+		}
+	}
+
+	if (strcmp(host, timeouthost) == 0) {
 		errno = ETIMEDOUT;
 		return -1;
 	} else if (strcmp(host, timeoutmx) == 0) {
@@ -230,10 +344,10 @@ int dnsmx(char **out, size_t *len, const char *host)
 
 		memcpy(*out + 2, timeoutmx, strlen(timeoutmx) + 1);
 		return 0;
+	} else {
+		errno = ENOENT;
+		return -1;
 	}
-
-	errno = ENOENT;
-	return -1;
 }
 
 int dnsname(char **out, const struct in6_addr *ip)
@@ -369,53 +483,70 @@ static int
 test_mx(void)
 {
 	int err = 0;
-	struct ips *res = NULL;
-	struct ips *cur;
-	unsigned int idx = 0;
+	unsigned int mxidx;
 
-	if (ask_dnsmx(mxname, &res) != 0) {
-		fprintf(stderr, "lookup of %s did not return MX entries\n", mxname);
-		return ++err;
-	}
+	for (mxidx = 0; mxentries[mxidx].name != NULL; mxidx++) {
+		struct ips *res = NULL;
+		struct ips *cur;
+		unsigned int idx = 0;
 
-	cur = res;
-	while (cur != NULL) {
-		char *nname = NULL;
-
-		if (cur->name == NULL) {
-			fprintf(stderr, "MX lookup %u for %s has no name set\n", idx, mxname);
-			err++;
-		} else if (strcmp(cur->name, mxname) != 0) {
-			fprintf(stderr, "MX lookup %u for %s has wrong name %s set\n", idx, mxname, cur->name);
-			err++;
+		if (ask_dnsmx(mxentries[mxidx].name, &res) != 0) {
+			fprintf(stderr, "lookup of %s did not return MX entries\n", mxentries[mxidx].name);
+			return ++err;
 		}
 
-		if (ask_dnsname(&cur->addr, &nname) <= 0) {
-			fprintf(stderr, "no reverse lookup found for MX IP\n");
-			err++;
-		} else {
-			if (strcmp(nname, dns_entries[0].name) == 0) {
-				if (cur->priority != 10) {
-					fprintf(stderr, "MX entries for %s should have priority 10, but have %u\n", nname, cur->priority);
-					err++;
+		cur = res;
+		while (cur != NULL) {
+			char *nname = NULL;
+			const char *ename = NULL;
+			char ipbuf[INET6_ADDRSTRLEN];
+			unsigned int k;
+
+			/* status output */
+			inet_ntop(AF_INET6, &cur->addr, ipbuf, sizeof(ipbuf));
+			printf("%s: MX[%u:%u]: name %s prio %u IP %s\n", __func__, mxidx, idx, cur->name, cur->priority, ipbuf);
+
+			if (cur->name == NULL) {
+				fprintf(stderr, "MX[%u:%u] lookup has no name set\n", mxidx, idx);
+				err++;
+				idx++;
+				cur = cur->next;
+				continue;
+			}
+
+			/* find the host name belonging to this entry */
+			for (k = 0; k < MAX_MX_PER_DOMAIN; k++)
+				if (mxentries[mxidx].entries[k].priority == cur->priority) {
+					ename = dns_entries[mxentries[mxidx].entries[k].dnsindex].name;
+					break;
 				}
-			} else 	if (strcmp(nname, dns_entries[4].name) == 0) {
-				if (cur->priority != 20) {
-					fprintf(stderr, "MX entries for %s should have priority 20, but have %u\n", nname, cur->priority);
-					err++;
-				}
-			} else {
-				fprintf(stderr, "unexpected reverse lookup %s for MX priority %u\n", nname, cur->priority);
+
+			if (ename == NULL) {
+				fprintf(stderr, "MX[%u:%u] lookup has unexpected priority %u\n", mxidx, idx, cur->priority);
+				err++;
+				idx++;
+				cur = cur->next;
+				continue;
+			}
+
+			if (strcmp(cur->name, ename) != 0) {
+				fprintf(stderr, "MX[%u:%u] lookup has wrong name %s set, expected was %s\n", mxidx, idx, cur->name, ename);
 				err++;
 			}
 
-			free(nname);
+			if (ask_dnsname(&cur->addr, &nname) <= 0) {
+				fprintf(stderr, "MX[%u:%u] no reverse lookup found for MX IP\n", mxidx, idx);
+				err++;
+			} else {
+				free(nname);
+			}
+
+			cur = cur->next;
+			idx++;
 		}
 
-		cur = cur->next;
+		freeips(res);
 	}
-	
-	freeips(res);
 
 	return err;
 }
