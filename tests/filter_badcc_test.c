@@ -52,6 +52,7 @@ static const char badcc_domain[] = "foo@example.com\0\0";
 
 #define RCPT_PATTERNS 5
 #define VALID_USERDIRFD (420 + 42)
+#define VALID_DOMAINDIRFD (VALID_USERDIRFD + 1)
 
 static struct userconf ds;
 
@@ -60,12 +61,14 @@ setup_userconf()
 {
 	if (strstr(thisrecip->to.s, "@example.net") != NULL) {
 		ds.domainpath.s = "example.net/";
+		ds.domaindirfd = VALID_DOMAINDIRFD;
 		if (strcmp(thisrecip->to.s, "foo@example.net") == 0)
 			ds.userdirfd = VALID_USERDIRFD;
 		else
 			ds.userdirfd = -1;
 	} else {
 		ds.domainpath.s = NULL;
+		ds.domaindirfd = -1;
 		ds.userdirfd = -1;
 	}
 
