@@ -170,7 +170,7 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 			return DNS_ERROR_TEMP;
 
 		if (r > 0) {
-			cur = in6_to_ips(a, r, 65536);
+			cur = in6_to_ips(a, r, MX_PRIORITY_IMPLICIT);
 			if (cur == NULL) {
 				free(ip6addr);
 				return DNS_ERROR_LOCAL;
@@ -180,10 +180,10 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 				*ips = cur;
 				while (cur->next != NULL)
 					cur = cur->next;
-				cur->next = in6_to_ips(ip6addr, q, 65536);
+				cur->next = in6_to_ips(ip6addr, q, MX_PRIORITY_IMPLICIT);
 			}
 		} else if (q > 0) {
-			cur = in6_to_ips(ip6addr, q, 65536);
+			cur = in6_to_ips(ip6addr, q, MX_PRIORITY_IMPLICIT);
 		}
 
 		if ((q >= 0) && (r >= 0))

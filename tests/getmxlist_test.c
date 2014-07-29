@@ -52,10 +52,10 @@ test_tryconn(void)
 
 	memset(mx, 0, sizeof(mx));
 	mx[0].next = mx + 1;
-	mx[0].priority = 65537;
+	mx[0].priority = MX_PRIORITY_USED;
 	mx[1].next = mx + 2;
-	mx[1].priority = 65537;
-	mx[2].priority = 65538;
+	mx[1].priority = MX_PRIORITY_USED;
+	mx[2].priority = MX_PRIORITY_CURRENT;
 
 	i = tryconn(mx, NULL, NULL);
 	if (i != -ENOENT) {
@@ -67,9 +67,9 @@ test_tryconn(void)
 	}
 
 	for (i = 0; i < (int)(sizeof(mx) / sizeof(mx[0])); i++) {
-		if (mx[i].priority != 65537) {
-			fprintf(stderr, "mx[%i].priority == %u, expected was 65537\n", i,
-					mx[i].priority);
+		if (mx[i].priority != MX_PRIORITY_USED) {
+			fprintf(stderr, "mx[%i].priority == %u, expected was MX_PRIORITY_USED (%u)\n", i,
+					mx[i].priority, MX_PRIORITY_USED);
 			ret++;
 		}
 	}
@@ -94,7 +94,7 @@ main(void)
 			.input = "::1",
 			.expect = "::1",
 #ifdef IPV4ONLY
-			.prio = 65537
+			.prio = MX_PRIORITY_USED
 #else
 			.prio = 0
 #endif

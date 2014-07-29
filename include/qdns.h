@@ -6,15 +6,24 @@
 
 #include <netinet/in.h>
 
-/** \struct ips
- \brief list of IP addresses for a given host
+/** @enum mx_special_priorities
+ * @brief values used as priority in struct ips to reflect special conditions
+ */
+enum mx_special_priorities {
+	MX_PRIORITY_IMPLICIT = 65536,	/**< used for implicit MX entries (i.e. A or AAAA) */
+	MX_PRIORITY_USED = 65537,	/**< the entry has already been tried */
+	MX_PRIORITY_CURRENT = 65538	/**< used to mark the entry currently in use */
+};
+
+/** @struct ips
+ @brief list of IP addresses for a given host
 
  This struct represents a member of an IP address list. It is used as return value
  by the ask_dns* functions. A complete list can be freed by calling freeips(). If
  this list represents a list of MX entries the priority field contains the priority
  given in DNS. If there is no MX entry at all and the A record is used instead the
- priority is set to 65536. If the list is not created by ask_dnsmx() then the value
- of the priority field is undefined.
+ priority is set to MX_PRIORITY_IMPLICIT. If the list is not created by ask_dnsmx()
+ then the value of the priority field is undefined.
  */
 struct ips {
 	struct in6_addr addr;	/**< IPv6 address */

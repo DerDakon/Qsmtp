@@ -453,8 +453,9 @@ test_implicit_mx(void)
 		while (cur != NULL) {
 			char *nname = NULL;
 
-			if (cur->priority != 65536) {
-				fprintf(stderr, "MX priority for %s was not set to 65536, but %u\n", dns_entries[idx].name, cur->priority);
+			if (cur->priority != MX_PRIORITY_IMPLICIT) {
+				fprintf(stderr, "MX priority for %s was not set to MX_PRIORITY_IMPLICIT (%u), but %u\n",
+						dns_entries[idx].name, MX_PRIORITY_IMPLICIT, cur->priority);
 				err++;
 			}
 

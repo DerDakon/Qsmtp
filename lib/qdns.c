@@ -58,8 +58,6 @@ ask_dnsmx(const char *name, struct ips **result)
 	/* there is no MX record, so we look for an AAAA record */
 	if (!l) {
 		struct in6_addr *a;
-		/* the DNS priority is 2 bytes long so 65536 can
-		 * never be returned from a real DNS_MX lookup */
 		int rc = ask_dnsaaaa(name, &a);
 
 		if (rc < 0)
@@ -67,7 +65,9 @@ ask_dnsmx(const char *name, struct ips **result)
 		else if (rc == 0)
 			return 1;
 
-		*result = in6_to_ips(a, rc, 65536);
+		/* the DNS priority is 2 bytes long so MX_PRIORITY_IMPLICIT
+		 * (i.e. 65536) can never be returned from a real DNS_MX lookup */
+		*result = in6_to_ips(a, rc, MX_PRIORITY_IMPLICIT);
 		if (*result == NULL)
 			return DNS_ERROR_LOCAL;
 

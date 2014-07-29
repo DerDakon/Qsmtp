@@ -102,8 +102,8 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
  * @return the socket descriptor of the open connection
  * @retval -ENOENT no IP address left to connect to
  *
- * Every entry where a connection attempt was made is marked with a priority of 65537,
- * the last one tried with 65538
+ * Every entry where a connection attempt was made is marked with a priority of
+ * MX_PRIORITY_USED, the last one tried with MX_PRIORITY_CURRENT.
  */
 int
 tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *outip6)
@@ -114,8 +114,8 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 		int sd;
 
 		for (thisip = mx; thisip; thisip = thisip->next) {
-			if (thisip->priority == 65538)
-				thisip->priority = 65537;
+			if (thisip->priority == MX_PRIORITY_CURRENT)
+				thisip->priority = MX_PRIORITY_USED;
 			if (thisip->priority <= 65536)
 				break;
 		}
@@ -133,11 +133,11 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 
 		sd = conn(thisip->addr, outip);
 		if (sd >= 0) {
-			/* set priority to 65538 to allow getrhost() to find active MX */
-			thisip->priority = 65538;
+			/* set priority to MX_PRIORITY_CURRENT to allow getrhost() to find active MX */
+			thisip->priority = MX_PRIORITY_CURRENT;
 			return sd;
 		}
-		thisip->priority = 65537;
+		thisip->priority = MX_PRIORITY_USED;
 	}
 }
 
@@ -157,7 +157,7 @@ remove_ipv6(struct ips **mx)
 
 	for (thisip = *mx; thisip; thisip = thisip->next) {
 		if (!IN6_IS_ADDR_V4MAPPED(&thisip->addr))
-			thisip->priority = 65537;
+			thisip->priority = MX_PRIORITY_USED;
 	}
 #else
 	(void) mx;

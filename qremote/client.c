@@ -18,7 +18,7 @@
 /**
  * print remote host information to buffer
  *
- * @param m list of MX entries, entry with priority 65538 is active
+ * @param m list of MX entries, entry with priority MX_PRIORITY_CURRENT is active
  */
 void
 getrhost(const struct ips *m)
@@ -27,7 +27,7 @@ getrhost(const struct ips *m)
 	free(rhost);
 
 	/* find active mx */
-	while (m->priority != 65538)
+	while (m->priority != MX_PRIORITY_CURRENT)
 		m = m->next;
 
 	if (m->name == NULL) {

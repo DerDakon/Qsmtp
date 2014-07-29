@@ -1103,7 +1103,7 @@ spfmx(const char *domain, const char *token)
 		return SPF_NONE;
 	/* Don't use the implicit MX for this. There are either all MX records
 	 * implicit or none so we only have to look at the first one */
-	if (mx->priority >= 65536) {
+	if (mx->priority >= MX_PRIORITY_IMPLICIT) {
 		freeips(mx);
 		return SPF_NONE;
 	}
