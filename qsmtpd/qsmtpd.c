@@ -872,6 +872,7 @@ smtp_rcpt(void)
 		free(tmp.s);
 		return netwrite("452 4.5.3 Too many recipients\r\n") ? errno : 0;
 	}
+
 	r = malloc(sizeof(*r));
 	if (!r) {
 		userconf_free(&ds);
@@ -883,6 +884,29 @@ smtp_rcpt(void)
 	r->ok = 0;	/* user will be rejected until we change this explicitely */
 	thisrecip = r;
 	TAILQ_INSERT_TAIL(&head, r, entries);
+
+	if ((rcptcount > 0) && (xmitstat.mailfrom.len == 0)) {
+		const char *logmess[] = {"rejected message to <", NULL, "> from <> from IP [", xmitstat.remoteip,
+						"] {bad bounce}", NULL};
+		struct recip *l = head.tqh_first;
+
+		if (err_badbounce() < 0)
+			return errno;
+
+		if (l->ok) {
+			/* this can only happen on the first call */
+			logmess[1] = l->to.s;
+			log_writen(LOG_INFO, logmess);
+			l->ok = 0;
+		}
+		badbounce = 1;
+		logmess[1] = r->to.s;
+		log_writen(LOG_INFO, logmess);
+		goodrcpt = 0;
+		rcptcount = 0;
+		return EBOGUS;
+	}
+
 	rcptcount++;
 
 /* load user and domain "filterconf" file */
@@ -934,29 +958,6 @@ smtp_rcpt(void)
 	if (i && (i != 5))
 		goto userdenied;
 
-	if (comstate != 0x20) {
-		if (!xmitstat.mailfrom.len) {
-			const char *logmess[] = {"rejected message to <> from <", NULL, "> from IP [", xmitstat.remoteip,
-							"] {bad bounce}", NULL};
-			if (err_badbounce() < 0)
-				return errno;
-			if (!badbounce) {
-				/* there are only two recipients in list until now */
-				struct recip *l = head.tqh_first;
-
-				logmess[1] = l->to.s;
-				log_writen(LOG_INFO, logmess);
-				TAILQ_REMOVE(&head, head.tqh_first, entries);
-				badbounce = 1;
-				l->ok = 0;
-			}
-			logmess[1] = r->to.s;
-			log_writen(LOG_INFO, logmess);
-			goodrcpt = 0;
-			rcptcount = 0;
-			return EBOGUS;
-		}
-	}
 	goodrcpt++;
 	r->ok = 1;
 	okmsg[1] = r->to.s;
