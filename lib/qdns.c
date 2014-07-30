@@ -87,8 +87,12 @@ ask_dnsmx(const char *name, struct ips **result)
 				return DNS_ERROR_LOCAL;
 			return DNS_ERROR_TEMP;
 		} else if (rc > 0) {
-			struct ips *u = in6_to_ips(a, rc, ntohs(*((uint16_t *) s)));
-			struct ips *p;
+			uint16_t pr;	/* priority */
+			struct ips *u, *p;
+
+			/* must be done with memcpy() as s may have arbitrary alignment */
+			memcpy(&pr, s, sizeof(pr));
+			u = in6_to_ips(a, rc, ntohs(pr));
 
 			/* add the new results to the list */
 			if (u == NULL) {
