@@ -1,5 +1,6 @@
 #include <qsmtpd/userfilters.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -12,12 +13,12 @@
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
 
-int
+enum filter_result
 cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	char **a;		/* array of blacklists to check */
 	int i = 0;		/* counter of the array position */
-	int rc = 0;		/* return code */
+	enum filter_result rc = FILTER_PASSED;	/* return code */
 	char *txt = NULL;	/* TXT record of the rbl entry */
 	const char *netmsg[] = {"501 5.7.1 message rejected, you are listed in ",
 				NULL, NULL, NULL, NULL};
@@ -28,53 +29,67 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	char *fromdomain;
 
 	if (!xmitstat.mailfrom.len)
-		return 0;
+		return FILTER_PASSED;
 
 	*t = userconf_get_buffer(ds, "namebl", &a, domainvalid, 1);
 	if (((int)*t) < 0) {
 		errno = -*t;
-		return -1;
+		return FILTER_ERROR;
 	} else if (*t == CONFIG_NONE) {
-		return 0;
+		return FILTER_PASSED;
 	}
 
 	fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
 
-	while (a[i] && (rc <= 0)) {
+	while (a[i] && (rc == FILTER_PASSED)) {
 		char *d = fromdomain;
 		size_t alen = strlen(a[i]) + 1;
 
-		while (d && (rc <= 0)) {
+		while ((d != NULL) && (rc == FILTER_PASSED)) {
 			size_t dlen = strlen(d);
 			char blname[256];
 
 			if (dlen + alen < 256) {
+				int k;
+
 				memcpy(blname, d, dlen);
 				blname[dlen++] = '.';
 				memcpy(blname + dlen, a[i], alen);
 
-				rc = ask_dnsa(blname, NULL);
-				switch (rc) {
+				k = ask_dnsa(blname, NULL);
+				switch (k) {
 				case DNS_ERROR_LOCAL:
-					goto out;
+					rc = DNS_ERROR_LOCAL;
+					break;
 				case DNS_ERROR_TEMP:
 					flagtemp = 1;
+					break;
+				case 0:
+					/* no match, keep checking */
+					break;
+				case DNS_ERROR_PERM:
+					/* invalid bl entry, ignore */
+					break;
 				default:
-					/* if there is any error here we just write the generic message to the client
-					 * so that's no real problem for us */
-					if (rc > 0)
-						(void) dnstxt(&txt, blname);
+					/* ask_dnsa() returns >0 on success, that means we have a match */
+					assert(k > 0);
+
+					/* if there is any error here we just write the generic
+					 * message to the client so that's no real problem for us */
+					(void) dnstxt(&txt, blname);
+					rc = FILTER_DENIED_UNSPECIFIC;
 					break;
 				}
-				/* ask_dnsa() returns >0 on success, that means we have a match */
 			}
-			if ( (d = strchr(d, '.')) )
+			d = strchr(d, '.');
+			if (d != NULL)
 				d++;
 		}
 		i++;
 	}
 
-	if (rc > 0) {
+	assert(rc != FILTER_WHITELISTED);
+	if (filter_denied(rc)) {
 		logmess[7] = a[--i];
 		log_writen(LOG_INFO, logmess);
 		netmsg[1] = a[i];
@@ -82,15 +97,19 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			netmsg[2] = ", message: ";
 			netmsg[3] = txt;
 		}
-		if (! (rc = net_writen(netmsg)) )
-			rc = 1;
+		if (net_writen(netmsg) != 0)
+			rc = FILTER_ERROR;
+		else
+			rc = FILTER_DENIED_WITH_MESSAGE;
+	} else if (rc == FILTER_ERROR) {
+		/* just go on */
 	} else if (flagtemp) {
 		*logmsg = "temporary DNS error on RBL lookup";
-		rc = 4;
+		rc = FILTER_DENIED_TEMPORARY;
 	} else {
-		rc = 0;
+		rc = FILTER_PASSED;
 	}
-out:
+
 	free(a);
 	free(txt);
 	return rc;

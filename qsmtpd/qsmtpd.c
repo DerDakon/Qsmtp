@@ -816,6 +816,7 @@ smtp_rcpt(void)
 {
 	struct recip *r;
 	int i = 0, j, e;
+	enum filter_result fr;	/* result of user filter */
 	string tmp;
 	char *more = NULL;
 	struct userconf ds;
@@ -910,32 +911,43 @@ smtp_rcpt(void)
 	rcptcount++;
 
 /* load user and domain "filterconf" file */
-	e = userconf_load_configs(&ds);
-	if (e != 0) {
+	i = userconf_load_configs(&ds);
+	if (i != 0) {
 		userconf_free(&ds);
 		return err_control2("user/domain filterconf for ", r->to.s) ? errno : EDONE;
 	}
 
 	i = j = e = 0;
-	while (rcpt_cbs[j]) {
+	fr = FILTER_PASSED;
+	/* Use all filters until there is a hard state: either rejection or whitelisting.
+	 * Continue on temporary errors to see if a later filter would introduce a hard
+	 * rejection to avoid that mail to come back to us just to fail. */
+	while ((rcpt_cbs[j] != NULL) && ((fr == FILTER_PASSED) || (fr == FILTER_DENIED_TEMPORARY))) {
+		enum config_domain t;
+
 		errmsg = NULL;
-		if ( (i = rcpt_cbs[j](&ds, &errmsg, &bt)) ) {
-			enum config_domain t;
+		fr = rcpt_cbs[j](&ds, &errmsg, &bt);
 
-			if (i == 5)
-				break;
-
-			if (i == 4) {
+		switch (fr) {
+		case FILTER_WHITELISTED:
+			/* will terminate the loop */
+			break;
+		case FILTER_PASSED:
+			/* test next filter */
+			break;
+		case FILTER_DENIED_TEMPORARY:
+			if (!getsetting(&ds, "fail_hard_on_temp", &t)) {
 				e = 1;
-				if (getsetting(&ds, "fail_hard_on_temp", &t))
-					i = 1;
+				break;
 			}
-			if (i == 1) {
-				if (getsetting(&ds, "nonexist_on_block", &t))
-					i = 3;
-			}
-
-			if (i == -1) {
+			fr = FILTER_DENIED_UNSPECIFIC;
+			/* fallthrough */
+		case FILTER_DENIED_UNSPECIFIC:
+			if (getsetting(&ds, "nonexist_on_block", &t))
+				fr = FILTER_DENIED_NOUSER;
+			break;
+		case FILTER_ERROR:
+			{
 				char filterno[ULSTRLEN];
 				char errnostr[ULSTRLEN];
 				const char *logmess[] = {"error ", errnostr, " in filter ", filterno, " for user ", r->to.s, NULL};
@@ -945,18 +957,23 @@ smtp_rcpt(void)
 
 				log_writen(LOG_WARNING, logmess);
 				e = 1;
-			} else if (i != 4) {
-				break;
+				fr = FILTER_DENIED_TEMPORARY;
 			}
+		default:
+			assert(filter_denied(fr));
+			/* will terminate the loop */
+			break;
 		}
 		j++;
 	}
 	userconf_free(&ds);
 
-	if ((i == 0) && e)
-		i = 4;
-	if (i && (i != 5))
+	/* check if there has been a temporary error, but no hard rejection */
+	if ((fr == FILTER_PASSED) && e)
+		fr = FILTER_DENIED_TEMPORARY;
+	if (filter_denied(fr) || (fr == FILTER_ERROR))
 		goto userdenied;
+	i = 0;
 
 	goodrcpt++;
 	r->ok = 1;
@@ -965,32 +982,38 @@ smtp_rcpt(void)
 	return net_writen(okmsg) ? errno : 0;
 userdenied:
 	e = errno;
-	if (errmsg && (i > 0)) {
-		logmsg[7] = errmsg;
-		logmsg[9] = blocktype[bt];
-		logmsg[1] = r->to.s;
-		log_writen(LOG_INFO, logmsg);
-	}
-	if (i > 0)
+	if (filter_denied(fr)) {
+		if (errmsg != NULL) {
+			logmsg[7] = errmsg;
+			logmsg[9] = blocktype[bt];
+			logmsg[1] = r->to.s;
+			log_writen(LOG_INFO, logmsg);
+		}
 		tarpit();
-	switch (i) {
-	case -1:
+	}
+
+	switch (fr) {
+	case FILTER_ERROR:
 		j = 1;
 		break;
-	case 2:
+	case FILTER_DENIED_UNSPECIFIC:
 		if ( (j = netwrite("550 5.7.1 mail denied for policy reasons\r\n")) )
 			e = errno;
 		break;
-	case 3:	{
+	case FILTER_DENIED_NOUSER:
+		{
 			const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
 
 			if ( (j = net_writen(rcptmsg)) )
 				e = errno;
 		}
 		break;
-	case 4:
+	case FILTER_DENIED_TEMPORARY:
 		if ( (j = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
 			e = errno;
+		break;
+	default:
+		assert(filter_denied(fr));
 		break;
 	}
 	return j ? e : 0;

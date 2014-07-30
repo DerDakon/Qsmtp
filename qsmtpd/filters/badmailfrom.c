@@ -24,11 +24,11 @@
  *    but not aol.com itself
  */
 
-static int
+static enum filter_result
 lookupbmf(char *at, char **a)
 {
 	unsigned int i = 0;
-	int rc = 0;
+	enum filter_result rc = FILTER_PASSED;
 
 	if (!a)
 		return rc;
@@ -36,7 +36,7 @@ lookupbmf(char *at, char **a)
 	while (a[i]) {
 		if (*a[i] == '@') {
 			if (at && !strcasecmp(a[i], at)) {
-				rc = 2;
+				rc = FILTER_DENIED_UNSPECIFIC;
 				break;
 			}
 		} else if (!strchr(a[i],'@')) {
@@ -48,13 +48,13 @@ lookupbmf(char *at, char **a)
 				/* compare a[i] with the last k bytes of xmitstat.mailfrom.s */
 				if (!strcasecmp(c, a[i])) {
 					if ((*a[i] == '.') || (*(c - 1) == '.') || (*(c - 1) == '@')) {
-						rc = 2;
+						rc = FILTER_DENIED_UNSPECIFIC;
 						break;
 					}
 				}
 			}
 		} else if (!strcasecmp(a[i], xmitstat.mailfrom.s)) {
-			rc = 2;
+			rc = FILTER_DENIED_UNSPECIFIC;
 			break;
 		}
 
@@ -64,40 +64,40 @@ lookupbmf(char *at, char **a)
 	return rc;
 }
 
-int
+enum filter_result
 cb_badmailfrom(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	int u;		/* if it is the user or domain policy */
 	char **a;	/* array of domains and/or mailaddresses to block */
-	int rc = 0;	/* return code */
+	enum filter_result rc = 0;	/* return code */
 	char *at;
 
 	if (!xmitstat.mailfrom.len)
-		return 0;
+		return FILTER_PASSED;
 
 	/* don't check syntax of entries here: there might be things like ".cn" and so on that would fail the test */
 	*t = userconf_get_buffer(ds, "badmailfrom", &a, NULL, 1);
 	if (((int)*t) < 0) {
 		errno = -*t;
-		return -1;
+		return FILTER_ERROR;
 	} else if (*t == CONFIG_NONE) {
-		return 0;
+		return FILTER_PASSED;
 	}
 
 	at = strchr(xmitstat.mailfrom.s, '@');
 	rc = lookupbmf(at, a);
-	if (!rc)
+	if (rc == FILTER_PASSED)
 		return rc;
 
 	*logmsg = "bad mail from";
 	u = userconf_get_buffer(ds, "goodmailfrom", &a, checkaddr, 1);
 	if (u < 0) {
 		errno = -u;
-		return -1;
+		return FILTER_ERROR;
 	} else if (u != CONFIG_NONE) {
 		if (lookupbmf(at, a)) {
 			logwhitelisted(*logmsg, *t, u);
-			rc = 0;
+			rc = FILTER_PASSED;
 		}
 	}
 	return rc;

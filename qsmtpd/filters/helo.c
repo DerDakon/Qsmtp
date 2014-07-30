@@ -14,7 +14,7 @@
  * 1) beginning with '.': helo is blocked if it ends with this string
  * 2) not beginning with '.': helo is blocked if it matches this string
  */
-int
+enum filter_result
 cb_helo(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	if (xmitstat.helostatus) {
@@ -26,18 +26,18 @@ cb_helo(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 						"", "HELO is my IP", "", ""};
 
 			*logmsg = badtypes[xmitstat.helostatus - 1];
-			return 2;
+			return FILTER_DENIED_UNSPECIFIC;
 		}
 	}
 
 	*t = userconf_find_domain(ds, "badhelo", HELOSTR, 1);
 	if (((int)*t) < 0) {
 		errno = -*t;
-		return -1;
+		return FILTER_ERROR;
 	} else if (*t == CONFIG_NONE) {
-		return 0;
+		return FILTER_PASSED;
 	}
 
 	*logmsg = "bad helo";
-	return 2;
+	return FILTER_DENIED_UNSPECIFIC;
 }

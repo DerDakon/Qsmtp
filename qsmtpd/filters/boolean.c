@@ -10,14 +10,12 @@
 
 #include <syslog.h>
 
-int
+enum filter_result
 cb_boolean(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
-	int rc;
-
 	if (getsettingglobal(ds, "whitelistauth", t) > 0) {
 		if (is_authenticated_client())
-			return 5;
+			return FILTER_WHITELISTED;
 	}
 
 	/* This rule violates RfC 3207, section 4:
@@ -26,9 +24,9 @@ cb_boolean(const struct userconf *ds, const char **logmsg, enum config_domain *t
 	 * We offer it for paranoid users but don't use getsettingglobal here so
 	 * it can't be turned on for everyone by accident (or stupid postmaster) */
 	if (!ssl && (getsetting(ds, "forcestarttls", t) > 0)) {
-		rc = netwrite("501 5.7.1 recipient requires encrypted message transmission\r\n");
+		int rc = netwrite("501 5.7.1 recipient requires encrypted message transmission\r\n");
 		*logmsg = "TLS required";
-		return rc ? rc : 1;
+		return (rc != 0) ? FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 	}
 
 	/* This rule is very tricky, normally you want bounce messages.
@@ -39,9 +37,9 @@ cb_boolean(const struct userconf *ds, const char **logmsg, enum config_domain *t
 		const char *logmess[] = {"rejected message to <", THISRCPT, "> from IP [", xmitstat.remoteip,
 					"] {no bounces allowed}", NULL};
 
-		rc = netwrite("550 5.7.1 address does not send mail, there can't be any bounces\r\n");
+		int rc = netwrite("550 5.7.1 address does not send mail, there can't be any bounces\r\n");
 		log_writen(LOG_INFO, logmess);
-		return rc ? rc : 1;
+		return (rc != 0) ? FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 	}
 
 	if ((getsetting(ds, "noapos", t) > 0) && xmitstat.mailfrom.len) {
@@ -49,9 +47,9 @@ cb_boolean(const struct userconf *ds, const char **logmsg, enum config_domain *t
 
 		if (memchr(xmitstat.mailfrom.s, '\'', at - xmitstat.mailfrom.s)) {
 			*logmsg = "apostroph in from";
-			return 2;
+			return FILTER_DENIED_UNSPECIFIC;
 		}
 	}
 
-	return 0;
+	return FILTER_PASSED;
 }

@@ -18,18 +18,18 @@
  * 2: reject mail if from domain resolves only to localhost addresses
  * 4: reject mail if from domain resolves only to private nets (RfC 1918)
  */
-int
+enum filter_result
 cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	long u;			/* contents of control setting is stored here */
 
 	/* we can't check the from domain on a bounce message */
 	if (!xmitstat.mailfrom.len)
-		return 0;
+		return FILTER_PASSED;
 
 	/* if there is a syntax error in the file it's the users fault and this mail will be accepted */
 	if ( (u = getsettingglobal(ds, "fromdomain", t)) <= 0)
-		return 0;
+		return FILTER_PASSED;
 
 	if (u & 1) {
 /* check if domain exists in DNS */
@@ -51,10 +51,10 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 				break;
 			default:
 				assert(xmitstat.fromdomain == 1);
-				return 0;
+				return FILTER_PASSED;
 			}
 
-			return netwrite(errmsg) ? -1 : 1;
+			return netwrite(errmsg) ? FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 		}
 	}
 	if (u & 2) {
@@ -77,7 +77,8 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 		}
 		if (flaghit) {
 			*logmsg = "MX in loopback net";
-			return netwrite("501 5.4.0 all your mail exchangers have loopback addresses\r\n") ? -1 : 1;
+			return netwrite("501 5.4.0 all your mail exchangers have loopback addresses\r\n") ?
+					FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 		}
 	}
 	if ((u & 4) && (xmitstat.frommx != NULL)) {
@@ -129,7 +130,8 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 		}
 		if (flaghit) {
 			*logmsg = "MX in private network";
-			return netwrite("501 5.4.0 all your mail exchangers point to local networks\r\n") ? -1 : 1;
+			return netwrite("501 5.4.0 all your mail exchangers point to local networks\r\n") ?
+					FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 		}
 	}
 #ifdef IPV4ONLY
@@ -139,7 +141,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 		struct ips *thisip;
 
 		if ( (flaghit = getsettingglobal(ds, "reject_ipv6only", t)) <= 0)
-			return 0;
+			return FILTER_PASSED;
 
 		for (thisip = xmitstat.frommx; flaghit && thisip; thisip = thisip->next) {
 			if (IN6_IS_ADDR_V4MAPPED(&(thisip->addr)))
@@ -147,9 +149,10 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 		}
 		if (flaghit) {
 			*logmsg = "IPv6 only";
-			return netwrite("501 5.4.0 all your mail exchangers have IPv6 addresses and I am an IPv4-only host\r\n") ? -1 : 1;
+			return netwrite("501 5.4.0 all your mail exchangers have IPv6 addresses and I am an IPv4-only host\r\n") ?
+					FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 		}
 	}
 #endif
-	return 0;
+	return FILTER_PASSED;
 }

@@ -81,22 +81,22 @@ loadjokers(struct dns_wc **wcs)
 
 static struct dns_wc *dns_wildcards;
 
-int
+enum filter_result
 cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	struct dns_wc *this;
 
 	/* we can't check the from domain on a bounce message */
 	if (!xmitstat.mailfrom.len || !xmitstat.frommx)
-		return 0;
+		return FILTER_PASSED;
 
 	/* if there is a syntax error in the file it's the users fault and this mail will be accepted */
 	if (getsettingglobal(ds, "block_wildcardns", t) <= 0)
-		return 0;
+		return FILTER_PASSED;
 
 	if (!dns_wildcards)
 		if (loadjokers(&dns_wildcards))
-			return -1;
+			return FILTER_ERROR;
 
 	this = dns_wildcards;
 	while (this) {
@@ -108,9 +108,9 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 		}
 		if (IN6_ARE_ADDR_EQUAL(&(xmitstat.frommx->addr), &(this->ip))) {
 			*logmsg = "MX is wildcard NS entry";
-			return 2;
+			return FILTER_DENIED_UNSPECIFIC;
 		}
 		this = this->next;
 	}
-	return 0;
+	return FILTER_PASSED;
 }

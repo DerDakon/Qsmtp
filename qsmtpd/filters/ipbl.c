@@ -9,11 +9,11 @@
 #include "log.h"
 #include <qsmtpd/qsmtpd.h>
 
-int
+enum filter_result
 cb_ipbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	int i;			/* counter of the array position */
-	int rc;			/* return code */
+	enum filter_result rc;	/* return code */
 	int fd;			/* file descriptor of the policy file */
 	const char *fnb;	/* filename of the blacklist file */
 	const char *fnw;	/* filename of the whitelist file */
@@ -27,33 +27,33 @@ cb_ipbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	}
 
 	if ( (fd = getfile(ds, fnb, t, 1)) < 0)
-		return (errno == ENOENT) ? 0 : fd;
+		return (errno == ENOENT) ? FILTER_PASSED : FILTER_ERROR;
 
 	i = lookupipbl(fd);
-	if (errno == ENOLCK) {
-		return 0;
-	}
+	if (errno == ENOLCK)
+		return FILTER_PASSED;
+
 	if (i > 0) {
 		enum config_domain u;
 
 		if ( (fd = getfile(ds, fnw, &u, 1)) < 0) {
 			if (errno != ENOENT)
-				return fd;
+				return FILTER_ERROR;
 			i = 0;
 		} else {
 			i = lookupipbl(fd);
 		}
 		if (i > 0) {
 			logwhitelisted("ipbl", *t, u);
-			rc = 0;
+			rc = FILTER_PASSED;
 		} else if (!i) {
 			*logmsg = "ipbl";
-			rc = 2;
+			rc = FILTER_DENIED_UNSPECIFIC;
 		} else {
 			const char *logmess[] = {"bad input data in ", blocktype[u],
 						"ipwl file for address <", THISRCPT, ">", NULL};
 			log_writen(LOG_ERR, logmess);
-			rc = 0;
+			rc = FILTER_PASSED;
 		}
 	} else {
 		if (i) {
@@ -62,7 +62,7 @@ cb_ipbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 
 			log_writen(LOG_ERR, logmess);
 		}
-		rc = 0;
+		rc = FILTER_PASSED;
 	}
 	return rc;
 }

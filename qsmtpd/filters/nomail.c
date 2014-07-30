@@ -18,29 +18,32 @@
  * -if the message does not start with a SMTP rejection code it will be used
  *  with a rejection code of "550 5.7.1 ".
  */
-int
+enum filter_result
 cb_nomail(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
-	int rc = 0;		/* return code */
 	size_t len;
 	char *rejmsg;
 	int fd;
 	int i;
 	int codebeg;		/* message begins with reject code */
+	const char *netmsg[] = { "550 5.7.1 ", NULL, NULL };
 
 	fd = getfile(ds, "nomail", t, 0);
 	if (fd == -1)
-		return (errno != ENOENT) ? fd : 0;
+		return (errno != ENOENT) ? FILTER_ERROR : FILTER_PASSED;
 
 	*logmsg = "nomail";
 
 	len = loadonelinerfd(fd, &rejmsg);
 	if (len == (size_t)-1)
-		return (errno != ENOENT) ? -1 : 2;
+		return (errno != ENOENT) ? FILTER_ERROR : FILTER_DENIED_UNSPECIFIC;
 
 	codebeg = (len > 10);
 
 	for (i = 0; (i < 10) && codebeg; i++) {
+		/* check that the beginning of the message is a valid return and
+		 * enhanced status code, i.e. it matches:
+		 * "([45])[0-9][0-9] ([45])\.[0-9]\.[0-9] " and the \1 == \2 */
 		switch (i) {
 		case 0:
 			codebeg = ((rejmsg[0] == '4') ||
@@ -62,15 +65,11 @@ cb_nomail(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		}
 	}
 
-	if (codebeg) {
-		const char *netmsg[] = { rejmsg, NULL };
-		rc = net_writen(netmsg);
-	} else {
-		const char *netmsg[] = { "550 5.7.1 ", rejmsg, NULL };
-		rc = net_writen(netmsg);
-	}
+	netmsg[1] = rejmsg;
+	/* if codebeg do not add the generic error code */
+	i = net_writen(netmsg + !!codebeg);
 
 	free(rejmsg);
 
-	return rc ? rc : 1;
+	return (i != 0) ? FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 }

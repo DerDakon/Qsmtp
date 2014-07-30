@@ -11,12 +11,12 @@
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
 
-int
+enum filter_result
 cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	char **a;		/* array of domains and/or mailaddresses to block */
 	int i;			/* counter of the array position */
-	int rc = 0;		/* return code */
+	enum filter_result rc = FILTER_PASSED;	/* return code */
 	const char *fnb;	/* filename of the blacklist file */
 	const char *fnw;	/* filename of the whitelist file */
 	char *txt = NULL;	/* TXT record of the rbl entry */
@@ -32,9 +32,9 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	*t = userconf_get_buffer(ds, fnb, &a, domainvalid, 1);
 	if (((int)*t) < 0) {
 		errno = -*t;
-		return -1;
+		return FILTER_ERROR;
 	} else if (*t == CONFIG_NONE) {
-		return 0;
+		return FILTER_PASSED;
 	}
 
 	i = check_rbl(a, &txt);
@@ -47,7 +47,7 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			free(a);
 			free(txt);
 			errno = -u;
-			return -1;
+			return FILTER_ERROR;
 		} else if (u == CONFIG_NONE) {
 			const char *netmsg[] = { "501 5.7.1 message rejected, you are listed in ",
 						a[i], NULL, txt, NULL };
@@ -59,8 +59,10 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			if (txt)
 				netmsg[2] = ", message: ";
 
-			if ( ! (rc = net_writen(netmsg)) )
-				rc = 1;
+			if (net_writen(netmsg) != 0)
+				rc = FILTER_ERROR;
+			else
+				rc = FILTER_DENIED_WITH_MESSAGE;
 		} else {
 			j = check_rbl(c, NULL);
 
@@ -73,18 +75,18 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			} else if (errno) {
 				if (errno == EAGAIN) {
 					*logmsg = "temporary DNS error on RBL lookup";
-					rc = 4;
+					rc = FILTER_DENIED_TEMPORARY;
 				} else {
-					rc = j;
+					rc = FILTER_ERROR;
 				}
 			}
 		}
 	} else if (errno) {
 		if (errno == EAGAIN) {
 			*logmsg = "temporary DNS error on RBL lookup";
-			rc = 4;
+			rc = FILTER_DENIED_TEMPORARY;
 		} else {
-			rc = -1;
+			rc = FILTER_ERROR;
 		}
 	}
 

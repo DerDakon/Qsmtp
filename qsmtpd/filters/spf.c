@@ -31,21 +31,21 @@
  * If no SPF record is found in DNS then the locally given sources will be searched for SPF records. This might set
  * a secondary SPF record for domains often abused for phishing.
  */
-int
+enum filter_result
 cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
-	int r = 0, rc = 1;		/* return code */
+	enum filter_result r = FILTER_PASSED;	/* return code */
 	long p;				/* spf policy */
 	char *fromdomain = NULL;	/* pointer to the beginning of the domain in xmitstat.mailfrom.s */
 	int spfs = xmitstat.spf;	/* the spf status to check, either global or local one */
 
 	if ((spfs == SPF_PASS) || (spfs == SPF_IGNORE))
-		return 0;
+		return FILTER_PASSED;
 
 	p = getsettingglobal(ds, "spfpolicy", t);
 
 	if (p <= 0)
-		return 0;
+		return FILTER_PASSED;
 
 /* there is no official SPF entry: go and check if someone else provided one, e.g. rspf.rhsbl.docsnyder.de. */
 	if (spfs == SPF_NONE) {
@@ -54,9 +54,9 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		*t = userconf_get_buffer(ds, "rspf", &a, domainvalid, 1);
 		if (((int)*t) < 0) {
 			errno = -*t;
-			return -1;
+			return FILTER_ERROR;
 		} else if (*t == CONFIG_NONE) {
-			return 0;
+			return FILTER_PASSED;
 		}
 
 		if (a != NULL) {
@@ -82,9 +82,9 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 				v++;
 			}
 			free(a);
-			if ((spfs == SPF_PASS) || (spfs < 0)) {
-				return 0;
-			}
+			if ((spfs == SPF_PASS) || (spfs < 0))
+				return FILTER_PASSED;
+
 			if (spfs == SPF_HARD_ERROR) {
 				spfs = SPF_NONE;
 			} else {
@@ -94,7 +94,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	}
 
 	if (spfs == SPF_TEMP_ERROR) {
-		r = 4;
+		r = FILTER_DENIED_TEMPORARY;
 		goto block;
 	}
 	if (p == 1)
@@ -105,8 +105,10 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		goto strict;
 	if (spfs == SPF_HARD_ERROR) {
 		*logmsg = "bad SPF";
-		rc = netwrite("550 5.5.2 syntax error in SPF record\r\n");
-		return rc ? rc : 1;
+		if (netwrite("550 5.5.2 syntax error in SPF record\r\n") != 0)
+			return FILTER_ERROR;
+		else
+			return FILTER_DENIED_WITH_MESSAGE;
 	}
 	if (p == 3)
 		goto strict;
@@ -130,9 +132,9 @@ strict:
 	*t = userconf_find_domain(ds, "spfstrict", fromdomain, 1);
 	if (((int)*t) < 0) {
 		errno = -*t;
-		return -1;
+		return FILTER_ERROR;
 	} else if (*t == CONFIG_NONE) {
-		return 0;
+		return FILTER_PASSED;
 	}
 block:
 	if (xmitstat.remotehost.len) {
@@ -141,31 +143,31 @@ block:
 		u = userconf_find_domain(ds, "spfignore", xmitstat.remotehost.s, 1);
 		if (u < 0) {
 			errno = -u;
-			return -1;
+			return FILTER_ERROR;
 		} else if (u != CONFIG_NONE) {
 			logwhitelisted("SPF", *t, u);
-			return 0;
+			return FILTER_PASSED;
 		}
 	}
 	if ((xmitstat.spfexp != NULL) && (spfs != SPF_HARD_ERROR)) {
 		const char *netmsg[] = {"550 5.7.1 mail denied by SPF policy, SPF record says: ",
 								xmitstat.spfexp, NULL};
 
-		if ((rc = net_writen(netmsg)))
-			return rc;
-	} else if (!r) {
-		if ((rc = netwrite("550 5.7.1 mail denied by SPF policy\r\n")))
-			return rc;
+		if (net_writen(netmsg) != 0)
+			return FILTER_ERROR;
+	} else if (r == FILTER_PASSED) {
+		if (netwrite("550 5.7.1 mail denied by SPF policy\r\n") != 0)
+			return FILTER_ERROR;
 	}
 
-	if ((r == 4) && !getsetting(ds, "fail_hard_on_temp", t)) {
+	if ((r == FILTER_DENIED_TEMPORARY) && !getsetting(ds, "fail_hard_on_temp", t)) {
 		*logmsg = "temp SPF";
-		if ((rc = netwrite("451 4.4.3 temporary error when checking the SPF policy\r\n")))
-			return rc;
-		return 1;
+		if (netwrite("451 4.4.3 temporary error when checking the SPF policy\r\n") != 0)
+			return FILTER_ERROR;
+		return FILTER_DENIED_WITH_MESSAGE;
 	}
 
 	if (!*logmsg)
 		*logmsg = "SPF";
-	return r ? r : 1;
+	return (r != FILTER_PASSED) ? r : FILTER_DENIED_WITH_MESSAGE;
 }
