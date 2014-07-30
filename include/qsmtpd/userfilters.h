@@ -12,6 +12,9 @@
 
 struct userconf;
 
+/** @enum config_domain
+ * @brief describe where the domain a read config value is originating from
+ */
 enum config_domain {
 	CONFIG_NONE = 0,		/**< no entry was returned */
 	CONFIG_USER = 1,		/**< the config entry was found in the user specific configuration */
