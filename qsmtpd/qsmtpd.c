@@ -10,6 +10,7 @@
 #include <control.h>
 #include <diropen.h>
 #include <log.h>
+#include <mmap.h>
 #include <netio.h>
 #include <qdns.h>
 #include <qmaildir.h>
@@ -148,7 +149,6 @@ setup(void)
 {
 	int j;
 	struct sigaction sa;
-	struct stat st;
 	char *tmp;
 	unsigned long tl;
 	char **tmpconf;
@@ -228,27 +228,27 @@ setup(void)
 			log_write(LOG_WARNING, "cannot lock control/rcpthosts");
 			return ENOLCK; /* not the right error code, but good enough */
 		}
-		if (fstat(rcpthfd, &st)) {
-			close(rcpthfd);
-			log_write(LOG_ERR, "cannot fstat() control/rcpthosts");
-			return errno;
-		}
-		if (st.st_size < 4) {
-			close(rcpthfd);
-			/* minimum length of domain name: x.yy = 4 bytes */
-			log_write(LOG_ERR, "control/rcpthosts too short");
-			return 1;
-		}
-		rcpthosts = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, rcpthfd, 0);
+
+		rcpthosts = mmap_fd(rcpthfd, &rcpthsize);
+
 		e = errno;
 		close(rcpthfd);
-		if (rcpthosts == MAP_FAILED) {
+
+		if ((rcpthosts == NULL) && (e != 0)) {
 			log_write(LOG_ERR, "cannot mmap() control/rcpthosts");
 			errno = e;
-			rcpthosts = NULL;
 			return -1;
 		}
-		rcpthsize = st.st_size;
+
+		if (rcpthsize < 4) {
+			/* minimum length of domain name: x.yy = 4 bytes */
+			log_write(LOG_ERR, "control/rcpthosts too short");
+			if (rcpthsize != 0) {
+				munmap(rcpthosts, rcpthsize);
+				rcpthosts = NULL;
+			}
+			return 1;
+		}
 	}
 
 #ifdef IPV4ONLY
