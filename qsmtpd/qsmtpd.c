@@ -953,6 +953,7 @@ userdenied:
 		break;
 	default:
 		assert(filter_denied(fr));
+		j = 0;
 		break;
 	}
 	return j ? e : 0;
