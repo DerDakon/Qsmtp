@@ -70,21 +70,4 @@ extern void logwhitelisted(const char *, const int, const int);
 
 #define THISRCPT (thisrecip->to.s)
 
-#if 0
-TAILQ_HEAD(pftailhead, pfixpol) pfixhead;
-
-/*! \struct pfixpol
- Describes the settings for one Postfix policy daemon
- */
-struct pfixpol {
-	TAILQ_ENTRY(pfixpol) entries;	/**< List pointers of policy daemons. */
-	char	*name;			/**< name for this filter (to be used in log and userconf) */
-	pid_t	pid;			/**< pid of daemon or 0 if not running */
-	int	fd;			/**< pipe for communication */
-};
-
-#define PFIXPOLDIR	"/var/qmail/control/postfixpol"
-#define PFIXSPOOLDIR	"/var/spool/Qsmtp"
-#endif
-
 #endif

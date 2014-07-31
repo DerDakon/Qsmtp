@@ -203,30 +203,6 @@ dieerror(int error)
 	exit(error);
 }
 
-static void
-freeppol(void)
-{
-#ifdef PFIXPOLDIR
-	while (!TAILQ_EMPTY(&pfixhead)) {
-		struct pfixpol *l = TAILQ_FIRST(&pfixhead);
-
-		TAILQ_REMOVE(&pfixhead, TAILQ_FIRST(&pfixhead), entries);
-		if (l->pid) {
-			int res;
-
-			close(l->fd);
-			kill(l->pid, SIGTERM);
-			if (!waitpid(l->pid, &res, WNOHANG)) {
-				sleep(3);
-				kill(l->pid, SIGKILL);
-			}
-		}
-		free(l->name);
-		free(l);
-	}
-#endif
-}
-
 /**
  * @brief check if the current client is authenticated
  * @return if the client may relay
@@ -275,9 +251,6 @@ setup(void)
 	unsigned long tl;
 	char **tmpconf;
 	int rcpthfd;		/* file descriptor of control/rcpthosts */
-#ifdef PFIXPOLDIR
-	DIR *dir;
-#endif
 
 #ifdef USESYSLOG
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
@@ -466,43 +439,6 @@ setup(void)
 	j = userbackend_init();
 	if (j != 0)
 		return j;
-
-#ifdef PFIXPOLDIR
-	dir = opendir(PFIXPOLDIR);
-	TAILQ_INIT(&pfixhead);
-	if (dir) {
-		struct dirent *de;
-
-		/* read all entries in the directory. End on EOVERFLOW or end of list */
-		while ( (de = readdir(dir)) ) {
-			struct pfixpol *pf;
-			if (de->d_name[0] == '.')
-				continue;
-			if (strlen(de->d_name) > 88) {
-				const char *emsg[] = {"name of policy daemon too long, ignoring \"", de->d_name, "\"", NULL};
-				log_writen(LOG_WARNING, emsg);
-				continue;
-			}
-
-			pf = malloc(sizeof(*pf));
-			if (pf)
-				pf->name = strdup(de->d_name);
-
-			if (!pf || !pf->name) {
-				closedir(dir);
-				freeppol();
-				free(pf);
-				return ENOMEM;
-			}
-
-			log_write(LOG_DEBUG, pf->name);
-			pf->pid = 0;
-			TAILQ_INSERT_TAIL(&pfixhead, pf, entries);
-		}
-		closedir(dir);
-	} else if (errno != ENOENT) {
-	}
-#endif
 
 	/* block sigpipe. If we don't we can't handle the errors in smtp_data() correctly and remote host
 	 * will see a connection drop on error (which is bad and violates RfC) */
@@ -1218,7 +1154,6 @@ void
 conn_cleanup(const int rc)
 {
 	freedata();
-	freeppol();
 	userbackend_free();
 	free(xmitstat.authname.s);
 
