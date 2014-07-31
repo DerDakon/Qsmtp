@@ -2,6 +2,7 @@
  \brief shell program to allow a user to modify his filterconf setting from remote host
  */
 
+#define _POSIX_C_SOURCE 200809L /* for O_CLOEXEC */
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
