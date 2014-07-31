@@ -7,6 +7,6 @@
 #include <sys/types.h>
 
 extern void *mmap_fd(int fd, off_t *len);
-extern void *mmap_name(const char *fname, off_t *len, int *fd);
+extern void *mmap_name(int dirfd, const char *fname, off_t *len, int *fd);
 
 #endif

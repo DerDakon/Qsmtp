@@ -215,40 +215,32 @@ setup(void)
 		liphost.len = heloname.len;
 	}
 
-	rcpthfd = openat(controldir_fd, "rcpthosts", O_RDONLY | O_CLOEXEC);
-	if (rcpthfd < 0) {
-		if (errno != ENOENT) {
-			log_write(LOG_ERR, "control/rcpthosts not found");
-			return errno;
-		}
-	} else {
-		int e;
-		if (flock(rcpthfd, LOCK_SH | LOCK_NB) != 0) {
-			close(rcpthfd);
-			log_write(LOG_WARNING, "cannot lock control/rcpthosts");
-			return ENOLCK; /* not the right error code, but good enough */
-		}
+	rcpthosts = mmap_name(controldir_fd, "rcpthosts", &rcpthsize, &rcpthfd);
 
-		rcpthosts = mmap_fd(rcpthfd, &rcpthsize);
+	if (rcpthosts == NULL) {
+		int e = errno;
 
-		e = errno;
-		close(rcpthfd);
-
-		if ((rcpthosts == NULL) && (e != 0)) {
-			log_write(LOG_ERR, "cannot mmap() control/rcpthosts");
+		switch (e) {
+		case ENOENT:
+			rcpthsize = 0;
+			/* fallthrough */
+		case 0:
+			assert(rcpthsize == 0);
+			/* allow this, this just means that no host is local */
+			break;
+		default:
+			log_write(LOG_ERR, "cannot map control/rcpthosts");
 			errno = e;
 			return -1;
 		}
+	}
 
-		if (rcpthsize < 4) {
-			/* minimum length of domain name: x.yy = 4 bytes */
-			log_write(LOG_ERR, "control/rcpthosts too short");
-			if (rcpthsize != 0) {
-				munmap(rcpthosts, rcpthsize);
-				rcpthosts = NULL;
-			}
-			return 1;
-		}
+	if ((rcpthsize > 0) && (rcpthsize < 4)) {
+		/* minimum length of domain name: x.yy = 4 bytes */
+		log_write(LOG_ERR, "control/rcpthosts too short");
+		munmap(rcpthosts, rcpthsize);
+		rcpthosts = NULL;
+		return 1;
 	}
 
 #ifdef IPV4ONLY

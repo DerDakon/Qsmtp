@@ -69,7 +69,7 @@ main(void)
 		return 16;
 	}
 
-	buf = mmap_name(testfname, &len, &fd2);
+	buf = mmap_name(AT_FDCWD, testfname, &len, &fd2);
 	if ((buf != NULL) || (errno != ENOLCK)) {
 		fputs("mmap_name() on exlusively locked file did not fail with ENOLCK\n", stderr);
 		close(fd);
@@ -99,7 +99,7 @@ main(void)
 	munmap(buf, len);
 
 	fd = -1;
-	buf = mmap_name(testfname, &len, &fd);
+	buf = mmap_name(AT_FDCWD, testfname, &len, &fd);
 	if (buf == NULL) {
 		fprintf(stderr, "mmap_name() failed, error %i\n", errno);
 		return 9;
@@ -126,7 +126,7 @@ main(void)
 	flock(fd, LOCK_UN);
 	unlink(testfname);
 
-	buf = mmap_name("nonexistent", &len, &fd);
+	buf = mmap_name(AT_FDCWD, "nonexistent", &len, &fd);
 	if (buf != NULL) {
 		fputs("mapping a nonexistent file did not fail, please check if your build directory is clean\n", stderr);
 		return 12;
@@ -155,7 +155,7 @@ main(void)
 	close(fd);
 
 	fd = -1;
-	buf = mmap_name(testfname, &len, &fd);
+	buf = mmap_name(AT_FDCWD, testfname, &len, &fd);
 	if ((buf != NULL) || (len != 0) || (errno != 0)) {
 		fprintf(stderr, "mapping an empty file by name was expected to return (buf, len, errno) = (NULL, 0, 0), but returned (%p, %lli, %i)\n",
 			buf, (long long)len, errno);

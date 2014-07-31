@@ -15,8 +15,7 @@
 #include <syslog.h>
 
 /**
- * map an already opened file into memory
- *
+ * @brief map an already opened file into memory
  * @param fd file descriptor of opened file
  * @param len length of mapping will be stored here
  * @return pointer to mapped area
@@ -42,22 +41,22 @@ mmap_fd(int fd, off_t *len)
 }
 
 /**
- * map a file into memory
- *
- * The file is flock()'ed to allow atomic modification of this file.
- *
- * @param fname path to file to map
+ * @brief map a file into memory
+ * @param dirfd descriptor of directory
+ * @param fname path to file to map relative to dirfd
  * @param len length of mapping will be stored here
  * @param fd file descriptor of opened file will be stored here
  * @return pointer to mapped area
  * @retval NULL an error occured (errno is set)
+ *
+ * The file is flock()'ed to allow atomic modification of this file.
  */
 void *
-mmap_name(const char *fname, off_t *len, int *fd)
+mmap_name(int dirfd, const char *fname, off_t *len, int *fd)
 {
 	void *buf;
 
-	*fd = open(fname, O_RDONLY | O_CLOEXEC);
+	*fd = openat(dirfd, fname, O_RDONLY | O_CLOEXEC);
 
 	if (*fd < 0)
 		return NULL;
