@@ -50,16 +50,16 @@ static struct smtpcomm commands[] = {
 	_C("NOOP",	0xffff, smtp_noop,      -1, 0), /* 0x0001 */
 	_C("QUIT",	0xfffd, smtp_quit,       0, 0), /* 0x0002 */
 	_C("RSET",	0xfffd, smtp_rset,     0x1, 0), /* 0x0004 */ /* the status to change to is set in smtp_rset */
-	_C("HELO",	0xfffd, smtp_helo,       0, 1), /* 0x0008 */
-	_C("EHLO",	0xfffd, smtp_ehlo,       0, 1), /* 0x0010 */
+	_C("HELO",	0xfffd, smtp_helo,       0, 5), /* 0x0008 */
+	_C("EHLO",	0xfffd, smtp_ehlo,       0, 5), /* 0x0010 */
 	_C("MAIL FROM:",0x0018, smtp_from,       0, 3), /* 0x0020 */
 	_C("RCPT TO:",	0x0060, smtp_rcpt,       0, 1), /* 0x0040 */
 	_C("DATA",	0x0040, smtp_data,    0x10, 0), /* 0x0080 */ /* the status to change to is changed in smtp_data */
 	_C("STARTTLS",	0x0010, smtp_starttls, 0x1, 0), /* 0x0100 */
-	_C("AUTH",	0x0010, smtp_auth,      -1, 1), /* 0x0200 */
-	_C("VRFY",	0xffff, smtp_vrfy,      -1, 1), /* 0x0400 */
+	_C("AUTH",	0x0010, smtp_auth,      -1, 5), /* 0x0200 */
+	_C("VRFY",	0xffff, smtp_vrfy,      -1, 5), /* 0x0400 */
 #ifdef CHUNKING
-	_C("BDAT",	0x0840, smtp_bdat,      -1, 1), /* 0x0800 */ /* the status to change to is changed in smtp_bdat */
+	_C("BDAT",	0x0840, smtp_bdat,      -1, 5), /* 0x0800 */ /* the status to change to is changed in smtp_bdat */
 #endif
 	_C("POST",	0xffff, http_post,      -1, 1)  /* 0x1000 */ /* this should stay last */
 };
@@ -611,6 +611,8 @@ smtploop(void)
 				if (comstate & commands[i].mask) {
 					unsigned int ostate = commands[i].state; /* the state originally recorded for this command */
 
+					/* "space required" may not come without "takes arguments" */
+					assert((commands[i].flags & 5) != 4);
 					if (!(commands[i].flags & 2) && (linein.len > 510)) {
 						/* RfC 2821, section 4.5.3.1 defines the maximum length of a command line
 						 * to 512 chars if this limit is not raised by an extension. Since we
@@ -619,7 +621,10 @@ smtploop(void)
 						 flagbogus = E2BIG;
 						 break;
 					}
+
 					if (!(commands[i].flags & 1) && linein.s[commands[i].len]) {
+						flagbogus = EINVAL;
+					} else if ((commands[i].flags & 4) && (linein.s[commands[i].len] != ' ')) {
 						flagbogus = EINVAL;
 					} else {
 						current_command = commands + i;

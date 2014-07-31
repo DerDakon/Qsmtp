@@ -21,7 +21,8 @@ struct smtpcomm {
 	int		(*func)(void);	/**< the function that handles this command */
 	long		state;		/**< the state to change to. If <0 don't change the state, if 0 use auto state */
 	unsigned int	flags;		/**< bit 1: this command takes arguments
-					     bit 2: this command allows lines > 512 chars (and will check this itself) */
+					     bit 2: this command allows lines > 512 chars (and will check this itself)
+					     bit 3: a space is required between commands and arguments */
 };
 
 /*! \struct xmitstat

@@ -57,11 +57,6 @@ execute_process(COMMAND sleep 1)
 # invalid auth argument, noop to reset bad command counter
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> auth=\r\nnoop\r")
 execute_process(COMMAND sleep 1)
-# now some commands that do not expect arguments
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "noop foo\r\nnoop\r")
-execute_process(COMMAND sleep 1)
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "rset foo\r\nRSET\r")
-execute_process(COMMAND sleep 1)
 # too long line, noop to reset bad command counter
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:${SPACES}<>\r\nnoop\r")
 execute_process(COMMAND sleep 1)
