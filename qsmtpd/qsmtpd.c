@@ -822,9 +822,9 @@ smtp_rcpt(void)
 	struct userconf ds;
 	const char *errmsg;
 	enum config_domain bt;			/* which policy matched */
-	const char *logmsg[] = {"rejected message to <", NULL, "> from <", MAILFROM,
-					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL};
-	const char *okmsg[] = {"250 2.1.0 recipient <", NULL, "> OK", NULL};
+	const char *logmsg[] = { "temporarily ", "rejected message to <", NULL, "> from <", MAILFROM,
+					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL };
+	const char *okmsg[] = { "250 2.1.0 recipient <", NULL, "> OK", NULL };
 	size_t bugoffset = 0;
 
 	while ((bugoffset < linein.len - 8) && (linein.s[8 + bugoffset] == ' '))
@@ -839,10 +839,10 @@ smtp_rcpt(void)
 	if  (i > 0) {
 		return i;
 	} else if (i == -1) {
-		logmsg[1] = tmp.s;
-		logmsg[7] = "no such user}";
-		logmsg[8] = NULL;
-		log_writen(LOG_INFO, logmsg);
+		logmsg[2] = tmp.s;
+		logmsg[8] = "no such user}";
+		logmsg[9] = NULL;
+		log_writen(LOG_INFO, logmsg + 1);
 		free(tmp.s);
 		return EBOGUS;
 	} else if (i == -2) {
@@ -984,10 +984,13 @@ userdenied:
 	e = errno;
 	if (filter_denied(fr)) {
 		if (errmsg != NULL) {
-			logmsg[7] = errmsg;
-			logmsg[9] = blocktype[bt];
-			logmsg[1] = r->to.s;
-			log_writen(LOG_INFO, logmsg);
+			logmsg[2] = r->to.s;
+			logmsg[8] = errmsg;
+			logmsg[10] = blocktype[bt];
+			if (fr == FILTER_DENIED_TEMPORARY)
+				log_writen(LOG_INFO, logmsg);
+			else
+				log_writen(LOG_INFO, logmsg + 1);
 		}
 		tarpit();
 	}
