@@ -55,7 +55,7 @@ check_line_limit(const string *bdata, const unsigned int maxlinelen)
 					lstart - bdata->s, lend - lstart, maxlinelen);
 				return 1;
 			}
-			
+
 			lend += 2;
 		}
 	} while ((lend < bdata->s + bdata->len) && (*lend != '\0'));

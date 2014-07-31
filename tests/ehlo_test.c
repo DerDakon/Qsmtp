@@ -220,7 +220,7 @@ testcase_auth(void)
 		if ((lines[i].mechs != NULL) && (auth_mechs != NULL) &&
 				(strcmp(lines[i].mechs, auth_mechs) == 0))
 			continue;
-			
+
 		fprintf(stderr, "line '%s' parsed mechanisms '%s', but expected '%s'\n",
 				lines[i].line, auth_mechs, lines[i].mechs);
 		ret++;
@@ -307,13 +307,13 @@ check_calls(int gresult)
 	} else {
 		ret = 0;
 	}
-	
+
 	if (netget_results[0].line != NULL) {
 		fprintf(stderr, "%s: greeting() did not call netget() often enough\n",
 			__func__);
 		ret++;
 	}
-	
+
 	if (nw_flags != 0) {
 		fprintf(stderr, "%s: greeting() did not call net_writen() often enough\n",
 			__func__);

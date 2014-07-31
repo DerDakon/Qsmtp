@@ -198,7 +198,7 @@ static struct {
 	}
 };
 
-static int 
+static int
 addrsyntax_test(void)
 {
 	int err = 0;

@@ -8,8 +8,8 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/stat.h> 
-#include <sys/types.h> 
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 /* name of the dummy files created */

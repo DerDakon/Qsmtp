@@ -87,7 +87,7 @@ struct {
 		.dirs = 1
 	},
 	/* this is rejected because of the '/'. It could be fixed for cases
-	 * where the address is catched by a .qmail*-default, but currently 
+	 * where the address is catched by a .qmail*-default, but currently
 	 * it is forbidden. */
 	{
 		.email = "baz-bar/foo@example.org",

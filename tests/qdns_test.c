@@ -1,7 +1,7 @@
 #include <libowfatconn.h>
 #include <qdns.h>
 
-#include <arpa/inet.h> 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -367,7 +367,7 @@ int dnsname(char **out, const struct in6_addr *ip)
 		}
 		i++;
 	}
-	
+
 	errno = ENOENT;
 	return -1;
 }

@@ -195,7 +195,7 @@ main(int argc __attribute__((unused)), char **argv)
 
 	expected_net_write1 = "334 \r\n";
 	expected_net_write2 = invalid_msg;
-	
+
 	if (smtp_auth() != EDONE) {
 		fprintf(stderr, "AUTH PLAIN with empty line did not fail as expected\n");
 		err++;
@@ -388,10 +388,10 @@ main(int argc __attribute__((unused)), char **argv)
 
 	/* CRAM-MD5 with empty MD5 response of valid length, but containing invalid characters */
 	setinput("AUTH CRAM-MD5");
-	
+
 	expected_net_write1 = "501 5.5.4 malformed auth input\r\n";
 	extra_read = "Zm9vIDAxMjN4NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm\r\n";
-	
+
 	if (smtp_auth() != EDONE) {
 		fprintf(stderr, "AUTH CRAM-MD5 with MD5 string containing invalid characters did not fail as expected\n");
 		err++;

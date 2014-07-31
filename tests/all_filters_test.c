@@ -9,7 +9,7 @@
 #include <qsmtpd/userconf.h>
 #include "test_io/testcase_io.h"
 
-#include <arpa/inet.h> 
+#include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -162,11 +162,11 @@ map_from_list(const char *values)
 
 	for (i = 0; *c != '\0'; i++)
 		c += strlen(c) + 1;
-	
+
 	res = calloc(i + 1, sizeof(*res));
 	if (res == NULL)
 		exit(ENOMEM);
-	
+
 	c = values;
 	for (i = 0; *c != '\0'; i++) {
 		res[i] = (char *)c;

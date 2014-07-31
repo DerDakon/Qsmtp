@@ -57,7 +57,7 @@ test_sst(void)
 
 	return ret;
 }
-	
+
 static int
 test_ws(void)
 {
@@ -400,7 +400,7 @@ test_multipart_boundary()
 					i, (int)boundary.len, boundary.s, qboundaries[i]);
 
 	}
-	
+
 	return ret;
 }
 

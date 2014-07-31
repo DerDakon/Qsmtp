@@ -260,7 +260,7 @@ testcase_checkreply(void)
 
 	netget_input = "220 ";
 	ret += check_cr(NULL, 220, checkreply(NULL, pre, 0));
-	
+
 	netget_input = "220 ";
 	ret += check_cr(NULL, 220, checkreply(" ZD", pre, 0));
 
