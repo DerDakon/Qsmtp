@@ -180,8 +180,8 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 	WRITE("F", 1);
 	WRITE(MAILFROM, xmitstat.mailfrom.len + 1);
 
-	while (head.tqh_first != NULL) {
-		struct recip *l = head.tqh_first;
+	while (!TAILQ_EMPTY(&head)) {
+		struct recip *l = TAILQ_FIRST(&head);
 
 		if (l->ok) {
 			const char *at = strchr(l->to.s, '@');
@@ -196,7 +196,7 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 				WRITE(l->to.s, l->to.len + 1);
 			}
 		}
-		TAILQ_REMOVE(&head, head.tqh_first, entries);
+		TAILQ_REMOVE(&head, TAILQ_FIRST(&head), entries);
 		free(l->to.s);
 		free(l);
 	}

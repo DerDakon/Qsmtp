@@ -149,7 +149,7 @@ write_received(const int chunked)
 	} else {
 		WRITEL(afterprot);
 	}
-	WRITE(head.tqh_first->to.s, head.tqh_first->to.len);
+	WRITE(TAILQ_FIRST(&head)->to.s, TAILQ_FIRST(&head)->to.len);
 	date822(datebuf + 3);
 	datebuf[34] = '\n';
 	WRITE(datebuf, 35);
@@ -319,7 +319,7 @@ smtp_data(void)
 					 * 2: at least 2 characters top level domain */
 					struct recip *np;
 
-					for (np = head.tqh_first; np != NULL; np = np->entries.tqe_next) {
+					TAILQ_FOREACH(np, &head, entries) {
 						if (np->ok && !strcmp(linein.s + 14, np->to.s)) {
 							logmail[9] = "mail loop}";
 							errmsg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n";
@@ -450,10 +450,10 @@ loop_data:
 	close(queuefd_hdr);
 	ultostr(msgsize, s);
 
-	while (head.tqh_first != NULL) {
-		struct recip *l = head.tqh_first;
+	while (!TAILQ_EMPTY(&head)) {
+		struct recip *l = TAILQ_FIRST(&head);
 
-		TAILQ_REMOVE(&head, head.tqh_first, entries);
+		TAILQ_REMOVE(&head, TAILQ_FIRST(&head), entries);
 		if (l->ok) {
 			logmail[1] = l->to.s;
 			log_writen(LOG_INFO, logmail);
@@ -606,10 +606,10 @@ smtp_bdat(void)
 
 	if ((msgsize > maxbytes) && !bdaterr) {
 		logmail[9] = "message too big}";
-		while (head.tqh_first != NULL) {
-			struct recip *l = head.tqh_first;
+		while (!TAILQ_EMPTY(&head)) {
+			struct recip *l = TAILQ_FIRST(&head);
 
-			TAILQ_REMOVE(&head, head.tqh_first, entries);
+			TAILQ_REMOVE(&head, TAILQ_FIRST(&head), entries);
 			if (l->ok) {
 				logmail[1] = l->to.s;
 				log_writen(LOG_INFO, logmail);

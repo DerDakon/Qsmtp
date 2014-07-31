@@ -367,7 +367,7 @@ test_log_messages(void)
 			ret++;
 		}
 
-		if (head.tqh_first != NULL) {
+		if (!TAILQ_EMPTY(&head)) {
 			fprintf(stderr, "%s[%u]: queue_envelope() did not clear all recipients\n", __func__, i);
 			ret++;
 		}

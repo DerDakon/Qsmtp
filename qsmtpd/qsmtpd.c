@@ -207,10 +207,10 @@ static void
 freeppol(void)
 {
 #ifdef PFIXPOLDIR
-	while (pfixhead.tqh_first != NULL) {
-		struct pfixpol *l = pfixhead.tqh_first;
+	while (!TAILQ_EMPTY(&pfixhead)) {
+		struct pfixpol *l = TAILQ_FIRST(&pfixhead);
 
-		TAILQ_REMOVE(&pfixhead, pfixhead.tqh_first, entries);
+		TAILQ_REMOVE(&pfixhead, TAILQ_FIRST(&pfixhead), entries);
 		if (l->pid) {
 			int res;
 
@@ -557,10 +557,10 @@ freedata(void)
 	xmitstat.frommx = NULL;
 	free(xmitstat.tlsclient);
 	xmitstat.tlsclient = NULL;
-	while (head.tqh_first != NULL) {
-		struct recip *l = head.tqh_first;
+	while (!TAILQ_EMPTY(&head)) {
+		struct recip *l = TAILQ_FIRST(&head);
 
-		TAILQ_REMOVE(&head, head.tqh_first, entries);
+		TAILQ_REMOVE(&head, TAILQ_FIRST(&head), entries);
 		free(l->to.s);
 		free(l);
 	}
@@ -889,7 +889,7 @@ smtp_rcpt(void)
 	if ((rcptcount > 0) && (xmitstat.mailfrom.len == 0)) {
 		const char *logmess[] = {"rejected message to <", NULL, "> from <> from IP [", xmitstat.remoteip,
 						"] {bad bounce}", NULL};
-		struct recip *l = head.tqh_first;
+		struct recip *l = TAILQ_FIRST(&head);
 
 		if (err_badbounce() < 0)
 			return errno;

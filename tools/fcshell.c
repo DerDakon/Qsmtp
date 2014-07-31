@@ -439,7 +439,7 @@ editwrite(const int type)
 	if (warn_noparam(5, "write"))
 		return;
 
-	if (((type <= 2) && (editbuffer.buf.lhead.tqh_first)) || ((type > 2) && editbuffer.buf.map.len)) {
+	if (((type <= 2) && !TAILQ_EMPTY(&editbuffer.buf.lhead)) || ((type > 2) && editbuffer.buf.map.len)) {
 
 		snprintf(fn, sizeof(fn), "%s.%i", editbuffer.name, getpid());
 		fcfd = fopen(fn, "w");
@@ -452,8 +452,10 @@ editwrite(const int type)
 		switch (type) {
 		case 0:
 		case 1:
-		case 2:	for (struct addrlist *thisad = editbuffer.buf.lhead.tqh_first;
-						thisad; thisad = thisad->entries.tqe_next) {
+		case 2:
+			{
+			struct addrlist *thisad;
+			TAILQ_FOREACH(thisad, &editbuffer.buf.lhead, entries)
 				if (fprintf(fcfd, "%s\n", thisad->address) < 0)
 					goto err;
 			}

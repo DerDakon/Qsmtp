@@ -33,7 +33,7 @@ cb_badcc(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	struct recip *np;	/* current recipient to check */
 
 	/* if there is only one recipient we don't need to check for CC addresses */
-	if (!head.tqh_first->entries.tqe_next)
+	if (TAILQ_NEXT(TAILQ_FIRST(&head), entries) == NULL)
 		return FILTER_PASSED;
 
 	*t = userconf_get_buffer(ds, "badcc", &a, checkaddr, 1);
@@ -46,7 +46,7 @@ cb_badcc(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 
 	rc = FILTER_PASSED;
 	/* look through the list of recipients but ignore the current one */
-	for (np = head.tqh_first; (np != NULL) && (rc == FILTER_PASSED); np = np->entries.tqe_next) {
+	for (np = TAILQ_FIRST(&head); (np != NULL) && (rc == FILTER_PASSED); np = TAILQ_NEXT(np, entries)) {
 		char *at = strchr(np->to.s, '@');
 		unsigned int i = 0;
 
