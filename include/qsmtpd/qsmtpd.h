@@ -70,7 +70,6 @@ extern int relayclient;			/**< flag if this client is allowed to relay by IP: 0 
 extern long comstate;			/**< status of the command state machine */
 extern int authhide;			/**< hide source of authenticated mail */
 extern int submission_mode;		/**< if we should act as message submission agent */
-extern char certfilename[];		/**< path to SSL certificate filename */
 
 extern int err_control(const char *);
 extern int err_control2(const char *, const char *);
@@ -78,7 +77,6 @@ extern void freedata(void);
 extern pid_t fork_clean();
 extern int pipe_move(int p[2], int target);
 void __attribute__ ((noreturn)) conn_cleanup(const int rc);
-extern int __attribute__ ((noreturn)) smtp_quit(void);
 
 #define EBOGUS 1002
 #define EDONE 1003

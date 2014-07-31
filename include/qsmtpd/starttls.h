@@ -8,4 +8,6 @@
 extern int smtp_starttls(void);
 extern int tls_verify(void);
 
+extern char certfilename[];		/**< path to SSL certificate filename */
+
 #endif

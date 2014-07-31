@@ -9,6 +9,7 @@
 
 #include <log.h>
 #include <netio.h>
+#include <qsmtpd/commands.h>
 #include <qsmtpd/qsmtpd.h>
 
 #include <string.h>
