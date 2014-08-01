@@ -441,6 +441,7 @@ smtp_rcpt(void)
 				log_writen(LOG_WARNING, logmess);
 				e = 1;
 				fr = FILTER_DENIED_TEMPORARY;
+				break;
 			}
 		default:
 			assert(filter_denied(fr));
