@@ -74,6 +74,8 @@ ask_dnsmx(const char *name, struct ips **result)
 		return 0;
 	}
 
+	*result = NULL;
+
 	while (r + l > s) {
 		struct in6_addr *a;
 		int rc;
