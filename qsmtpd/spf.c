@@ -1236,7 +1236,7 @@ spfexists(const char *domain, const char *token)
 		r = -1;
 		break;
 	default:
-		if (r < 0)
+		if (i < 0)
 			r = SPF_HARD_ERROR;
 		else
 			r = SPF_PASS;
