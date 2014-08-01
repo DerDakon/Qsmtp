@@ -687,8 +687,10 @@ smtp_noop(void)
 int
 smtp_rset(void)
 {
+#ifdef CHUNKING
 	if (comstate == 0x0800)
 		queue_reset();
+#endif /* CHUNKING */
 	/* if there was EHLO or HELO before we reset to the state to immediately after this */
 	if (comstate >= 0x008) {
 		freedata();
