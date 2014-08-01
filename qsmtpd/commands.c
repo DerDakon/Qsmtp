@@ -522,6 +522,7 @@ smtp_from(void)
 	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> is syntactically correct", NULL};
 	char *s;
 	size_t bugoffset = 0;
+	off_t maxqueuebytes;	/* free space in queue */
 
 	/* detect broken clients that have spaces between ':' and '<' */
 	while ((bugoffset < linein.len - 10) && (linein.s[10 + bugoffset] == ' '))
@@ -616,6 +617,7 @@ smtp_from(void)
 		/* will happen in most cases because program runs not in group qmail */
 		case EACCES:
 			log_write(LOG_WARNING, "warning: can not get free queue disk space");
+			maxqueuebytes = (off_t)-1;
 			break;
 /*		case ELOOP:
 		case ENAMETOOLONG:
@@ -631,10 +633,12 @@ smtp_from(void)
 	} else {
 		if (sbuf.f_flag & ST_RDONLY)
 			return EROFS;
-		/* check if the free disk in queue filesystem is at least the size of the message */
-		if ((databytes && (databytes < xmitstat.thisbytes)) || (sbuf.f_bsize*sbuf.f_bavail < xmitstat.thisbytes))
-			return netwrite("452 4.3.1 Requested action not taken: insufficient system storage\r\n") ? errno : EDONE;
+		maxqueuebytes = sbuf.f_bsize*sbuf.f_bavail;
 	}
+
+	/* check if the free disk in queue filesystem is at least the size of the message */
+	if ((databytes && (databytes < xmitstat.thisbytes)) || (maxqueuebytes < xmitstat.thisbytes))
+		return netwrite("452 4.3.1 Requested action not taken: insufficient system storage\r\n") ? errno : EDONE;
 
 	/* no need to check existence of sender domain on bounce message */
 	if (xmitstat.mailfrom.len) {
