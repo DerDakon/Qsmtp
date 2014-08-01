@@ -12,7 +12,7 @@ extern int checkaddr(const char *const) __attribute__ ((pure)) __attribute__ ((n
 extern int addrsyntax(char *in, const int flags, string *addr, char **more) __attribute__ ((pure)) __attribute__ ((nonnull (1)));
 extern int addrspec_valid(const char * const addr);
 
-extern int addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds, const char *rcpthosts, const off_t rcpthsize) __attribute__ ((nonnull (1)));
+extern int addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds, const char * /* rcpthosts */, const off_t /* rcpthsize */) __attribute__ ((nonnull (1)));
 
 /**
  * @brief check if the user identified by localpart and ds->domainpath exists
