@@ -49,11 +49,14 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			size_t dlen = strlen(d);
 			char blname[256];		/* maximum length of a valid DNS domain name + \0 */
 
-			if (dlen + alen < sizeof(blname) - 1) { /* -1 for the additional '.' */
+			if (dlen + alen < sizeof(blname)) {
 				int k;
 
 				memcpy(blname, d, dlen);
 				blname[dlen++] = '.';
+				/* This is no overrun as alen already includes the terminating
+				 * '\0', and the size was checked for being smaller than the
+				 * buffer length before. */
 				memcpy(blname + dlen, a[i], alen);
 
 				k = ask_dnsa(blname, NULL);
