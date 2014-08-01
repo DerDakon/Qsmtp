@@ -26,7 +26,7 @@
 #include <sys/statvfs.h>
 #include <unistd.h>
 
-char certfilename[24 + INET6_ADDRSTRLEN + 6];		/**< path to SSL certificate filename */
+char certfilename[24 + INET6_ADDRSTRLEN + 6] = "control/servercert.pem";		/**< path to SSL certificate filename */
 
 #define MAXRCPT		500		/**< maximum number of recipients in a single mail */
 
