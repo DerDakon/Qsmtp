@@ -183,7 +183,7 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 				cur->next = in6_to_ips(ip6addr, q, MX_PRIORITY_IMPLICIT);
 			}
 		} else if (q > 0) {
-			cur = in6_to_ips(ip6addr, q, MX_PRIORITY_IMPLICIT);
+			*ips = in6_to_ips(ip6addr, q, MX_PRIORITY_IMPLICIT);
 		}
 
 		if ((q >= 0) && (r >= 0))
