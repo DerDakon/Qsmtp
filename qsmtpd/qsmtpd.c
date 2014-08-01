@@ -141,7 +141,7 @@ dieerror(int error)
 		break;
 	}
 	log_writen(LOG_WARNING, logmsg);
-	exit(error);
+	conn_cleanup(error);
 }
 
 static int

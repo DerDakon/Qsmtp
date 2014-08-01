@@ -735,7 +735,7 @@ http_post(void)
 	if (!strncmp(" / HTTP/1.", linein.s + 4, 10)) {
 		const char *logmsg[] = {"dropped connection from [", xmitstat.remoteip, "]: client is talking HTTP to me", NULL};
 		log_writen(LOG_INFO, logmsg);
-		exit(0);
+		conn_cleanup(0);
 	}
 	return EINVAL;
 }
