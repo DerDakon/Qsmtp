@@ -45,17 +45,17 @@ verify_ipv6_sorted(const struct ips *ip)
 {
 	int err = verify(ip);
 
-	if (IN6_IS_ADDR_V4MAPPED(ip)) {
+	if (IN6_IS_ADDR_V4MAPPED(&ip->addr)) {
 		fputs("v4 mapped address comes first\n", stderr);
 		return ++err;
 	}
 
-	if (!IN6_IS_ADDR_V4MAPPED(ip->next)) {
+	if (!IN6_IS_ADDR_V4MAPPED(&ip->next->addr)) {
 		fputs("second position is no IPv4 mapped address\n", stderr);
 		return ++err;
 	}
 
-	if (!IN6_IS_ADDR_V4MAPPED(ip->next->next)) {
+	if (!IN6_IS_ADDR_V4MAPPED(&ip->next->next->addr)) {
 		fputs("third position is no IPv4 mapped address\n", stderr);
 		return ++err;
 	}
