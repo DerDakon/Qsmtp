@@ -440,7 +440,7 @@ test_implicit_mx(void)
 			continue;
 		}
 
-		res = NULL;
+		res = (void *)((uintptr_t)-1);
 
 		if (ask_dnsmx(dns_entries[idx].name, &res) != 0) {
 			fprintf(stderr, "%s did not return implicit MX entries\n", dns_entries[idx].name);
@@ -487,7 +487,7 @@ test_mx(void)
 	unsigned int mxidx;
 
 	for (mxidx = 0; mxentries[mxidx].name != NULL; mxidx++) {
-		struct ips *res = NULL;
+		struct ips *res = (void *)((uintptr_t)-1);
 		struct ips *cur;
 		unsigned int idx = 0;
 
