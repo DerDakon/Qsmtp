@@ -116,9 +116,9 @@ int main(void)
 		return 2;
 	}
 
-	inet_ntop(AF_INET6, &mx->addr, gotip, sizeof(gotip));
+	inet_ntop(AF_INET6, mx->addr, gotip, sizeof(gotip));
 
-	if (memcmp(&(mx->addr), &expectedip, sizeof(expectedip)) != 0) {
+	if (memcmp(mx->addr, &expectedip, sizeof(expectedip)) != 0) {
 		fprintf(stderr, "expected ip %s, but got %s\n", ipexpect, gotip);
 		freeips(mx);
 		free(ipexpect);

@@ -136,7 +136,7 @@ parse_route_params(struct ips **mx, const char *remhost, unsigned int *targetpor
 
 			/* decide if the name of the MX should be copied: copy it
 				* it it doesn't look like an IPv4 or IPv6 address */
-			if (IN6_IS_ADDR_V4MAPPED(&(*mx)->addr)) {
+			if (IN6_IS_ADDR_V4MAPPED((*mx)->addr)) {
 				struct in6_addr ad;
 				is_ip = (inet_pton(AF_INET6, host, &ad) > 0);
 			} else {

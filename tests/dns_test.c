@@ -45,17 +45,17 @@ verify_ipv6_sorted(const struct ips *ip)
 {
 	int err = verify(ip);
 
-	if (IN6_IS_ADDR_V4MAPPED(&ip->addr)) {
+	if (IN6_IS_ADDR_V4MAPPED(ip->addr)) {
 		fputs("v4 mapped address comes first\n", stderr);
 		return ++err;
 	}
 
-	if (!IN6_IS_ADDR_V4MAPPED(&ip->next->addr)) {
+	if (!IN6_IS_ADDR_V4MAPPED(ip->next->addr)) {
 		fputs("second position is no IPv4 mapped address\n", stderr);
 		return ++err;
 	}
 
-	if (!IN6_IS_ADDR_V4MAPPED(&ip->next->next->addr)) {
+	if (!IN6_IS_ADDR_V4MAPPED(ip->next->next->addr)) {
 		fputs("third position is no IPv4 mapped address\n", stderr);
 		return ++err;
 	}
@@ -82,7 +82,8 @@ test_sort_priority(void)
 			exit(ENOMEM);
 		}
 		memset(ipa, 0, sizeof(*ipa));
-		ipa->addr.s6_addr32[2] = i * 1000;
+		ipa->addr = &ipa->ad;
+		ipa->addr->s6_addr32[2] = i * 1000;
 		ipa->next = ipb;
 		ipb = ipa;
 	}
@@ -131,15 +132,16 @@ test_sort_ipv6(void)
 			freeips(ipb);
 			exit(ENOMEM);
 		}
-		ipa->addr.s6_addr32[3] = i * 1000;
+		ipa->addr = &ipa->ad;
+		ipa->addr->s6_addr32[3] = i * 1000;
 		/* make this v4mapped or not */
-		ipa->addr.s6_addr32[1] = 0;
+		ipa->addr->s6_addr32[1] = 0;
 		if (i == count) {
-			ipa->addr.s6_addr32[2] = 0;
-			ipa->addr.s6_addr32[0] = htonl(0xfe800000);
+			ipa->addr->s6_addr32[2] = 0;
+			ipa->addr->s6_addr32[0] = htonl(0xfe800000);
 		} else {
-			ipa->addr.s6_addr32[2] = htonl(0xffff);
-			ipa->addr.s6_addr32[0] = 0;
+			ipa->addr->s6_addr32[2] = htonl(0xffff);
+			ipa->addr->s6_addr32[0] = 0;
 		}
 		ipa->next = ipb;
 		ipa->priority = 42;

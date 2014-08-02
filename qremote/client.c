@@ -53,7 +53,7 @@ getrhost(const struct ips *m)
 	}
 	rhost[rhostlen++] = '[';
 	/* there can't be any errors here ;) */
-	(void) inet_ntop(AF_INET6, &m->addr, rhost + rhostlen, INET6_ADDRSTRLEN);
+	(void) inet_ntop(AF_INET6, m->addr, rhost + rhostlen, INET6_ADDRSTRLEN);
 	rhostlen = strlen(rhost);
 	rhost[rhostlen++] = ']';
 	rhost[rhostlen] = '\0';

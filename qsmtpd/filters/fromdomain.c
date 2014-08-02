@@ -63,14 +63,15 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 		struct ips *thisip = xmitstat.frommx;
 
 		while (flaghit && thisip) {
-			if (IN6_IS_ADDR_V4MAPPED(&(thisip->addr))) {
-				unsigned int net = (thisip->addr.s6_addr32[3] & htonl(0xff000000));
+			assert(thisip->addr == &thisip->ad);
+			if (IN6_IS_ADDR_V4MAPPED(thisip->addr)) {
+				unsigned int net = (thisip->addr->s6_addr32[3] & htonl(0xff000000));
 
 				/* block if net is in 0/8 or 127/8 */
 				if (net && (net != htonl(0x7f000000)))
 					flaghit = 0;
 			} else {
-				if (!IN6_IS_ADDR_LOOPBACK(&(thisip->addr)))
+				if (!IN6_IS_ADDR_LOOPBACK(thisip->addr))
 					flaghit = 0;
 			}
 			thisip = thisip->next;
@@ -87,7 +88,8 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 		struct ips *thisip = xmitstat.frommx;
 
 		while (flaghit && thisip) {
-			if (IN6_IS_ADDR_V4MAPPED(&(thisip->addr))) {
+			assert(thisip->addr == &thisip->ad);
+			if (IN6_IS_ADDR_V4MAPPED(thisip->addr)) {
 				int flagtmp = 0;
 				const struct in_addr priva =    { .s_addr = htonl(0x0a000000) }; /* 10/8 */
 				const struct in_addr privb =    { .s_addr = htonl(0xac100000) }; /* 172.16/12 */
@@ -99,32 +101,32 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 				const struct in_addr bench =    { .s_addr = htonl(0xc0120000) }; /* 192.18/15 */
 
 				/* 10.0.0.0/8 */
-				flagtmp = ip4_matchnet(&(thisip->addr), &priva, 8);
+				flagtmp = ip4_matchnet(thisip->addr, &priva, 8);
 				/* 172.16.0.0/12 */
 				if (!flagtmp)
-					flagtmp = ip4_matchnet(&(thisip->addr), &privb, 12);
+					flagtmp = ip4_matchnet(thisip->addr, &privb, 12);
 				/* 192.168.0.0/16 */
 				if (!flagtmp)
-					flagtmp = ip4_matchnet(&(thisip->addr), &privc, 16);
+					flagtmp = ip4_matchnet(thisip->addr, &privc, 16);
 				/* 169.254.0.0/16 */
 				if (!flagtmp)
-					flagtmp = ip4_matchnet(&(thisip->addr), &linkloc, 16);
+					flagtmp = ip4_matchnet(thisip->addr, &linkloc, 16);
 				/* 192.0.2.0/24 */
 				if (!flagtmp)
-					flagtmp = ip4_matchnet(&(thisip->addr), &testnet1, 24);
+					flagtmp = ip4_matchnet(thisip->addr, &testnet1, 24);
 				/* 198.51.100.0/24 */
 				if (!flagtmp)
-					flagtmp = ip4_matchnet(&(thisip->addr), &testnet2, 24);
+					flagtmp = ip4_matchnet(thisip->addr, &testnet2, 24);
 				/* 203.0.113.0/24 */
 				if (!flagtmp)
-					flagtmp = ip4_matchnet(&(thisip->addr), &testnet3, 24);
+					flagtmp = ip4_matchnet(thisip->addr, &testnet3, 24);
 				/* 192.18.0.0/15 */
 				if (!flagtmp)
-					flagtmp = ip4_matchnet(&(thisip->addr), &bench, 15);
+					flagtmp = ip4_matchnet(thisip->addr, &bench, 15);
 				if (!flagtmp)
 					flaghit = 0;
 			} else {
-				flaghit = IN6_IS_ADDR_LINKLOCAL(&(thisip->addr)) || IN6_IS_ADDR_SITELOCAL(&(thisip->addr));
+				flaghit = IN6_IS_ADDR_LINKLOCAL(thisip->addr) || IN6_IS_ADDR_SITELOCAL(thisip->addr);
 			}
 			thisip = thisip->next;
 		}
@@ -144,7 +146,8 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 			return FILTER_PASSED;
 
 		for (thisip = xmitstat.frommx; flaghit && thisip; thisip = thisip->next) {
-			if (IN6_IS_ADDR_V4MAPPED(&(thisip->addr)))
+			assert(thisip->addr == &thisip->ad);
+			if (IN6_IS_ADDR_V4MAPPED(thisip->addr))
 				flaghit = 0;
 		}
 		if (flaghit) {

@@ -94,7 +94,8 @@ parseips(const char *list)
 		}
 
 		memset(n, 0, sizeof(*n));
-		if (inet_pton(AF_INET6, parsep, &n->addr) != 1) {
+		n->addr = &n->ad;
+		if (inet_pton(AF_INET6, parsep, n->addr) != 1) {
 			fprintf(stderr, "%s can not be parsed as IPv6 address\n", parsep);
 			exit(EINVAL);
 		}

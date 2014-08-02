@@ -38,8 +38,9 @@ run_test(const int *inidx, const int *outidx)
 			exit(ENOMEM);
 
 		memset(a, 0, sizeof(*a));
+		a->addr = &a->ad;
 
-		inet_pton(AF_INET6, testips[inidx[idx]], &a->addr);
+		inet_pton(AF_INET6, testips[inidx[idx]], a->addr);
 		if (in == NULL) {
 			in = a;
 			res = a;
@@ -86,7 +87,7 @@ run_test(const int *inidx, const int *outidx)
 
 			inet_pton(AF_INET6, testips[outidx[idx]], &addr);
 
-			if (memcmp(&addr, &tmp->addr, sizeof(addr)) != 0) {
+			if (memcmp(&addr, tmp->addr, sizeof(addr)) != 0) {
 				fprintf(stderr, "expected %s at output index %u, but got something else\n", testips[outidx[idx]], idx);
 				freeips(res);
 				return 1;

@@ -78,6 +78,7 @@ freeips(struct ips *p)
 
 		p = thisip->next;
 		free(thisip->name);
+		assert(thisip->addr == &thisip->ad);
 		free(thisip);
 	}
 }
@@ -105,8 +106,8 @@ sortmx(struct ips **p)
 		if ((res->priority > next->priority)
 #ifndef IPV4ONLY
 				|| ((res->priority == next->priority)
-					&& IN6_IS_ADDR_V4MAPPED(&(res->addr))
-					&& !IN6_IS_ADDR_V4MAPPED(&(next->addr)))
+					&& IN6_IS_ADDR_V4MAPPED(res->addr)
+					&& !IN6_IS_ADDR_V4MAPPED(next->addr))
 #endif
 				) {
 			next->next = res;
@@ -153,7 +154,8 @@ in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 
 		cnt--;
 
-		memcpy(&n->addr, a + cnt, sizeof(*a));
+		n->addr = &n->ad;
+		memcpy(n->addr, a + cnt, sizeof(*a));
 
 		n->name = NULL;
 		n->next = res;

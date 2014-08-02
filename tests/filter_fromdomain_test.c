@@ -81,7 +81,8 @@ setup_ip(const char *ip)
 		return;
 
 	xmitstat.fromdomain = 0;
-	xmitstat.frommx->addr = xmitstat.sremoteip;
+	xmitstat.frommx->addr = &xmitstat.frommx->ad;
+	*xmitstat.frommx->addr = xmitstat.sremoteip;
 	xmitstat.frommx->priority = 42;
 	xmitstat.frommx->next = NULL;
 }

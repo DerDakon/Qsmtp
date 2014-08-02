@@ -53,9 +53,12 @@ test_tryconn(void)
 	memset(mx, 0, sizeof(mx));
 	mx[0].next = mx + 1;
 	mx[0].priority = MX_PRIORITY_USED;
+	mx[0].addr = &mx[0].ad;
 	mx[1].next = mx + 2;
 	mx[1].priority = MX_PRIORITY_USED;
+	mx[1].addr = &mx[1].ad;
 	mx[2].priority = MX_PRIORITY_CURRENT;
+	mx[2].addr = &mx[2].ad;
 
 	i = tryconn(mx, NULL, NULL);
 	if (i != -ENOENT) {
@@ -135,7 +138,7 @@ main(void)
 			continue;
 		}
 
-		if (memcmp(&addr, &mx->addr, sizeof(addr)) != 0) {
+		if (memcmp(&addr, mx->addr, sizeof(addr)) != 0) {
 			fprintf(stderr, "addr %u was not parsed to correct result\n",
 					i);
 			ret++;

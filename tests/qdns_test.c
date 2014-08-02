@@ -459,7 +459,7 @@ test_implicit_mx(void)
 				err++;
 			}
 
-			if (ask_dnsname(&cur->addr, &nname) <= 0) {
+			if (ask_dnsname(cur->addr, &nname) <= 0) {
 				fprintf(stderr, "no reverse lookup found for implicit MX IP of %s\n", dns_entries[idx].name);
 				err++;
 			} else {
@@ -504,7 +504,7 @@ test_mx(void)
 			unsigned int k;
 
 			/* status output */
-			inet_ntop(AF_INET6, &cur->addr, ipbuf, sizeof(ipbuf));
+			inet_ntop(AF_INET6, cur->addr, ipbuf, sizeof(ipbuf));
 			printf("%s: MX[%u:%u]: name %s prio %u IP %s\n", __func__, mxidx, idx, cur->name, cur->priority, ipbuf);
 
 			if (cur->name == NULL) {
@@ -535,7 +535,7 @@ test_mx(void)
 				err++;
 			}
 
-			if (ask_dnsname(&cur->addr, &nname) <= 0) {
+			if (ask_dnsname(cur->addr, &nname) <= 0) {
 				fprintf(stderr, "MX[%u:%u] no reverse lookup found for MX IP\n", mxidx, idx);
 				err++;
 			} else {

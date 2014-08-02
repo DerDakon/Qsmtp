@@ -438,10 +438,10 @@ work:
 	dirfd = mkdir_pr(argv[1]);
 
 	memset(ipname, 0, sizeof(ipname));
-	if (IN6_IS_ADDR_V4MAPPED(&(cur->addr))) {
+	if (IN6_IS_ADDR_V4MAPPED(cur->addr)) {
 		for (i = 12; i <= 15; i++) {
 			char append[5];
-			sprintf(append, "%u/", cur->addr.s6_addr[i]);
+			sprintf(append, "%u/", cur->addr->s6_addr[i]);
 			strcat(ipname, append);
 			if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
 				fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
@@ -452,7 +452,7 @@ work:
 	} else {
 		for (i = 0; i < 8; i++) {
 			char append[6];
-			sprintf(append, "%04x/", ntohs(cur->addr.s6_addr16[i]));
+			sprintf(append, "%04x/", ntohs(cur->addr->s6_addr16[i]));
 			strcat(ipname, append);
 			if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
 				fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
@@ -476,10 +476,10 @@ work:
 	ipname[strlen(ipname) - 1] = '\0';
 	sprintf(iplinkname, "%s/%s", logdir, ipname);
 
-	if (IN6_IS_ADDR_V4MAPPED(&(cur->addr)))
-		inet_ntop(AF_INET, cur->addr.s6_addr32 + 3, ipname, sizeof(ipname));
+	if (IN6_IS_ADDR_V4MAPPED(cur->addr))
+		inet_ntop(AF_INET, cur->addr->s6_addr32 + 3, ipname, sizeof(ipname));
 	else
-		inet_ntop(AF_INET6, &(cur->addr), ipname, sizeof(ipname));
+		inet_ntop(AF_INET6, cur->addr, ipname, sizeof(ipname));
 	symlinkat(iplinkname, dirfd, ipname);
 
 	makelog("conn");

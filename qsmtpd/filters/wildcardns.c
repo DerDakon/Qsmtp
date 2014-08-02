@@ -106,7 +106,7 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 			this = this->next;
 			continue;
 		}
-		if (IN6_ARE_ADDR_EQUAL(&(xmitstat.frommx->addr), &(this->ip))) {
+		if (IN6_ARE_ADDR_EQUAL(xmitstat.frommx->addr, &(this->ip))) {
 			*logmsg = "MX is wildcard NS entry";
 			return FILTER_DENIED_UNSPECIFIC;
 		}

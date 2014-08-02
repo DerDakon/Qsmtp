@@ -95,8 +95,10 @@ testcase_valid_return(void)
 	mx[0].next = mx + 1;
 	mx[0].priority = 42;
 	mx[0].name = NULL;
+	mx[0].addr = &mx[0].ad;
 
-	inet_pton(AF_INET6, ipstr_example, &(mx[1].addr));
+	mx[1].addr = &mx[1].ad;
+	inet_pton(AF_INET6, ipstr_example, mx[1].addr);
 	mx[1].priority = MX_PRIORITY_CURRENT;
 	mx[1].name = name_example;
 
@@ -130,8 +132,10 @@ testcase_noname(const char *ipstr)
 	memset(&mx, 0, sizeof(mx));
 	mx[0].next = mx + 1;
 	mx[0].priority = 42;
+	mx[0].addr = &mx[0].ad;
 
-	inet_pton(AF_INET6, ipstr, &(mx[1].addr));
+	mx[1].addr = &mx[1].ad;
+	inet_pton(AF_INET6, ipstr, mx[1].addr);
 	mx[1].priority = MX_PRIORITY_CURRENT;
 
 	getrhost(mx);

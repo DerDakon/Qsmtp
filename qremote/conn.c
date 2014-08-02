@@ -114,6 +114,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 		int sd;
 
 		for (thisip = mx; thisip; thisip = thisip->next) {
+			assert(thisip->addr == &thisip->ad);
 			if (thisip->priority == MX_PRIORITY_CURRENT)
 				thisip->priority = MX_PRIORITY_USED;
 			if (thisip->priority <= 65536)
@@ -123,7 +124,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 			return -ENOENT;
 
 #ifndef IPV4ONLY
-		if (!IN6_IS_ADDR_V4MAPPED(&thisip->addr))
+		if (!IN6_IS_ADDR_V4MAPPED(thisip->addr))
 			outip = outip6;
 		else
 #else
@@ -131,7 +132,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 #endif
 			outip = outip4;
 
-		sd = conn(thisip->addr, outip);
+		sd = conn(*(thisip->addr), outip);
 		if (sd >= 0) {
 			/* set priority to MX_PRIORITY_CURRENT to allow getrhost() to find active MX */
 			thisip->priority = MX_PRIORITY_CURRENT;
@@ -156,7 +157,7 @@ remove_ipv6(struct ips **mx)
 	struct ips *thisip;
 
 	for (thisip = *mx; thisip; thisip = thisip->next) {
-		if (!IN6_IS_ADDR_V4MAPPED(&thisip->addr))
+		if (!IN6_IS_ADDR_V4MAPPED(thisip->addr))
 			thisip->priority = MX_PRIORITY_USED;
 	}
 #else
@@ -185,14 +186,15 @@ getmxlist(char *remhost, struct ips **mx)
 				err_mem(0);
 
 			memset(*mx, 0, sizeof(**mx));
+			(*mx)->addr = &(*mx)->ad;
 
 			remhost[reml - 1] = '\0';
-			if (inet_pton(AF_INET6, remhost + 1, &((*mx)->addr)) > 0) {
+			if (inet_pton(AF_INET6, remhost + 1, (*mx)->addr) > 0) {
 				remhost[reml - 1] = ']';
 				remove_ipv6(mx);
 				return;
-			} else if (inet_pton(AF_INET, remhost + 1, &((*mx)->addr.s6_addr32[3])) > 0) {
-				(*mx)->addr.s6_addr32[2] = ntohl(0xffff);
+			} else if (inet_pton(AF_INET, remhost + 1, &((*mx)->addr->s6_addr32[3])) > 0) {
+				(*mx)->addr->s6_addr32[2] = ntohl(0xffff);
 				remhost[reml - 1] = ']';
 				return;
 			}

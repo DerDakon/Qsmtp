@@ -56,15 +56,15 @@ filter_my_ips(struct ips *ipl)
 		while (tmp != NULL) {
 			if (curi->ifa_addr->sa_family == AF_INET) {
 				/* either configured as localhost or 127.0.0./8 or 0.0.0.0 */
-				if (!IN6_IS_ADDR_V4MAPPED(&tmp->addr) ||
-						(tmp->addr.s6_addr32[3] != ((struct sockaddr_in *)curi->ifa_addr)->sin_addr.s_addr) ||
-						(tmp->addr.s6_addr[15] == 127) || (tmp->addr.s6_addr32[3] == 0)) {
+				if (!IN6_IS_ADDR_V4MAPPED(tmp->addr) ||
+						(tmp->addr->s6_addr32[3] != ((struct sockaddr_in *)curi->ifa_addr)->sin_addr.s_addr) ||
+						(tmp->addr->s6_addr[15] == 127) || (tmp->addr->s6_addr32[3] == 0)) {
 					prev = tmp;
 					tmp = tmp->next;
 					continue;
 				}
 #ifndef IPV4ONLY
-			} else if (memcmp(tmp->addr.s6_addr32, ((struct sockaddr_in6 *)curi->ifa_addr)->sin6_addr.s6_addr32, sizeof(tmp->addr.s6_addr32)) != 0) {
+			} else if (memcmp(tmp->addr->s6_addr32, ((struct sockaddr_in6 *)curi->ifa_addr)->sin6_addr.s6_addr32, sizeof(tmp->addr->s6_addr32)) != 0) {
 				prev = tmp;
 				tmp = tmp->next;
 				continue;

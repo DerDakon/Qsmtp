@@ -245,7 +245,8 @@ default_session_config(void)
 	xmitstat.thisbytes = 5000;
 	strncpy(xmitstat.remoteip, "::ffff:192.168.8.9", sizeof(xmitstat.remoteip) - 1);
 	memset(&frommx, 0, sizeof(frommx));
-	inet_pton(AF_INET6, "::ffff:10.1.2.3s", &(frommx.addr));
+	frommx.addr = &frommx.ad;
+	inet_pton(AF_INET6, "::ffff:10.1.2.3s", frommx.addr);
 	frommx.priority = 42;
 	xmitstat.frommx = &frommx;
 
