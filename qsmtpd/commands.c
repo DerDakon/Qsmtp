@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
@@ -618,7 +619,7 @@ smtp_from(void)
 		/* will happen in most cases because program runs not in group qmail */
 		case EACCES:
 			log_write(LOG_WARNING, "warning: can not get free queue disk space");
-			maxqueuebytes = (off_t)-1;
+			maxqueuebytes = (sizeof(maxqueuebytes) == 4) ? INT32_MAX : INT64_MAX;
 			break;
 /*		case ELOOP:
 		case ENAMETOOLONG:
