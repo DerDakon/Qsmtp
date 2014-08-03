@@ -41,6 +41,29 @@ tc_ignore_net_writen(const char *const *a __attribute__((unused)))
 }
 
 int
+testcase_net_writen_combine(const char *const *msg)
+{
+	size_t len = 0;
+	unsigned int i;
+
+	for (i = 0; msg[i] != NULL; i++)
+		len += strlen(msg[i]);
+
+	{
+		char buf[len + 1];
+
+		memset(buf, 0, len + 1);
+
+		for (i = 0; msg[i] != NULL; i++)
+			strcat(buf, msg[i]);
+
+		netnwrite(buf, len);
+	}
+
+	return 0;
+}
+
+int
 net_write_multiline(const char *const *a)
 {
 	ASSERT_CALLBACK(testcase_net_write_multiline);

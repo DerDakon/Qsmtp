@@ -21,6 +21,16 @@ DECLARE_TC_SETUP(net_read);
 typedef int (func_net_writen)(const char *const *);
 DECLARE_TC_SETUP(net_writen);
 
+/**
+ * @brief simple helper for net_writen()
+ *
+ * This function may be passed to testcase_setup_net_writen() to combine all
+ * strings given in msg into a single string. The combined string is afterwards
+ * passed to netnwrite() where it can be checked e.g. using
+ * testcase_netnwrite_compare().
+ */
+extern int testcase_net_writen_combine(const char *const *msg);
+
 typedef int (func_net_write_multiline)(const char *const *);
 DECLARE_TC_SETUP(net_write_multiline);
 
@@ -29,7 +39,7 @@ DECLARE_TC_SETUP(netnwrite);
 
 extern const char *netnwrite_msg; /**< the next message expected in netnwrite() */
 /**
- * @brief a simple checker for netnwrite
+ * @brief a simple checker for netnwrite()
  *
  * This function may be passed to testcase_setup_netnwrite() to have a simple
  * checker for netnwrite(). The message sent to netnwrite() is compared to
