@@ -400,11 +400,13 @@ struct xmitstat xmitstat;
 string heloname;
 static const char defaulthelo[] = "myhelo.example.net";
 
-static void
+static int
 init_helo(const char *helo)
 {
-	newstr(&heloname, strlen(helo));
+	if (newstr(&heloname, strlen(helo)) != 0)
+		return ENOMEM;
 	memcpy(heloname.s, helo, strlen(helo));
+	return 0;
 }
 
 static int
@@ -634,7 +636,8 @@ runtest(struct spftestcase *tc)
 	int err = 0;
 
 	setup_transfer(tc->helo, tc->from, tc->goodip);
-	init_helo(defaulthelo);
+	if (init_helo(defaulthelo) != 0)
+		return ++err;
 
 	dnsdata = tc->dns;
 
@@ -1036,7 +1039,8 @@ run_suite_test(const struct suite_testcase *testcases)
 	unsigned int i = 0;
 	int err = 0;
 
-	init_helo(defaulthelo);
+	if (init_helo(defaulthelo) != 0)
+		return ++err;
 
 	while (testcases[i].helo != NULL) {
 		int r;
@@ -2474,11 +2478,18 @@ test_parse()
 	dnsdata = parseentries;
 	memset(&xmitstat, 0, sizeof(xmitstat));
 	if (newstr(&xmitstat.helostr, strlen(parseentries[0].key)))
-		return ENOMEM;
+		return ++err;
 	memcpy(xmitstat.helostr.s, parseentries[0].key, strlen(parseentries[0].key));
 	memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
-	init_helo(myhelo);
-	newstr(&xmitstat.mailfrom, strlen(mailfrom));
+	if (init_helo(myhelo) != 0) {
+		free(xmitstat.helostr.s);
+		return ++err;
+	}
+	if (newstr(&xmitstat.mailfrom, strlen(mailfrom)) != 0) {
+		free(heloname.s);
+		free(xmitstat.helostr.s);
+		return ENOMEM;
+	}
 	memcpy(xmitstat.mailfrom.s, mailfrom, strlen(mailfrom));
 
 	r = check_host("nonexistent.example.org");
@@ -2662,11 +2673,18 @@ test_received()
 
 	memset(&xmitstat, 0, sizeof(xmitstat));
 	if (newstr(&xmitstat.helostr, strlen(strchr(mailfrom, '@') + 1)))
-		return ENOMEM;
+		return ++err;
 	memcpy(xmitstat.helostr.s, strchr(mailfrom, '@') + 1, strlen(strchr(mailfrom, '@') + 1));
 	memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
-	init_helo(myhelo);
-	newstr(&xmitstat.mailfrom, strlen(mailfrom));
+	if (init_helo(myhelo) != 0) {
+		free(xmitstat.helostr.s);
+		return ENOMEM;
+	}
+	if (newstr(&xmitstat.mailfrom, strlen(mailfrom)) != 0) {
+		free(xmitstat.helostr.s);
+		free(heloname.s);
+		return ENOMEM;
+	}
 	memcpy(xmitstat.mailfrom.s, mailfrom, strlen(mailfrom));
 
 	for (i = SPF_NONE; i <= SPF_HARD_ERROR; i++) {
