@@ -447,16 +447,18 @@ smtp_rcpt(void)
 	if ((fr == FILTER_PASSED) && e)
 		fr = FILTER_DENIED_TEMPORARY;
 
-	if (filter_denied(fr) || (fr == FILTER_ERROR))
-		goto userdenied;
-	i = 0;
+	if (!filter_denied(fr) && (fr != FILTER_ERROR)) {
+		/* accept mail */
+		i = 0;
 
-	goodrcpt++;
-	r->ok = 1;
-	okmsg[1] = r->to.s;
+		goodrcpt++;
+		r->ok = 1;
+		okmsg[1] = r->to.s;
 
-	return net_writen(okmsg) ? errno : 0;
-userdenied:
+		return net_writen(okmsg) ? errno : 0;
+	}
+
+	/* handle rejection */
 	e = errno;
 	if (filter_denied(fr)) {
 		if (errmsg != NULL) {
