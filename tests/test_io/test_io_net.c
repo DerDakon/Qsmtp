@@ -50,14 +50,16 @@ testcase_net_writen_combine(const char *const *msg)
 		len += strlen(msg[i]);
 
 	{
-		char buf[len + 1];
+		char buf[len + 3];
 
 		memset(buf, 0, len + 1);
 
 		for (i = 0; msg[i] != NULL; i++)
 			strcat(buf, msg[i]);
 
-		netnwrite(buf, len);
+		strcat(buf, "\r\n");
+
+		netnwrite(buf, len + 2);
 	}
 
 	return 0;
