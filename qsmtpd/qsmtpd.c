@@ -81,7 +81,7 @@ string heloname;			/**< the fqdn to show in helo */
 string msgidhost;			/**< the fqdn to use if a message-id is added */
 string liphost;				/**< replacement domain if TO address is <foo@[ip]> */
 int socketd = 1;			/**< the descriptor where messages to network are written to */
-long comstate = 0x001;			/**< status of the command state machine, initialized to noop */
+unsigned int comstate = 0x001;		/**< status of the command state machine, initialized to noop */
 int authhide;				/**< hide source of authenticated mail */
 int submission_mode;			/**< if we should act as message submission agent */
 

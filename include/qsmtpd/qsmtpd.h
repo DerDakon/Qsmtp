@@ -68,7 +68,7 @@ extern int badbounce;			/**< bounce message with more than one recipient */
 extern unsigned long sslauth;		/**< if SMTP AUTH is only allowed after STARTTLS */
 extern unsigned long databytes;		/**< maximum message size */
 extern int relayclient;			/**< flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */
-extern long comstate;			/**< status of the command state machine */
+extern unsigned int comstate;		/**< status of the command state machine */
 extern int authhide;			/**< hide source of authenticated mail */
 extern int submission_mode;		/**< if we should act as message submission agent */
 

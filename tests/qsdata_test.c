@@ -21,7 +21,7 @@ const char **globalconf;
 string heloname;
 string msgidhost;
 string liphost;
-long comstate = 0x001;
+unsigned int comstate = 0x001;
 int authhide;
 int submission_mode;
 int queuefd_data = -1;
