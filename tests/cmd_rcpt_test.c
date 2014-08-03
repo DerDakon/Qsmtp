@@ -394,6 +394,18 @@ main(void)
 			.flush_rcpt = 1,
 			.netmsg = "550 5.1.1 no such user <xfn@example.org>\r\n"
 		},
+		/* fail_hard_on_temp + nonexist_on_block, but whitelisted even if there is a temporary error */
+		{
+			.xmitstat = {
+				.spf = 4,
+				.helostatus = 5
+			},
+			.input = "RCPT TO:<xfn@example.org>",
+			.uc_load = 0,
+			.tarpit = 1,
+			.flush_rcpt = 1,
+			.netmsg = "250 2.1.0 recipient <xfn@example.org> OK\r\n"
+		},
 		{
 			.input = NULL
 		}

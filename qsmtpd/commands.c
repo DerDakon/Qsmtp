@@ -407,8 +407,6 @@ smtp_rcpt(void)
 	 * Continue on temporary errors to see if a later filter would introduce a hard
 	 * rejection to avoid that mail to come back to us just to fail. */
 	while ((rcpt_cbs[j] != NULL) && ((fr == FILTER_PASSED) || (fr == FILTER_DENIED_TEMPORARY))) {
-		enum config_domain t;
-
 		errmsg = NULL;
 		fr = rcpt_cbs[j](&ds, &errmsg, &bt);
 
@@ -420,15 +418,7 @@ smtp_rcpt(void)
 			/* test next filter */
 			break;
 		case FILTER_DENIED_TEMPORARY:
-			if (!getsetting(&ds, "fail_hard_on_temp", &t)) {
-				e = 1;
-				break;
-			}
-			fr = FILTER_DENIED_UNSPECIFIC;
-			/* fallthrough */
-		case FILTER_DENIED_UNSPECIFIC:
-			if (getsetting(&ds, "nonexist_on_block", &t))
-				fr = FILTER_DENIED_NOUSER;
+			e = 1;
 			break;
 		case FILTER_ERROR:
 			{
@@ -456,6 +446,7 @@ smtp_rcpt(void)
 	/* check if there has been a temporary error, but no hard rejection */
 	if ((fr == FILTER_PASSED) && e)
 		fr = FILTER_DENIED_TEMPORARY;
+
 	if (filter_denied(fr) || (fr == FILTER_ERROR))
 		goto userdenied;
 	i = 0;
@@ -484,10 +475,26 @@ userdenied:
 	case FILTER_ERROR:
 		j = 1;
 		break;
+	case FILTER_DENIED_TEMPORARY:
+		{
+		enum config_domain t;
+		if (!getsetting(&ds, "fail_hard_on_temp", &t)) {
+			if ( (j = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
+				e = errno;
+			break;
+		}
+		}
+		/* fallthrough */
 	case FILTER_DENIED_UNSPECIFIC:
-		if ( (j = netwrite("550 5.7.1 mail denied for policy reasons\r\n")) )
-			e = errno;
-		break;
+		{
+		enum config_domain t;
+		if (!getsetting(&ds, "nonexist_on_block", &t)) {
+			if ( (j = netwrite("550 5.7.1 mail denied for policy reasons\r\n")) )
+				e = errno;
+			break;
+		}
+		}
+		/* fallthrough */
 	case FILTER_DENIED_NOUSER:
 		{
 			const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
@@ -495,10 +502,6 @@ userdenied:
 			if ( (j = net_writen(rcptmsg)) )
 				e = errno;
 		}
-		break;
-	case FILTER_DENIED_TEMPORARY:
-		if ( (j = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
-			e = errno;
 		break;
 	default:
 		assert(filter_denied(fr));
