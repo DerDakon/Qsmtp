@@ -443,11 +443,14 @@ smtp_rcpt(void)
 	}
 	userconf_free(&ds);
 
+	/* has been mapped to FILTER_DENIED_TEMPORARY before */
+	assert(fr != FILTER_ERROR);
+
 	/* check if there has been a temporary error, but no hard rejection */
 	if ((fr == FILTER_PASSED) && e)
 		fr = FILTER_DENIED_TEMPORARY;
 
-	if (!filter_denied(fr) && (fr != FILTER_ERROR)) {
+	if (!filter_denied(fr)) {
 		/* accept mail */
 		i = 0;
 
@@ -474,9 +477,6 @@ smtp_rcpt(void)
 	}
 
 	switch (fr) {
-	case FILTER_ERROR:
-		j = 1;
-		break;
 	case FILTER_DENIED_TEMPORARY:
 		{
 		enum config_domain t;

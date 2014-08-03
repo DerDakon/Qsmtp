@@ -406,6 +406,17 @@ main(void)
 			.flush_rcpt = 1,
 			.netmsg = "250 2.1.0 recipient <xfn@example.org> OK\r\n"
 		},
+		/* fail_hard_on_temp + nonexist_on_block, all filters but one pass, that one is error */
+		{
+			.xmitstat = {
+				.helostatus = 7
+			},
+			.input = "RCPT TO:<xxx@example.org>",
+			.uc_load = 0,
+			.tarpit = 1,
+			.flush_rcpt = 1,
+			.netmsg = "450 4.7.0 mail temporary denied for policy reasons\r\n"
+		},
 		{
 			.input = NULL
 		}
