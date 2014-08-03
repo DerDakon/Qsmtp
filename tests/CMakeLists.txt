@@ -843,3 +843,13 @@ TARGET_LINK_LIBRARIES(testcase_queue_envelope
 
 ADD_TEST(NAME "Queue_envelope"
 		COMMAND testcase_queue_envelope)
+
+ADD_EXECUTABLE(testcase_cmd_rcpt
+		cmd_rcpt_test.c
+		${CMAKE_SOURCE_DIR}/lib/fmt.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/commands.c)
+TARGET_LINK_LIBRARIES(testcase_cmd_rcpt
+		testcase_io_lib)
+
+ADD_TEST(NAME "Qsmtpd_cmd_RCPT"
+		COMMAND testcase_cmd_rcpt)
