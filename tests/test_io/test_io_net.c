@@ -41,6 +41,20 @@ tc_ignore_net_writen(const char *const *a __attribute__((unused)))
 }
 
 int
+net_write_multiline(const char *const *a)
+{
+	ASSERT_CALLBACK(testcase_net_write_multiline);
+
+	return testcase_net_write_multiline(a);
+}
+
+int
+tc_ignore_net_write_multiline(const char *const *a __attribute__((unused)))
+{
+	return 0;
+}
+
+int
 tc_ignore_netwrite(const char *a __attribute__((unused)))
 {
 	return 0;

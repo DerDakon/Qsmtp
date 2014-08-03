@@ -21,6 +21,9 @@ DECLARE_TC_SETUP(net_read);
 typedef int (func_net_writen)(const char *const *);
 DECLARE_TC_SETUP(net_writen);
 
+typedef int (func_net_write_multiline)(const char *const *);
+DECLARE_TC_SETUP(net_write_multiline);
+
 typedef int (func_netnwrite)(const char *, const size_t);
 DECLARE_TC_SETUP(netnwrite);
 
