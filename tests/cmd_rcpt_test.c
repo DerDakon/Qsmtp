@@ -12,6 +12,7 @@
 #include "test_io/testcase_io.h"
 
 #include <assert.h>
+#include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,6 +31,7 @@ static int expected_tarpit;
 struct recip *thisrecip;
 unsigned int goodrcpt;
 int badbounce;
+int controldir_fd = AT_FDCWD;
 
 static int expected_uc_load = -1;
 
@@ -99,7 +101,6 @@ rcpt_cb rcpt_cbs[] = {
 const char *blocktype[] = { (char *)((uintptr_t)-1), "user", "domain", (char *)((uintptr_t)-1), "global", (char *)((uintptr_t)-1), (char *)((uintptr_t)-1) };
 
 /* make sure they will never be accessed */
-int controldir_fd = -1;
 /* too small for anything, but noone should check */
 unsigned long databytes = 1;
 char *protocol = (char *)((uintptr_t)-1);
@@ -205,13 +206,13 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 	strncpy(addr->s, in, addr->len - 1);
 	addr->s[addr->len - 1] = '\0';
 
+	/* nothere is not here */
+	if (strcmp(addr->s, "nothere@example.org") == 0)
+		return -1;
+
 	/* assume only example.org is local */
 	if (strstr(addr->s, "@example.org") == NULL)
 		return -2;
-
-	/* nothere is not here */
-	if (strstr(addr->s, "nothere@") != NULL)
-		return -1;
 
 	/* allow easy customization of return value in getsetting() */
 	if (addr->s[0] == 'd')
@@ -417,6 +418,32 @@ main(void)
 			.flush_rcpt = 1,
 			.netmsg = "450 4.7.0 mail temporary denied for policy reasons\r\n"
 		},
+		/* user does not exist */
+		{
+			.input = "RCPT TO:<nothere@example.org>",
+			.tarpit = 1,
+			.flush_rcpt = 1,
+			.rcpt_result = EBOGUS
+			/* no netmsg, it would be written by addrparse() */
+		},
+		/* remote user, relaying denied */
+		{
+			.input = "RCPT TO:<abc@example.com>",
+			.tarpit = 1,
+			.flush_rcpt = 1,
+			.tls_verify = 1,
+			.rcpt_result = EBOGUS,
+			.netmsg = "551 5.7.1 relaying denied\r\n"
+		},
+		/* remote user, relaying permitted */
+		{
+			.input = "RCPT TO:<abc@example.com>",
+			.tarpit = 1,
+			.flush_rcpt = 1,
+			.tls_verify = 1,
+			.tls_verify_result = 1,
+			.netmsg = "250 2.1.0 recipient <abc@example.com> OK\r\n"
+		},
 		{
 			.input = NULL
 		}
@@ -455,7 +482,7 @@ main(void)
 			errcnt++;
 		}
 
-		if (testdata[i].netmsg[0] == '2') {
+		if ((testdata[i].netmsg != NULL) && (testdata[i].netmsg[0] == '2')) {
 			if (goodrcpt != oldgood + 1) {
 				fprintf(stderr, "smtp_rcpt() returned 0, but goodrcpt was %u instead of %u\n",
 						goodrcpt, oldgood + 1);
