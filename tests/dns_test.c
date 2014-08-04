@@ -83,6 +83,7 @@ test_sort_priority(void)
 		}
 		memset(ipa, 0, sizeof(*ipa));
 		ipa->addr = &ipa->ad;
+		ipa->count = 1;
 		ipa->addr->s6_addr32[2] = i * 1000;
 		ipa->next = ipb;
 		ipb = ipa;
@@ -133,6 +134,7 @@ test_sort_ipv6(void)
 			exit(ENOMEM);
 		}
 		ipa->addr = &ipa->ad;
+		ipa->count = 1;
 		ipa->addr->s6_addr32[3] = i * 1000;
 		/* make this v4mapped or not */
 		ipa->addr->s6_addr32[1] = 0;

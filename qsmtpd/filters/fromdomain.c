@@ -64,6 +64,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 
 		while (flaghit && thisip) {
 			assert(thisip->addr == &thisip->ad);
+			assert(thisip->count == 1);
 			if (IN6_IS_ADDR_V4MAPPED(thisip->addr)) {
 				unsigned int net = (thisip->addr->s6_addr32[3] & htonl(0xff000000));
 
@@ -89,6 +90,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 
 		while (flaghit && thisip) {
 			assert(thisip->addr == &thisip->ad);
+			assert(thisip->count == 1);
 			if (IN6_IS_ADDR_V4MAPPED(thisip->addr)) {
 				int flagtmp = 0;
 				const struct in_addr priva =    { .s_addr = htonl(0x0a000000) }; /* 10/8 */
@@ -147,6 +149,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 
 		for (thisip = xmitstat.frommx; flaghit && thisip; thisip = thisip->next) {
 			assert(thisip->addr == &thisip->ad);
+			assert(thisip->count == 1);
 			if (IN6_IS_ADDR_V4MAPPED(thisip->addr))
 				flaghit = 0;
 		}

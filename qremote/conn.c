@@ -115,6 +115,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 
 		for (thisip = mx; thisip; thisip = thisip->next) {
 			assert(thisip->addr == &thisip->ad);
+			assert(thisip->count == 1);
 			if (thisip->priority == MX_PRIORITY_CURRENT)
 				thisip->priority = MX_PRIORITY_USED;
 			if (thisip->priority <= 65536)
@@ -187,6 +188,7 @@ getmxlist(char *remhost, struct ips **mx)
 
 			memset(*mx, 0, sizeof(**mx));
 			(*mx)->addr = &(*mx)->ad;
+			(*mx)->count = 1;
 
 			remhost[reml - 1] = '\0';
 			if (inet_pton(AF_INET6, remhost + 1, (*mx)->addr) > 0) {
@@ -199,7 +201,7 @@ getmxlist(char *remhost, struct ips **mx)
 				return;
 			}
 			remhost[reml - 1] = ']';
-			free(*mx);
+			freeips(*mx);
 		}
 
 		log_writen(LOG_ERR, logmsg);

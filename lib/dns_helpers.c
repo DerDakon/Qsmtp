@@ -79,6 +79,7 @@ freeips(struct ips *p)
 		p = thisip->next;
 		free(thisip->name);
 		assert(thisip->addr == &thisip->ad);
+		assert(thisip->count == 1);
 		free(thisip);
 	}
 }
@@ -102,6 +103,9 @@ sortmx(struct ips **p)
 	while (next) {
 		struct ips *this = res;
 		struct ips *tmp = next->next;
+
+		assert(next->addr == &next->ad);
+		assert(next->count == 1);
 
 		if ((res->priority > next->priority)
 #ifndef IPV4ONLY
@@ -155,6 +159,7 @@ in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 		cnt--;
 
 		n->addr = &n->ad;
+		n->count = 1;
 		memcpy(n->addr, a + cnt, sizeof(*a));
 
 		n->name = NULL;

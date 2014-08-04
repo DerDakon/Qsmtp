@@ -10,6 +10,7 @@
 #include <qremote/statuscodes.h>
 
 #include <arpa/inet.h>
+#include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -27,8 +28,11 @@ getrhost(const struct ips *m)
 	free(rhost);
 
 	/* find active mx */
-	while (m->priority != MX_PRIORITY_CURRENT)
+	while (m->priority != MX_PRIORITY_CURRENT) {
+		assert(m->addr == &m->ad);
+		assert(m->count == 1);
 		m = m->next;
+	}
 
 	if (m->name == NULL) {
 		partner_fqdn = NULL;

@@ -40,6 +40,7 @@ run_test(const int *inidx, const int *outidx)
 
 		memset(a, 0, sizeof(*a));
 		a->addr = &a->ad;
+		a->count = 1;
 
 		inet_pton(AF_INET6, testips[inidx[idx]], a->addr);
 		if (in == NULL) {

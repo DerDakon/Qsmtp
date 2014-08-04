@@ -1104,6 +1104,7 @@ spfmx(const char *domain, const char *token)
 	/* Don't use the implicit MX for this. There are either all MX records
 	 * implicit or none so we only have to look at the first one */
 	assert(mx->addr == &mx->ad);
+	assert(mx->count == 1);
 	if (mx->priority >= MX_PRIORITY_IMPLICIT) {
 		freeips(mx);
 		return SPF_NONE;
@@ -1112,6 +1113,7 @@ spfmx(const char *domain, const char *token)
 		struct ips *cur;
 		for (cur = mx; cur != NULL; cur = cur->next) {
 			assert(cur->addr == &cur->ad);
+			assert(cur->count == 1);
 			if (IN6_IS_ADDR_V4MAPPED(cur->addr) &&
 					ip4_matchnet(&xmitstat.sremoteip,
 							(struct in_addr *) &(cur->addr->s6_addr32[3]), ip4l)) {
@@ -1124,6 +1126,7 @@ spfmx(const char *domain, const char *token)
 		struct ips *cur;
 		for (cur = mx; cur != NULL; cur = cur->next) {
 			assert(cur->addr == &cur->ad);
+			assert(cur->count == 1);
 			if (ip6_matchnet(&xmitstat.sremoteip, cur->addr, ip6l)) {
 				freeips(mx);
 				return SPF_PASS;

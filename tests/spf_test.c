@@ -80,8 +80,10 @@ parseips(const char *list)
 		char *end = strchr(next, ';');
 		struct ips *n = malloc(sizeof(*n));
 
-		if (n == NULL)
+		if (n == NULL) {
+			freeips(ret);
 			exit(ENOMEM);
+		}
 
 		if (end == NULL) {
 			parsep = next;
@@ -95,13 +97,14 @@ parseips(const char *list)
 
 		memset(n, 0, sizeof(*n));
 		n->addr = &n->ad;
+		n->count = 1;
+		n->next = ret;
 		if (inet_pton(AF_INET6, parsep, n->addr) != 1) {
-			fprintf(stderr, "%s can not be parsed as IPv6 address\n", parsep);
+			freeips(n);
+			fprintf(stderr, "%s cannot be parsed as IPv6 address\n", parsep);
 			exit(EINVAL);
 		}
 		n->priority = 42;
-		n->next = ret;
-		n->name = NULL;
 		ret = n;
 
 		next = end;

@@ -6,6 +6,7 @@
 
 #include <qdns.h>
 
+#include <assert.h>
 #include <ifaddrs.h> 
 #include <stdlib.h>
 #include <string.h>
@@ -54,6 +55,9 @@ filter_my_ips(struct ips *ipl)
 
 		tmp = ret;
 		while (tmp != NULL) {
+			assert(tmp->addr == &tmp->ad);
+			assert(tmp->count == 1);
+
 			if (curi->ifa_addr->sa_family == AF_INET) {
 				/* either configured as localhost or 127.0.0./8 or 0.0.0.0 */
 				if (!IN6_IS_ADDR_V4MAPPED(tmp->addr) ||
@@ -73,7 +77,8 @@ filter_my_ips(struct ips *ipl)
 
 			if (prev) {
 				prev->next = tmp->next;
-				free(tmp);
+				tmp->next = NULL;
+				freeips(tmp);
 				tmp = prev->next;
 			} else {
 				/* the first result was deleted */
@@ -82,7 +87,8 @@ filter_my_ips(struct ips *ipl)
 
 				prev = tmp;
 				tmp = tmp->next;
-				free(prev);
+				prev->next = NULL;
+				freeips(prev);
 				prev = NULL;
 			}
 		}

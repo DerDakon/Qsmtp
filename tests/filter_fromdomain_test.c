@@ -83,7 +83,6 @@ setup_ip(const char *ip)
 	xmitstat.fromdomain = 0;
 	xmitstat.frommx->addr = &xmitstat.frommx->ad;
 	*xmitstat.frommx->addr = xmitstat.sremoteip;
-	xmitstat.frommx->priority = 42;
 	xmitstat.frommx->next = NULL;
 }
 
@@ -95,7 +94,10 @@ main(void)
 		configline,
 		NULL
 	};
-	struct ips frommx;
+	struct ips frommx = {
+		.priority = 42,
+		.count = 1
+	};
 
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 
