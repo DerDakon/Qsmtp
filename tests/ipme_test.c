@@ -133,6 +133,8 @@ main(void)
 	const int only_ipv4_out[] = { 1, -1 };
 	const int only_ipv4_dupes_in[] = { 0, 1, 0, 1, 1, -1 };
 	const int only_ipv4_dupes_out[] = { 1, 1, 1, -1 };
+	const int only_ipv4_loopback_net[] = { 0, 5, -1 };
+	const int only_ipv4_anynet[] = { 4, -1 };
 #ifndef IPV4ONLY
 	const int only_localhost_ipv6[] = { 2, -1 };
 	const int only_localhost_dupes_ipv6[] = { 2, 2, 2, -1 };
@@ -162,6 +164,8 @@ main(void)
 	ret += run_test(only_ipv4_in4, only_ipv4_out);
 	ret += run_test(only_ipv4_in5, only_ipv4_out);
 	ret += run_test(only_ipv4_dupes_in, only_ipv4_dupes_out);
+	ret += run_test(only_ipv4_loopback_net, NULL);
+	ret += run_test(only_ipv4_anynet, NULL);
 
 #ifndef IPV4ONLY
 	ret += run_test(only_localhost_ipv6, NULL);
