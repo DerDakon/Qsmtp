@@ -28,7 +28,7 @@ enum mx_special_priorities {
 struct ips {
 	struct in6_addr *addr;	/**< IPv6 address */
 	char *name;		/**< name of the MX */
-	unsigned int priority;	/**< MX priority, undefined for A or AAAA */
+	unsigned int priority;	/**< MX priority */
 	struct ips *next;	/**< pointer to next list entry */
 	struct in6_addr ad;
 };
