@@ -55,41 +55,73 @@ filter_my_ips(struct ips *ipl)
 
 		tmp = ret;
 		while (tmp != NULL) {
-			assert(tmp->addr == &tmp->ad);
-			assert(tmp->count == 1);
-
+			unsigned short s = 0;
 			if (curi->ifa_addr->sa_family == AF_INET) {
 				/* either configured as localhost or 127.0.0./8 or 0.0.0.0 */
-				if (!IN6_IS_ADDR_V4MAPPED(tmp->addr) ||
-						((tmp->addr->s6_addr32[3] != ((struct sockaddr_in *)curi->ifa_addr)->sin_addr.s_addr) &&
-						(tmp->addr->s6_addr[12] != IN_LOOPBACKNET) && (tmp->addr->s6_addr32[3] != 0))) {
-					prev = tmp;
-					tmp = tmp->next;
-					continue;
+				for (s = 0; s < tmp->count; s++) {
+					if (!IN6_IS_ADDR_V4MAPPED(tmp->addr + s))
+						continue;
+
+					if (((tmp->addr[s].s6_addr32[3] != ((struct sockaddr_in *)curi->ifa_addr)->sin_addr.s_addr) &&
+							(tmp->addr[s].s6_addr[12] != IN_LOOPBACKNET) && (tmp->addr[s].s6_addr32[3] != 0)))
+						continue;
+
+					break;
 				}
 #ifndef IPV4ONLY
-			} else if (!IN6_ARE_ADDR_EQUAL(tmp->addr, &((struct sockaddr_in6 *)curi->ifa_addr)->sin6_addr)) {
-				prev = tmp;
-				tmp = tmp->next;
-				continue;
+			} else {
+				for (s = 0; s < tmp->count; s++)
+					if (IN6_ARE_ADDR_EQUAL(tmp->addr + s, &((struct sockaddr_in6 *)curi->ifa_addr)->sin6_addr))
+						break;
 #endif /* IPV4ONLY */
 			}
 
-			if (prev) {
-				prev->next = tmp->next;
-				tmp->next = NULL;
-				freeips(tmp);
-				tmp = prev->next;
-			} else {
-				/* the first result was deleted */
-				if (ret == tmp)
-					ret = ret->next;
-
+			if (s == tmp->count) {
 				prev = tmp;
 				tmp = tmp->next;
-				prev->next = NULL;
-				freeips(prev);
-				prev = NULL;
+				continue;
+			}
+
+			if (tmp->count == 1) {
+				if (prev) {
+					prev->next = tmp->next;
+#if 0
+					tmp->next = NULL;
+					freeips(tmp);
+#else
+					if (tmp->addr != &tmp->ad)
+						free(tmp->addr);
+					free(tmp);
+#endif
+					tmp = prev->next;
+				} else {
+					/* the first result was deleted */
+					if (ret == tmp)
+						ret = ret->next;
+
+					prev = tmp;
+					tmp = tmp->next;
+#if 0
+					prev->next = NULL;
+					freeips(prev);
+#else
+					if (prev->addr != &prev->ad)
+						free(prev->addr);
+					free(prev);
+#endif
+					prev = NULL;
+				}
+			} else {
+				/* no need to move if the one to be deleted is the last entry anyway */
+				struct in6_addr *n;
+				tmp->count--;
+				if (s != tmp->count)
+					memmove(tmp->addr + s, tmp->addr + s + 1, sizeof(*tmp->addr) * (tmp->count - s));
+
+				n = realloc(tmp->addr, sizeof(*tmp->addr) * tmp->count);
+				/* if shrinking fails just keep the old pointer */
+				if (n != NULL)
+					tmp->addr = n;
 			}
 		}
 	}
