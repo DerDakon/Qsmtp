@@ -29,8 +29,6 @@
 
 char certfilename[24 + INET6_ADDRSTRLEN + 6] = "control/servercert.pem";		/**< path to SSL certificate filename */
 
-#define MAXRCPT		500		/**< maximum number of recipients in a single mail */
-
 /**
  * check if the argument given to HELO/EHLO is syntactically correct
  *
@@ -369,7 +367,7 @@ smtp_rcpt(void)
 	thisrecip = r;
 	TAILQ_INSERT_TAIL(&head, r, entries);
 
-	if ((rcptcount > 0) && (xmitstat.mailfrom.len == 0)) {
+	if ((rcptcount++ > 0) && (xmitstat.mailfrom.len == 0)) {
 		const char *logmess[] = {"rejected message to <", NULL, "> from <> from IP [", xmitstat.remoteip,
 						"] {bad bounce}", NULL};
 		struct recip *l = TAILQ_FIRST(&head);
@@ -388,11 +386,8 @@ smtp_rcpt(void)
 		logmess[1] = r->to.s;
 		log_writen(LOG_INFO, logmess);
 		goodrcpt = 0;
-		rcptcount = 0;
 		return EBOGUS;
 	}
-
-	rcptcount++;
 
 /* load user and domain "filterconf" file */
 	i = userconf_load_configs(&ds);

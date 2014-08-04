@@ -323,7 +323,9 @@ main(void)
 		struct xmitstat xmitstat;
 		const char *input;
 		unsigned int bugoffset;
-		int tls_verify;
+		unsigned int tls_verify:1;	/* call to tls_verify() is permitted */
+		unsigned int badbounce:1;	/* if this is a bad bounce */
+		unsigned int maxrcpt:1;		/* maximum number of rcpts should have been reached before */
 		int tls_verify_result;
 		int tarpit;
 		int flush_rcpt;	/* clear the recipient list after this test */
@@ -333,14 +335,23 @@ main(void)
 	} testdata[] = {
 		/* simple acceptance */
 		{
+			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
+			},
 			.input = "RCPT TO:<foo@example.org>",
 			.uc_load = 0,
 			.netmsg = "250 2.1.0 recipient <foo@example.org> OK\r\n",
-			.flush_rcpt = 1
 		},
 		/* all filters return temporary error */
 		{
 			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
 				.helostatus = 4,
 				.spf = 4,
 				.check2822 = 1
@@ -348,101 +359,171 @@ main(void)
 			.input = "RCPT TO:<bar@example.org>",
 			.uc_load = 0,
 			.tarpit = 1,
-			.flush_rcpt = 1,
 			.netmsg = "450 4.7.0 mail temporary denied for policy reasons\r\n"
 		},
 		/* fail_hard_on_temp, all filters but one pass, that one is temp */
 		{
 			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
 				.helostatus = 4
 			},
 			.input = "RCPT TO:<xfx@example.org>",
 			.uc_load = 0,
 			.tarpit = 1,
-			.flush_rcpt = 1,
 			.netmsg = "550 5.7.1 mail denied for policy reasons\r\n"
 		},
 		/* permanent rejection */
 		{
 			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
 				.helostatus = 2
 			},
 			.input = "RCPT TO:<bar@example.org>",
 			.uc_load = 0,
 			.tarpit = 1,
-			.flush_rcpt = 1,
 			.netmsg = "550 5.7.1 mail denied for policy reasons\r\n"
 		},
 		/* permanent rejection, user pretends to not exist */
 		{
 			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
 				.helostatus = 2
 			},
 			.input = "RCPT TO:<xxn@example.org>",
 			.uc_load = 0,
 			.tarpit = 1,
-			.flush_rcpt = 1,
 			.netmsg = "550 5.1.1 no such user <xxn@example.org>\r\n"
 		},
 		/* fail_hard_on_temp + nonexist_on_block, all filters but one pass, that one is temp */
 		{
 			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
 				.helostatus = 4
 			},
 			.input = "RCPT TO:<xfn@example.org>",
 			.uc_load = 0,
 			.tarpit = 1,
-			.flush_rcpt = 1,
 			.netmsg = "550 5.1.1 no such user <xfn@example.org>\r\n"
 		},
 		/* fail_hard_on_temp + nonexist_on_block, but whitelisted even if there is a temporary error */
 		{
 			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
 				.spf = 4,
 				.helostatus = 5
 			},
 			.input = "RCPT TO:<xfn@example.org>",
 			.uc_load = 0,
 			.tarpit = 1,
-			.flush_rcpt = 1,
 			.netmsg = "250 2.1.0 recipient <xfn@example.org> OK\r\n"
 		},
 		/* fail_hard_on_temp + nonexist_on_block, all filters but one pass, that one is error */
 		{
 			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
 				.helostatus = 7
 			},
 			.input = "RCPT TO:<xxx@example.org>",
 			.uc_load = 0,
 			.tarpit = 1,
-			.flush_rcpt = 1,
 			.netmsg = "450 4.7.0 mail temporary denied for policy reasons\r\n"
 		},
 		/* user does not exist */
 		{
+			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
+			},
 			.input = "RCPT TO:<nothere@example.org>",
 			.tarpit = 1,
-			.flush_rcpt = 1,
 			.rcpt_result = EBOGUS
 			/* no netmsg, it would be written by addrparse() */
 		},
 		/* remote user, relaying denied */
 		{
+			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
+			},
 			.input = "RCPT TO:<abc@example.com>",
 			.tarpit = 1,
-			.flush_rcpt = 1,
 			.tls_verify = 1,
 			.rcpt_result = EBOGUS,
 			.netmsg = "551 5.7.1 relaying denied\r\n"
 		},
 		/* remote user, relaying permitted */
 		{
+			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
+			},
 			.input = "RCPT TO:<abc@example.com>",
-			.tarpit = 1,
 			.flush_rcpt = 1,
 			.tls_verify = 1,
 			.tls_verify_result = 1,
 			.netmsg = "250 2.1.0 recipient <abc@example.com> OK\r\n"
+		},
+		/* first one of a multi-recipient bounce, this one with space bug */
+		{
+			.input = "RCPT TO:  <foo@example.org>",
+			.bugoffset = 2,
+			.netmsg = "250 2.1.0 recipient <foo@example.org> OK\r\n",
+		},
+		/* this is the one that gets immediate rejection */
+		{
+			.input = "RCPT TO:  <foo@example.org>",
+			.bugoffset = 2,
+			.tarpit = 1,
+			.rcpt_result = EBOGUS,
+			.badbounce = 1,
+			.netmsg = "550 5.5.3 bounce messages must not have more than one recipient\r\n"
+		},
+		/* once again because of it's beauty */
+		{
+			.input = "RCPT TO: <foo@example.org>",
+			.bugoffset = 1,
+			.tarpit = 1,
+			.rcpt_result = EBOGUS,
+			.badbounce = 1,
+			.flush_rcpt = 1,
+			.netmsg = "550 5.5.3 bounce messages must not have more than one recipient\r\n"
+		},
+		/* maximum number of recipients reached */
+		{
+			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
+			},
+			.input = "RCPT TO:<abc@example.org>",
+			.flush_rcpt = 1,
+			.maxrcpt = 1,
+			.netmsg = "452 4.5.3 Too many recipients\r\n"
 		},
 		{
 			.input = NULL
@@ -473,6 +554,8 @@ main(void)
 		expected_tls_verify = testdata[i].tls_verify;
 		tls_verify_result = testdata[i].tls_verify_result;
 		netnwrite_msg = testdata[i].netmsg;
+		if (testdata[i].maxrcpt)
+			oldcnt = rcptcount = MAXRCPT;
 
 		r = smtp_rcpt();
 
@@ -484,24 +567,36 @@ main(void)
 
 		if ((testdata[i].netmsg != NULL) && (testdata[i].netmsg[0] == '2')) {
 			if (goodrcpt != oldgood + 1) {
-				fprintf(stderr, "smtp_rcpt() returned 0, but goodrcpt was %u instead of %u\n",
-						goodrcpt, oldgood + 1);
+				fprintf(stderr, "%u: smtp_rcpt() returned 0, but goodrcpt was %u instead of %u\n",
+						i, goodrcpt, oldgood + 1);
 				errcnt++;
 			}
 			if (rcptcount != oldcnt + 1) {
-				fprintf(stderr, "smtp_rcpt() returned 0, but rcptcount was %u instead of %u\n",
-					rcptcount, oldcnt + 1);
+				fprintf(stderr, "%u: smtp_rcpt() returned 0, but rcptcount was %u instead of %u\n",
+						i, rcptcount, oldcnt + 1);
 				errcnt++;
 			}
 		} else {
-			if (goodrcpt != oldgood) {
-				fprintf(stderr, "smtp_rcpt() returned %i, but goodrcpt was %u instead of %u\n",
-					r, goodrcpt, oldgood);
+			if (testdata[i].badbounce) {
+				if (!badbounce) {
+					fprintf(stderr, "%u: bad bounce expected, but not set by smtp_rcpt()\n",
+							i);
+					errcnt++;
+				}
+				if (goodrcpt != 0) {
+					fprintf(stderr, "%u: goodrcpt was %u instead of 0 for bad bounce\n",
+							i, goodrcpt);
+					errcnt++;
+				}
+			} else if (goodrcpt != oldgood) {
+				fprintf(stderr, "%u: smtp_rcpt() returned %i, but goodrcpt was %u instead of %u\n",
+						i, r, goodrcpt, oldgood);
 				errcnt++;
 			}
 		}
 
-		if (testdata[i].flush_rcpt) {
+		/* flush on request and on last test */
+		if (testdata[i].flush_rcpt || (testdata[i + 1].input == NULL)) {
 			while (!TAILQ_EMPTY(&head)) {
 				struct recip *l = TAILQ_FIRST(&head);
 
