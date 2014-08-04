@@ -64,7 +64,7 @@ filter_my_ips(struct ips *ipl)
 					continue;
 				}
 #ifndef IPV4ONLY
-			} else if (memcmp(tmp->addr->s6_addr32, ((struct sockaddr_in6 *)curi->ifa_addr)->sin6_addr.s6_addr32, sizeof(tmp->addr->s6_addr32)) != 0) {
+			} else if (!IN6_ARE_ADDR_EQUAL(tmp->addr, &((struct sockaddr_in6 *)curi->ifa_addr)->sin6_addr)) {
 				prev = tmp;
 				tmp = tmp->next;
 				continue;

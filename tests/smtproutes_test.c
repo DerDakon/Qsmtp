@@ -118,7 +118,7 @@ int main(void)
 
 	inet_ntop(AF_INET6, mx->addr, gotip, sizeof(gotip));
 
-	if (memcmp(mx->addr, &expectedip, sizeof(expectedip)) != 0) {
+	if (!IN6_ARE_ADDR_EQUAL(mx->addr, &expectedip)) {
 		fprintf(stderr, "expected ip %s, but got %s\n", ipexpect, gotip);
 		freeips(mx);
 		free(ipexpect);

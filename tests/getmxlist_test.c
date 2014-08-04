@@ -138,7 +138,7 @@ main(void)
 			continue;
 		}
 
-		if (memcmp(&addr, mx->addr, sizeof(addr)) != 0) {
+		if (!IN6_ARE_ADDR_EQUAL(&addr, mx->addr)) {
 			fprintf(stderr, "addr %u was not parsed to correct result\n",
 					i);
 			ret++;

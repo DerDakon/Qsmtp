@@ -70,7 +70,7 @@ test_ask_dnsname(const struct in6_addr *ip, char **result)
 
 	inet_pton(AF_INET6, ipstr_example, &iptmp);
 
-	if (memcmp(ip, &iptmp, sizeof(iptmp)) == 0) {
+	if (!IN6_ARE_ADDR_EQUAL(ip, &iptmp)) {
 		*result = strdup(name_example);
 		if (*result == NULL)
 			exit(ENOMEM);
@@ -80,7 +80,7 @@ test_ask_dnsname(const struct in6_addr *ip, char **result)
 
 	inet_pton(AF_INET6, ipstr_fail, &iptmp);
 
-	if (memcmp(ip, &iptmp, sizeof(iptmp)) == 0)
+	if (IN6_ARE_ADDR_EQUAL(ip, &iptmp))
 		return -2;
 	else
 		return 0;

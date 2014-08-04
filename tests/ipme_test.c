@@ -3,6 +3,7 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -87,8 +88,13 @@ run_test(const int *inidx, const int *outidx)
 
 			inet_pton(AF_INET6, testips[outidx[idx]], &addr);
 
-			if (memcmp(&addr, tmp->addr, sizeof(addr)) != 0) {
-				fprintf(stderr, "expected %s at output index %u, but got something else\n", testips[outidx[idx]], idx);
+			if (!IN6_ARE_ADDR_EQUAL(&addr, tmp->addr)) {
+				char astr[INET6_ADDRSTRLEN];
+
+				inet_ntop(AF_INET6, tmp->addr, astr, sizeof(astr));
+
+				fprintf(stderr, "expected %s at output index %u, but got %s\n",
+						testips[outidx[idx]], idx, astr);
 				freeips(res);
 				return 1;
 			}
