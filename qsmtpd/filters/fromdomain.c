@@ -10,6 +10,85 @@
 #include <qsmtpd/qsmtpd.h>
 
 #include <assert.h>
+#include <arpa/inet.h>
+
+static struct {
+	struct in_addr net;
+	const unsigned char len;
+} reserved_netsv4[] = {
+	{
+		/* private net a, 10/8 */
+		.len = 8
+	},
+	{
+		/* private net b, 172.16/12 */
+		.len = 12
+	},
+	{
+		/* private net c, 192.168/16 */
+		.len = 16
+	},
+	{
+		/* link local, 169.254/16 */
+		.len = 16
+	},
+	{
+		/* TEST-NET-1, 192.0.2/24 */
+		.len = 24
+	},
+	{
+		/* TEST-NET-2, 198.51.100/24 */
+		.len = 24
+	},
+	{
+		/* TEST-NET-3, 203.0.113/24 */
+		.len = 24
+	},
+	{
+		/* benchmarking, 192.18/15 */
+		.len = 15
+	}
+};
+
+static struct {
+	struct in6_addr net;
+	const unsigned char len;
+} reserved_netsv6[] = {
+	{
+		/* ORCHID, 2001:10/28 */
+		.len = 28
+	},
+	{
+		/* Documentation, 2001:db8/32 */
+		.len = 32
+	}
+};
+
+static void
+init_nets(void)
+{
+	/* private net a */
+	reserved_netsv4[0].net.s_addr = htonl(0x0a000000);
+	/* private net b */
+	reserved_netsv4[1].net.s_addr = htonl(0xac100000);
+	/* private net c */
+	reserved_netsv4[2].net.s_addr = htonl(0xc0a80000);
+	/* link local */
+	reserved_netsv4[3].net.s_addr = htonl(0xa9fe0000);
+	/* TEST-NET-1 */
+	reserved_netsv4[4].net.s_addr = htonl(0xc0000200);
+	/* TEST-NET-2 */
+	reserved_netsv4[5].net.s_addr = htonl(0xc6336400);
+	/* TEST-NET-3 */
+	reserved_netsv4[6].net.s_addr = htonl(0xcb007100);
+	/* benchmarking */
+	reserved_netsv4[7].net.s_addr = htonl(0xc0120000);
+
+	/* ORCHID */
+	inet_pton(AF_INET6, "2001:10::", &reserved_netsv6[0].net);
+	/* Documentation */
+	inet_pton(AF_INET6, "2001:db8::", &reserved_netsv6[1].net);
+}
 
 /*
  * contents of fromdomain (binary or'ed)
@@ -86,51 +165,39 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 	if ((u & 4) && (xmitstat.frommx != NULL)) {
 /* check if all MX entries resolve to private networks */
 		int flaghit = 1;
-		struct ips *thisip = xmitstat.frommx;
+		struct ips *thisip;
 
-		while (flaghit && thisip) {
+		if (reserved_netsv4[0].net.s_addr == 0)
+			init_nets();
+
+		for (thisip = xmitstat.frommx; (thisip != NULL) && flaghit; thisip = thisip->next) {
 			assert(thisip->addr == &thisip->ad);
 			assert(thisip->count == 1);
 			if (IN6_IS_ADDR_V4MAPPED(thisip->addr)) {
 				int flagtmp = 0;
-				const struct in_addr priva =    { .s_addr = htonl(0x0a000000) }; /* 10/8 */
-				const struct in_addr privb =    { .s_addr = htonl(0xac100000) }; /* 172.16/12 */
-				const struct in_addr privc =    { .s_addr = htonl(0xc0a80000) }; /* 192.168/16 */
-				const struct in_addr linkloc =  { .s_addr = htonl(0xa9fe0000) }; /* 169.254/16 */
-				const struct in_addr testnet1 = { .s_addr = htonl(0xc0000200) }; /* 192.0.2/24 */
-				const struct in_addr testnet2 = { .s_addr = htonl(0xc6336400) }; /* 198.51.100/24 */
-				const struct in_addr testnet3 = { .s_addr = htonl(0xcb007100) }; /* 203.0.113/24 */
-				const struct in_addr bench =    { .s_addr = htonl(0xc0120000) }; /* 192.18/15 */
+				unsigned int i;
 
-				/* 10.0.0.0/8 */
-				flagtmp = ip4_matchnet(thisip->addr, &priva, 8);
-				/* 172.16.0.0/12 */
-				if (!flagtmp)
-					flagtmp = ip4_matchnet(thisip->addr, &privb, 12);
-				/* 192.168.0.0/16 */
-				if (!flagtmp)
-					flagtmp = ip4_matchnet(thisip->addr, &privc, 16);
-				/* 169.254.0.0/16 */
-				if (!flagtmp)
-					flagtmp = ip4_matchnet(thisip->addr, &linkloc, 16);
-				/* 192.0.2.0/24 */
-				if (!flagtmp)
-					flagtmp = ip4_matchnet(thisip->addr, &testnet1, 24);
-				/* 198.51.100.0/24 */
-				if (!flagtmp)
-					flagtmp = ip4_matchnet(thisip->addr, &testnet2, 24);
-				/* 203.0.113.0/24 */
-				if (!flagtmp)
-					flagtmp = ip4_matchnet(thisip->addr, &testnet3, 24);
-				/* 192.18.0.0/15 */
-				if (!flagtmp)
-					flagtmp = ip4_matchnet(thisip->addr, &bench, 15);
-				if (!flagtmp)
-					flaghit = 0;
+				for (i = 0; i < sizeof(reserved_netsv4) / sizeof(reserved_netsv4[0]); i++)
+					if (ip4_matchnet(thisip->addr, &reserved_netsv4[i].net, reserved_netsv4[i].len)) {
+						flagtmp = 1;
+						break;
+					}
+
+				flaghit &= flagtmp;
 			} else {
-				flaghit = IN6_IS_ADDR_LINKLOCAL(thisip->addr) || IN6_IS_ADDR_SITELOCAL(thisip->addr);
+				int flagtmp = 0;
+				unsigned int i;
+
+				for (i = 0; i < sizeof(reserved_netsv6) / sizeof(reserved_netsv6[0]); i++) {
+					if (ip6_matchnet(thisip->addr, &reserved_netsv6[i].net, reserved_netsv6[i].len)) {
+						flagtmp = 1;
+						break;
+					}
+				}
+
+				if (!flagtmp)
+					flaghit = IN6_IS_ADDR_LINKLOCAL(thisip->addr) || IN6_IS_ADDR_SITELOCAL(thisip->addr);
 			}
-			thisip = thisip->next;
 		}
 		if (flaghit) {
 			*logmsg = "MX in private network";

@@ -81,9 +81,7 @@ setup_ip(const char *ip)
 		return;
 
 	xmitstat.fromdomain = 0;
-	xmitstat.frommx->addr = &xmitstat.frommx->ad;
 	*xmitstat.frommx->addr = xmitstat.sremoteip;
-	xmitstat.frommx->next = NULL;
 }
 
 int
@@ -98,6 +96,8 @@ main(void)
 		.priority = 42,
 		.count = 1
 	};
+
+	frommx.addr = &frommx.ad;
 
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 
@@ -138,6 +138,16 @@ main(void)
 	setup_ip("::ffff:203.0.113.3");
 	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
 	err += check_expect(1, "checking TEST-NET-3 203.0.113.3", "MX in private network");
+
+	/* ORCHID */
+	setup_ip("2001:10::17:14");
+	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
+	err += check_expect(1, "checking ORCHID 2001:10::17:14", "MX in private network");
+
+	/* Documentation */
+	setup_ip("2001:db8::1822:13:0:1");
+	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
+	err += check_expect(1, "checking documentation net 2001:db8::1822:13:0:1", "MX in private network");
 
 	sprintf(configline, "fromdomain=1");
 
