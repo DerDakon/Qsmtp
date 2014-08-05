@@ -296,7 +296,7 @@ int
 smtp_rcpt(void)
 {
 	struct recip *r;
-	int i = 0, j, e;
+	int i, e;
 	enum filter_result fr;	/* result of user filter */
 	string tmp;
 	char *more = NULL;
@@ -327,11 +327,11 @@ smtp_rcpt(void)
 		free(tmp.s);
 		return EBOGUS;
 	} else if (i == -2) {
-		j = is_authenticated();
+		i = is_authenticated();
 
-		if (j < 0) {
-			return -j;
-		} else if (j == 0) {
+		if (i < 0) {
+			return -i;
+		} else if (i == 0) {
 			const char *logmess[] = {"rejected message to <", tmp.s, "> from <", MAILFROM,
 					"> from IP [", xmitstat.remoteip, "] {relaying denied}", NULL};
 
@@ -396,14 +396,14 @@ smtp_rcpt(void)
 		return err_control2("user/domain filterconf for ", r->to.s) ? errno : EDONE;
 	}
 
-	i = j = e = 0;
+	i = e = 0;
 	fr = FILTER_PASSED;
 	/* Use all filters until there is a hard state: either rejection or whitelisting.
 	 * Continue on temporary errors to see if a later filter would introduce a hard
 	 * rejection to avoid that mail to come back to us just to fail. */
-	while ((rcpt_cbs[j] != NULL) && ((fr == FILTER_PASSED) || (fr == FILTER_DENIED_TEMPORARY))) {
+	while ((rcpt_cbs[i] != NULL) && ((fr == FILTER_PASSED) || (fr == FILTER_DENIED_TEMPORARY))) {
 		errmsg = NULL;
-		fr = rcpt_cbs[j](&ds, &errmsg, &bt);
+		fr = rcpt_cbs[i](&ds, &errmsg, &bt);
 
 		switch (fr) {
 		case FILTER_WHITELISTED:
@@ -422,7 +422,7 @@ smtp_rcpt(void)
 				const char *logmess[] = {"error ", errnostr, " in filter ", filterno, " for user ", r->to.s, NULL};
 
 				ultostr(errno, errnostr);
-				ultostr(j, filterno);
+				ultostr(i, filterno);
 
 				log_writen(LOG_WARNING, logmess);
 				e = 1;
@@ -434,7 +434,8 @@ smtp_rcpt(void)
 			/* will terminate the loop */
 			break;
 		}
-		j++;
+		
+		i++;
 	}
 	userconf_free(&ds);
 
@@ -447,8 +448,6 @@ smtp_rcpt(void)
 
 	if (!filter_denied(fr)) {
 		/* accept mail */
-		i = 0;
-
 		goodrcpt++;
 		r->ok = 1;
 		okmsg[1] = r->to.s;
@@ -476,7 +475,7 @@ smtp_rcpt(void)
 		{
 		enum config_domain t;
 		if (!getsetting(&ds, "fail_hard_on_temp", &t)) {
-			if ( (j = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
+			if ( (i = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
 				e = errno;
 			break;
 		}
@@ -486,7 +485,7 @@ smtp_rcpt(void)
 		{
 		enum config_domain t;
 		if (!getsetting(&ds, "nonexist_on_block", &t)) {
-			if ( (j = netwrite("550 5.7.1 mail denied for policy reasons\r\n")) )
+			if ( (i = netwrite("550 5.7.1 mail denied for policy reasons\r\n")) )
 				e = errno;
 			break;
 		}
@@ -496,16 +495,16 @@ smtp_rcpt(void)
 		{
 			const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
 
-			if ( (j = net_writen(rcptmsg)) )
+			if ( (i = net_writen(rcptmsg)) )
 				e = errno;
 		}
 		break;
 	default:
 		assert(filter_denied(fr));
-		j = 0;
+		i = 0;
 		break;
 	}
-	return j ? e : 0;
+	return i ? e : 0;
 }
 
 int
