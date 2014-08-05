@@ -110,6 +110,21 @@ main(void)
 			.count = 1
 		}
 	};
+	struct ips frommx_mixed[3] = {
+		{
+			.priority = 0,
+			.count = 3
+		},
+		{
+			.priority = 2,
+			.count = 1
+		},
+		{
+			.priority = 3,
+			.count = 4
+		}
+	};
+	struct in6_addr frommx_mixed_addr[frommx_mixed[0].count + frommx_mixed[1].count + frommx_mixed[2].count];
 	unsigned int i;
 
 	frommx_mixed_invalid[0].next = frommx_mixed_invalid + 1;
@@ -126,6 +141,30 @@ main(void)
 
 		frommx_mixed_invalid[i].addr = &frommx_mixed_invalid[i].ad;
 		r = inet_pton(AF_INET6, ipstr[i], frommx_mixed_invalid[i].addr);
+		assert(r == 1);
+	}
+
+	frommx_mixed[0].next = frommx_mixed + 1;
+	frommx_mixed[0].addr = frommx_mixed_addr;
+	frommx_mixed[1].next = frommx_mixed + 2;
+	frommx_mixed[1].addr = frommx_mixed[0].addr + frommx_mixed[0].count;
+	frommx_mixed[2].addr = frommx_mixed[1].addr + frommx_mixed[1].count;
+
+	/* set up a list of many invalid IPs and the last one is ok */
+	for (i = 0; i < sizeof(frommx_mixed_addr) / sizeof(frommx_mixed_addr[0]); i++) {
+		const char *ipstr[] = {
+			"::ffff:127.0.0.1",
+			"::ffff:127.1.1.2",
+			"::ffff:172.16.15.14",
+			"::ffff:10.9.8.7",
+			"::ffff:192.168.167.166",
+			"::1",
+			"fe80::2:3:44",
+			"::ffff:8.8.8.8",
+		};
+		int r;
+
+		r = inet_pton(AF_INET6, ipstr[i], frommx_mixed_addr + i);
 		assert(r == 1);
 	}
 
@@ -207,6 +246,9 @@ main(void)
 	xmitstat.frommx = frommx_mixed_invalid;
 	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
 	err += check_expect(1, "checking multiple invalid addresses", "unroutable MX");
+
+	xmitstat.frommx = frommx_mixed;
+	err += check_expect(0, "checking mixed invalid addresses ending in Google public DNS", NULL);
 
 	sprintf(configline, "fromdomain=2");
 	xmitstat.frommx = &frommx;

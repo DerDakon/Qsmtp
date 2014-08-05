@@ -1111,12 +1111,15 @@ spfmx(const char *domain, const char *token)
 	}
 	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
 		struct ips *cur;
-		for (cur = mx; cur != NULL; cur = cur->next) {
+		unsigned short s;
+
+		FOREACH_STRUCT_IPS(cur, s, mx) {
 			assert(cur->addr == &cur->ad);
 			assert(cur->count == 1);
-			if (IN6_IS_ADDR_V4MAPPED(cur->addr) &&
+			assert(s == 0);
+			if (IN6_IS_ADDR_V4MAPPED(cur->addr + s) &&
 					ip4_matchnet(&xmitstat.sremoteip,
-							(struct in_addr *) &(cur->addr->s6_addr32[3]), ip4l)) {
+							(struct in_addr *) &(cur->addr[s].s6_addr32[3]), ip4l)) {
 				freeips(mx);
 				return SPF_PASS;
 			}
@@ -1124,10 +1127,13 @@ spfmx(const char *domain, const char *token)
 #ifndef IPV4ONLY
 	} else {
 		struct ips *cur;
-		for (cur = mx; cur != NULL; cur = cur->next) {
+		unsigned short s;
+
+		FOREACH_STRUCT_IPS(cur, s, mx) {
 			assert(cur->addr == &cur->ad);
 			assert(cur->count == 1);
-			if (ip6_matchnet(&xmitstat.sremoteip, cur->addr, ip6l)) {
+			assert(s == 0);
+			if (ip6_matchnet(&xmitstat.sremoteip, cur->addr + s, ip6l)) {
 				freeips(mx);
 				return SPF_PASS;
 			}

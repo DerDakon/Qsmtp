@@ -34,6 +34,15 @@ struct ips {
 	struct in6_addr ad;
 };
 
+/**
+ * @brief iterate through all IP addresses in an list of MX entries
+ * @param _ptr struct ips* variable that holds the current entry
+ * @param _s unsigned short variable that holds the current index inside _ptr
+ * @param _list start point of the list to iterate over
+ */
+#define FOREACH_STRUCT_IPS(_ptr, _s, _list) \
+	for (_ptr = _list, _s = 0; _ptr != NULL; (_s < _ptr->count - 1) ? (_s++) : (_ptr = _ptr->next, _s = 0))
+
 /* lib/qdns.c */
 
 extern int ask_dnsmx(const char *, struct ips **) __attribute__ ((nonnull (1,2)));

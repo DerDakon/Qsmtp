@@ -140,26 +140,25 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 		/* check if all MX entries resolve to private networks or are loopbacks */
 		int flaghit = 1;
 		struct ips *thisip;
+		unsigned short s;
 
 		if (reserved_netsv4[0].net.s_addr == 0)
 			init_nets();
 
-		for (thisip = xmitstat.frommx; (thisip != NULL) && flaghit; thisip = thisip->next) {
-			assert(thisip->addr == &thisip->ad);
-			assert(thisip->count == 1);
-			if (IN6_IS_ADDR_V4MAPPED(thisip->addr)) {
+		FOREACH_STRUCT_IPS(thisip, s, xmitstat.frommx) {
+			if (IN6_IS_ADDR_V4MAPPED(thisip->addr + s)) {
 				int flagtmp = 0;
 				unsigned int i;
 
 				if (u & 4)
 					for (i = 0; i < sizeof(reserved_netsv4) / sizeof(reserved_netsv4[0]); i++)
-						if (ip4_matchnet(thisip->addr, &reserved_netsv4[i].net, reserved_netsv4[i].len)) {
+						if (ip4_matchnet(thisip->addr + s, &reserved_netsv4[i].net, reserved_netsv4[i].len)) {
 							flagtmp = 1;
 							break;
 						}
 
 				if ((u & 2) && !flagtmp) {
-					unsigned int net = (thisip->addr->s6_addr32[3] & htonl(0xff000000));
+					unsigned int net = (thisip->addr[s].s6_addr32[3] & htonl(0xff000000));
 
 					/* block if net is in 0/8 or 127/8 */
 					if ((net == 0) || (net == htonl(0x7f000000)))
@@ -173,23 +172,25 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 
 				if (u & 4) {
 					for (i = 0; i < sizeof(reserved_netsv6) / sizeof(reserved_netsv6[0]); i++) {
-						if (ip6_matchnet(thisip->addr, &reserved_netsv6[i].net, reserved_netsv6[i].len)) {
+						if (ip6_matchnet(thisip->addr + s, &reserved_netsv6[i].net, reserved_netsv6[i].len)) {
 							flagtmp = 1;
 							break;
 						}
 					}
 
 					if (!flagtmp)
-						flagtmp = IN6_IS_ADDR_LINKLOCAL(thisip->addr) || IN6_IS_ADDR_SITELOCAL(thisip->addr);
+						flagtmp = IN6_IS_ADDR_LINKLOCAL(thisip->addr + s) || IN6_IS_ADDR_SITELOCAL(thisip->addr + s);
 				}
 
 				if ((u & 2) && !flagtmp) {
-					if (IN6_IS_ADDR_LOOPBACK(thisip->addr))
+					if (IN6_IS_ADDR_LOOPBACK(thisip->addr + s))
 						flagtmp = 1;
 				}
 
 				flaghit &= flagtmp;
 			}
+			if (!flaghit)
+				break;
 		}
 		if (flaghit) {
 			*logmsg = "unroutable MX";
@@ -200,16 +201,15 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 #ifdef IPV4ONLY
 	/* check if all MX entries point to IPv6 addresses */
 	if (u) {
-		int flaghit = 0;
+		int flaghit;
 		struct ips *thisip;
+		unsigned short s;
 
 		if ( (flaghit = getsettingglobal(ds, "reject_ipv6only", t)) <= 0)
 			return FILTER_PASSED;
 
-		for (thisip = xmitstat.frommx; flaghit && thisip; thisip = thisip->next) {
-			assert(thisip->addr == &thisip->ad);
-			assert(thisip->count == 1);
-			if (IN6_IS_ADDR_V4MAPPED(thisip->addr))
+		FOREACH_STRUCT_IPS(thisip, s, xmitstat.frommx) {
+			if (IN6_IS_ADDR_V4MAPPED(thisip->addr + s))
 				flaghit = 0;
 		}
 		if (flaghit) {
