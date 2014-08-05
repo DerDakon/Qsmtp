@@ -96,6 +96,38 @@ main(void)
 		.priority = 42,
 		.count = 1
 	};
+	struct ips frommx_mixed_invalid[3] = {
+		{
+			.priority = 0,
+			.count = 1
+		},
+		{
+			.priority = 1,
+			.count = 1
+		},
+		{
+			.priority = 2,
+			.count = 1
+		}
+	};
+	unsigned int i;
+
+	frommx_mixed_invalid[0].next = frommx_mixed_invalid + 1;
+	frommx_mixed_invalid[1].next = frommx_mixed_invalid + 2;
+
+	/* set up a list of many invalid IPs  */
+	for (i = 0; i < sizeof(frommx_mixed_invalid) / sizeof(frommx_mixed_invalid[0]); i++) {
+		const char *ipstr[] = {
+			"::ffff:127.0.0.1",
+			"::ffff:127.1.1.2",
+			"::ffff:172.16.15.14"
+		};
+		int r;
+
+		frommx_mixed_invalid[i].addr = &frommx_mixed_invalid[i].ad;
+		r = inet_pton(AF_INET6, ipstr[i], frommx_mixed_invalid[i].addr);
+		assert(r == 1);
+	}
 
 	frommx.addr = &frommx.ad;
 
@@ -114,40 +146,40 @@ main(void)
 
 	err += check_expect(0, "checking deactivated fromdomain filter", NULL);
 
-	sprintf(configline, "fromdomain=4");
+	sprintf(configline, "fromdomain=6");
 	setup_ip("::ffff:172.16.42.42");
 
 	err += check_expect(0, "checking local net 172.16.42.42 without MX", NULL);
 
 	xmitstat.frommx = &frommx;
 	setup_ip("::ffff:172.16.42.42");
-	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
-	err += check_expect(1, "checking local net 172.16.42.42", "MX in private network");
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+	err += check_expect(1, "checking local net 172.16.42.42", "unroutable MX");
 
 	/* TEST-NET-1 */
 	setup_ip("::ffff:192.0.2.1");
-	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
-	err += check_expect(1, "checking TEST-NET-1 192.0.2.1", "MX in private network");
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+	err += check_expect(1, "checking TEST-NET-1 192.0.2.1", "unroutable MX");
 
 	/* TEST-NET-2 */
 	setup_ip("::ffff:198.51.100.2");
-	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
-	err += check_expect(1, "checking TEST-NET-2 198.51.100.2", "MX in private network");
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+	err += check_expect(1, "checking TEST-NET-2 198.51.100.2", "unroutable MX");
 
 	/* TEST-NET-3 */
 	setup_ip("::ffff:203.0.113.3");
-	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
-	err += check_expect(1, "checking TEST-NET-3 203.0.113.3", "MX in private network");
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+	err += check_expect(1, "checking TEST-NET-3 203.0.113.3", "unroutable MX");
 
 	/* ORCHID */
 	setup_ip("2001:10::17:14");
-	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
-	err += check_expect(1, "checking ORCHID 2001:10::17:14", "MX in private network");
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+	err += check_expect(1, "checking ORCHID 2001:10::17:14", "unroutable MX");
 
 	/* Documentation */
 	setup_ip("2001:db8::1822:13:0:1");
-	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
-	err += check_expect(1, "checking documentation net 2001:db8::1822:13:0:1", "MX in private network");
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+	err += check_expect(1, "checking documentation net 2001:db8::1822:13:0:1", "unroutable MX");
 
 	sprintf(configline, "fromdomain=1");
 
@@ -171,23 +203,29 @@ main(void)
 	setup_ip("::ffff:8.8.8.8");
 	err += check_expect(0, "checking Google public DNS", NULL);
 
+	setup_ip("::ffff:8.8.8.8");
+	xmitstat.frommx = frommx_mixed_invalid;
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+	err += check_expect(1, "checking multiple invalid addresses", "unroutable MX");
+
 	sprintf(configline, "fromdomain=2");
+	xmitstat.frommx = &frommx;
 	setup_ip("::ffff:127.4.5.6");
-	netnwrite_msg = "501 5.4.0 all your mail exchangers have loopback addresses\r\n";
-	err += check_expect(1, "checking IPv4 loopback net", "MX in loopback net");
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+	err += check_expect(1, "checking IPv4 loopback net", "unroutable MX");
 
 	sprintf(configline, "fromdomain=2");
 	setup_ip("::1");
-	netnwrite_msg = "501 5.4.0 all your mail exchangers have loopback addresses\r\n";
-	err += check_expect(1, "checking IPv6 loopback net", "MX in loopback net");
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+	err += check_expect(1, "checking IPv6 loopback net", "unroutable MX");
 
 	setup_ip("feab::42:42:42");
-	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
 	err += check_expect(0, "checking IPv6 link local net when only loopback is forbidden", NULL);
 
 	sprintf(configline, "fromdomain=4");
-	netnwrite_msg = "501 5.4.0 all your mail exchangers point to local networks\r\n";
-	err += check_expect(1, "checking IPv6 link local net", "MX in private network");
+	netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+	err += check_expect(1, "checking IPv6 link local net", "unroutable MX");
 
 	if (netnwrite_msg != NULL)
 		err++;

@@ -136,34 +136,8 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 			return netwrite(errmsg) ? FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 		}
 	}
-	if (u & 2) {
-/* check if all MX entries are loopbacks */
-		int flaghit = 1;
-		struct ips *thisip = xmitstat.frommx;
-
-		while (flaghit && thisip) {
-			assert(thisip->addr == &thisip->ad);
-			assert(thisip->count == 1);
-			if (IN6_IS_ADDR_V4MAPPED(thisip->addr)) {
-				unsigned int net = (thisip->addr->s6_addr32[3] & htonl(0xff000000));
-
-				/* block if net is in 0/8 or 127/8 */
-				if (net && (net != htonl(0x7f000000)))
-					flaghit = 0;
-			} else {
-				if (!IN6_IS_ADDR_LOOPBACK(thisip->addr))
-					flaghit = 0;
-			}
-			thisip = thisip->next;
-		}
-		if (flaghit) {
-			*logmsg = "MX in loopback net";
-			return netwrite("501 5.4.0 all your mail exchangers have loopback addresses\r\n") ?
-					FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
-		}
-	}
-	if ((u & 4) && (xmitstat.frommx != NULL)) {
-/* check if all MX entries resolve to private networks */
+	if ((u & 6) && (xmitstat.frommx != NULL)) {
+		/* check if all MX entries resolve to private networks or are loopbacks */
 		int flaghit = 1;
 		struct ips *thisip;
 
@@ -177,31 +151,49 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 				int flagtmp = 0;
 				unsigned int i;
 
-				for (i = 0; i < sizeof(reserved_netsv4) / sizeof(reserved_netsv4[0]); i++)
-					if (ip4_matchnet(thisip->addr, &reserved_netsv4[i].net, reserved_netsv4[i].len)) {
+				if (u & 4)
+					for (i = 0; i < sizeof(reserved_netsv4) / sizeof(reserved_netsv4[0]); i++)
+						if (ip4_matchnet(thisip->addr, &reserved_netsv4[i].net, reserved_netsv4[i].len)) {
+							flagtmp = 1;
+							break;
+						}
+
+				if ((u & 2) && !flagtmp) {
+					unsigned int net = (thisip->addr->s6_addr32[3] & htonl(0xff000000));
+
+					/* block if net is in 0/8 or 127/8 */
+					if ((net == 0) || (net == htonl(0x7f000000)))
 						flagtmp = 1;
-						break;
-					}
+				}
 
 				flaghit &= flagtmp;
 			} else {
 				int flagtmp = 0;
 				unsigned int i;
 
-				for (i = 0; i < sizeof(reserved_netsv6) / sizeof(reserved_netsv6[0]); i++) {
-					if (ip6_matchnet(thisip->addr, &reserved_netsv6[i].net, reserved_netsv6[i].len)) {
-						flagtmp = 1;
-						break;
+				if (u & 4) {
+					for (i = 0; i < sizeof(reserved_netsv6) / sizeof(reserved_netsv6[0]); i++) {
+						if (ip6_matchnet(thisip->addr, &reserved_netsv6[i].net, reserved_netsv6[i].len)) {
+							flagtmp = 1;
+							break;
+						}
 					}
+
+					if (!flagtmp)
+						flagtmp = IN6_IS_ADDR_LINKLOCAL(thisip->addr) || IN6_IS_ADDR_SITELOCAL(thisip->addr);
 				}
 
-				if (!flagtmp)
-					flaghit = IN6_IS_ADDR_LINKLOCAL(thisip->addr) || IN6_IS_ADDR_SITELOCAL(thisip->addr);
+				if ((u & 2) && !flagtmp) {
+					if (IN6_IS_ADDR_LOOPBACK(thisip->addr))
+						flagtmp = 1;
+				}
+
+				flaghit &= flagtmp;
 			}
 		}
 		if (flaghit) {
-			*logmsg = "MX in private network";
-			return netwrite("501 5.4.0 all your mail exchangers point to local networks\r\n") ?
+			*logmsg = "unroutable MX";
+			return netwrite("501 5.4.0 none of your mail exchangers has a routable address\r\n") ?
 					FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 		}
 	}
