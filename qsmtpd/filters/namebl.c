@@ -62,7 +62,7 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 				k = ask_dnsa(blname, NULL);
 				switch (k) {
 				case DNS_ERROR_LOCAL:
-					rc = DNS_ERROR_LOCAL;
+					rc = FILTER_ERROR;
 					break;
 				case DNS_ERROR_TEMP:
 					flagtemp = 1;
