@@ -122,6 +122,9 @@ main(void)
 		snprintf(buf, sizeof(buf), "[%s]", patterns[i].input);
 
 		getmxlist(buf, &mx);
+#ifdef IPV4ONLY
+		sortmx(&mx);
+#endif
 
 		if (inet_pton(AF_INET6, patterns[i].expect, &addr) <= 0)
 			exit(EFAULT);

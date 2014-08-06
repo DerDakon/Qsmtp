@@ -144,29 +144,6 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 }
 
 /**
- * @brief set IPv6 addresses as already used
- * 
- * @param mx list of addresses
- *
- * This will mark all IPv6 addresses as already used in case this is
- * compiled as only supporting IPv4 addresses. Otherwise it does nothing.
- */
-static void
-remove_ipv6(struct ips **mx)
-{
-#ifdef IPV4ONLY
-	struct ips *thisip;
-
-	for (thisip = *mx; thisip; thisip = thisip->next) {
-		if (!IN6_IS_ADDR_V4MAPPED(thisip->addr))
-			thisip->priority = MX_PRIORITY_USED;
-	}
-#else
-	(void) mx;
-#endif
-}
-
-/**
  * get all IPs for the MX entries of target address
  *
  * @param remhost target address
@@ -193,7 +170,6 @@ getmxlist(char *remhost, struct ips **mx)
 			remhost[reml - 1] = '\0';
 			if (inet_pton(AF_INET6, remhost + 1, (*mx)->addr) > 0) {
 				remhost[reml - 1] = ']';
-				remove_ipv6(mx);
 				return;
 			} else if (inet_pton(AF_INET, remhost + 1, &((*mx)->addr->s6_addr32[3])) > 0) {
 				(*mx)->addr->s6_addr32[2] = ntohl(0xffff);
@@ -223,6 +199,4 @@ getmxlist(char *remhost, struct ips **mx)
 			net_conn_shutdown(shutdown_abort);
 		}
 	}
-
-	remove_ipv6(mx);
 }

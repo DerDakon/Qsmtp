@@ -117,6 +117,8 @@ ip6_sort(const void *l, const void *r)
  * IPv6 addresses are prefered. If 2 entries of p have the same priority
  * those that contain IPv6 addresses will be moved to the front for the
  * same reason.
+ *
+ * If IPV4ONLY is defined all IPv6 addresses will be stripped from the list.
  */
 void
 sortmx(struct ips **p)
@@ -131,6 +133,30 @@ sortmx(struct ips **p)
 		qsort(next->addr, next->count, sizeof(*next->addr),
 				ip6_sort);
 	}
+
+#ifdef IPV4ONLY
+	/* "remove" all IPv6 entries */
+	for (next = *p; next != NULL; next = next->next) {
+		unsigned short s;
+
+		/* if the first entry is an IPv6 address the whole MX consists of
+		 * such as they were sorted last before */
+		if (!IN6_IS_ADDR_V4MAPPED(next->addr)) {
+			next->priority = MX_PRIORITY_USED;
+			continue;
+		}
+
+		/* Check if the list included IPv6 entries. Since they come as a
+		 * block at the end just reduce the count entry to not include
+		 * them anymore. */
+		for (s = 1; s < next->count; s++) {
+			if (!IN6_IS_ADDR_V4MAPPED(next->addr + s)) {
+				next->count = s - 1;
+				break;
+			}
+		}
+	}
+#endif
 
 	/* make us live easy: copy first entry */
 	res = *p;

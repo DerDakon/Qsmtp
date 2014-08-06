@@ -65,6 +65,27 @@ verify_ipv6_sorted(const struct ips *ip)
 {
 	int err = verify(ip);
 
+#ifdef IPV4ONLY
+	if (!IN6_IS_ADDR_V4MAPPED(ip->addr)) {
+		fputs("first position is no IPv4 mapped address\n", stderr);
+		return ++err;
+	}
+
+	if (!IN6_IS_ADDR_V4MAPPED(ip->next->addr)) {
+		fputs("second position is no IPv4 mapped address\n", stderr);
+		return ++err;
+	}
+
+	if (IN6_IS_ADDR_V4MAPPED(ip->next->next->addr)) {
+		fputs("third mapped address comes first\n", stderr);
+		err++;
+	}
+
+	if (ip->next->next->priority != MX_PRIORITY_USED) {
+		fputs("MX entry consisting only of IPv6 addresses has not been marked as used\n", stderr);
+		err++;
+	}
+#else
 	if (IN6_IS_ADDR_V4MAPPED(ip->addr)) {
 		fputs("v4 mapped address comes first\n", stderr);
 		return ++err;
@@ -79,6 +100,7 @@ verify_ipv6_sorted(const struct ips *ip)
 		fputs("third position is no IPv4 mapped address\n", stderr);
 		return ++err;
 	}
+#endif
 
 	return err;
 }
@@ -88,6 +110,7 @@ verify_ipv6_sorted_complete(const struct ips *ip)
 {
 	int err = 0;
 	const struct ips *cur;
+	unsigned short s;
 
 	for (cur = ip; cur->next != NULL; cur = cur->next) {
 
@@ -99,13 +122,17 @@ verify_ipv6_sorted_complete(const struct ips *ip)
 
 	}
 
-	for (cur = ip; cur != NULL; cur = cur->next) {
-		unsigned short s;
 #ifdef IPV4ONLY
-		int last = 1;
+	FOREACH_STRUCT_IPS(cur, s, ip) {
+		if (!IN6_IS_ADDR_V4MAPPED(cur->addr + s)) {
+			fprintf(stderr, "found IPv6 entry at %u/%u in sorted list\n",
+					cur->priority, s);
+			err++;
+		}
+	}
 #else
+	for (cur = ip; cur != NULL; cur = cur->next) {
 		int last = 0;
-#endif
 		int has_changed = 0;
 
 		for (s = 0; s < cur->count; s++) {
@@ -122,6 +149,7 @@ verify_ipv6_sorted_complete(const struct ips *ip)
 			has_changed = 1;
 		}
 	}
+#endif
 
 	return err;
 }
