@@ -2,6 +2,7 @@
 #include <qdns.h>
 
 #include <arpa/inet.h>
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -574,6 +575,81 @@ test_errors(void)
 	return err;
 }
 
+/**
+ * @brief test the FOREACH_STRUCT_IPS macro
+ */
+static int
+test_foreach(void)
+{
+	struct in6_addr a[8];
+	struct ips ip[5] = {
+		{
+			.priority = 1,
+			.count = 1,
+		},
+		{
+			.priority = 2,
+			.count = 3,
+		},
+		{
+			.priority = 3,
+			.count = 1,
+		},
+		{
+			.priority = 4,
+			.count = 1,
+		},
+		{
+			.priority = 5,
+			.count = 2
+		}
+	};
+	struct ips *cur;
+	unsigned short s;
+	uint32_t u;
+	int err = 0;
+
+	memset(a, 0, sizeof(a));
+
+	for (s = 0; s < sizeof(a) / sizeof(a[0]); s++)
+		a[s].s6_addr32[0] = s + 1;
+
+	ip[0].addr = a;
+	for (s = 0; s < sizeof(ip) / sizeof(ip[0]) - 1; s++) {
+		ip[s + 1].addr = ip[s].addr + ip[s].count;
+		ip[s].next = ip + s + 1;
+	}
+
+	u = 0;
+	/* now iterate over all IPs, check that their lower value gives the
+	 * expected sequence 1..8. Set the next value to the priority, so that
+	 * can be checked later. */
+
+	FOREACH_STRUCT_IPS(cur, s, ip) {
+		if (cur->addr[s].s6_addr32[0] != u + 1) {
+			fprintf(stderr, "index %u: s %u, IP index was %u\n",
+					u, s, cur->addr[s].s6_addr32[0]);
+			err++;
+		}
+		u++;
+		cur->addr[s].s6_addr32[1] = cur->priority;
+	}
+
+	for (s = 0; s < sizeof(a) / sizeof(a[0]); s++) {
+		const uint32_t exp[] = { 1, 2, 2, 2, 3, 4, 5, 5 };
+
+		assert(sizeof(a) / sizeof(a[0]) == sizeof(exp) / sizeof(exp[0]));
+
+		if (a[s].s6_addr32[1] != exp[s]) {
+			fprintf(stderr, "IP %u has priority %u but %u was expected\n",
+					s, a[s].s6_addr32[1], exp[s]);
+			err++;
+		}
+	}
+
+	return err;
+}
+
 int
 main(void)
 {
@@ -583,6 +659,7 @@ main(void)
 	err += test_implicit_mx();
 	err += test_mx();
 	err += test_errors();
+	err += test_foreach();
 
 	return err;
 }
