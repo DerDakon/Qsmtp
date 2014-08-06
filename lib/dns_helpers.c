@@ -78,8 +78,12 @@ freeips(struct ips *p)
 
 		p = thisip->next;
 		free(thisip->name);
+#ifdef NEW_IPS_LAYOUT
+		free(thisip->addr);
+#else
 		assert(thisip->addr == &thisip->ad);
 		assert(thisip->count == 1);
+#endif
 		free(thisip);
 	}
 }
@@ -208,6 +212,19 @@ in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 
 	assert(cnt > 0);
 
+#ifdef NEW_IPS_LAYOUT
+	res = malloc(sizeof(*res));
+	if (res == NULL) {
+		free(a);
+		return NULL;
+	}
+
+	res->addr = a;
+	res->count = cnt;
+	res->priority = priority;
+	res->name = NULL;
+	res->next = NULL;
+#else
 	while (cnt > 0) {
 		struct ips *n = malloc(sizeof(*n));
 
@@ -230,6 +247,7 @@ in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 	}
 
 	free(a);
+#endif
 
 	return res;
 }

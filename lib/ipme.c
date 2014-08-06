@@ -85,7 +85,7 @@ filter_my_ips(struct ips *ipl)
 			if (tmp->count == 1) {
 				if (prev) {
 					prev->next = tmp->next;
-#if 0
+#ifdef NEW_IPS_LAYOUT
 					tmp->next = NULL;
 					freeips(tmp);
 #else
@@ -101,7 +101,7 @@ filter_my_ips(struct ips *ipl)
 
 					prev = tmp;
 					tmp = tmp->next;
-#if 0
+#ifdef NEW_IPS_LAYOUT
 					prev->next = NULL;
 					freeips(prev);
 #else

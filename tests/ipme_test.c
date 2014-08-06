@@ -19,6 +19,7 @@
 static void
 fixup_before_free(struct ips *n)
 {
+#ifndef NEW_IPS_LAYOUT
 	while (n != NULL) {
 		n->count = 1;
 		if (n->addr != &n->ad) {
@@ -27,6 +28,9 @@ fixup_before_free(struct ips *n)
 		}
 		n = n->next;
 	}
+#else
+	(void)n;
+#endif
 }
 
 static const char *testips[] = {
