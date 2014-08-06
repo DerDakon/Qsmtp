@@ -68,6 +68,7 @@ dnsentry_search(const enum dnstype stype, const char *skey)
 	return NULL;
 }
 
+#ifndef NEW_IPS_LAYOUT
 static struct ips *
 parseips(const char *list)
 {
@@ -91,7 +92,7 @@ parseips(const char *list)
 			assert((size_t)(end - next) < sizeof(curbuf));
 			strncpy(curbuf, next, end - next);
 			curbuf[end - next] = '\0';
-			         parsep = curbuf;
+			parsep = curbuf;
 			end++;
 		}
 
@@ -112,6 +113,7 @@ parseips(const char *list)
 
 	return ret;
 }
+#endif
 
 static struct in6_addr *
 parsein6(const char *list, int *cnt)
@@ -196,9 +198,28 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 			return 0;
 		else
 			return r;
-	}
+	} else {
+#ifndef NEW_IPS_LAYOUT
+		*ips = parseips(value);
+#else
+		int c;
 
-	*ips = parseips(value);
+		*ips = malloc(sizeof(**ips));
+
+		if (*ips == NULL)
+			return DNS_ERROR_LOCAL;
+
+		(*ips)->addr = parsein6(value, &c);
+		if ((*ips)->addr == NULL) {
+			free(*ips);
+			return DNS_ERROR_LOCAL;
+		}
+		(*ips)->next = NULL;
+		(*ips)->count = (unsigned short)c;
+		(*ips)->priority = 42;
+		(*ips)->name = strdup(domain);
+#endif
+	}
 
 	return 0;
 }
