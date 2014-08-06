@@ -164,7 +164,17 @@ getmxlist(char *remhost, struct ips **mx)
 				err_mem(0);
 
 			memset(*mx, 0, sizeof(**mx));
+#ifndef NEW_IPS_LAYOUT
 			(*mx)->addr = &(*mx)->ad;
+#else
+			(*mx)->addr = malloc(sizeof(*(*mx)->addr));
+			if ((*mx)->addr == NULL) {
+				free(*mx);
+				err_mem(0);
+			}
+			(*mx)->addr->s6_addr32[0] = ntohl(0);
+			(*mx)->addr->s6_addr32[1] = ntohl(0);
+#endif
 			(*mx)->count = 1;
 
 			remhost[reml - 1] = '\0';
