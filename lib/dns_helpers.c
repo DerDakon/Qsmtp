@@ -84,15 +84,53 @@ freeips(struct ips *p)
 	}
 }
 
+static int
+ip6_sort(const void *l, const void *r)
+{
+	/* If IPv6 addresses are permitted they are considered smaller,
+	 * so they will be first in the list and be tried first. In case
+	 * they are not allowed they are considered greater so they end
+	 * up at the end of the list and can easily be omitted. */
+#ifdef IPV4ONLY
+	const int ret = -1;
+#else
+	const int ret = 1;
+#endif
+	const struct in6_addr *lip = l;
+	const struct in6_addr *rip = r;
+	const int l_is_4 = IN6_IS_ADDR_V4MAPPED(lip);
+	const int r_is_4 = IN6_IS_ADDR_V4MAPPED(rip);
+
+	if (l_is_4 == r_is_4)
+		return 0;
+	else if (l_is_4)
+		return ret;
+	else
+		return -ret;
+}
+
 /**
- * sort MX list by priority
- *
+ * @brief sort MX list by priority
  * @param p list of MX entries
+ *
+ * Inside each entry of p the IPv6 entries are moved to the front so that
+ * IPv6 addresses are prefered. If 2 entries of p have the same priority
+ * those that contain IPv6 addresses will be moved to the front for the
+ * same reason.
  */
 void
 sortmx(struct ips **p)
 {
 	struct ips *next, *res = NULL;
+
+	/* first sort the IPs in every entry */
+	for (next = *p; next != NULL; next = next->next) {
+		if (next->count == 1)
+			continue;
+
+		qsort(next->addr, next->count, sizeof(*next->addr),
+				ip6_sort);
+	}
 
 	/* make us live easy: copy first entry */
 	res = *p;
@@ -103,9 +141,6 @@ sortmx(struct ips **p)
 	while (next) {
 		struct ips *this = res;
 		struct ips *tmp = next->next;
-
-		assert(next->addr == &next->ad);
-		assert(next->count == 1);
 
 		if ((res->priority > next->priority)
 #ifndef IPV4ONLY
