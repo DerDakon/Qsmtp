@@ -84,7 +84,8 @@ static struct dns_wc *dns_wildcards;
 enum filter_result
 cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
-	struct dns_wc *this;
+	struct ips *thismx;
+	unsigned short s;
 
 	/* we can't check the from domain on a bounce message */
 	if (!xmitstat.mailfrom.len || !xmitstat.frommx)
@@ -98,19 +99,31 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 		if (loadjokers(&dns_wildcards))
 			return FILTER_ERROR;
 
-	this = dns_wildcards;
-	while (this) {
-		/* check if top level domain of sender address matches this entry */
-		if ((xmitstat.mailfrom.s[xmitstat.mailfrom.len - this->len - 1] != '.') ||
-				strcasecmp(xmitstat.mailfrom.s + xmitstat.mailfrom.len - this->len, this->tld)) {
-			this = this->next;
-			continue;
+	FOREACH_STRUCT_IPS(thismx, s, xmitstat.frommx) {
+		struct dns_wc *this;
+		int match = 0;
+
+		for (this = dns_wildcards; this != NULL; this = this->next) {
+			if (xmitstat.mailfrom.len < this->len + 1)
+				continue;
+
+			/* check if top level domain of sender address matches this entry */
+			if ((xmitstat.mailfrom.s[xmitstat.mailfrom.len - this->len - 1] != '.') ||
+					strcasecmp(xmitstat.mailfrom.s + xmitstat.mailfrom.len - this->len, this->tld)) {
+				this = this->next;
+				continue;
+			}
+
+			if (IN6_ARE_ADDR_EQUAL(thismx->addr + s, &this->ip)) {
+				match = 1;
+				break;
+			}
 		}
-		if (IN6_ARE_ADDR_EQUAL(xmitstat.frommx->addr, &(this->ip))) {
-			*logmsg = "MX is wildcard NS entry";
-			return FILTER_DENIED_UNSPECIFIC;
-		}
-		this = this->next;
+
+		if (!match)
+			return FILTER_PASSED;
 	}
-	return FILTER_PASSED;
+
+	*logmsg = "MX is wildcard NS entry";
+	return FILTER_DENIED_UNSPECIFIC;
 }
