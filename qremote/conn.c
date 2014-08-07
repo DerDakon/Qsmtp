@@ -109,39 +109,45 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 int
 tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *outip6)
 {
+	static unsigned short cur_s;
+
 	while (1) {
 		struct ips *thisip;
 		const struct in6_addr *outip;
 		int sd;
 
 		for (thisip = mx; thisip; thisip = thisip->next) {
-			assert(thisip->addr == &thisip->ad);
-			assert(thisip->count == 1);
-			if (thisip->priority == MX_PRIORITY_CURRENT)
-				thisip->priority = MX_PRIORITY_USED;
-			if (thisip->priority <= 65536)
+			if (thisip->priority == MX_PRIORITY_CURRENT) {
+				if (cur_s < thisip->count - 1) {
+					cur_s++;
+					break;
+				} else {
+					thisip->priority = MX_PRIORITY_USED;
+				}
+			} else if (thisip->priority <= 65536) {
+				cur_s = 0;
+				/* set priority to MX_PRIORITY_CURRENT so this can be identified */
+				thisip->priority = MX_PRIORITY_CURRENT;
 				break;
+			}
 		}
 		if (!thisip)
 			return -ENOENT;
 
-#ifndef IPV4ONLY
-		if (!IN6_IS_ADDR_V4MAPPED(thisip->addr))
+#ifdef IPV4ONLY
+		(void) outip6;
+#else
+		if (!IN6_IS_ADDR_V4MAPPED(thisip->addr + cur_s))
 			outip = outip6;
 		else
-#else
-		(void) outip6;
 #endif
 			outip = outip4;
 
-		sd = conn(*(thisip->addr), outip);
+		sd = conn(thisip->addr[cur_s], outip);
 		if (sd >= 0) {
-			/* set priority to MX_PRIORITY_CURRENT to allow getrhost() to find active MX */
-			thisip->priority = MX_PRIORITY_CURRENT;
-			getrhost(thisip, 0);
+			getrhost(thisip, cur_s);
 			return sd;
 		}
-		thisip->priority = MX_PRIORITY_USED;
 	}
 }
 
