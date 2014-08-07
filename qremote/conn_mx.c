@@ -29,7 +29,6 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		if (socketd < 0)
 			return socketd;
 		dup2(socketd, 0);
-		getrhost(mx);
 
 		/* This is only an intermediate solution: check if the remote server accepts
 		 * the connection and then closes it. The proper check would be to let the

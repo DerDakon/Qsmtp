@@ -506,7 +506,6 @@ work:
 		net_conn_shutdown(shutdown_clean);
 	smtpext = i;
 
-	getrhost(cur);
 	freeips(mx);
 	mx = NULL;
 

@@ -43,6 +43,12 @@ err_mem(const int doquit __attribute__ ((unused)))
 	exit(ENOMEM);
 }
 
+void
+getrhost(const struct ips *m __attribute__ ((unused)), const unsigned short idx __attribute__ ((unused)))
+{
+	abort();
+}
+
 static int
 test_tryconn(void)
 {

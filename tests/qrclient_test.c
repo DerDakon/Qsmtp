@@ -89,22 +89,16 @@ test_ask_dnsname(const struct in6_addr *ip, char **result)
 static int
 testcase_valid_return(void)
 {
-	struct ips mx[2];
+	struct ips mx;
 
 	memset(&mx, 0, sizeof(mx));
-	mx[0].next = mx + 1;
-	mx[0].priority = 42;
-	mx[0].name = NULL;
-	mx[0].addr = &mx[0].ad;
-	mx[0].count = 1;
+	mx.addr = &mx.ad;
+	mx.count = 1;
+	inet_pton(AF_INET6, ipstr_example, mx.addr);
+	mx.priority = MX_PRIORITY_CURRENT;
+	mx.name = name_example;
 
-	mx[1].addr = &mx[1].ad;
-	mx[1].count = 1;
-	inet_pton(AF_INET6, ipstr_example, mx[1].addr);
-	mx[1].priority = MX_PRIORITY_CURRENT;
-	mx[1].name = name_example;
-
-	getrhost(mx);
+	getrhost(&mx, 0);
 
 	if ((partner_fqdn == NULL) || (rhost == NULL)) {
 		fprintf(stderr, "%s: NULL value set\n", __func__);
@@ -129,20 +123,17 @@ testcase_valid_return(void)
 static int
 testcase_noname(const char *ipstr)
 {
-	struct ips mx[2];
+	struct ips mx;
+	struct in6_addr ips[2];
 
 	memset(&mx, 0, sizeof(mx));
-	mx[0].next = mx + 1;
-	mx[0].priority = 42;
-	mx[0].addr = &mx[0].ad;
-	mx[0].count = 1;
+	mx.addr = ips;
+	mx.count = 2;
+	memset(ips, 0, sizeof(ips[0]));
+	inet_pton(AF_INET6, ipstr, ips + 1);
+	mx.priority = MX_PRIORITY_CURRENT;
 
-	mx[1].addr = &mx[1].ad;
-	mx[1].count = 1;
-	inet_pton(AF_INET6, ipstr, mx[1].addr);
-	mx[1].priority = MX_PRIORITY_CURRENT;
-
-	getrhost(mx);
+	getrhost(&mx, 1);
 
 	if (rhost == NULL) {
 		fprintf(stderr, "%s: NULL value set\n", __func__);

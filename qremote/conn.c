@@ -8,6 +8,7 @@
 #include <log.h>
 #include <netio.h>
 #include <qdns.h>
+#include <qremote/client.h>
 #include <qremote/qremote.h>
 
 #include <arpa/inet.h>
@@ -137,6 +138,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *ou
 		if (sd >= 0) {
 			/* set priority to MX_PRIORITY_CURRENT to allow getrhost() to find active MX */
 			thisip->priority = MX_PRIORITY_CURRENT;
+			getrhost(thisip, 0);
 			return sd;
 		}
 		thisip->priority = MX_PRIORITY_USED;

@@ -17,22 +17,15 @@
 #include <unistd.h>
 
 /**
- * print remote host information to buffer
- *
- * @param m list of MX entries, entry with priority MX_PRIORITY_CURRENT is active
+ * @brief print remote host information to buffer
+ * @param m the currently active MX entry
+ * @param s index of the currently active IP address
  */
 void
-getrhost(const struct ips *m)
+getrhost(const struct ips *m, const unsigned short idx)
 {
 	free(partner_fqdn);
 	free(rhost);
-
-	/* find active mx */
-	while (m->priority != MX_PRIORITY_CURRENT) {
-		assert(m->addr == &m->ad);
-		assert(m->count == 1);
-		m = m->next;
-	}
 
 	if (m->name == NULL) {
 		partner_fqdn = NULL;
@@ -57,7 +50,7 @@ getrhost(const struct ips *m)
 	}
 	rhost[rhostlen++] = '[';
 	/* there can't be any errors here ;) */
-	(void) inet_ntop(AF_INET6, m->addr, rhost + rhostlen, INET6_ADDRSTRLEN);
+	(void) inet_ntop(AF_INET6, m->addr + idx, rhost + rhostlen, INET6_ADDRSTRLEN);
 	rhostlen = strlen(rhost);
 	rhost[rhostlen++] = ']';
 	rhost[rhostlen] = '\0';
