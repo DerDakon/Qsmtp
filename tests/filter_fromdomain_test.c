@@ -96,6 +96,7 @@ main(void)
 		.priority = 42,
 		.count = 1
 	};
+	struct in6_addr frommxip;
 	struct ips frommx_mixed_invalid[3] = {
 		{
 			.priority = 0,
@@ -130,26 +131,6 @@ main(void)
 	frommx_mixed_invalid[0].next = frommx_mixed_invalid + 1;
 	frommx_mixed_invalid[1].next = frommx_mixed_invalid + 2;
 
-	/* set up a list of many invalid IPs  */
-	for (i = 0; i < sizeof(frommx_mixed_invalid) / sizeof(frommx_mixed_invalid[0]); i++) {
-		const char *ipstr[] = {
-			"::ffff:127.0.0.1",
-			"::ffff:127.1.1.2",
-			"::ffff:172.16.15.14"
-		};
-		int r;
-
-		frommx_mixed_invalid[i].addr = &frommx_mixed_invalid[i].ad;
-		r = inet_pton(AF_INET6, ipstr[i], frommx_mixed_invalid[i].addr);
-		assert(r == 1);
-	}
-
-	frommx_mixed[0].next = frommx_mixed + 1;
-	frommx_mixed[0].addr = frommx_mixed_addr;
-	frommx_mixed[1].next = frommx_mixed + 2;
-	frommx_mixed[1].addr = frommx_mixed[0].addr + frommx_mixed[0].count;
-	frommx_mixed[2].addr = frommx_mixed[1].addr + frommx_mixed[1].count;
-
 	/* set up a list of many invalid IPs and the last one is ok */
 	for (i = 0; i < sizeof(frommx_mixed_addr) / sizeof(frommx_mixed_addr[0]); i++) {
 		const char *ipstr[] = {
@@ -168,7 +149,17 @@ main(void)
 		assert(r == 1);
 	}
 
-	frommx.addr = &frommx.ad;
+	/* set up a list of multiple invalid IPs */
+	for (i = 0; i < sizeof(frommx_mixed_invalid) / sizeof(frommx_mixed_invalid[0]); i++)
+		frommx_mixed_invalid[i].addr = frommx_mixed_addr + i;
+
+	frommx_mixed[0].next = frommx_mixed + 1;
+	frommx_mixed[0].addr = frommx_mixed_addr;
+	frommx_mixed[1].next = frommx_mixed + 2;
+	frommx_mixed[1].addr = frommx_mixed[0].addr + frommx_mixed[0].count;
+	frommx_mixed[2].addr = frommx_mixed[1].addr + frommx_mixed[1].count;
+
+	frommx.addr = &frommxip;
 
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 

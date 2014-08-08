@@ -90,9 +90,10 @@ static int
 testcase_valid_return(void)
 {
 	struct ips mx;
+	struct in6_addr ip;
 
 	memset(&mx, 0, sizeof(mx));
-	mx.addr = &mx.ad;
+	mx.addr = &ip;
 	mx.count = 1;
 	inet_pton(AF_INET6, ipstr_example, mx.addr);
 	mx.priority = MX_PRIORITY_CURRENT;

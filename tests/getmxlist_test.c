@@ -59,14 +59,14 @@ test_tryconn(void)
 	memset(mx, 0, sizeof(mx));
 	mx[0].next = mx + 1;
 	mx[0].priority = MX_PRIORITY_USED;
-	mx[0].addr = &mx[0].ad;
+	mx[0].addr = NULL;
 	mx[0].count = 1;
 	mx[1].next = mx + 2;
 	mx[1].priority = MX_PRIORITY_USED;
-	mx[1].addr = &mx[1].ad;
+	mx[1].addr = NULL;
 	mx[1].count = 1;
 	mx[2].priority = MX_PRIORITY_CURRENT;
-	mx[2].addr = &mx[2].ad;
+	mx[2].addr = NULL;
 	mx[2].count = 1;
 
 	i = tryconn(mx, NULL, NULL);

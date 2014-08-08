@@ -26,12 +26,11 @@ enum mx_special_priorities {
  then the value of the priority field is undefined.
  */
 struct ips {
-	struct in6_addr *addr;	/**< IPv6 address */
+	struct in6_addr *addr;	/**< IPv6 addresses */
 	char *name;		/**< name of the MX */
 	unsigned int priority;	/**< MX priority */
 	unsigned short count;	/**< entries in addr */
 	struct ips *next;	/**< pointer to next list entry */
-	struct in6_addr ad;
 };
 
 /**
