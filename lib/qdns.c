@@ -57,6 +57,7 @@ ask_dnsmx(const char *name, struct ips **result)
 	/* there is no MX record, so we look for an AAAA record */
 	if (!l) {
 		struct in6_addr *a;
+
 		int rc = ask_dnsaaaa(name, &a);
 
 		if (rc < 0)
@@ -89,7 +90,7 @@ ask_dnsmx(const char *name, struct ips **result)
 			return DNS_ERROR_TEMP;
 		} else if (rc > 0) {
 			uint16_t pr;	/* priority */
-			struct ips *u, *p;
+			struct ips *u;
 
 			/* must be done with memcpy() as s may have arbitrary alignment */
 			memcpy(&pr, s, sizeof(pr));
@@ -102,14 +103,8 @@ ask_dnsmx(const char *name, struct ips **result)
 				return DNS_ERROR_LOCAL;
 			}
 
-			p = *result;
-			while ((p != NULL) && (p->next != NULL))
-				p = p->next;
-
-			if (p == NULL)
-				*result = u;
-			else
-				p->next = u;
+			u->next = *result;
+			*result = u;
 
 			u->name = strdup(mxname);
 			if (u->name == NULL) {
