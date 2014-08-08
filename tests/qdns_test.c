@@ -453,6 +453,7 @@ test_implicit_mx(void)
 		cur = res;
 		while (cur != NULL) {
 			char *nname = NULL;
+			unsigned short s;
 
 			if (cur->priority != MX_PRIORITY_IMPLICIT) {
 				fprintf(stderr, "MX priority for %s was not set to MX_PRIORITY_IMPLICIT (%u), but %u\n",
@@ -463,12 +464,22 @@ test_implicit_mx(void)
 			if (ask_dnsname(cur->addr, &nname) <= 0) {
 				fprintf(stderr, "no reverse lookup found for implicit MX IP of %s\n", dns_entries[idx].name);
 				err++;
-			} else {
-				if (strcmp(nname, dns_entries[idx].name) != 0) {
-					fprintf(stderr, "reverse lookup %s different from %s\n", nname, dns_entries[idx].name);
+			} else if (strcmp(cur->name, dns_entries[idx].name) != 0) {
+				fprintf(stderr, "MX name for %s was %s\n", dns_entries[idx].name, cur->name);
+				err++;
+			}
+
+			for (s = 0; s < cur->count; s++) {
+				if (ask_dnsname(cur->addr + s, &nname) <= 0) {
+					fprintf(stderr, "no reverse lookup found for implicit MX #%u IP of %s\n", s, dns_entries[idx].name);
 					err++;
+				} else {
+					if (strcmp(nname, dns_entries[idx].name) != 0) {
+						fprintf(stderr, "reverse lookup %s of IP %u different from %s\n", nname, s, dns_entries[idx].name);
+						err++;
+					}
+					free(nname);
 				}
-				free(nname);
 			}
 
 			cur = cur->next;

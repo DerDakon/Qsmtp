@@ -71,6 +71,12 @@ ask_dnsmx(const char *name, struct ips **result)
 		if (*result == NULL)
 			return DNS_ERROR_LOCAL;
 
+		(*result)->name = strdup(name);
+		if ((*result)->name == NULL) {
+			freeips(*result);
+			return DNS_ERROR_LOCAL;
+		}
+
 		return 0;
 	}
 
