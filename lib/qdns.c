@@ -120,7 +120,8 @@ ask_dnsmx(const char *name, struct ips **result)
 		} else if (rc != 0) {
 			errtype = (1 << -rc);
 		}
-		s += 3 + strlen(s + 2);
+		/* 2 for priority, one for terminating \0 */
+		s += 3 + strlen(mxname);
 	}
 
 	free(r);
