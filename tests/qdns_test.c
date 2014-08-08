@@ -577,12 +577,15 @@ test_errors(void)
 	r = ask_dnsmx(timeouthost, &i);
 	if ((r != DNS_ERROR_TEMP) || (errno != ETIMEDOUT)) {
 		fprintf(stderr, "lookup of %s returned %i, errno %i\n", timeouthost, r, errno);
+		freeips(i);
 		err++;
 	}
 
+	i = NULL;
 	r = ask_dnsmx(timeoutmx, &i);
 	if ((r != DNS_ERROR_TEMP) || (errno != ETIMEDOUT)) {
 		fprintf(stderr, "lookup of %s returned %i, errno %i\n", timeouthost, r, errno);
+		freeips(i);
 		err++;
 	}
 
