@@ -1107,7 +1107,7 @@ spfmx(const char *domain, const char *token)
 		freeips(mx);
 		return SPF_NONE;
 	}
-	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip)) {
+	if (connection_is_ipv4()) {
 		struct ips *cur;
 		unsigned short s;
 

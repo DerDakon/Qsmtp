@@ -593,6 +593,7 @@ setup_transfer(const char *helo, const char *from, const char *remoteip)
 		fprintf(stderr, "can not parse %s as IPv6 address for mailfrom %s\n", remoteip, from);
 		exit(EINVAL);
 	}
+	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
 	if (ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s) > 0)
 		xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
@@ -622,6 +623,7 @@ runtest(struct spftestcase *tc)
 	assert(strlen(tc->badip) < sizeof(xmitstat.remoteip));
 	strncpy(xmitstat.remoteip, tc->badip, sizeof(xmitstat.remoteip));
 	inet_pton(AF_INET6, tc->badip, &xmitstat.sremoteip);
+	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
 	r = check_host(strchr(tc->from, '@') + 1);
 	if (!SPF_FAIL(r)) {
@@ -689,6 +691,7 @@ test_parse_ip4()
 	i = 0;
 
 	inet_pton(AF_INET6, "::ffff:10.42.42.42", &xmitstat.sremoteip);
+	xmitstat.ipv4conn = 1;
 
 	while (ip4invalid[i] != NULL) {
 		ip4entries[0].value = ip4invalid[i];
@@ -731,6 +734,7 @@ test_parse_ip4()
 	}
 
 	inet_pton(AF_INET6, "fef0::abc:001", &xmitstat.sremoteip);
+	xmitstat.ipv4conn = 0;
 	ip4entries[0].value = ip4valid[0];
 
 	r = check_host(ip4entries[0].key);
@@ -831,6 +835,7 @@ test_parse_ip6()
 	}
 
 	inet_pton(AF_INET6, "::ffff:10.42.42.42", &xmitstat.sremoteip);
+	xmitstat.ipv4conn = 1;
 	ip6entries[0].value = ip6valid[0];
 
 	r = check_host(ip6entries[0].key);
@@ -929,6 +934,7 @@ test_parse_mx()
 	i = 0;
 
 	inet_pton(AF_INET6, "::ffff:10.42.42.42", &xmitstat.sremoteip);
+	xmitstat.ipv4conn = 1;
 
 	while (mxinvalid[i] != NULL) {
 		mxentries[0].value = mxinvalid[i];
@@ -976,6 +982,7 @@ test_parse_mx()
 	i = 0;
 
 	inet_pton(AF_INET6, "cafe:babe::42", &xmitstat.sremoteip);
+	xmitstat.ipv4conn = 0;
 
 	while (mxvalid6[i] != NULL) {
 		mxentries[0].value = mxvalid6[i];
@@ -2449,6 +2456,7 @@ test_parse()
 		return ++err;
 	memcpy(xmitstat.helostr.s, parseentries[0].key, strlen(parseentries[0].key));
 	memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
+	xmitstat.ipv4conn = 0;
 	if (init_helo(myhelo) != 0) {
 		free(xmitstat.helostr.s);
 		return ++err;
@@ -2644,6 +2652,7 @@ test_received()
 		return ++err;
 	memcpy(xmitstat.helostr.s, strchr(mailfrom, '@') + 1, strlen(strchr(mailfrom, '@') + 1));
 	memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
+	xmitstat.ipv4conn = 0;
 	if (init_helo(myhelo) != 0) {
 		free(xmitstat.helostr.s);
 		return ENOMEM;
@@ -2659,9 +2668,11 @@ test_received()
 		if (i == 6)	/* this was SPF_FAIL_NONEX */
 			continue;
 		memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
+		xmitstat.ipv4conn = 0;
 		xmitstat.spfmechanism = mechanism[(i * 2) % 5];
 		err += check_received(i, 1);
 		memcpy(&xmitstat.sremoteip, &sender_ip4, sizeof(sender_ip4));
+		xmitstat.ipv4conn = 1;
 		xmitstat.spfmechanism = mechanism[(i * 2 + 1) % 5];
 		err += check_received(i, 1);
 	}
