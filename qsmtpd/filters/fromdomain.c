@@ -209,8 +209,10 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 			return FILTER_PASSED;
 
 		FOREACH_STRUCT_IPS(thisip, s, xmitstat.frommx) {
-			if (IN6_IS_ADDR_V4MAPPED(thisip->addr + s))
+			if (IN6_IS_ADDR_V4MAPPED(thisip->addr + s)) {
 				flaghit = 0;
+				break;
+			}
 		}
 		if (flaghit) {
 			*logmsg = "IPv6 only";
