@@ -85,14 +85,8 @@ filter_my_ips(struct ips *ipl)
 			if (tmp->count == 1) {
 				if (prev) {
 					prev->next = tmp->next;
-#ifdef NEW_IPS_LAYOUT
 					tmp->next = NULL;
 					freeips(tmp);
-#else
-					if (tmp->addr != &tmp->ad)
-						free(tmp->addr);
-					free(tmp);
-#endif
 					tmp = prev->next;
 				} else {
 					/* the first result was deleted */
@@ -101,14 +95,8 @@ filter_my_ips(struct ips *ipl)
 
 					prev = tmp;
 					tmp = tmp->next;
-#ifdef NEW_IPS_LAYOUT
 					prev->next = NULL;
 					freeips(prev);
-#else
-					if (prev->addr != &prev->ad)
-						free(prev->addr);
-					free(prev);
-#endif
 					prev = NULL;
 				}
 			} else {

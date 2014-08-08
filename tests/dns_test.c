@@ -7,30 +7,6 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-/*
- * temporary hack to allow freeips() to work without asserting
- *
- * This test already tests the new code path that some other library
- * functions like freeips() currently prevent from being executed
- * because not all users of struct ips have been converted yet.
- */
-static void
-fixup_before_free(struct ips *n)
-{
-#ifndef NEW_IPS_LAYOUT
-	while (n != NULL) {
-		n->count = 1;
-		if (n->addr != &n->ad) {
-			free(n->addr);
-			n->addr = &n->ad;
-		}
-		n = n->next;
-	}
-#else
-	(void)n;
-#endif
-}
-
 static int
 verify(const struct ips *ip)
 {
@@ -173,7 +149,6 @@ test_sort_priority(void)
 	for (i = count; i > 0; --i) {
 		ipa = malloc(sizeof(*ipa));
 		if (ipa == NULL) {
-			fixup_before_free(ipb);
 			freeips(ipb);
 			exit(ENOMEM);
 		}
@@ -184,7 +159,6 @@ test_sort_priority(void)
 
 		ipa->addr = malloc(sizeof(*ipa->addr));
 		if (ipa->addr == NULL) {
-			fixup_before_free(ipb);
 			freeips(ipb);
 			exit(ENOMEM);
 		}
@@ -217,7 +191,6 @@ test_sort_priority(void)
 		ipb = ipa;
 	}
 
-	fixup_before_free(ipb);
 	freeips(ipb);
 
 	return ret;
@@ -238,7 +211,6 @@ test_sort_ipv6(void)
 	for (i = count; i > 0; --i) {
 		ipa = malloc(sizeof(*ipa));
 		if (ipa == NULL) {
-			fixup_before_free(ipb);
 			freeips(ipb);
 			exit(ENOMEM);
 		}
@@ -248,7 +220,6 @@ test_sort_ipv6(void)
 
 		ipa->addr = malloc(sizeof(*ipa->addr));
 		if (ipa->addr == NULL) {
-			fixup_before_free(ipb);
 			freeips(ipb);
 			exit(ENOMEM);
 		}
@@ -276,7 +247,6 @@ test_sort_ipv6(void)
 	sortmx(&ipa);
 	ret += verify_ipv6_sorted(ipa);
 
-	fixup_before_free(ipa);
 	freeips(ipa);
 
 	return ret;
@@ -301,7 +271,6 @@ test_sort_ipv6_inner(void)
 
 		ipa = malloc(sizeof(*ipa));
 		if (ipa == NULL) {
-			fixup_before_free(ipb);
 			freeips(ipb);
 			exit(ENOMEM);
 		}
@@ -311,7 +280,6 @@ test_sort_ipv6_inner(void)
 		ipa->count = 3 + i;
 		ipa->addr = malloc(ipa->count * sizeof(*ipa->addr));
 		if (ipa->addr == NULL) {
-			fixup_before_free(ipb);
 			freeips(ipb);
 			exit(ENOMEM);
 		}
@@ -341,7 +309,6 @@ test_sort_ipv6_inner(void)
 	sortmx(&ipa);
 	ret += verify_ipv6_sorted_complete(ipa);
 
-	fixup_before_free(ipa);
 	freeips(ipa);
 
 	return ret;

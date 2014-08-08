@@ -111,24 +111,12 @@ ask_dnsmx(const char *name, struct ips **result)
 			else
 				p->next = u;
 
-#ifdef NEW_IPS_LAYOUT
 			u->name = strdup(mxname);
 			if (u->name == NULL) {
 				freeips(*result);
 				free(r);
 				return DNS_ERROR_LOCAL;
 			}
-#else
-			for (p = u; p != NULL; p = p->next) {
-				p->name = strdup(mxname);
-				if (p->name == NULL) {
-					freeips(*result);
-					free(r);
-					return DNS_ERROR_LOCAL;
-				}
-			}
-#endif
-
 		} else if (rc != 0) {
 			errtype = (1 << -rc);
 		}

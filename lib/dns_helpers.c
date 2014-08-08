@@ -78,12 +78,7 @@ freeips(struct ips *p)
 
 		p = thisip->next;
 		free(thisip->name);
-#ifdef NEW_IPS_LAYOUT
 		free(thisip->addr);
-#else
-		assert(thisip->addr == &thisip->ad);
-		assert(thisip->count == 1);
-#endif
 		free(thisip);
 	}
 }
@@ -208,11 +203,10 @@ sortmx(struct ips **p)
 struct ips *
 in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 {
-	struct ips *res = NULL;
+	struct ips *res;
 
 	assert(cnt > 0);
 
-#ifdef NEW_IPS_LAYOUT
 	res = malloc(sizeof(*res));
 	if (res == NULL) {
 		free(a);
@@ -224,30 +218,6 @@ in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 	res->priority = priority;
 	res->name = NULL;
 	res->next = NULL;
-#else
-	while (cnt > 0) {
-		struct ips *n = malloc(sizeof(*n));
-
-		if (n == NULL) {
-			freeips(res);
-			res = NULL;
-			break;
-		}
-
-		cnt--;
-
-		n->addr = &n->ad;
-		n->count = 1;
-		memcpy(n->addr, a + cnt, sizeof(*a));
-
-		n->name = NULL;
-		n->next = res;
-		n->priority = priority;
-		res = n;
-	}
-
-	free(a);
-#endif
 
 	return res;
 }

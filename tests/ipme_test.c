@@ -9,30 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-/*
- * temporary hack to allow freeips() to work without asserting
- *
- * This test already tests the new code path that some other library
- * functions like freeips() currently prevent from being executed
- * because not all users of struct ips have been converted yet.
- */
-static void
-fixup_before_free(struct ips *n)
-{
-#ifndef NEW_IPS_LAYOUT
-	while (n != NULL) {
-		n->count = 1;
-		if (n->addr != &n->ad) {
-			free(n->addr);
-			n->addr = &n->ad;
-		}
-		n = n->next;
-	}
-#else
-	(void)n;
-#endif
-}
-
 static const char *testips[] = {
 	"::ffff:127.0.0.1",	/* IPv4 localhost, you must have it */
 	"::ffff:10.255.255.255", /* broadcast in private network, valid but can't be configured if you are sane */
@@ -127,7 +103,6 @@ run_test(const int *inidx, const int *outidx, int condensed)
 			fprintf(stderr, "%s ", testips[inidx[idx]]);
 		fprintf(stderr, "\n");
 
-		fixup_before_free(res);
 		freeips(res);
 
 		return 1;
@@ -140,7 +115,6 @@ run_test(const int *inidx, const int *outidx, int condensed)
 
 			if (outidx[idx] == -1) {
 				fprintf(stderr, "expected %u output items, but got more\n", idx);
-				fixup_before_free(res);
 				freeips(res);
 				return 1;
 			}
@@ -157,7 +131,6 @@ run_test(const int *inidx, const int *outidx, int condensed)
 
 					fprintf(stderr, "expected %s at output index %u, but got %s\n",
 							testips[outidx[idx]], idx, astr);
-					fixup_before_free(res);
 					freeips(res);
 					return 1;
 				}
@@ -175,13 +148,11 @@ run_test(const int *inidx, const int *outidx, int condensed)
 				fprintf(stderr, "%s ", testips[inidx[idx]]);
 			fprintf(stderr, "\n");
 
-			fixup_before_free(res);
 			freeips(res);
 			return 1;
 		}
 	}
 
-	fixup_before_free(res);
 	freeips(res);
 
 	return 0;

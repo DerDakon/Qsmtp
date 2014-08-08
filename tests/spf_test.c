@@ -68,53 +68,6 @@ dnsentry_search(const enum dnstype stype, const char *skey)
 	return NULL;
 }
 
-#ifndef NEW_IPS_LAYOUT
-static struct ips *
-parseips(const char *list)
-{
-	const char *next = list;
-	struct ips *ret = NULL;
-
-	while (next != NULL) {
-		char curbuf[INET6_ADDRSTRLEN];
-		const char *parsep;
-		char *end = strchr(next, ';');
-		struct ips *n = malloc(sizeof(*n));
-
-		if (n == NULL) {
-			freeips(ret);
-			exit(ENOMEM);
-		}
-
-		if (end == NULL) {
-			parsep = next;
-		} else {
-			assert((size_t)(end - next) < sizeof(curbuf));
-			strncpy(curbuf, next, end - next);
-			curbuf[end - next] = '\0';
-			parsep = curbuf;
-			end++;
-		}
-
-		memset(n, 0, sizeof(*n));
-		n->addr = &n->ad;
-		n->count = 1;
-		n->next = ret;
-		if (inet_pton(AF_INET6, parsep, n->addr) != 1) {
-			freeips(n);
-			fprintf(stderr, "%s cannot be parsed as IPv6 address\n", parsep);
-			exit(EINVAL);
-		}
-		n->priority = 42;
-		ret = n;
-
-		next = end;
-	}
-
-	return ret;
-}
-#endif
-
 static struct in6_addr *
 parsein6(const char *list, int *cnt)
 {
@@ -170,24 +123,19 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 		int r = ask_dnsa(domain, &a);
 		struct in6_addr *ip6addr;
 		int q = ask_dnsaaaa(domain, &ip6addr);
-		struct ips *cur;
 
 		if (dnsentry_search(DNSTYPE_TIMEOUT, domain) != NULL)
 			return DNS_ERROR_TEMP;
 
 		if (r > 0) {
-			cur = in6_to_ips(a, r, MX_PRIORITY_IMPLICIT);
-			if (cur == NULL) {
+			*ips = in6_to_ips(a, r, MX_PRIORITY_IMPLICIT);
+			if (*ips == NULL) {
 				free(ip6addr);
 				return DNS_ERROR_LOCAL;
 			}
 
-			if (q > 0) {
-				*ips = cur;
-				while (cur->next != NULL)
-					cur = cur->next;
-				cur->next = in6_to_ips(ip6addr, q, MX_PRIORITY_IMPLICIT);
-			}
+			if (q > 0)
+				(*ips)->next = in6_to_ips(ip6addr, q, MX_PRIORITY_IMPLICIT);
 		} else if (q > 0) {
 			*ips = in6_to_ips(ip6addr, q, MX_PRIORITY_IMPLICIT);
 		}
@@ -199,9 +147,6 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 		else
 			return r;
 	} else {
-#ifndef NEW_IPS_LAYOUT
-		*ips = parseips(value);
-#else
 		int c;
 
 		*ips = malloc(sizeof(**ips));
@@ -218,7 +163,6 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 		(*ips)->count = (unsigned short)c;
 		(*ips)->priority = 42;
 		(*ips)->name = strdup(domain);
-#endif
 	}
 
 	return 0;

@@ -145,22 +145,10 @@ parse_route_params(struct ips **mx, const char *remhost, unsigned int *targetpor
 			}
 
 			if (!is_ip) {
-#ifndef NEW_IPS_LAYOUT
-				struct ips *m = *mx;
-
-				while (m != NULL) {
-					m->name = strdup(host);
-					if (m->name == NULL) {
-						freeips(*mx);
-						return -ENOMEM;
-					}
-					m = m->next;
-#else
 				(*mx)->name = strdup(host);
 				if ((*mx)->name == NULL) {
 					freeips(*mx);
 					return -ENOMEM;
-#endif
 				}
 			}
 		}
