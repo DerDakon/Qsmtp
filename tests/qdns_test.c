@@ -501,12 +501,10 @@ test_mx(void)
 		while (cur != NULL) {
 			char *nname = NULL;
 			const char *ename = NULL;
-			char ipbuf[INET6_ADDRSTRLEN];
 			unsigned int k;
 
 			/* status output */
-			inet_ntop(AF_INET6, cur->addr, ipbuf, sizeof(ipbuf));
-			printf("%s: MX[%u:%u]: name %s prio %u IP %s\n", __func__, mxidx, idx, cur->name, cur->priority, ipbuf);
+			printf("%s: MX[%u:%u]: name %s prio %u\n", __func__, mxidx, idx, cur->name, cur->priority);
 
 			if (cur->name == NULL) {
 				fprintf(stderr, "MX[%u:%u] lookup has no name set\n", mxidx, idx);
@@ -536,11 +534,27 @@ test_mx(void)
 				err++;
 			}
 
-			if (ask_dnsname(cur->addr, &nname) <= 0) {
-				fprintf(stderr, "MX[%u:%u] no reverse lookup found for MX IP\n", mxidx, idx);
-				err++;
-			} else {
-				free(nname);
+			for (k = 0; k < cur->count; k++) {
+				char ipbuf[INET6_ADDRSTRLEN];
+				inet_ntop(AF_INET6, cur->addr + k, ipbuf, sizeof(ipbuf));
+				unsigned short l;
+
+				printf("%s: MX[%u:%u:%u]: name %s prio %u IP %s\n", __func__, mxidx, idx, k, cur->name, cur->priority, ipbuf);
+				/* check reverse lookup of every IP */
+				if (ask_dnsname(cur->addr + k, &nname) <= 0) {
+					fprintf(stderr, "MX[%u:%u:%u] no reverse lookup found for MX IP\n", mxidx, idx, k);
+					err++;
+				} else {
+					free(nname);
+				}
+
+				/* check that every IP is only returned once per MX name */
+				for (l = 0; l < k; l++)
+					if (IN6_ARE_ADDR_EQUAL(cur->addr + k, cur->addr + l)) {
+						fprintf(stderr, "MX[%u:%u:%u] has same address as MX[%u:%u:%u]\n",
+								mxidx, idx, k, mxidx, idx, l);
+						err++;
+					}
 			}
 
 			cur = cur->next;
