@@ -183,7 +183,7 @@ getmxlist(char *remhost, struct ips **mx)
 			if (inet_pton(AF_INET6, remhost + 1, (*mx)->addr) > 0) {
 				remhost[reml - 1] = ']';
 				return;
-			} else if (inet_pton(AF_INET, remhost + 1, &((*mx)->addr->s6_addr32[3])) > 0) {
+			} else if (inet_pton(AF_INET, remhost + 1, (*mx)->addr->s6_addr32 + 3) > 0) {
 				(*mx)->addr->s6_addr32[0] = ntohl(0);
 				(*mx)->addr->s6_addr32[1] = ntohl(0);
 				(*mx)->addr->s6_addr32[2] = ntohl(0xffff);
