@@ -227,11 +227,12 @@ userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const c
 	return 0;
 }
 
+static struct in6_addr frommxip;
 static struct ips frommx = {
+	.addr = &frommxip,
 	.priority = 42,
 	.count = 1
 };
-static struct in6_addr frommxip;
 
 static void
 default_session_config(void)
@@ -248,7 +249,6 @@ default_session_config(void)
 	xmitstat.helostr.len = strlen(xmitstat.helostr.s);
 	xmitstat.thisbytes = 5000;
 	strncpy(xmitstat.remoteip, "::ffff:192.168.8.9", sizeof(xmitstat.remoteip) - 1);
-	frommx.addr = &frommxip;
 	inet_pton(AF_INET6, "::ffff:10.1.2.3s", frommx.addr);
 	xmitstat.frommx = &frommx;
 

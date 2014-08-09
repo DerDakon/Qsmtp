@@ -92,11 +92,12 @@ main(void)
 		configline,
 		NULL
 	};
+	struct in6_addr frommxip;
 	struct ips frommx = {
+		.addr = &frommxip,
 		.priority = 42,
 		.count = 1
 	};
-	struct in6_addr frommxip;
 	struct ips frommx_mixed_invalid[3] = {
 		{
 			.priority = 0,
@@ -158,8 +159,6 @@ main(void)
 	frommx_mixed[1].next = frommx_mixed + 2;
 	frommx_mixed[1].addr = frommx_mixed[0].addr + frommx_mixed[0].count;
 	frommx_mixed[2].addr = frommx_mixed[1].addr + frommx_mixed[1].count;
-
-	frommx.addr = &frommxip;
 
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 
