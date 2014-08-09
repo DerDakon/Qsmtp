@@ -56,3 +56,11 @@ ADD_LIBRARY(qsmtp_lib ${QSMTP_LIB_SRCS} ${QSMTP_LIB_HDRS})
 # would be the right thing for the binaries. This allows the
 # testcases to easily link against qsmtp_lib and implementing
 # the io stuff themself.
+
+ADD_LIBRARY(qsmtp_dane_lib
+	qdns_dane.c
+	../include/qdns_dane.h
+)
+TARGET_LINK_LIBRARIES(qsmtp_dane_lib
+		${OWFAT_LIBRARIES}
+)

@@ -62,3 +62,9 @@ INSTALL(TARGETS
 	DESTINATION bin
 	COMPONENT tools
 )
+
+ADD_EXECUTABLE(dnsdane dnsdane.c)
+TARGET_LINK_LIBRARIES(dnsdane
+	qsmtp_dane_lib
+	qsmtp_lib
+)
