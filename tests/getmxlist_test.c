@@ -139,7 +139,7 @@ main(void)
 			continue;
 		}
 
-		if (mx->next != NULL) {
+		if ((mx->next != NULL) || (mx->count > 1)) {
 			fprintf(stderr, "addr %u returned multiple IPs\n",
 					i);
 			ret++;
