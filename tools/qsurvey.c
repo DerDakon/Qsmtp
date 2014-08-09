@@ -367,6 +367,7 @@ main(int argc, char *argv[])
 	struct ips *cur;
 	int i;
 	int dirfd;
+	unsigned short s;
 
 	if (argc != 2) {
 		write(2, "Usage: Qsurvey hostname\n", 24);
@@ -389,17 +390,13 @@ main(int argc, char *argv[])
 	/* only one address is available: just do it in this
 	 * process, no need to fork. */
 	cur = mx;
-	if ((mx->next == NULL) || (mx->next->priority > 65536))
+	s = 0;
+	if (((mx->next == NULL) || (mx->next->priority > 65536)) && (mx->count == 1))
 		goto work;
 
-	while (cur) {
-		while ((cur != NULL) && (cur->priority > 65536))
-			cur = cur->next;
-
-		if (cur == NULL) {
-			freeips(mx);
-			return 0;
-		}
+	FOREACH_STRUCT_IPS(cur, s, mx) {
+		if (cur->priority > 65536)
+			break;
 
 		switch (fork()) {
 		case -1:
@@ -410,19 +407,16 @@ main(int argc, char *argv[])
 		case 0:
 			break;
 		default:
-			cur = cur->next;
 			continue;
 		}
 
+		/* case 0, i.e. new child */
 		break;
 	}
 
+	freeips(mx);
+	return 0;
 work:
-	if (cur == NULL) {
-		freeips(mx);
-		return 0;
-	}
-
 	if (logdir == NULL)
 		logdir = "/tmp/Qsurvey";
 
@@ -438,10 +432,10 @@ work:
 	dirfd = mkdir_pr(argv[1]);
 
 	memset(ipname, 0, sizeof(ipname));
-	if (IN6_IS_ADDR_V4MAPPED(cur->addr)) {
+	if (IN6_IS_ADDR_V4MAPPED(cur->addr + s)) {
 		for (i = 12; i <= 15; i++) {
 			char append[5];
-			sprintf(append, "%u/", cur->addr->s6_addr[i]);
+			sprintf(append, "%u/", cur->addr[s].s6_addr[i]);
 			strcat(ipname, append);
 			if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
 				fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
@@ -452,7 +446,7 @@ work:
 	} else {
 		for (i = 0; i < 8; i++) {
 			char append[6];
-			sprintf(append, "%04x/", ntohs(cur->addr->s6_addr16[i]));
+			sprintf(append, "%04x/", ntohs(cur->addr[s].s6_addr16[i]));
 			strcat(ipname, append);
 			if ((mkdirat(logdirfd, ipname, S_IRUSR | S_IWUSR | S_IXUSR) < 0) && (errno != EEXIST)) {
 				fprintf(stderr, "cannot create directory %s: %s\n", ipname, strerror(errno));
@@ -476,10 +470,10 @@ work:
 	ipname[strlen(ipname) - 1] = '\0';
 	sprintf(iplinkname, "%s/%s", logdir, ipname);
 
-	if (IN6_IS_ADDR_V4MAPPED(cur->addr))
-		inet_ntop(AF_INET, cur->addr->s6_addr32 + 3, ipname, sizeof(ipname));
+	if (IN6_IS_ADDR_V4MAPPED(cur->addr + s))
+		inet_ntop(AF_INET, cur->addr[s].s6_addr32 + 3, ipname, sizeof(ipname));
 	else
-		inet_ntop(AF_INET6, cur->addr, ipname, sizeof(ipname));
+		inet_ntop(AF_INET6, cur->addr + s, ipname, sizeof(ipname));
 	symlinkat(iplinkname, dirfd, ipname);
 
 	makelog("conn");
