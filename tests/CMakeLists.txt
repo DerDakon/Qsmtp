@@ -319,6 +319,18 @@ TARGET_LINK_LIBRARIES(testcase_qdns
 ADD_TEST(NAME "QDNS"
 		COMMAND testcase_qdns)
 
+INCLUDE_DIRECTORIES(${OWFAT_INCLUDE_DIRS})
+
+ADD_EXECUTABLE(testcase_qdns_dane
+		qdns_dane_test.c)
+TARGET_LINK_LIBRARIES(testcase_qdns_dane
+		qsmtp_dane_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "QDNS_DANE"
+		COMMAND testcase_qdns_dane)
+
 ADD_EXECUTABLE(testcase_mime
 		mime_test.c
 		${CMAKE_SOURCE_DIR}/qremote/mime.c
