@@ -1,9 +1,11 @@
 #include <qremote/conn.h>
 
 #include <netio.h>
+#include <qdns_dane.h>
 #include <qremote/greeting.h>
 #include "test_io/testcase_io.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +18,7 @@ static int greet_result, next_greet_result;
 static int pending_result;
 static int quitnext;
 static int tls_result = -1;
+unsigned int targetport = 428;
 
 void
 quitmsg(void)
@@ -137,19 +140,30 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		msg = -220;
 		break;
 	case 13:
-		greet_result = esmtp_8bitmime | esmtp_starttls;
+		greet_result = esmtp_8bitmime;
 		msg = 220;
 		tls_result = 1;
 		quitnext = 1;
 		break;
 	case 14:
-		msg = -220;
+		greet_result = esmtp_8bitmime | esmtp_starttls;
+		msg = 220;
+		tls_result = 1;
+		quitnext = 1;
 		break;
 	case 15:
+		msg = -220;
+		break;
+	case 16:
 		greet_result = esmtp_8bitmime | esmtp_starttls;
 		msg = 220;
 		tls_result = 0;
 		next_greet_result = esmtp_8bitmime;
+		break;
+	case 17:
+		greet_result = esmtp_8bitmime;
+		msg = 220;
+		tls_result = 0;
 		break;
 	default:
 		abort();
@@ -172,6 +186,10 @@ tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 		const struct in6_addr *outip6 __attribute__ ((unused)))
 {
 	int p[2];
+	static char namebuf[64];
+
+	mx->name = namebuf;
+	snprintf(namebuf, sizeof(namebuf), "prio%u.example.org", mx->priority);
 
 	switch (mx->priority) {
 	case 5:
@@ -209,15 +227,28 @@ getrhost(const struct ips *mx __attribute__ ((unused)))
 }
 
 int
+dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
+{
+	assert(host != NULL);
+	assert(out == NULL);
+	assert(port == targetport);
+
+	if (strcmp(host, "prio2.example.org") == 0)
+		return 1;
+
+	return 0;
+}
+
+int
 main(void)
 {
 	struct ips mx[3];
 	int ret = 0;
 	int i;
 
-	// run the first 7 subtests (one more because of the data_pending() failure in between */
+	// run the first 8 subtests (one more because of the data_pending() failure in between */
 	memset(mx, 0, sizeof(mx));
-	mx[0].priority = 8;
+	mx[0].priority = 9;
 	mx[0].next = mx + 1;
 	mx[1].next = mx + 2;
 
@@ -241,6 +272,17 @@ main(void)
 		ret++;
 	}
 
+	if (socketd >= 0)
+		close(socketd);
+	
+	mx[0].priority = 1;
+	
+	i = connect_mx(mx, NULL, NULL);
+	if (i != 0) {
+		fprintf(stderr, "connect_mx() returned %i instead of 0\n", i);
+		ret++;
+	}
+	
 	if (close(socketd) != 0)
 		ret++;
 	if (close(0) != 0)

@@ -40,6 +40,7 @@ ADD_EXECUTABLE(Qremote
 TARGET_LINK_LIBRARIES(Qremote
 	qsmtp_lib
 	qsmtp_io_lib
+	qsmtp_dane_lib
 	${MEMCHECK_LIBRARIES}
 	${OPENSSL_LIBRARIES}
 )
