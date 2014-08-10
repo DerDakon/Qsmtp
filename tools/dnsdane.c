@@ -34,11 +34,11 @@ main(int argc, char **argv)
 		}
 
 		for (k = 0; k < j; k++) {
-			unsigned int l;
-			printf("record %i: %u %u %u ", k, info[k].cert_usage, info[k].selectors, info[k].matching_types);
+			size_t l;
+			printf("record %i: %u %u %u ", k, info[k].cert_usage, info[k].selector, info[k].matching_type);
 
-			for (l = 0; l < sizeof(info[0].data) / sizeof(info[0].data[0]); l++)
-				printf("%08X", ntohl(info[k].data[l]));
+			for (l = 0; l < info[k].datalen; l++)
+				printf("%02X", info[k].data[l]);
 		}
 
 		free(info);

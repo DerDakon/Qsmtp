@@ -11,8 +11,9 @@
 #include <string.h>
 
 #define DNS_T_TLSA "\0\64"
-#define TLSA_DATA_LEN 32
-#define TLSA_RECORD_LEN (TLSA_DATA_LEN + 3)
+#define TLSA_DATA_LEN_SHA256 (256 / 8)
+#define TLSA_DATA_LEN_SHA512 (512 / 8)
+#define TLSA_MIN_RECORD_LEN 3
 
 /* taken from dns_txt_packet() of libowfat */
 static int
@@ -92,6 +93,7 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 		.s = hostbuf
 	};
 	int r;
+	size_t off = 0;
 
 	hostbuf[0] = '_';
 	ultostr(port, hostbuf + 1);
@@ -107,31 +109,75 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 		return r;
 	}
 
-	if ((sa.len % TLSA_RECORD_LEN) != 0) {
+	if (sa.len < TLSA_MIN_RECORD_LEN) {
 		free(sa.s);
 		if (out != NULL)
 			*out = NULL;
 		return DNS_ERROR_PERM;
 	}
 
-	r = (int)(sa.len / TLSA_RECORD_LEN);
+	if (out != NULL)
+		*out = NULL;
 
-	if (out != NULL) {
-		struct daneinfo *res = calloc(r, sizeof(*res));
-		int i;
+	r = 0;
 
-		if (res == NULL) {
+	while (off < sa.len) {
+		struct daneinfo tmp = {
+			.cert_usage = sa.s[off],
+			.selector = sa.s[off + 1],
+			.matching_type = sa.s[off + 2]
+		};
+		unsigned int minlen;
+		unsigned int maxlen;
+
+		off += TLSA_MIN_RECORD_LEN;
+
+		switch (tmp.matching_type) {
+		default:
+		case TLSA_MT_Full:
+			minlen = 0;
+			/* probably wrong, but no idea how to properly detect that */
+			maxlen = sa.len - off;
+			break;
+		case TLSA_MT_SHA2_256:
+			minlen = TLSA_DATA_LEN_SHA256;
+			maxlen = TLSA_DATA_LEN_SHA256;
+			break;
+		case TLSA_MT_SHA2_512:
+			minlen = TLSA_DATA_LEN_SHA512;
+			maxlen = TLSA_DATA_LEN_SHA512;
+			break;
+		}
+
+		if (sa.len - off < minlen) {
+			if (out != NULL)
+				free(*out);
 			free(sa.s);
-			return DNS_ERROR_LOCAL;
+			return DNS_ERROR_PERM;
 		}
-		*out = res;
 
-		for (i = 0; i < r; i++) {
-			res[i].cert_usage     = sa.s[i * TLSA_RECORD_LEN];
-			res[i].selectors      = sa.s[i * TLSA_RECORD_LEN + 1];
-			res[i].matching_types = sa.s[i * TLSA_RECORD_LEN + 2];
-			memcpy(res[i].data, sa.s + i * TLSA_RECORD_LEN + 3, TLSA_DATA_LEN);
+		if (out != NULL) {
+			struct daneinfo *res = realloc(*out, sizeof(*res) * (r + 1));
+
+			tmp.data = malloc(maxlen);
+
+			if ((res == NULL) || (tmp.data == NULL)) {
+				int j;
+				for (j = 0; j < r; j++)
+					free((*out)[j].data);
+				free(*out);
+				free(sa.s);
+				return DNS_ERROR_LOCAL;
+			}
+
+			memcpy(tmp.data, sa.s + off, maxlen);
+
+			tmp.datalen = maxlen;
+			res[r++] = tmp;
+			*out = res;
 		}
+
+		off += maxlen;
 	}
 
 	free(sa.s);
