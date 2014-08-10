@@ -4,6 +4,7 @@
 
 #include <assert.h>
 #include <dns.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,7 +25,15 @@ int dns_domain_fromdot(char **q __attribute__ ((unused)), const char * host, uns
 int
 main(void)
 {
+	struct daneinfo *val = (struct daneinfo *)(uintptr_t)-1;
+
 	if (dnstlsa("foo.example.org", 42, NULL) != DNS_ERROR_LOCAL)
+		err++;
+
+	if (dnstlsa("foo.example.org", 42, &val) != DNS_ERROR_LOCAL)
+		err++;
+
+	if (val != NULL)
 		err++;
 
 	return err;
