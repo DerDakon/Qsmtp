@@ -102,13 +102,15 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 	r = dns_tlsa(&sa, &fqdn);
 	if ((r != 0) || (sa.len == 0)) {
 		free(sa.s);
-		*out = NULL;
+		if (out != NULL)
+			*out = NULL;
 		return r;
 	}
 
 	if ((sa.len % TLSA_RECORD_LEN) != 0) {
 		free(sa.s);
-		*out = NULL;
+		if (out != NULL)
+			*out = NULL;
 		return DNS_ERROR_PERM;
 	}
 

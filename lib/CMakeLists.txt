@@ -62,5 +62,6 @@ ADD_LIBRARY(qsmtp_dane_lib
 	../include/qdns_dane.h
 )
 TARGET_LINK_LIBRARIES(qsmtp_dane_lib
+		qsmtp_lib
 		${OWFAT_LIBRARIES}
 )
