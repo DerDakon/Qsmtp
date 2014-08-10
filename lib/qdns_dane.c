@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <stralloc.h>
 #include <string.h>
-#include <uint16.h>
 
 #define DNS_T_TLSA "\0\64"
 #define TLSA_DATA_LEN 32
@@ -21,7 +20,7 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 {
 	unsigned int pos;
 	char header[12];
-	uint16 numanswers;
+	uint16_t numanswers;
 	
 	if (!stralloc_copys(out, ""))
 		return -1;
@@ -29,14 +28,14 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 	pos = dns_packet_copy(buf, len, 0, header, 12);
 	if (!pos)
 		return -1;
-	uint16_unpack_big(header + 6, &numanswers);
+	numanswers = ntohs(*((unsigned short *)(header + 6)));
 	pos = dns_packet_skipname(buf, len, pos);
 	if (!pos)
 		return -1;
 	pos += 4;
 
 	while (numanswers--) {
-		uint16 datalen;
+		uint16_t datalen;
 
 		pos = dns_packet_skipname(buf, len, pos);
 		if (!pos)
@@ -44,7 +43,7 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 		pos = dns_packet_copy(buf, len, pos, header, 10);
 		if (!pos)
 			return -1;
-		uint16_unpack_big(header + 8, &datalen);
+		datalen = ntohs(*((unsigned short *)(header + 8)));
 
 		if (byte_equal(header, 2, DNS_T_TLSA)) {
 			if (byte_equal(header + 2, 2, DNS_C_IN)) {
@@ -62,11 +61,12 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 	return 0;
 }
 
-static char *q = 0;
 
 static int
 dns_tlsa(stralloc *out, const stralloc *fqdn)
 {
+	char *q = NULL;
+
 	if (!dns_domain_fromdot(&q, fqdn->s, fqdn->len))
 		return -1;
 	if (dns_resolve(q, DNS_T_TLSA) == -1)
