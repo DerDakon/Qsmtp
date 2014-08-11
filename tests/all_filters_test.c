@@ -256,12 +256,6 @@ default_session_config(void)
 	TAILQ_INIT(&head);
 }
 
-static inline int __attribute__ ((nonnull (1,2)))
-str_starts_with(const char *str, const char *pattern)
-{
-	return (strncmp(str, pattern, strlen(pattern)) == 0);
-}
-
 int
 main(void)
 {
