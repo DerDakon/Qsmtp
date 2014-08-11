@@ -489,7 +489,7 @@ main(void)
 		},
 		/* first one of a multi-recipient bounce, this one with space bug */
 		{
-			.input = "RCPT TO:  <foo@example.org>",
+			.input = "rcpt to:  <foo@example.org>",
 			.bugoffset = 2,
 			.netmsg = "250 2.1.0 recipient <foo@example.org> OK\r\n",
 		},
@@ -524,6 +524,14 @@ main(void)
 			.flush_rcpt = 1,
 			.maxrcpt = 1,
 			.netmsg = "452 4.5.3 Too many recipients\r\n"
+		},
+		/* space bug, rcpt to not in angle brackets */
+		{
+			.input = "rcpt to: postmaster",
+			.flush_rcpt = 1,
+			.tarpit = 1,
+			.rcpt_result = EINVAL,
+			.netmsg = "500 5.5.2 command syntax error\r\n"
 		},
 		{
 			.input = NULL
@@ -593,6 +601,12 @@ main(void)
 						i, r, goodrcpt, oldgood);
 				errcnt++;
 			}
+		}
+
+		if (xmitstat.spacebug != !!testdata[i].bugoffset) {
+				fprintf(stderr, "%u: smtp_rcpt() set spacebug to %u, but %u was expected\n",
+						i, xmitstat.spacebug, !!testdata[i].bugoffset);
+				errcnt++;
 		}
 
 		/* flush on request and on last test */
