@@ -39,6 +39,8 @@ main(int argc, char **argv)
 
 			for (l = 0; l < info[k].datalen; l++)
 				printf("%02X", info[k].data[l]);
+
+			free(info[k].data);
 		}
 
 		free(info);

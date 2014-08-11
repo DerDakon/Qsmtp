@@ -6,7 +6,6 @@
 #include <dns.h>
 #include <errno.h>
 #include <stdlib.h>
-#include <stralloc.h>
 #include <string.h>
 
 #define DNS_T_TLSA "\0\64"
@@ -14,17 +13,29 @@
 #define TLSA_DATA_LEN_SHA512 (512 / 8)
 #define TLSA_MIN_RECORD_LEN 3
 
+static int
+free_tlsa_data(struct daneinfo **out, const int cnt)
+{
+	int i;
+
+	if (out != NULL) {
+		for (i = 0; i < cnt; i++)
+			free(out[i]->data);
+		free(*out);
+		*out = NULL;
+	}
+
+	return -1;
+}
+
 /* taken from dns_txt_packet() of libowfat */
 static int
-dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
+dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 {
 	unsigned int pos;
 	char header[12];
 	uint16_t numanswers;
-	int ret;
-
-	if (!stralloc_copys(out, ""))
-		return -1;
+	int ret = 0;
 
 	if (len < sizeof(header)) {
 		errno = EINVAL;
@@ -38,16 +49,21 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 		return -1;
 	pos += 4;
 
-	ret = numanswers;
+	if (out != NULL) {
+		*out = calloc(numanswers, sizeof(**out));
+		if (*out == NULL)
+			return -1;
+	}
+
 	while (numanswers--) {
 		uint16_t datalen;
 
 		pos = dns_packet_skipname(buf, len, pos);
 		if (!pos)
-			return -1;
+			return free_tlsa_data(out, ret);
 		if (len < pos + 10) {
 			errno = EINVAL;
-			return -1;
+			return free_tlsa_data(out, ret);
 		}
 		memcpy(header, buf + pos, 10);
 		pos += 10;
@@ -60,19 +76,19 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 
 				if (datalen <= TLSA_MIN_RECORD_LEN) {
 					errno = EINVAL;
-					return -1;
+					return free_tlsa_data(out, ret);
 				}
 
 				if (pos + datalen > len) {
 					errno = EINVAL;
-					return -1;
+					return free_tlsa_data(out, ret);
 					
 				}
 
 				switch (buf[pos + 2]) {
 				default:
 				case TLSA_MT_Full:
-					minlen = 0;
+					minlen = 1;
 					maxlen = datalen;
 					break;
 				case TLSA_MT_SHA2_256:
@@ -87,10 +103,24 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 
 				if ((datalen < minlen + TLSA_MIN_RECORD_LEN) || (datalen > maxlen + TLSA_MIN_RECORD_LEN)) {
 					errno = EINVAL;
-					return -1;
+					return free_tlsa_data(out, ret);
 				}
 
-				stralloc_copyb(out, buf + pos, datalen);
+				if (out != NULL) {
+					struct daneinfo *res = out[ret];
+
+					res->cert_usage = buf[pos];
+					res->selector = buf[pos + 1];
+					res->matching_type = buf[pos + 2];
+					res->datalen = datalen - TLSA_MIN_RECORD_LEN;
+					res->data = malloc(res->datalen);
+
+					if (res->data == NULL)
+						return free_tlsa_data(out, ret);
+
+					memcpy(res->data, buf + pos + TLSA_MIN_RECORD_LEN, res->datalen);
+					ret++;
+				}
 			}
 		}
 		pos += datalen;
@@ -100,7 +130,7 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 }
 
 static int
-dns_tlsa(stralloc *out, const stralloc *fqdn)
+dns_tlsa(struct daneinfo **out, const stralloc *fqdn)
 {
 	char *q = NULL;
 	int r;
@@ -114,24 +144,18 @@ dns_tlsa(stralloc *out, const stralloc *fqdn)
 		return r;
 	dns_transmit_free(&dns_resolve_tx);
 	dns_domain_free(&q);
-	return 0;
+	return r;
 }
 
 int
 dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 {
 	char hostbuf[strlen("_65535._tcp.") + strlen(host) + 1];
-	stralloc sa = {
-		.a = 0,
-		.len = 0,
-		.s = NULL
-	};
 	stralloc fqdn = {
 		.a = sizeof(hostbuf) - 1,
 		.s = hostbuf
 	};
 	int r;
-	size_t off = 0;
 
 	hostbuf[0] = '_';
 	ultostr(port, hostbuf + 1);
@@ -139,75 +163,17 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 	strcat(hostbuf, host);
 	fqdn.len = strlen(hostbuf);
 
-	r = dns_tlsa(&sa, &fqdn);
-	if ((r < 0) || (sa.len == 0)) {
-		free(sa.s);
-		if (out != NULL)
-			*out = NULL;
-		return r;
-	}
-
-	if (sa.len < TLSA_MIN_RECORD_LEN) {
-		free(sa.s);
-		if (out != NULL)
-			*out = NULL;
-		return DNS_ERROR_PERM;
-	}
-
 	if (out != NULL)
 		*out = NULL;
 
-	r = 0;
-
-	while (off < sa.len) {
-		struct daneinfo tmp = {
-			.cert_usage = sa.s[off],
-			.selector = sa.s[off + 1],
-			.matching_type = sa.s[off + 2]
-		};
-		unsigned int maxlen;
-
-		off += TLSA_MIN_RECORD_LEN;
-
-		switch (tmp.matching_type) {
-		default:
-		case TLSA_MT_Full:
-			/* probably wrong, but no idea how to properly detect that */
-			maxlen = sa.len - off;
-			break;
-		case TLSA_MT_SHA2_256:
-			maxlen = TLSA_DATA_LEN_SHA256;
-			break;
-		case TLSA_MT_SHA2_512:
-			maxlen = TLSA_DATA_LEN_SHA512;
-			break;
-		}
-
+	r = dns_tlsa(out, &fqdn);
+	if (r <= 0) {
 		if (out != NULL) {
-			struct daneinfo *res = realloc(*out, sizeof(*res) * (r + 1));
-
-			tmp.data = malloc(maxlen);
-
-			if ((res == NULL) || (tmp.data == NULL)) {
-				int j;
-				for (j = 0; j < r; j++)
-					free((*out)[j].data);
-				free(*out);
-				free(sa.s);
-				return DNS_ERROR_LOCAL;
-			}
-
-			memcpy(tmp.data, sa.s + off, maxlen);
-
-			tmp.datalen = maxlen;
-			res[r++] = tmp;
-			*out = res;
+			free(*out);
+			*out = NULL;
 		}
-
-		off += maxlen;
+		return r;
 	}
-
-	free(sa.s);
 
 	return r;
 }
