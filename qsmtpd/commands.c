@@ -638,7 +638,7 @@ smtp_from(void)
 	}
 
 	/* check if the free disk in queue filesystem is at least the size of the message */
-	if ((databytes && (databytes < xmitstat.thisbytes)) || (maxqueuebytes < xmitstat.thisbytes))
+	if ((databytes && (databytes < xmitstat.thisbytes)) || ((size_t)maxqueuebytes < xmitstat.thisbytes))
 		return netwrite("452 4.3.1 Requested action not taken: insufficient system storage\r\n") ? errno : EDONE;
 
 	/* no need to check existence of sender domain on bounce message */

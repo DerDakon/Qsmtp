@@ -38,7 +38,7 @@ struct xmitstat {
 	unsigned int spf:4;		/**< result of the SPF lookup */
 	int fromdomain:3;		/**< result of the lookup for fromips */
 	unsigned int spacebug:1;	/**< if client sends spaces between ':' and '<' */
-	unsigned long thisbytes;	/**< size of the message announced by the remote host */
+	size_t thisbytes;		/**< size of the message announced by the remote host */
 	string mailfrom;		/**< the current from address */
 	string authname;		/**< if SMTP AUTH is used (and successful) this is set */
 	char *tlsclient;		/**< TLS client authenticated by certificate for relaying */
