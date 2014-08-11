@@ -449,51 +449,19 @@ test_greeting_ehlo_skip_first_line(void)
 	return r;
 }
 
-static const char **log_multi_expect;
-
-void
-test_log_writen(int priority, const char **msg)
-{
-	unsigned int c;
-	const int log_prio_expect = LOG_WARNING;
-
-	if (priority != log_prio_expect) {
-		fprintf(stderr, "log_writen(%i, ...) called, but expected priority is %i\n",
-				priority, log_prio_expect);
-		abort();
-	}
-
-	for (c = 0; msg[c] != NULL; c++) {
-		if ((log_multi_expect == NULL) || (log_multi_expect[c] == NULL)) {
-			fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is NULL\n",
-					priority, c);
-			abort();
-		}
-		if (strcmp(log_multi_expect[c], msg[c]) != 0) {
-			fprintf(stderr, "log_writen(%i, ...) called, but parameter at position %u is '%s' instead of '%s'\n",
-					priority, c, msg[c], log_multi_expect[c]);
-			abort();
-		}
-	}
-
-	if (log_multi_expect[c] != NULL) {
-		fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is not NULL, but %s\n",
-				priority, c, log_multi_expect[c]);
-		abort();
-	}
-
-	log_multi_expect = NULL;
-}
-
 static int
 test_greeting_ehlo_invalid(void)
 {
 	int r;
-	const char *logmsg[] = { "syntax error in ", "EHLO ", "response \"",
-			"250-SIZE JUNK", "\" from ", rhost, NULL };
+	const char badmsg[] = "syntax error in EHLO response \"250-SIZE JUNK\" from ";
+	char logbuf[strlen(badmsg) + strlen(rhost) + 1];
+
+	strcpy(logbuf, badmsg);
+	strcat(logbuf, rhost);
+	log_write_priority = LOG_WARNING;
+	log_write_msg = logbuf;
 
 	nw_flags = 2;
-	log_multi_expect = logmsg;
 
 	netget_results[0].line = "250-nice to meet you";
 	netget_results[0].ret = 250;
@@ -504,7 +472,8 @@ test_greeting_ehlo_invalid(void)
 
 	remotesize = 0;
 
-	testcase_setup_log_writen(test_log_writen);
+	testcase_setup_log_writen(testcase_log_writen_combine);
+	testcase_setup_log_write(testcase_log_write_compare);
 
 	r = check_calls(-EINVAL);
 
@@ -534,11 +503,15 @@ test_greeting_helo_invalid_code(void)
 static int
 test_greeting_ehlo_syntax_first(void)
 {
-	const char *logmsg[] = { "syntax error in ", "EHLO ", "response \"",
-			"junk", "\" from ", rhost, NULL };
+	const char badmsg[] = "syntax error in EHLO response \"junk\" from ";
+	char logbuf[strlen(badmsg) + strlen(rhost) + 1];
+
+	strcpy(logbuf, badmsg);
+	strcat(logbuf, rhost);
+	log_write_priority = LOG_WARNING;
+	log_write_msg = logbuf;
 
 	nw_flags = 2;
-	log_multi_expect = logmsg;
 
 	netget_results[0].line = "junk";
 	netget_results[0].ret = -EINVAL;
@@ -549,11 +522,15 @@ test_greeting_ehlo_syntax_first(void)
 static int
 test_greeting_ehlo_syntax_second(void)
 {
-	const char *logmsg[] = { "syntax error in ", "EHLO ", "response \"",
-			"junk", "\" from ", rhost, NULL };
+	const char badmsg[] = "syntax error in EHLO response \"junk\" from ";
+	char logbuf[strlen(badmsg) + strlen(rhost) + 1];
+
+	strcpy(logbuf, badmsg);
+	strcat(logbuf, rhost);
+	log_write_priority = LOG_WARNING;
+	log_write_msg = logbuf;
 
 	nw_flags = 2;
-	log_multi_expect = logmsg;
 
 	netget_results[0].line = "250-nice to meet you";
 	netget_results[0].ret = 250;
@@ -566,11 +543,15 @@ test_greeting_ehlo_syntax_second(void)
 static int
 test_greeting_helo_syntax_first(void)
 {
-	const char *logmsg[] = { "syntax error in ", "HELO ", "response \"",
-			"junk", "\" from ", rhost, NULL };
+	const char badmsg[] = "syntax error in HELO response \"junk\" from ";
+	char logbuf[strlen(badmsg) + strlen(rhost) + 1];
+
+	strcpy(logbuf, badmsg);
+	strcat(logbuf, rhost);
+	log_write_priority = LOG_WARNING;
+	log_write_msg = logbuf;
 
 	nw_flags = 3;
-	log_multi_expect = logmsg;
 
 	netget_results[0].line = "503 5.5.1 Bad sequence of commands";
 	netget_results[0].ret = 503;
@@ -583,11 +564,15 @@ test_greeting_helo_syntax_first(void)
 static int
 test_greeting_helo_syntax_second(void)
 {
-	const char *logmsg[] = { "syntax error in ", "HELO ", "response \"",
-			"junk", "\" from ", rhost, NULL };
+	const char badmsg[] = "syntax error in HELO response \"junk\" from ";
+	char logbuf[strlen(badmsg) + strlen(rhost) + 1];
+
+	strcpy(logbuf, badmsg);
+	strcat(logbuf, rhost);
+	log_write_priority = LOG_WARNING;
+	log_write_msg = logbuf;
 
 	nw_flags = 3;
-	log_multi_expect = logmsg;
 
 	netget_results[0].line = "503 5.5.1 Bad sequence of commands";
 	netget_results[0].ret = 503;

@@ -38,6 +38,7 @@ typedef int (func_netnwrite)(const char *, const size_t);
 DECLARE_TC_SETUP(netnwrite);
 
 extern const char *netnwrite_msg; /**< the next message expected in netnwrite() */
+
 /**
  * @brief a simple checker for netnwrite()
  *
@@ -63,8 +64,31 @@ DECLARE_TC_SETUP(net_conn_shutdown);
 typedef void (func_log_writen)(int priority, const char **s);
 DECLARE_TC_SETUP(log_writen);
 
+/**
+ * @brief simple helper for log_writen()
+ *
+ * This function may be passed to testcase_setup_log_writen() to combine all
+ * strings given in msg into a single string. The combined string is afterwards
+ * passed to log_write() where it can be checked e.g. using
+ * testcase_log_write_compare().
+ */
+extern void testcase_log_writen_combine(int priority, const char **msg);
+
 typedef void (func_log_write)(int priority, const char *s);
 DECLARE_TC_SETUP(log_write);
+
+extern const char *log_write_msg;	/**< the next message expected in log_write() */
+extern int log_write_priority;		/**< the priority of the next message in log_write() */
+
+/**
+ * @brief a simple checker for log_write()
+ *
+ * This function may be passed to testcase_setup_log_write() to have a simple
+ * checker for log_write(). The message sent to log_write() is compared to
+ * log_write_msg and log_write_priority. log_write_msg is reset afterwards.
+ * If the messages do not match the program is aborted.
+ */
+extern void testcase_log_write_compare(int priority, const char *a);
 
 typedef void (func_dieerror)(int error);
 DECLARE_TC_SETUP(dieerror);

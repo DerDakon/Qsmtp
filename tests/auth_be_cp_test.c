@@ -20,99 +20,20 @@ const char *tempnoauth = "[MSG:tempnoauth]";
 
 static int err;	/* global error counter */
 
-static const char *expected_log;
-
-static void
-test_log_write(int priority, const char *s)
-{
-	if (expected_log == NULL) {
-		fprintf(stderr, "no log message expected, but received '%s'\n", s);
-		err++;
-		return;
-	}
-
-	if (strcmp(s, expected_log) != 0) {
-		fprintf(stderr, "expected log message '%s', but received '%s'\n", expected_log, s);
-		err++;
-		return;
-	}
-
-	if (priority != LOG_ERR) {
-		fprintf(stderr, "log priority LOG_ERR (%i) expected, but got %i\n", LOG_ERR, priority);
-		err++;
-		return;
-	}
-
-	expected_log = NULL;
-}
-
-static int expect_log_writen;
 static char baddummy[PATH_MAX];
-
-void
-test_log_writen(int priority, const char **msg)
-{
-	const char *log_multi_expect[] = { "checkpassword program '", baddummy,
-			"' is not executable, error was: ",
-			strerror(ENOTDIR), NULL };
-	unsigned int c;
-
-	if (!expect_log_writen) {
-		int i;
-
-		fprintf(stderr, "unexpected call to %s(), args:\n", __func__);
-
-		for (i = 0; msg[i] != NULL; i++)
-			fprintf(stderr, "\t%s\n", msg[i]);
-		err++;
-		return;
-	} else {
-		expect_log_writen = 0;
-	}
-
-	if (priority != LOG_WARNING) {
-		fprintf(stderr, "log_writen(%i, ...) called, but expected priority is LOG_WARNING\n",
-				priority);
-		err++;
-	}
-
-	for (c = 0; msg[c] != NULL; c++) {
-		if (log_multi_expect[c] == NULL) {
-			fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is NULL\n",
-					priority, c);
-			err++;
-		}
-		if (strcmp(log_multi_expect[c], msg[c]) != 0) {
-			fprintf(stderr, "log_writen(%i, ...) called, but parameter at position %u is '%s' instead of '%s'\n",
-					priority, c, msg[c], log_multi_expect[c]);
-			err++;
-		}
-	}
-
-	if (log_multi_expect[c] != NULL) {
-		fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is not NULL, but %s\n",
-				priority, c, log_multi_expect[c]);
-		err++;
-	}
-}
 
 static void
 check_all_msgs(void)
 {
-	if (expected_log != NULL) {
+	if (log_write_msg != NULL) {
 		fprintf(stderr, "expected log message '%s' was not received\n",
-				expected_log);
+				log_write_msg);
 		err++;
 	}
 
 	if (netnwrite_msg != NULL) {
 		fprintf(stderr, "expected message '%s' was not received\n",
 				netnwrite_msg);
-		err++;
-	}
-
-	if (expect_log_writen) {
-		fprintf(stderr, "expected call to log_writen() was not received\n");
 		err++;
 	}
 }
@@ -139,7 +60,8 @@ test_fork_fail(void)
 	sdummy.len = strlen(sdummy.s);
 
 	fork_success = 0;
-	expected_log = "cannot fork auth";
+	log_write_msg = "cannot fork auth";
+	log_write_priority = LOG_ERR;
 	netnwrite_msg = tempnoauth;
 
 	if (auth_backend_execute(&sdummy, &sdummy, &sdummy) != -EDONE) {
@@ -160,7 +82,8 @@ test_chkpw_abort(void)
 	struct string pass = { .s = (char *)users[0].password, .len = strlen(users[0].password) };
 
 	fork_success = 1;
-	expected_log = "auth child crashed";
+	log_write_msg = "auth child crashed";
+	log_write_priority = LOG_ERR;
 	netnwrite_msg = tempnoauth;
 
 	if (auth_backend_execute(&user, &pass, NULL) != -EDONE) {
@@ -219,18 +142,24 @@ test_setup_errors(const char *dummy)
 {
 	const char *args_invalid_count[] = { "Qsmtpd", "foo.example.com" };
 	const char *args_noexec[] = { "Qsmtpd", "foo.example.com", baddummy, "" };
+	char logbuf[sizeof(baddummy) + 100];
 
 	assert(strlen(dummy) + strlen("/something") < sizeof(baddummy));
 	strcpy(baddummy, dummy);
 	strcat(baddummy, "/something");
 
-	expected_log = "invalid number of parameters given";
+	snprintf(logbuf, sizeof(logbuf), "checkpassword program '%s' is not executable, error was: %s",
+			baddummy, strerror(ENOTDIR));
+
+	log_write_msg = "invalid number of parameters given";
+	log_write_priority = LOG_ERR;
 	if (auth_backend_setup(2, args_invalid_count) != -EINVAL) {
 		fprintf(stderr, "auth_backend_setup(2, ...) returned wrong error code\n");
 		err++;
 	}
 
-	expect_log_writen = 1;
+	log_write_msg = logbuf;
+	log_write_priority = LOG_WARNING;
 	if (auth_backend_setup(4, args_noexec) != -EACCES) {
 		fprintf(stderr, "auth_backend_setup(4, ...) returned wrong error code\n");
 		err++;
@@ -248,12 +177,12 @@ main(int argc, char **argv)
 		return 1;
 	}
 
-	testcase_setup_log_write(test_log_write);
+	testcase_setup_log_write(testcase_log_write_compare);
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 
 	test_fork_fail();
 
-	testcase_setup_log_writen(test_log_writen);
+	testcase_setup_log_writen(testcase_log_writen_combine);
 
 	test_setup_errors(argv[1]);
 

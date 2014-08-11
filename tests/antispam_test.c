@@ -142,7 +142,7 @@ test_rbl()
 	return err;
 }
 
-void test_log_writen(int priority __attribute__ ((unused)), const char **msg __attribute__ ((unused)))
+void test_log_writen(int priority __attribute__ ((unused)), const char **msg)
 {
 	unsigned int i = 0;
 	static int firstseen;

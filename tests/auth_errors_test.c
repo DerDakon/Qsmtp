@@ -76,42 +76,9 @@ test_net_readline(size_t num, char *buf)
 	return len < num ? len : num;
 }
 
-static const char *expected_log;
-
-static void
-test_log_write(int priority, const char *s)
-{
-	if (expected_log == NULL) {
-		fprintf(stderr, "no log message expected, but received '%s'\n", s);
-		err++;
-		return;
-	}
-
-	if (strcmp(s, expected_log) != 0) {
-		fprintf(stderr, "expected log message '%s', but received '%s'\n", expected_log, s);
-		err++;
-		return;
-	}
-
-	if (priority != LOG_ERR) {
-		fprintf(stderr, "log priority LOG_ERR (%i) expected, but got %i\n", LOG_ERR, priority);
-		err++;
-		return;
-	}
-
-	expected_log = NULL;
-}
-
 static void
 check_all_msgs(void)
 {
-	if (expected_log != NULL) {
-		fprintf(stderr, "expected log message '%s' was not received\n",
-				expected_log);
-		err++;
-		expected_log = NULL;
-	}
-
 	if (expected_net_write1 != NULL) {
 		fprintf(stderr, "expected message '%s' was not received\n",
 				expected_net_write1);
@@ -147,7 +114,6 @@ main(int argc __attribute__((unused)), char **argv)
 
 	testcase_setup_netnwrite(test_netnwrite);
 	testcase_setup_net_readline(test_net_readline);
-	testcase_setup_log_write(test_log_write);
 
 	auth_setup(2, argv_auth);
 

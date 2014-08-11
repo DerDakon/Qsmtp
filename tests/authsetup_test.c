@@ -147,47 +147,10 @@ test_controlfiles(void)
 	return errcnt;
 }
 
-static const char **log_multi_expect;
-static int log_prio_expect;
-
-void
-test_log_writen(int priority, const char **msg)
-{
-	unsigned int c;
-
-	if (priority != log_prio_expect) {
-		fprintf(stderr, "log_writen(%i, ...) called, but expected priority is %i\n",
-				priority, log_prio_expect);
-		exit(1);
-	}
-
-	for (c = 0; msg[c] != NULL; c++) {
-		if ((log_multi_expect == NULL) || (log_multi_expect[c] == NULL)) {
-			fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is NULL\n",
-					priority, c);
-			exit(1);
-		}
-		if (strcmp(log_multi_expect[c], msg[c]) != 0) {
-			fprintf(stderr, "log_writen(%i, ...) called, but parameter at position %u is '%s' instead of '%s'\n",
-					priority, c, msg[c], log_multi_expect[c]);
-			exit(1);
-		}
-	}
-
-	if (log_multi_expect[c] != NULL) {
-		fprintf(stderr, "log_writen(%i, ...) called, but expected parameter at position %u is not NULL, but %s\n",
-				priority, c, log_multi_expect[c]);
-		exit(1);
-	}
-
-	log_multi_expect = NULL;
-}
-
 static int
 test_nonexistent(void)
 {
-	const char *found_garbage[] = {"error: unknown auth type \"", "garbage",
-			"\" found in control/authtypes\n", NULL};
+	const char found_garbage[] = "error: unknown auth type \"garbage\" found in control/authtypes\n";
 	char *auth_str;
 	int ret = 0;
 
@@ -198,9 +161,9 @@ test_nonexistent(void)
 
 	controldir_fd = get_dirfd(AT_FDCWD, "control");
 
-	testcase_setup_log_writen(test_log_writen);
-	log_multi_expect = found_garbage;
-	log_prio_expect = LOG_ERR;
+	testcase_setup_log_writen(testcase_log_writen_combine);
+	log_write_msg = found_garbage;
+	log_write_priority = LOG_ERR;
 
 	auth_str = smtp_authstring();
 
@@ -213,7 +176,7 @@ test_nonexistent(void)
 		ret++;
 	}
 
-	if (log_multi_expect != NULL) {
+	if (log_write_msg != NULL) {
 		fprintf(stderr, "%s: smtp_authstring() did not write the expected error message\n", __func__);
 		ret++;
 	}
@@ -236,7 +199,7 @@ test_loaderror(void)
 	controldir_fd = -1;
 
 	/* no message expected, but this will bail out if one comes */
-	testcase_setup_log_writen(test_log_writen);
+	testcase_setup_log_writen(testcase_log_writen_combine);
 
 	auth_str = smtp_authstring();
 
@@ -286,38 +249,11 @@ test_no_auth_yet(void)
 	return ret;
 }
 
-const char *log_single_expect;
-
-void
-test_log_write(int priority, const char *msg)
-{
-	if (log_single_expect == NULL) {
-		fprintf(stderr, "unexpected call: log_write(%i, %s)\n",
-				priority, msg);
-		exit(1);
-	}
-
-	if (priority != LOG_ERR) {
-		fprintf(stderr, "log_write(%i, %s) called, but expected priority is LOG_ERR\n",
-				priority, msg);
-		exit(1);
-	}
-
-	if (strcmp(log_single_expect, msg) != 0) {
-		fprintf(stderr, "log_write(%i, %s) called, but expected message was '%s'\n",
-				priority, msg, log_single_expect);
-		exit(1);
-	}
-
-	log_single_expect = NULL;
-}
-
 static int
 test_setup_errors(void)
 {
 	int ret = 0;
-	const char *err_invalid_domain[] = { "domainname for auth invalid: ", "@",
-			NULL };
+	const char err_invalid_domain[] = "domainname for auth invalid: @";
 	const char *args_invalid_domain[] = { "Qsmtpd", "@", NULL };
 
 	sslauth = 0;
@@ -327,15 +263,20 @@ test_setup_errors(void)
 		return ++ret;
 	}
 
-	testcase_setup_log_writen(test_log_writen);
+	testcase_setup_log_writen(testcase_log_writen_combine);
 
-	log_multi_expect = err_invalid_domain;
-	log_prio_expect = LOG_WARNING;
+	log_write_msg = err_invalid_domain;
+	log_write_priority = LOG_WARNING;
 	auth_setup(3, args_invalid_domain);
-	log_multi_expect = NULL;
 
 	if (auth_permitted()) {
 		fprintf(stderr, "auth_permitted() after incorrect auth_setup() returned 1\n");
+		ret++;
+	}
+
+	if (log_write_msg != NULL) {
+		fprintf(stderr, "%s: smtp_authstring() did not write the expected error message\n", __func__);
+		log_write_msg = NULL;
 		ret++;
 	}
 
@@ -345,14 +286,10 @@ test_setup_errors(void)
 		return ++ret;
 	}
 
-	if (log_multi_expect != NULL) {
-		fprintf(stderr, "%s: smtp_authstring() did not write the expected error message\n", __func__);
-		ret++;
-	}
-
 	/* this will cause auth_backend_setup() to return with failure */
-	testcase_setup_log_write(test_log_write);
-	log_single_expect = backend_setup_errmsg;
+	testcase_setup_log_writen(testcase_log_writen_combine);
+	log_write_msg = backend_setup_errmsg;
+	log_write_priority = LOG_ERR;
 	auth_setup(2, argv_auth);
 
 	if (auth_permitted()) {
@@ -360,8 +297,9 @@ test_setup_errors(void)
 		ret++;
 	}
 
-	if (log_multi_expect != NULL) {
+	if (log_write_msg != NULL) {
 		fprintf(stderr, "%s: smtp_authstring() did not write the expected error message\n", __func__);
+		log_write_msg = NULL;
 		ret++;
 	}
 
@@ -374,6 +312,7 @@ int main(int argc, char **argv)
 {
 	int errcnt = 0;
 
+	testcase_setup_log_write(testcase_log_write_compare);
 	testcase_ignore_log_writen();
 
 	if (argc != 2) {

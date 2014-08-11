@@ -16,6 +16,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+#include <syslog.h>
 #include <unistd.h>
 
 struct xmitstat xmitstat;
@@ -261,31 +262,6 @@ str_starts_with(const char *str, const char *pattern)
 	return (strncmp(str, pattern, strlen(pattern)) == 0);
 }
 
-static unsigned int log_count;
-
-void
-test_log_writen(int priority, const char **s)
-{
-	char buffer[1024];
-	int i;
-
-	buffer[0] = '\0';
-	for (i = 0; s[i] != NULL; i++) {
-		assert(strlen(buffer) + strlen(s[i]) < sizeof(buffer));
-		strcat(buffer, s[i]);
-	}
-	printf("log priority %i: %s\n", priority, buffer);
-
-	if ((testdata[testindex].logmsg != NULL) &&
-			(strcmp(testdata[testindex].logmsg, buffer) != 0)) {
-		fprintf(stderr, "expected log message '%s' instead\n",
-				testdata[testindex].logmsg);
-		err++;
-	}
-
-	log_count++;
-}
-
 int
 main(void)
 {
@@ -351,7 +327,10 @@ main(void)
 
 	strncpy(confpath, "0/", sizeof(confpath));
 
-	testcase_setup_log_writen(test_log_writen);
+	log_write_priority = LOG_INFO;
+
+	testcase_setup_log_writen(testcase_log_writen_combine);
+	testcase_setup_log_write(testcase_log_write_compare);
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 	testcase_ignore_ask_dnsa();
 
@@ -362,13 +341,10 @@ main(void)
 		const char *failmsg = NULL;	/* expected failure message */
 		int r = 0;			/* filter result */
 		const char *fmsg = NULL;	/* returned failure message */
-		unsigned int exp_log_count = 0;	/* expected log messages */
 		int expected_r = 0;		/* expected filter result */
 
 		/* set default configuration */
 		default_session_config();
-
-		log_count = 0;
 
 		thisrecip = &dummyrecip;
 		firstrecip.to.s = "baz@example.com";
@@ -382,8 +358,8 @@ main(void)
 		xmitstat.esmtp = testdata[testindex].esmtp;
 		failmsg = testdata[testindex].failmsg;
 		netnwrite_msg = testdata[testindex].netmsg;
-		if (testdata[testindex].logmsg != NULL)
-			exp_log_count = 1;
+		log_write_msg = testdata[testindex].logmsg;
+
 		if (testdata[testindex].netmsg != NULL) {
 			if (*testdata[testindex].netmsg == '5')
 				expected_r = 1;
@@ -451,9 +427,9 @@ main(void)
 			err++;
 		}
 
-		if (log_count != exp_log_count) {
-			fprintf(stderr, "configuration %u: expected %u log messages, got %u\n",
-					testindex, exp_log_count, log_count);
+		if (log_write_msg != NULL) {
+			fprintf(stderr, "configuration %u: expected a log messages, got none\n",
+					testindex);
 			err++;
 		}
 
