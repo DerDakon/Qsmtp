@@ -302,20 +302,6 @@ userconf_load_configs(struct userconf *ds __attribute__ ((unused)))
 	return r;
 }
 
-/* FIXME: replace this by a checker */
-void
-test_log_writen(int priority, const char **s)
-{
-	unsigned int i;
-
-	printf("priority %i: ", priority);
-
-	for (i = 0; s[i] != NULL; i++)
-		printf("%s", s[i]);
-
-	printf("\n");
-}
-
 int
 main(void)
 {
@@ -543,7 +529,8 @@ main(void)
 
 	testcase_setup_net_writen(testcase_net_writen_combine);
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
-	testcase_setup_log_writen(test_log_writen);
+	/* FIXME: replace this by a checker */
+	testcase_setup_log_writen(testcase_log_writen_console);
 
 	for (i = 0; testdata[i].input != NULL; i++) {
 		int r;

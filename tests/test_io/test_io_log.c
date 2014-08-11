@@ -43,6 +43,19 @@ testcase_log_writen_combine(int priority, const char **msg)
 }
 
 void
+testcase_log_writen_console(int priority, const char **msg)
+{
+	unsigned int i;
+
+	printf("LOG OUTPUT[%i]: ", priority);
+
+	for (i = 0; msg[i] != NULL; i++)
+		printf("%s", msg[i]);
+
+	printf("\n");
+}
+
+void
 log_write(int priority, const char *s)
 {
 	const char *msg[] = { s, NULL };

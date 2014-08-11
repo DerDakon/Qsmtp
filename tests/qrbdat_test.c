@@ -103,7 +103,6 @@ test_log_write(int priority, const char *s)
 	}
 	fprintf(stderr, "log_write(%i, %s) called unexpected\n", priority, s);
 	exit(EFAULT);
-
 }
 
 void

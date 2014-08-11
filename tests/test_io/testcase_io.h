@@ -74,6 +74,14 @@ DECLARE_TC_SETUP(log_writen);
  */
 extern void testcase_log_writen_combine(int priority, const char **msg);
 
+/**
+ * @brief redirect helper for log_writen()
+ *
+ * This function may be passed to testcase_setup_log_writen() to redirect
+ * all log messages to stdout.
+ */
+extern void testcase_log_writen_console(int priority, const char **msg);
+
 typedef void (func_log_write)(int priority, const char *s);
 DECLARE_TC_SETUP(log_write);
 
