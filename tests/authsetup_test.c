@@ -150,7 +150,7 @@ test_controlfiles(void)
 static int
 test_nonexistent(void)
 {
-	const char found_garbage[] = "error: unknown auth type \"garbage\" found in control/authtypes\n";
+	const char found_garbage[] = "error: unknown auth type \"garbage\" found in control/authtypes";
 	char *auth_str;
 	int ret = 0;
 

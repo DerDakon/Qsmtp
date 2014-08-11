@@ -484,7 +484,7 @@ smtp_authstring(void)
 				if (usedtype & (1 << i)) {
 					const char *logmsg[] = {"error: duplicate auth type \"",
 								confbuf + confpos,
-								"\" found in control/authtypes\n", NULL};
+								"\" found in control/authtypes", NULL};
 					log_writen(LOG_ERR, logmsg);
 					found = 1;
 					break;
@@ -504,7 +504,7 @@ smtp_authstring(void)
 
 		if (found == 0) {
 			const char *logmsg[] = {"error: unknown auth type \"", confbuf + confpos,
-						"\" found in control/authtypes\n", NULL};
+						"\" found in control/authtypes", NULL};
 			log_writen(LOG_ERR, logmsg);
 		}
 		confpos += strlen(confbuf + confpos) + 1;
