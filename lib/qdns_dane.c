@@ -130,12 +130,12 @@ dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 }
 
 static int
-dns_tlsa(struct daneinfo **out, const stralloc *fqdn)
+dns_tlsa(struct daneinfo **out, const char *fqdn)
 {
 	char *q = NULL;
 	int r;
 
-	if (!dns_domain_fromdot(&q, fqdn->s, fqdn->len))
+	if (!dns_domain_fromdot(&q, fqdn, strlen(fqdn)))
 		return -1;
 	if (dns_resolve(q, DNS_T_TLSA) == -1)
 		return -1;
@@ -151,22 +151,17 @@ int
 dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 {
 	char hostbuf[strlen("_65535._tcp.") + strlen(host) + 1];
-	stralloc fqdn = {
-		.a = sizeof(hostbuf) - 1,
-		.s = hostbuf
-	};
 	int r;
 
 	hostbuf[0] = '_';
 	ultostr(port, hostbuf + 1);
 	strcat(hostbuf, "._tcp.");
 	strcat(hostbuf, host);
-	fqdn.len = strlen(hostbuf);
 
 	if (out != NULL)
 		*out = NULL;
 
-	r = dns_tlsa(out, &fqdn);
+	r = dns_tlsa(out, hostbuf);
 	if (r <= 0) {
 		if (out != NULL) {
 			free(*out);
