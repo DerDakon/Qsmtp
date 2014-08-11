@@ -53,11 +53,41 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 
 		if (memcmp(header, DNS_T_TLSA, 2) == 0) {
 			if (memcmp(header + 2, DNS_C_IN, 2) == 0) {
+				unsigned int minlen;
+				unsigned int maxlen;
+
+				if (datalen <= TLSA_MIN_RECORD_LEN) {
+					errno = EINVAL;
+					return -1;
+				}
+
 				if (pos + datalen > len) {
 					errno = EINVAL;
 					return -1;
 					
 				}
+
+				switch (buf[pos + 2]) {
+				default:
+				case TLSA_MT_Full:
+					minlen = 0;
+					maxlen = datalen;
+					break;
+				case TLSA_MT_SHA2_256:
+					minlen = TLSA_DATA_LEN_SHA256;
+					maxlen = TLSA_DATA_LEN_SHA256;
+					break;
+				case TLSA_MT_SHA2_512:
+					minlen = TLSA_DATA_LEN_SHA512;
+					maxlen = TLSA_DATA_LEN_SHA512;
+					break;
+				}
+
+				if ((datalen < minlen + TLSA_MIN_RECORD_LEN) || (datalen > maxlen + TLSA_MIN_RECORD_LEN)) {
+					errno = EINVAL;
+					return -1;
+				}
+
 				stralloc_copyb(out, buf + pos, datalen);
 			}
 		}
@@ -132,7 +162,6 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 			.selector = sa.s[off + 1],
 			.matching_type = sa.s[off + 2]
 		};
-		unsigned int minlen;
 		unsigned int maxlen;
 
 		off += TLSA_MIN_RECORD_LEN;
@@ -140,25 +169,15 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 		switch (tmp.matching_type) {
 		default:
 		case TLSA_MT_Full:
-			minlen = 0;
 			/* probably wrong, but no idea how to properly detect that */
 			maxlen = sa.len - off;
 			break;
 		case TLSA_MT_SHA2_256:
-			minlen = TLSA_DATA_LEN_SHA256;
 			maxlen = TLSA_DATA_LEN_SHA256;
 			break;
 		case TLSA_MT_SHA2_512:
-			minlen = TLSA_DATA_LEN_SHA512;
 			maxlen = TLSA_DATA_LEN_SHA512;
 			break;
-		}
-
-		if (sa.len - off < minlen) {
-			if (out != NULL)
-				free(*out);
-			free(sa.s);
-			return DNS_ERROR_PERM;
 		}
 
 		if (out != NULL) {
