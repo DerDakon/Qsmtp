@@ -167,7 +167,6 @@ main(void)
 	int r;
 	int err = 0;
 
-	testcase_ignore_log_write();
 	testcase_ignore_log_writen();
 
 	memset(&ds, 0, sizeof(ds));

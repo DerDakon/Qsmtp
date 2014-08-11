@@ -21,9 +21,11 @@ tc_ignore_log_writen(int priority __attribute__((unused)), const char **s __attr
 void
 log_write(int priority, const char *s)
 {
-	ASSERT_CALLBACK(testcase_log_write);
-
-	testcase_log_write(priority, s);
+	const char *msg[] = { s, NULL };
+	if (testcase_log_write == NULL)
+		testcase_log_writen(priority, msg);
+	else
+		testcase_log_write(priority, s);
 }
 
 void
