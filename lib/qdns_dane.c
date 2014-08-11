@@ -162,12 +162,9 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 		*out = NULL;
 
 	r = dns_tlsa(out, hostbuf);
-	if (r <= 0) {
-		if (out != NULL) {
-			free(*out);
-			*out = NULL;
-		}
-		return r;
+	if ((r <= 0) && (out != NULL)) {
+		free(*out);
+		*out = NULL;
 	}
 
 	return r;
