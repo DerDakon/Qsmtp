@@ -21,6 +21,7 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 	unsigned int pos;
 	char header[12];
 	uint16_t numanswers;
+	int ret;
 
 	if (!stralloc_copys(out, ""))
 		return -1;
@@ -37,6 +38,7 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 		return -1;
 	pos += 4;
 
+	ret = numanswers;
 	while (numanswers--) {
 		uint16_t datalen;
 
@@ -94,21 +96,22 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 		pos += datalen;
 	}
 
-	return 0;
+	return ret;
 }
-
 
 static int
 dns_tlsa(stralloc *out, const stralloc *fqdn)
 {
 	char *q = NULL;
+	int r;
 
 	if (!dns_domain_fromdot(&q, fqdn->s, fqdn->len))
 		return -1;
 	if (dns_resolve(q, DNS_T_TLSA) == -1)
 		return -1;
-	if (dns_tlsa_packet(out, dns_resolve_tx.packet, dns_resolve_tx.packetlen) == -1)
-		return -1;
+	r = dns_tlsa_packet(out, dns_resolve_tx.packet, dns_resolve_tx.packetlen);
+	if (r < 0)
+		return r;
 	dns_transmit_free(&dns_resolve_tx);
 	dns_domain_free(&q);
 	return 0;
@@ -137,7 +140,7 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 	fqdn.len = strlen(hostbuf);
 
 	r = dns_tlsa(&sa, &fqdn);
-	if ((r != 0) || (sa.len == 0)) {
+	if ((r < 0) || (sa.len == 0)) {
 		free(sa.s);
 		if (out != NULL)
 			*out = NULL;
