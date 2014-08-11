@@ -3,7 +3,6 @@
 #include <fmt.h>
 #include <qdns.h>
 
-#include <byte.h>
 #include <dns.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -52,8 +51,8 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 		pos += 10;
 		datalen = ntohs(*((unsigned short *)(header + 8)));
 
-		if (byte_equal(header, 2, DNS_T_TLSA)) {
-			if (byte_equal(header + 2, 2, DNS_C_IN)) {
+		if (memcmp(header, DNS_T_TLSA, 2) == 0) {
+			if (memcmp(header + 2, DNS_C_IN, 2) == 0) {
 				if (pos + datalen > len) {
 					errno = EINVAL;
 					return -1;
