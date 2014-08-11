@@ -22,15 +22,18 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 	unsigned int pos;
 	char header[12];
 	uint16_t numanswers;
-	
+
 	if (!stralloc_copys(out, ""))
 		return -1;
-	
-	pos = dns_packet_copy(buf, len, 0, header, 12);
-	if (!pos)
+
+	if (len < sizeof(header)) {
+		errno = EINVAL;
 		return -1;
+	}
+	memcpy(header, buf, sizeof(header));
+
 	numanswers = ntohs(*((unsigned short *)(header + 6)));
-	pos = dns_packet_skipname(buf, len, pos);
+	pos = dns_packet_skipname(buf, len, sizeof(header));
 	if (!pos)
 		return -1;
 	pos += 4;
@@ -41,9 +44,12 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 		pos = dns_packet_skipname(buf, len, pos);
 		if (!pos)
 			return -1;
-		pos = dns_packet_copy(buf, len, pos, header, 10);
-		if (!pos)
+		if (len < pos + 10) {
+			errno = EINVAL;
 			return -1;
+		}
+		memcpy(header, buf + pos, 10);
+		pos += 10;
 		datalen = ntohs(*((unsigned short *)(header + 8)));
 
 		if (byte_equal(header, 2, DNS_T_TLSA)) {
@@ -58,7 +64,7 @@ dns_tlsa_packet(stralloc *out, const char *buf, unsigned int len)
 		}
 		pos += datalen;
 	}
-	
+
 	return 0;
 }
 
