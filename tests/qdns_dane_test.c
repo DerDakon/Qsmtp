@@ -125,8 +125,7 @@ static struct {
 		.len = 67,
 		.ret = -EINVAL
 	},
-	/* answers = 2, one subpacket of data length 36, one of length 4 (invalid) */
-	/* first matching type says SHA2-256 (valid) */
+	/* answers = 2, one valid SHA-256 packet, one of length 4 (invalid) */
 	{
 		.packet = "\0\0\0\0\0\0\0\2\0\0\0\0" /* header */
 			"\0" /* first name */
@@ -140,6 +139,22 @@ static struct {
 			"\1\1\1", /* TLSA header */
 		.len = 80,
 		.ret = -EINVAL
+	},
+	/* answers = 3, one valid "full" packet, one valid SHA2-512 packet, third subrecord missing */
+	{
+		.packet = "\0\0\0\0\0\0\0\3\0\0\0\0" /* header */
+		"\0" /* first name */
+		"\0\0\0\0" /* 4 more */
+		"\0" /*name of subrecord */
+		"\0\64\0\1\0\0\0\0\0\4" /* subheader */
+		"\2\1\0" /* TLSA header */
+		"\0" /* TLSA data */
+		"\0" /*name of subrecord */
+		"\0\64\0\1\0\0\0\0\0\103" /* subheader */
+		"\1\1\2" /* TLSA header */
+		"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", /* TLSA data */
+		.len = 110,
+		.ret = -ENOTBLK
 	}
 };
 
@@ -172,14 +187,16 @@ dns_domain_fromdot(char **q, const char *host, unsigned int len)
 
 	idx = (host[1] - '1') * 10 + (host[2] - '0');
 
+	passed_q = q;
+
 	if (idx < ARRAY_SIZE(patterns)) {
 		dns_resolve_tx.packet = (char *)patterns[idx].packet;
 		dns_resolve_tx.packetlen = patterns[idx].len;
 	} else {
 		dns_resolve_tx.packetlen = 0;
+		if ((idx % 2) == 0)
+			return 0;
 	}
-
-	passed_q = q;
 
 	return 1;
 }
@@ -230,14 +247,16 @@ main(void)
 	struct daneinfo *val = (struct daneinfo *)(uintptr_t)-1;
 	unsigned short i;
 
-	if (dnstlsa("foo.example.org", 48, NULL) != DNS_ERROR_LOCAL)
-		err++;
+	for (i = 98; i <= 99; i++) {
+		if (dnstlsa("foo.example.org", i, NULL) != DNS_ERROR_LOCAL)
+			err++;
 
-	if (dnstlsa("foo.example.org", 48, &val) != DNS_ERROR_LOCAL)
-		err++;
+		if (dnstlsa("foo.example.org", i, &val) != DNS_ERROR_LOCAL)
+			err++;
 
-	if (val != NULL)
-		err++;
+		if (val != NULL)
+			err++;
+	}
 
 	errno = 0;
 	for (i = 0; i < ARRAY_SIZE(patterns); i++) {

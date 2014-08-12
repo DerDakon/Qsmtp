@@ -20,7 +20,7 @@ free_tlsa_data(struct daneinfo **out, const int cnt)
 
 	if (out != NULL) {
 		for (i = 0; i < cnt; i++)
-			free(out[i]->data);
+			free((*out)[i].data);
 		free(*out);
 		*out = NULL;
 	}
@@ -106,7 +106,7 @@ dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 				}
 
 				if (out != NULL) {
-					struct daneinfo *res = out[ret];
+					struct daneinfo *res = *out + ret;
 
 					res->cert_usage = buf[pos];
 					res->selector = buf[pos + 1];
