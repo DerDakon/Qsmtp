@@ -466,6 +466,7 @@ test_implicit_mx(void)
 				err++;
 			} else if (strcmp(cur->name, dns_entries[idx].name) != 0) {
 				fprintf(stderr, "MX name for %s was %s\n", dns_entries[idx].name, cur->name);
+				free(nname);
 				err++;
 			}
 
