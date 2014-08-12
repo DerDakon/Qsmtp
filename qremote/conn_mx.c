@@ -118,7 +118,6 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 			quitmsg();
 			continue;
 		}
-		
 	} while (socketd < 0);
 
 	return 0;
