@@ -82,7 +82,6 @@ dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 				if (pos + datalen > len) {
 					errno = EINVAL;
 					return free_tlsa_data(out, ret);
-					
 				}
 
 				switch (buf[pos + 2]) {
@@ -119,8 +118,8 @@ dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 						return free_tlsa_data(out, ret);
 
 					memcpy(res->data, buf + pos + TLSA_MIN_RECORD_LEN, res->datalen);
-					ret++;
 				}
+				ret++;
 			}
 		}
 		pos += datalen;
