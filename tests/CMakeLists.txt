@@ -322,9 +322,11 @@ ADD_TEST(NAME "QDNS"
 INCLUDE_DIRECTORIES(${OWFAT_INCLUDE_DIRS})
 
 ADD_EXECUTABLE(testcase_qdns_dane
-		qdns_dane_test.c)
+		qdns_dane_test.c
+		${CMAKE_SOURCE_DIR}/lib/qdns_dane.c
+)
 TARGET_LINK_LIBRARIES(testcase_qdns_dane
-		qsmtp_dane_lib
+		qsmtp_lib
 		${MEMCHECK_LIBRARIES}
 )
 
