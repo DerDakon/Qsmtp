@@ -468,6 +468,8 @@ test_implicit_mx(void)
 				fprintf(stderr, "MX name for %s was %s\n", dns_entries[idx].name, cur->name);
 				free(nname);
 				err++;
+			} else {
+				free(nname);
 			}
 
 			for (s = 0; s < cur->count; s++) {
