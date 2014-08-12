@@ -49,7 +49,7 @@ dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 		return -1;
 	pos += 4;
 
-	if (out != NULL) {
+	if ((out != NULL) && (numanswers > 0)) {
 		*out = calloc(numanswers, sizeof(**out));
 		if (*out == NULL)
 			return -1;
