@@ -185,7 +185,7 @@ lookupipbl(int x __attribute__ ((unused)))
 
 /* checker functions */
 int
-addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds __attribute__ ((unused)), const char *rh, const off_t rs)
+addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds, const char *rh, const off_t rs)
 {
 	char *br;
 	int i;
@@ -328,7 +328,6 @@ main(void)
 				},
 			},
 			.input = "RCPT TO:<foo@example.org>",
-			.uc_load = 0,
 			.netmsg = "250 2.1.0 recipient <foo@example.org> OK\r\n",
 		},
 		/* all filters return temporary error */
@@ -343,7 +342,6 @@ main(void)
 				.check2822 = 1
 			},
 			.input = "RCPT TO:<bar@example.org>",
-			.uc_load = 0,
 			.tarpit = 1,
 			.netmsg = "450 4.7.0 mail temporary denied for policy reasons\r\n"
 		},
@@ -357,7 +355,6 @@ main(void)
 				.helostatus = 4
 			},
 			.input = "RCPT TO:<xfx@example.org>",
-			.uc_load = 0,
 			.tarpit = 1,
 			.netmsg = "550 5.7.1 mail denied for policy reasons\r\n"
 		},
@@ -371,7 +368,6 @@ main(void)
 				.helostatus = 2
 			},
 			.input = "RCPT TO:<bar@example.org>",
-			.uc_load = 0,
 			.tarpit = 1,
 			.netmsg = "550 5.7.1 mail denied for policy reasons\r\n"
 		},
@@ -385,7 +381,6 @@ main(void)
 				.helostatus = 2
 			},
 			.input = "RCPT TO:<xxn@example.org>",
-			.uc_load = 0,
 			.tarpit = 1,
 			.netmsg = "550 5.1.1 no such user <xxn@example.org>\r\n"
 		},
@@ -399,7 +394,6 @@ main(void)
 				.helostatus = 4
 			},
 			.input = "RCPT TO:<xfn@example.org>",
-			.uc_load = 0,
 			.tarpit = 1,
 			.netmsg = "550 5.1.1 no such user <xfn@example.org>\r\n"
 		},
@@ -414,7 +408,6 @@ main(void)
 				.helostatus = 5
 			},
 			.input = "RCPT TO:<xfn@example.org>",
-			.uc_load = 0,
 			.tarpit = 1,
 			.netmsg = "250 2.1.0 recipient <xfn@example.org> OK\r\n"
 		},
@@ -428,7 +421,6 @@ main(void)
 				.helostatus = 7
 			},
 			.input = "RCPT TO:<xxx@example.org>",
-			.uc_load = 0,
 			.tarpit = 1,
 			.netmsg = "450 4.7.0 mail temporary denied for policy reasons\r\n"
 		},
@@ -516,8 +508,7 @@ main(void)
 			.input = "rcpt to: postmaster",
 			.flush_rcpt = 1,
 			.tarpit = 1,
-			.rcpt_result = EINVAL,
-			.netmsg = "500 5.5.2 command syntax error\r\n"
+			.rcpt_result = EINVAL
 		},
 		{
 			.input = NULL
@@ -591,9 +582,15 @@ main(void)
 		}
 
 		if (xmitstat.spacebug != !!testdata[i].bugoffset) {
-				fprintf(stderr, "%u: smtp_rcpt() set spacebug to %u, but %u was expected\n",
-						i, xmitstat.spacebug, !!testdata[i].bugoffset);
-				errcnt++;
+			fprintf(stderr, "%u: smtp_rcpt() set spacebug to %u, but %u was expected\n",
+					i, xmitstat.spacebug, !!testdata[i].bugoffset);
+			errcnt++;
+		}
+
+		if (netnwrite_msg != NULL) {
+			fprintf(stderr, "%u: expected network reply %s was not sent\n",
+					i, netnwrite_msg);
+			errcnt++;
 		}
 
 		/* flush on request and on last test */
