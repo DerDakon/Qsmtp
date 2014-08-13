@@ -23,11 +23,6 @@ execute_process(COMMAND sleep 1)
 # invalid arguments
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> foo=bar nonsense\r")
 execute_process(COMMAND sleep 1)
-# valid size, valid body, valid empty auth
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> size=20 body=8bitmime auth=<>\r\nrset\r")
-execute_process(COMMAND sleep 1)
-# duplicate size
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> size=20 size=20\r")
 # valid empty auth, valid body
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> auth=<> body=8bitmime\r")
 # space bug, rcpt to not in angle brackets
@@ -39,23 +34,8 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> size=20 body=7bit
 # argument after rcpt, which is not supported
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "rcpt to:<postmaster> invalid\r\nrset\r")
 execute_process(COMMAND sleep 1)
-# duplicate body, noop to reset bad command counter
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> body=7bit body=7bit\r\nnoop\r")
-execute_process(COMMAND sleep 1)
-# invalid size
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> size=a\r\nnoop\r")
-execute_process(COMMAND sleep 1)
-# invalid size, space bug
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from: <> size=2a\r\nnoop\r")
-execute_process(COMMAND sleep 1)
 # missing angle brackets
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from: foo@example.net\r\nnoop\r")
-execute_process(COMMAND sleep 1)
-# invalid body arguments, noop to reset bad command counter
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> body=foo\r\nnoop\r")
-execute_process(COMMAND sleep 1)
-# invalid auth argument, noop to reset bad command counter
-execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:<> auth=\r\nnoop\r")
 execute_process(COMMAND sleep 1)
 # too long line, noop to reset bad command counter
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "mail from:${SPACES}<>\r\nnoop\r")

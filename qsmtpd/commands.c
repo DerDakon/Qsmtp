@@ -555,6 +555,7 @@ smtp_from(void)
 		return EBOGUS;
 	}
 	xmitstat.thisbytes = 0;
+	xmitstat.datatype = 0;
 	/* data behind the <..> is only allowed in ESMTP */
 	if (more && !xmitstat.esmtp)
 		return EINVAL;
@@ -600,8 +601,11 @@ smtp_from(void)
 		} else
 			return EBADRQC;
 
-		if (*more && (*more != ' '))
+		if (*more && (*more != ' ')) {
+			xmitstat.thisbytes = 0;
+			xmitstat.datatype = 0;
 			return EINVAL;
+		}
 		continue;
 	}
 	if (linein.len > validlength)

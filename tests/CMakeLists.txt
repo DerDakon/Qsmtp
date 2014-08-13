@@ -645,7 +645,7 @@ ADD_TEST(NAME "Qsmtpd_cmd_args"
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
 SET_TESTS_PROPERTIES(Qsmtpd_cmd_args PROPERTIES
-		PASS_REGULAR_EXPRESSION "^${QSMTPD_GREETING_LINE}250 [^\n ]*\n250 [^\n ]*\n500 5\\.5\\.2 command syntax error\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n501 5\\.5\\.2 unrecognized command parameter\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n250 2\\.1\\.5 sender <> is syntactically correct\n500 5\\.5\\.2 command syntax error\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n250 2\\.1\\.5 sender <> is syntactically correct\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+500-5\\.5\\.2 line too long\n500-5\\.5\\.2 This is usually a bug in your mail client\n500 5\\.5\\.2 Try to use a different encoding like quoted-printable for this mail.\n250 2.0.0 ok\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
+		PASS_REGULAR_EXPRESSION "^${QSMTPD_GREETING_LINE}250 [^\n ]*\n250 [^\n ]*\n500 5\\.5\\.2 command syntax error\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n501 5\\.5\\.2 unrecognized command parameter\n250 2\\.1\\.5 sender <> is syntactically correct\n500 5\\.5\\.2 command syntax error\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n250 2\\.1\\.5 sender <> is syntactically correct\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+500-5\\.5\\.2 line too long\n500-5\\.5\\.2 This is usually a bug in your mail client\n500 5\\.5\\.2 Try to use a different encoding like quoted-printable for this mail.\n250 2.0.0 ok\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
 
 SET(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_bad_args.cmake")
 CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_bad_args.cmake" @ONLY)
@@ -867,3 +867,17 @@ TARGET_LINK_LIBRARIES(testcase_cmd_rcpt
 
 ADD_TEST(NAME "Qsmtpd_cmd_RCPT"
 		COMMAND testcase_cmd_rcpt)
+
+ADD_EXECUTABLE(testcase_cmd_from
+		cmd_from_test.c
+		${CMAKE_SOURCE_DIR}/lib/dns_helpers.c
+		${CMAKE_SOURCE_DIR}/lib/fmt.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/addrparse.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/addrsyntax.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/commands.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/xtext.c)
+TARGET_LINK_LIBRARIES(testcase_cmd_from
+		testcase_io_lib)
+
+ADD_TEST(NAME "Qsmtpd_cmd_FROM"
+		COMMAND testcase_cmd_from)
