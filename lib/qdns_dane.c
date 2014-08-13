@@ -125,6 +125,19 @@ dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 		pos += datalen;
 	}
 
+	if (out != NULL) {
+		/* there may have been more sub-packets than actually interesting ones,
+		 * shrink the array to the needed size */
+		if (ret > 0) {
+			struct daneinfo *tmp = realloc(*out, sizeof(**out) * ret);
+			if (tmp != NULL)
+				*out = tmp;
+		} else {
+			free(*out);
+			*out = NULL;
+		}
+	}
+
 	return ret;
 }
 
@@ -161,10 +174,6 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 		*out = NULL;
 
 	r = dns_tlsa(out, hostbuf);
-	if ((r <= 0) && (out != NULL)) {
-		free(*out);
-		*out = NULL;
-	}
 
 	return r;
 }
