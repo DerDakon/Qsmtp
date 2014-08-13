@@ -141,28 +141,11 @@ dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 	return ret;
 }
 
-static int
-dns_tlsa(struct daneinfo **out, const char *fqdn)
-{
-	char *q = NULL;
-	int r;
-
-	if (!dns_domain_fromdot(&q, fqdn, strlen(fqdn)))
-		return -1;
-	if (dns_resolve(q, DNS_T_TLSA) == -1)
-		return -1;
-	r = dns_tlsa_packet(out, dns_resolve_tx.packet, dns_resolve_tx.packetlen);
-	if (r < 0)
-		return r;
-	dns_transmit_free(&dns_resolve_tx);
-	dns_domain_free(&q);
-	return r;
-}
-
 int
 dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 {
 	char hostbuf[strlen("_65535._tcp.") + strlen(host) + 1];
+	char *q = NULL;
 	int r;
 
 	hostbuf[0] = '_';
@@ -173,7 +156,15 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 	if (out != NULL)
 		*out = NULL;
 
-	r = dns_tlsa(out, hostbuf);
+	if (!dns_domain_fromdot(&q, hostbuf, strlen(hostbuf)))
+		return -1;
+	if (dns_resolve(q, DNS_T_TLSA) == -1)
+		return -1;
+	r = dns_tlsa_packet(out, dns_resolve_tx.packet, dns_resolve_tx.packetlen);
+	if (r < 0)
+		return r;
+	dns_transmit_free(&dns_resolve_tx);
+	dns_domain_free(&q);
 
 	return r;
 }
