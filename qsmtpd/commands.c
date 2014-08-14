@@ -606,7 +606,6 @@ smtp_from(void)
 			xmitstat.datatype = 0;
 			return EINVAL;
 		}
-		continue;
 	}
 	if (linein.len > validlength)
 		return E2BIG;
