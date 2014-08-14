@@ -88,30 +88,30 @@ cdb_seekmm(int fd, const char *key, unsigned int len, char **mm, const struct st
 
 	lenhash = cdb_unpack(*mm + pos + 4);
 
-	if (!lenhash)
-		goto out;
-	h2 = (h >> 8) % lenhash;
+	if (lenhash != 0) {
+		h2 = (h >> 8) % lenhash;
 
-	pos = cdb_unpack(*mm + pos);
+		pos = cdb_unpack(*mm + pos);
 
-	for (loop = 0; loop < lenhash; ++loop) {
-		cur = *mm + pos + 8 * h2;
-		poskd = cdb_unpack(cur + 4);
+		for (loop = 0; loop < lenhash; ++loop) {
+			cur = *mm + pos + 8 * h2;
+			poskd = cdb_unpack(cur + 4);
 
-		if (!poskd)
-			break;
+			if (!poskd)
+				break;
 
-		if (cdb_unpack(cur) == h) {
-			cur = *mm + poskd;
+			if (cdb_unpack(cur) == h) {
+				cur = *mm + poskd;
 
-			if (cdb_unpack(cur) == len)
-				if (!strncmp(cur + 8, key, len))
-					return cur + 8 + len;
+				if (cdb_unpack(cur) == len)
+					if (!strncmp(cur + 8, key, len))
+						return cur + 8 + len;
+			}
+			if (++h2 == lenhash)
+				h2 = 0;
 		}
-		if (++h2 == lenhash)
-			h2 = 0;
 	}
-out:
+
 	err = errno;
 	munmap(*mm, st->st_size);
 	errno = err;
