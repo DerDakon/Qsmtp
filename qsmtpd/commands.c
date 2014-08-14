@@ -507,8 +507,8 @@ smtp_rcpt(void)
 	return i ? e : 0;
 }
 
-int
-smtp_from(void)
+static int
+smtp_from_inner(void)
 {
 	int i = 0;
 	char *more = NULL;
@@ -530,8 +530,7 @@ smtp_from(void)
 		bugoffset++;
 	if (linein.s[10 + bugoffset] != '<')
 		return EINVAL;
-	if (bugoffset != 0)
-		xmitstat.spacebug = 1;
+	xmitstat.spacebug = !!bugoffset;
 
 	/* if we are in submission mode we require authentication before any mail */
 	if (submission_mode) {
@@ -545,17 +544,11 @@ smtp_from(void)
 		}
 	}
 
-	i = addrparse(linein.s + 11 + bugoffset, 0, &(xmitstat.mailfrom), &more, NULL, rcpthosts, rcpthsize);
-	xmitstat.frommx = NULL;
-	xmitstat.fromdomain = 0;
+	i = addrparse(linein.s + 11 + bugoffset, 0, &xmitstat.mailfrom, &more, NULL, rcpthosts, rcpthsize);
 	if (i > 0)
 		return i;
-	else if (i == -1) {
-		free(xmitstat.mailfrom.s);
+	else if (i == -1)
 		return EBOGUS;
-	}
-	xmitstat.thisbytes = 0;
-	xmitstat.datatype = 0;
 	/* data behind the <..> is only allowed in ESMTP */
 	if (more && !xmitstat.esmtp)
 		return EINVAL;
@@ -601,11 +594,8 @@ smtp_from(void)
 		} else
 			return EBADRQC;
 
-		if (*more && (*more != ' ')) {
-			xmitstat.thisbytes = 0;
-			xmitstat.datatype = 0;
+		if ((*more != '\0') && (*more != ' '))
 			return EINVAL;
-		}
 	}
 	if (linein.len > validlength)
 		return E2BIG;
@@ -652,8 +642,6 @@ smtp_from(void)
 			return errno;
 		s = strchr(xmitstat.mailfrom.s, '@') + 1;
 	} else {
-		xmitstat.fromdomain = 0;
-		xmitstat.frommx = NULL;
 		s = HELOSTR;
 	}
 
@@ -673,6 +661,32 @@ smtp_from(void)
 	goodrcpt = 0;
 	okmsg[1] = MAILFROM;
 	return net_writen(okmsg) ? errno : 0;
+}
+
+int
+smtp_from(void)
+{
+	int r;
+
+	xmitstat.frommx = NULL;
+	xmitstat.fromdomain = 0;
+	xmitstat.thisbytes = 0;
+	xmitstat.datatype = 0;
+	STREMPTY(xmitstat.mailfrom);
+
+	r = smtp_from_inner();
+
+	if (r != 0) {
+		freeips(xmitstat.frommx);
+		xmitstat.frommx = NULL;
+		xmitstat.fromdomain = 0;
+		xmitstat.thisbytes = 0;
+		xmitstat.datatype = 0;
+		free(xmitstat.mailfrom.s);
+		STREMPTY(xmitstat.mailfrom);
+	}
+
+	return r;
 }
 
 int

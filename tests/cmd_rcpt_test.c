@@ -183,6 +183,12 @@ lookupipbl(int x __attribute__ ((unused)))
 	abort();
 }
 
+void
+freeips(struct ips *x __attribute__ ((unused)))
+{
+	abort();
+}
+
 /* checker functions */
 int
 addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds, const char *rh, const off_t rs)

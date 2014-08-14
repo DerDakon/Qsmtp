@@ -294,11 +294,7 @@ main(void)
 		/* again, but too large SIZE given */
 		{
 			.xmitstat = {
-				.mailfrom = {
-					.s = "foo@example.org"
-				},
-				.esmtp = 1,
-				.thisbytes = 123450
+				.esmtp = 1
 			},
 			.input = "MAIL FROM:<foo@example.org> SIZE=123450",
 			.netmsg = "452 4.3.1 Requested action not taken: insufficient system storage\r\n",
@@ -306,21 +302,11 @@ main(void)
 		},
 		/* SIZE given, but not in ESMTP mode */
 		{
-			.xmitstat = {
-				.mailfrom = {
-					.s = "foo@example.org"
-				},
-			},
 			.input = "MAIL FROM:<foo@example.org> SIZE=12345",
 			.from_result = EINVAL
 		},
 		/* SIZE given, but not in ESMTP mode */
 		{
-			.xmitstat = {
-				.mailfrom = {
-					.s = "foo@example.org"
-				},
-			},
 			.input = "MAIL FROM:<foo@example.org> SIZE=12345",
 			.from_result = EINVAL
 		},
@@ -337,8 +323,7 @@ main(void)
 		/* duplicate size */
 		{
 			.xmitstat = {
-				.esmtp = 1,
-				.thisbytes = 20
+				.esmtp = 1
 			},
 			.input = "mail from:<> size=20 size=20",
 			.from_result = EINVAL
@@ -390,8 +375,6 @@ main(void)
 	};
 	unsigned int i;
 
-	TAILQ_INIT(&head);
-
 	testcase_setup_net_writen(testcase_net_writen_combine);
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 	testcase_setup_ask_dnsmx(test_ask_dnsmx);
@@ -431,6 +414,7 @@ main(void)
 				errcnt++;
 			}
 		} else {
+			assert(testdata[i].from_result == 0);
 			if (xmitstat.mailfrom.s == NULL) {
 				fprintf(stderr, "%u: smtp_from() set xmitstat.mailfrom to NULL/%zu, but '%s'/%zu was expected\n",
 						i, xmitstat.mailfrom.len, testdata[i].xmitstat.mailfrom.s, strlen(testdata[i].xmitstat.mailfrom.s));
@@ -440,11 +424,20 @@ main(void)
 						i, xmitstat.mailfrom.s, xmitstat.mailfrom.len, testdata[i].xmitstat.mailfrom.s, strlen(testdata[i].xmitstat.mailfrom.s));
 				errcnt++;
 			}
+			free(xmitstat.mailfrom.s);
 		}
 
-		free(xmitstat.mailfrom.s);
-		// TODO: check frommx
-		freeips(xmitstat.frommx);
+		if (r == 0) {
+			// TODO: check frommx
+			freeips(xmitstat.frommx);
+		} else {
+			if (xmitstat.frommx != NULL) {
+				fprintf(stderr, "%u: smtp_from() returned %i, but set frommx\n",
+						i, r);
+				freeips(xmitstat.frommx);
+				errcnt++;
+			}
+		}
 
 		if (xmitstat.thisbytes != testdata[i].xmitstat.thisbytes) {
 			fprintf(stderr, "%u: smtp_from() set thisbytes to %zu, but %zu was expected\n",
