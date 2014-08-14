@@ -369,6 +369,54 @@ main(void)
 			.input = "mail from:<> auth=",
 			.from_result = EINVAL
 		},
+		/* size given more than once */
+		{
+			.xmitstat = {
+				.esmtp = 1
+			},
+			.input = "mail from:<> size=0 size=2",
+			.from_result = EINVAL
+		},
+		/* auth given more than once */
+		{
+			.xmitstat = {
+				.esmtp = 1
+			},
+			.input = "mail from:<> auth=<> auth=<>",
+			.from_result = EINVAL
+		},
+		/* no space between > and size */
+		{
+			.xmitstat = {
+				.esmtp = 1
+			},
+			.input = "mail from:<>size=20",
+			.from_result = EINVAL
+		},
+		/* no space between 7BIT and size */
+		{
+			.xmitstat = {
+				.esmtp = 1
+			},
+			.input = "mail from:<> body=7BITsize=20",
+			.from_result = EINVAL
+		},
+		/* bad extension name */
+		{
+			.xmitstat = {
+				.esmtp = 1
+			},
+			.input = "mail from:<> foo=bar",
+			.from_result = EBADRQC
+		},
+		/* bad extension name, followed by something valid */
+		{
+			.xmitstat = {
+				.esmtp = 1
+			},
+			.input = "mail from:<> foo=bar size=20",
+			.from_result = EBADRQC
+		},
 		{
 			.input = NULL
 		}

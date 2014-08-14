@@ -508,6 +508,84 @@ smtp_rcpt(void)
 }
 
 static int
+smtp_from_extensions(const char *more, unsigned int *validlength)
+{
+	unsigned int seen = 0;	/* which extensions were already seen */
+	const char *names[] = { "SIZE=", "BODY=", "AUTH=", NULL };
+
+	while ((more != NULL) && (*more != '\0')) {
+		unsigned int ext;
+		const char *p; /* where to begin parsing the value */
+
+		for (ext = 0; names[ext] != NULL; ext++) {
+			if (*more != ' ')
+				return EINVAL;
+
+			if (strncasecmp(names[ext], more + 1, strlen(names[ext])) == 0)
+				break;
+		}
+
+		/* unknown extension */
+		if (names[ext] == NULL)
+			return EBADRQC;
+
+		if (seen & (1 << ext))
+			return EINVAL;
+
+		seen |= (1 << ext);
+
+		p = more + 1 + strlen(names[ext]);
+
+		switch (ext) {
+		case 0:
+			if ((*p >= '0') && (*p <= '9')) {
+				char *end;
+				xmitstat.thisbytes = strtoul(p, &end, 10);
+				/* the line length limit is raised by 26 characters
+				 * in RfC 1870, section 3. */
+				*validlength += 26;
+				more = end;
+				break;
+			} else {
+				return EINVAL;
+			}
+		case 1:
+			{
+			const char *datatypes[] = { "7BIT", "8BITMIME", NULL };
+			unsigned int dt;
+
+			for (dt = 0; datatypes[dt] != NULL; dt++)
+				if (strncasecmp(p, datatypes[dt], strlen(datatypes[dt])) == 0) {
+					more = p + strlen(datatypes[dt]);
+					xmitstat.datatype = dt;
+					break;
+				}
+
+			if (datatypes[dt] == NULL)
+				return EINVAL;
+			break;
+			}
+		case 2:
+			{
+			ssize_t xlen = xtextlen(p);
+
+			if (xlen <= 0)
+				return EINVAL;
+
+			validlength += 500;
+			more += xlen + 6;
+			break;
+			}
+		}
+
+		if ((*more != '\0') && (*more != ' '))
+			return EINVAL;
+	}
+
+	return 0;
+}
+
+static int
 smtp_from_inner(void)
 {
 	int i = 0;
@@ -518,7 +596,6 @@ smtp_from_inner(void)
 	 * The limit is defined to 512 characters including CRLF (which we do not count)
 	 * in RfC 2821, section 4.5.3.1 */
 	unsigned int validlength = 510;
-	int seenbody = 0;	/* if we found a "BODY=" after mail, there may only be one */
 	struct statvfs sbuf;
 	const char *okmsg[] = {"250 2.1.5 sender <", NULL, "> is syntactically correct", NULL};
 	char *s;
@@ -552,51 +629,11 @@ smtp_from_inner(void)
 	/* data behind the <..> is only allowed in ESMTP */
 	if (more && !xmitstat.esmtp)
 		return EINVAL;
-	while (more && *more) {
-		if (!strncasecmp(more, " SIZE=", 6)) {
-			char *sizenum = more + 6;
 
-			/* this is only set if we found SIZE before; there should only be one */
-			if (xmitstat.thisbytes)
-				return EINVAL;
-			if ((*sizenum >= '0') && (*sizenum <= '9')) {
-				char *end;
-				xmitstat.thisbytes = strtoul(sizenum, &end, 10);
-				/* the line length limit is raised by 26 characters
-				 * in RfC 1870, section 3. */
-				validlength += 26;
-				more = end;
-			} else
-				return EINVAL;
-		} else if (!strncasecmp(more, " BODY=", 6)) {
-			char *bodytype = more + 6;
+	i = smtp_from_extensions(more, &validlength);
+	if (i != 0)
+		return i;
 
-			if (seenbody)
-				return EINVAL;
-			seenbody = 1;
-			if (!strncasecmp(bodytype, "7BIT", 4)) {
-				more = bodytype + 4;
-				xmitstat.datatype = 0;
-			} else if (!strncasecmp(bodytype, "8BITMIME", 8)) {
-				more = bodytype + 8;
-				xmitstat.datatype = 1;
-			} else
-				return EINVAL;
-		} else if (!strncasecmp(more, " AUTH=", 6)) {
-			char *authstr = more + 6;
-			ssize_t xlen = xtextlen(authstr);
-
-			if (xlen <= 0)
-				return EINVAL;
-
-			validlength += 500;
-			more += xlen + 6;
-		} else
-			return EBADRQC;
-
-		if ((*more != '\0') && (*more != ' '))
-			return EINVAL;
-	}
 	if (linein.len > validlength)
 		return E2BIG;
 
