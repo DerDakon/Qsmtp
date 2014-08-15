@@ -445,6 +445,17 @@ TARGET_LINK_LIBRARIES(testcase_filter_fromdomain
 ADD_TEST(NAME "Filter-FromDomain"
 		COMMAND testcase_filter_fromdomain)
 
+
+ADD_EXECUTABLE(testcase_filter_spf
+		filter_spf.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/filters/spf.c
+)
+TARGET_LINK_LIBRARIES(testcase_filter_spf
+		testcase_io_lib)
+
+ADD_TEST(NAME "Filter-SPF"
+		COMMAND testcase_filter_spf)
+
 ADD_EXECUTABLE(testcase_vpop_control
 		vpop_control_test.c)
 TARGET_LINK_LIBRARIES(testcase_vpop_control
