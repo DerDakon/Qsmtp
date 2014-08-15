@@ -1,5 +1,6 @@
 #include <qsmtpd/commands.h>
 
+#include <fmt.h>
 #include <netio.h>
 #include <qsmtpd/queue.h>
 #include <qsmtpd/qsauth.h>
@@ -533,6 +534,7 @@ main(void)
 		int r;
 		unsigned int oldgood = goodrcpt;
 		unsigned int oldcnt = rcptcount;
+		char ulbuf[ULSTRLEN];
 
 		linein.len = strlen(testdata[i].input);
 		assert(linein.len < TESTIO_MAX_LINELEN);
@@ -593,11 +595,8 @@ main(void)
 			errcnt++;
 		}
 
-		if (netnwrite_msg != NULL) {
-			fprintf(stderr, "%u: expected network reply %s was not sent\n",
-					i, netnwrite_msg);
-			errcnt++;
-		}
+		snprintf(ulbuf, sizeof(ulbuf), "%u", i);
+		errcnt += testcase_netnwrite_check(ulbuf);
 
 		/* flush on request and on last test */
 		if (testdata[i].flush_rcpt || (testdata[i + 1].input == NULL)) {

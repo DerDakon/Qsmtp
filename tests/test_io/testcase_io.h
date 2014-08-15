@@ -49,6 +49,24 @@ extern const char *netnwrite_msg; /**< the next message expected in netnwrite() 
  */
 extern int testcase_netnwrite_compare(const char *a, const size_t len);
 
+/**
+ * @brief check if netnwrite() was called
+ * @param prefix text to print before the error message
+ * @returns if netnwrite() was called
+ * @retval 0 netnwrite() was called, i.e. netnwrite_msg is NULL
+ * @retval 1 netnwrite() was not called, i.e. netnwrite_msg != NULL
+ *
+ * This is a simple checker to see if expected calls to netnwrite() arrived,
+ * use it like:
+ *
+ * @code
+ * err += testcase_netnwrite_check("my fancy test");
+ * @endcode
+ *
+ * netnwrite_msg is always NULL once this function returns.
+ */
+extern int testcase_netnwrite_check(const char *prefix);
+
 typedef size_t (func_net_readbin)(size_t, char *);
 DECLARE_TC_SETUP(net_readbin);
 

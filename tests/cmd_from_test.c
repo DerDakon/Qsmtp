@@ -1,5 +1,6 @@
 #include <qsmtpd/commands.h>
 
+#include <fmt.h>
 #include <netio.h>
 #include <qdns.h>
 #include <qsmtpd/antispam.h>
@@ -431,6 +432,7 @@ main(void)
 
 	for (i = 0; testdata[i].input != NULL; i++) {
 		int r;
+		char ulbuf[ULSTRLEN];
 
 		linein.len = strlen(testdata[i].input);
 		assert(linein.len < TESTIO_MAX_LINELEN);
@@ -505,11 +507,8 @@ main(void)
 			errcnt++;
 		}
 
-		if (netnwrite_msg != NULL) {
-			fprintf(stderr, "%u: expected network reply %s was not sent\n",
-					i, netnwrite_msg);
-			errcnt++;
-		}
+		snprintf(ulbuf, sizeof(ulbuf), "%u", i);
+		errcnt += testcase_netnwrite_check(ulbuf);
 	}
 
 	return errcnt;

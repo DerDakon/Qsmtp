@@ -23,19 +23,15 @@ static int err;	/* global error counter */
 static char baddummy[PATH_MAX];
 
 static void
-check_all_msgs(void)
+check_all_msgs(const char *caller)
 {
 	if (log_write_msg != NULL) {
-		fprintf(stderr, "expected log message '%s' was not received\n",
-				log_write_msg);
+		fprintf(stderr, "%s: expected log message '%s' was not received\n",
+				caller, log_write_msg);
 		err++;
 	}
 
-	if (netnwrite_msg != NULL) {
-		fprintf(stderr, "expected message '%s' was not received\n",
-				netnwrite_msg);
-		err++;
-	}
+	err += testcase_netnwrite_check(caller);
 }
 
 static int fork_success;
@@ -69,7 +65,7 @@ test_fork_fail(void)
 		err++;
 	}
 
-	check_all_msgs();
+	check_all_msgs(__func__);
 }
 
 /**
@@ -91,7 +87,7 @@ test_chkpw_abort(void)
 		err++;
 	}
 
-	check_all_msgs();
+	check_all_msgs(__func__);
 }
 
 /**
@@ -112,7 +108,7 @@ test_chkpw_wrong(void)
 		err++;
 	}
 
-	check_all_msgs();
+	check_all_msgs(__func__);
 }
 
 /**
@@ -131,7 +127,7 @@ test_chkpw_correct(void)
 		err++;
 	}
 
-	check_all_msgs();
+	check_all_msgs(__func__);
 }
 
 /**
@@ -165,7 +161,7 @@ test_setup_errors(const char *dummy)
 		err++;
 	}
 
-	check_all_msgs();
+	check_all_msgs(__func__);
 }
 
 int

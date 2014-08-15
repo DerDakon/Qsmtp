@@ -116,6 +116,17 @@ testcase_netnwrite_compare(const char *a, const size_t len)
 }
 
 int
+testcase_netnwrite_check(const char *prefix)
+{
+	if (netnwrite_msg == NULL)
+		return 0;
+
+	fprintf(stderr, "%s: the expected network message '%s' was not sent\n", prefix, netnwrite_msg);
+	netnwrite_msg = NULL;
+	return 1;
+}
+
+int
 tc_ignore_netnwrite(const char *a __attribute__((unused)), const size_t len __attribute__((unused)))
 {
 	return 0;

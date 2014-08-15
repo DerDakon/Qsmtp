@@ -562,10 +562,7 @@ check_data_badbounce()
 	if (r != EDONE)
 		ret++;
 
-	if (netnwrite_msg != NULL) {
-		fprintf(stderr, "expected error message not received for bad bounce");
-		ret++;
-	}
+	ret += testcase_netnwrite_check(__func__);
 
 	return ret;
 }
@@ -586,10 +583,7 @@ check_data_no_rcpt()
 	if (r != EDONE)
 		ret++;
 
-	if (netnwrite_msg != NULL) {
-		fprintf(stderr, "expected error message not received for no recipients");
-		ret++;
-	}
+	ret += testcase_netnwrite_check(__func__);
 
 	return ret;
 }
