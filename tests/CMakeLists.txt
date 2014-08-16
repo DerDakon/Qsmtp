@@ -456,6 +456,17 @@ TARGET_LINK_LIBRARIES(testcase_filter_spf
 ADD_TEST(NAME "Filter-SPF"
 		COMMAND testcase_filter_spf)
 
+ADD_EXECUTABLE(testcase_filter_wildcardns
+		filter_wildcardns_test.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/filters/wildcardns.c
+)
+TARGET_LINK_LIBRARIES(testcase_filter_nomail
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
+ADD_TEST(NAME "Filter-WildcardNS"
+		COMMAND testcase_filter_wildcardns)
+
 ADD_EXECUTABLE(testcase_vpop_control
 		vpop_control_test.c)
 TARGET_LINK_LIBRARIES(testcase_vpop_control

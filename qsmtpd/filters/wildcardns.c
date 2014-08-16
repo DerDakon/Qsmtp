@@ -109,10 +109,8 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 
 			/* check if top level domain of sender address matches this entry */
 			if ((xmitstat.mailfrom.s[xmitstat.mailfrom.len - this->len - 1] != '.') ||
-					strcasecmp(xmitstat.mailfrom.s + xmitstat.mailfrom.len - this->len, this->tld)) {
-				this = this->next;
+					strcasecmp(xmitstat.mailfrom.s + xmitstat.mailfrom.len - this->len, this->tld))
 				continue;
-			}
 
 			if (IN6_ARE_ADDR_EQUAL(thismx->addr + s, &this->ip)) {
 				match = 1;
