@@ -17,7 +17,6 @@ struct dns_wc {
 		struct in6_addr ip;	/**< IP address of nameserver */
 		char tld[MAXTLDLEN + 1];	/**< Top Level Domain ip serves for */
 		size_t len;		/**< length of tld */
-		struct dns_wc *next;	/**< next item in list */
 };
 
 static int __attribute__ ((pure))
@@ -36,11 +35,14 @@ validns(const char *inp)
 	return inp[i];
 }
 
+/**
+ * @brief load the wildcardns entries
+ * @return entry count of wcs
+ */
 static int
 loadjokers(struct dns_wc **wcs)
 {
-	int i;
-	struct dns_wc **this = wcs;
+	int i, cnt;
 	char **inputs;
 
 	if (loadlistfd(openat(controldir_fd, "wildcardns", O_RDONLY | O_CLOEXEC), &inputs, &validns))
@@ -49,35 +51,38 @@ loadjokers(struct dns_wc **wcs)
 	if (inputs == NULL)
 		return 0;
 
+	for (cnt = 0; inputs[cnt]; cnt++)
+		;
+
+	*wcs = calloc(cnt, sizeof(**wcs));
+	if (*wcs == NULL) {
+		free(inputs);
+		return -1;
+	}
+
+	cnt = 0;
+
 	for (i = 0; inputs[i]; i++) {
-		struct dns_wc t;
+		struct dns_wc *t = (*wcs) + cnt;
 		size_t j = 0;
 
-		t.next = NULL;
-
 		while (inputs[i][j] != '_') {
-			t.tld[j] = inputs[i][j];
+			t->tld[j] = inputs[i][j];
 			j++;
 		}
-		t.tld[j] = '\0';
-		t.len = j++;
-		if (inet_pton(AF_INET6, inputs[i] + j, &t.ip) <= 0)
-			continue;
-		*this = malloc(sizeof(**this));
-		if (!*this) {
-			while (*wcs) {
-				*this = (*wcs)->next;
-				free(*wcs);
-				*wcs = *this;
-			}
-			free(inputs);
-			return -1;
-		}
-		**this = t;
-		this = &((*this)->next);
+		t->tld[j] = '\0';
+		t->len = j++;
+
+		/* simply ignore all invalid entries */
+		if (inet_pton(AF_INET6, inputs[i] + j, &t->ip) > 0)
+			cnt++;
 	}
 	free(inputs);
-	return 0;
+
+	/* no need to shrink the array in case there are unused entries at
+	 * the end: the array will be iterated over and then freed anyway */
+
+	return cnt;
 }
 
 enum filter_result
@@ -86,6 +91,7 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 	struct ips *thismx;
 	unsigned short s;
 	struct dns_wc *dns_wildcards;
+	int cnt;
 	int match;
 
 	if (xmitstat.frommx == NULL)
@@ -96,24 +102,25 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 		return FILTER_PASSED;
 
 	/* the only case this returns an error is ENOMEM */
-	if (loadjokers(&dns_wildcards))
+	cnt = loadjokers(&dns_wildcards);
+	if (cnt < 0)
 		return FILTER_ERROR;
 
 	FOREACH_STRUCT_IPS(thismx, s, xmitstat.frommx) {
-		struct dns_wc *this;
+		int i;
 
 		match = 0;
 
-		for (this = dns_wildcards; this != NULL; this = this->next) {
-			if (xmitstat.mailfrom.len < this->len + 1)
+		for (i = 0; i < cnt; i++) {
+			if (xmitstat.mailfrom.len < dns_wildcards[i].len + 1)
 				continue;
 
 			/* check if top level domain of sender address matches this entry */
-			if ((xmitstat.mailfrom.s[xmitstat.mailfrom.len - this->len - 1] != '.') ||
-					strcasecmp(xmitstat.mailfrom.s + xmitstat.mailfrom.len - this->len, this->tld))
+			if ((xmitstat.mailfrom.s[xmitstat.mailfrom.len - dns_wildcards[i].len - 1] != '.') ||
+					strcasecmp(xmitstat.mailfrom.s + xmitstat.mailfrom.len - dns_wildcards[i].len, dns_wildcards[i].tld))
 				continue;
 
-			if (IN6_ARE_ADDR_EQUAL(thismx->addr + s, &this->ip)) {
+			if (IN6_ARE_ADDR_EQUAL(thismx->addr + s, &(dns_wildcards[i].ip))) {
 				match = 1;
 				break;
 			}
@@ -123,11 +130,7 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 			break;
 	}
 
-	while (dns_wildcards != NULL) {
-		struct dns_wc *next = dns_wildcards->next;
-		free(dns_wildcards);
-		dns_wildcards = next;
-	}
+	free(dns_wildcards);
 
 	if (!match)
 		return FILTER_PASSED;
