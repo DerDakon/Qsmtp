@@ -88,14 +88,14 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 	struct dns_wc *dns_wildcards;
 	int match;
 
-	/* we can't check the from domain on a bounce message */
-	if (!xmitstat.mailfrom.len || !xmitstat.frommx)
+	if (xmitstat.frommx == NULL)
 		return FILTER_PASSED;
 
 	/* if there is a syntax error in the file it's the users fault and this mail will be accepted */
 	if (getsettingglobal(ds, "block_wildcardns", t) <= 0)
 		return FILTER_PASSED;
 
+	/* the only case this returns an error is ENOMEM */
 	if (loadjokers(&dns_wildcards))
 		return FILTER_ERROR;
 
