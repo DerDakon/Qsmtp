@@ -9,6 +9,17 @@
 #include "control.h"
 #include <qsmtpd/qsmtpd.h>
 
+/** \struct dns_wc
+ * \brief list entry of a wildcard nameserver for a top level domain
+ */
+#define MAXTLDLEN 6
+struct dns_wc {
+		struct in6_addr ip;	/**< IP address of nameserver */
+		char tld[MAXTLDLEN + 1];	/**< Top Level Domain ip serves for */
+		size_t len;		/**< length of tld */
+		struct dns_wc *next;	/**< next item in list */
+};
+
 static int __attribute__ ((pure))
 validns(const char *inp)
 {
@@ -16,7 +27,7 @@ validns(const char *inp)
 
 	while (((inp[i] >= 'a') && (inp[i] <= 'z')) || ((inp[i] >= 'A') && (inp[i] <= 'Z')))
 		i++;
-	if ((inp[i] != '_') || (i > 6))
+	if ((inp[i] != '_') || (i > MAXTLDLEN))
 		return 1;
 	i++;
 	while (((inp[i] >= 'a') && (inp[i] <= 'f')) || ((inp[i] >= 'A') && (inp[i] <= 'F')) ||
@@ -24,16 +35,6 @@ validns(const char *inp)
 		i++;
 	return inp[i];
 }
-
-/** \struct dns_wc
- * \brief list entry of a wildcard nameserver for a top level domain
- */
-struct dns_wc {
-		struct in6_addr ip;	/**< IP address of nameserver */
-		char tld[7];		/**< Top Level Domain ip serves for */
-		size_t len;		/**< length of tld */
-		struct dns_wc *next;	/**< next item in list */
-};
 
 static int
 loadjokers(struct dns_wc **wcs)
