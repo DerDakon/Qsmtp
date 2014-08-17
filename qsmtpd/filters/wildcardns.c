@@ -45,6 +45,8 @@ loadjokers(struct dns_wc **wcs)
 	int i, cnt;
 	char **inputs;
 
+	*wcs = NULL;
+
 	if (loadlistfd(openat(controldir_fd, "wildcardns", O_RDONLY | O_CLOEXEC), &inputs, &validns))
 		return 0;
 
