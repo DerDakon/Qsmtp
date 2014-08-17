@@ -112,10 +112,18 @@ main(void)
 	}
 
 	xmitstat.frommx = &frommx;
-	/* test with an IP that is no wildcard NS and a valid from */
 	r = inet_pton(AF_INET6, "::ffff:192.168.42.3", frommxip);
 	assert(r > 0);
 	frommxip[1] = frommxip[0];
+	/* test without mailfrom, should just pass */
+	r = cb_wildcardns(&ds, &logmsg, &t);
+	if (r != FILTER_PASSED) {
+		fprintf(stderr, "cb_wildcardns() without mailfrom returned %i instead of %i (FILTER_PASSED)\n",
+			r, FILTER_PASSED);
+		err++;
+	}
+
+	/* test with an IP that is no wildcard NS and a valid from */
 	xmitstat.mailfrom.s = (char *)unrelated_from;
 	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
 
