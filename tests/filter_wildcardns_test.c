@@ -32,19 +32,25 @@ getsettingglobal(const struct userconf *ds __attribute__ ((unused)), const char 
 
 /* the strings from doc/wildcardns */
 static const char *jokers[] = {
-	"ac_::ffff:81.6.204.23",
-	"mp_::ffff:66.135.225.102",
-	"museum_::ffff:195.7.77.20",
-	"nu_::ffff:212.181.91.6",
-	"nu_::ffff:69.25.75.72",
-	"nu_::212.181.91.6",
-	"nu_::69.25.75.72",
-	"ph_::ffff:203.119.4.6",
-	"tk_::ffff:195.20.32.77",
-	"tk_::ffff:195.20.32.78",
-	"sh_::ffff:81.6.204.23",
-	"tm_::ffff:81.6.204.23",
-	"ws_::ffff:216.35.187.246",
+	"ph_::ffff:203.119.6.168",
+	"wc_::ffff:54.243.76.18",
+	"wc_::ffff:107.20.147.236",
+	"wc_::ffff:50.19.216.23",
+	"wc_::ffff:54.225.151.133",
+	"wc_::ffff:54.225.183.92",
+	"wc_::ffff:54.225.217.143",
+	"wc_::ffff:107.20.147.236",
+	"wc_::ffff:50.19.216.23",
+	"wc_::ffff:54.225.151.133",
+	"wc_::ffff:54.225.183.92",
+	"wc_::ffff:54.225.217.143",
+	"wc_::ffff:54.243.76.18",
+	"wc_::ffff:54.225.183.92",
+	"wc_::ffff:54.225.217.143",
+	"wc_::ffff:54.243.76.18",
+	"wc_::ffff:107.20.147.236",
+	"wc_::ffff:50.19.216.23",
+	"wc_::ffff:54.225.151.133",
 	NULL
 };
 
@@ -60,6 +66,23 @@ loadlistfd(int fd __attribute__ ((unused)), char ***buf, checkfunc cf __attribut
 	return 0;
 }
 
+static void
+addjokerips(const unsigned int first, const unsigned int last, struct in6_addr *i)
+{
+	unsigned int j;
+
+	for (j = first; j <= last; j++) {
+		const char *ipstr = strchr(jokers[j], '_');
+		int r;
+
+		assert(ipstr != NULL);
+		ipstr++;
+
+		r = inet_pton(AF_INET6, ipstr, i + j - first);
+		assert(r > 0);
+	}
+}
+
 int
 main(void)
 {
@@ -69,7 +92,7 @@ main(void)
 	int r;
 	int err = 0;
 	unsigned int i;
-	struct in6_addr frommxip[2];
+	struct in6_addr frommxip[sizeof(jokers) / sizeof(jokers[0])];
 	struct ips frommx = {
 		.addr = frommxip,
 		.count = 1
@@ -113,13 +136,12 @@ main(void)
 
 	for (i = 0; jokers[i] != NULL; i++) {
 		const char *ipstr = strchr(jokers[i], '_');
+		const size_t tldlen = ipstr - jokers[i];
 		char frombuf[32] = "foo@example.";
 
-		assert(ipstr != NULL);
-		ipstr++;
+		assert(tldlen < sizeof(frombuf) - strlen(frombuf) - 1);
 
-		r = inet_pton(AF_INET6, ipstr, frommxip);
-		assert(r > 0);
+		addjokerips(i, i, frommxip);
 
 		xmitstat.mailfrom.s = (char *)unrelated_from;
 		xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
@@ -132,8 +154,7 @@ main(void)
 			err++;
 		}
 
-		assert(ipstr - jokers[i] < sizeof(frombuf) - strlen(frombuf) - 1);
-		strncat(frombuf, jokers[i], ipstr - jokers[i] - 1);
+		strncat(frombuf, jokers[i], tldlen);
 
 		xmitstat.mailfrom.s = frombuf;
 		xmitstat.mailfrom.len = strlen(frombuf);
@@ -159,6 +180,41 @@ main(void)
 					i, r, FILTER_DENIED_UNSPECIFIC);
 			err++;
 		}
+	}
+
+	/* check "all of a kind": a bogus entry with all MX IPs for that TLS set,
+	 * which is basically what you would get in reality */
+	for (i = 0; jokers[i] != NULL; i++) {
+		const char *ipstr = strchr(jokers[i], '_');
+		const size_t tldlen = ipstr - jokers[i];
+		char frombuf[32] = "foo@example.";
+		unsigned int j;
+
+		for (j = i + 1; jokers[j] != NULL; j++)
+			if (strncmp(jokers[j], jokers[i], tldlen + 1) != 0)
+				break;
+
+		addjokerips(i, j - 1, frommxip);
+		frommx.count = j - i;
+		strncat(frombuf, jokers[i], tldlen);
+
+		xmitstat.mailfrom.s = frombuf;
+		xmitstat.mailfrom.len = strlen(frombuf);
+
+		r = cb_wildcardns(&ds, &logmsg, &t);
+		if (r != FILTER_DENIED_UNSPECIFIC) {
+			fprintf(stderr, "cb_wildcardns() with %u wilcard MX IPs (%u...%u) returned %i instead of %i (FILTER_DENIED_UNSPECIFIC)\n",
+					frommx.count, i, j - 1, r, FILTER_DENIED_UNSPECIFIC);
+			err++;
+		}
+
+		if ((logmsg == NULL) || (strcmp(logmsg, expected_logmsg) != 0)) {
+			fprintf(stderr, "cb_wildcardns() with %u wilcard MX IPs (%u...%u) set logmsg to '%s' instead of '%s'\n",
+					frommx.count, i, j - 1, logmsg, expected_logmsg);
+			err++;
+		}
+
+		i = j - 1;
 	}
 
 	return err;
