@@ -86,7 +86,7 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 	struct ips *thismx;
 	unsigned short s;
 	struct dns_wc *dns_wildcards;
-	int match = 0;
+	int match;
 
 	/* we can't check the from domain on a bounce message */
 	if (!xmitstat.mailfrom.len || !xmitstat.frommx)
@@ -101,6 +101,8 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 
 	FOREACH_STRUCT_IPS(thismx, s, xmitstat.frommx) {
 		struct dns_wc *this;
+
+		match = 0;
 
 		for (this = dns_wildcards; this != NULL; this = this->next) {
 			if (xmitstat.mailfrom.len < this->len + 1)

@@ -68,11 +68,14 @@ main(void)
 	struct userconf ds;
 	int r;
 	int err = 0;
-	struct in6_addr frommxip;
+	unsigned int i;
+	struct in6_addr frommxip[2];
 	struct ips frommx = {
-		.addr = &frommxip,
+		.addr = frommxip,
 		.count = 1
 	};
+	const char expected_logmsg[] = "MX is wildcard NS entry";
+	const char unrelated_from[] = "foo@example.com";
 
 	memset(&ds, 0, sizeof(ds));
 	ds.domaindirfd = -1;
@@ -95,9 +98,10 @@ main(void)
 	}
 
 	/* test with an IP that is no wildcard NS and a valid from */
-	r = inet_pton(AF_INET6, "::ffff:192.168.42.3", &frommxip);
+	r = inet_pton(AF_INET6, "::ffff:192.168.42.3", frommxip);
 	assert(r > 0);
-	xmitstat.mailfrom.s = "foo@example.com";
+	frommxip[1] = frommxip[0];
+	xmitstat.mailfrom.s = (char *)unrelated_from;
 	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
 
 	r = cb_wildcardns(&ds, &logmsg, &t);
@@ -105,6 +109,56 @@ main(void)
 		fprintf(stderr, "cb_wildcardns() with valid IP and from returned %i instead of %i (FILTER_PASSED)\n",
 			r, FILTER_PASSED);
 		err++;
+	}
+
+	for (i = 0; jokers[i] != NULL; i++) {
+		const char *ipstr = strchr(jokers[i], '_');
+		char frombuf[32] = "foo@example.";
+
+		assert(ipstr != NULL);
+		ipstr++;
+
+		r = inet_pton(AF_INET6, ipstr, frommxip);
+		assert(r > 0);
+
+		xmitstat.mailfrom.s = (char *)unrelated_from;
+		xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
+		frommx.count = 1;
+
+		r = cb_wildcardns(&ds, &logmsg, &t);
+		if (r != FILTER_PASSED) {
+			fprintf(stderr, "cb_wildcardns() with MX IP set to wildcard entry %u and unrelated from returned %i instead of %i (FILTER_PASSED)\n",
+					i, r, FILTER_DENIED_UNSPECIFIC);
+			err++;
+		}
+
+		assert(ipstr - jokers[i] < sizeof(frombuf) - strlen(frombuf) - 1);
+		strncat(frombuf, jokers[i], ipstr - jokers[i] - 1);
+
+		xmitstat.mailfrom.s = frombuf;
+		xmitstat.mailfrom.len = strlen(frombuf);
+
+		r = cb_wildcardns(&ds, &logmsg, &t);
+		if (r != FILTER_DENIED_UNSPECIFIC) {
+			fprintf(stderr, "cb_wildcardns() with MX IP set to wildcard entry %u returned %i instead of %i (FILTER_DENIED_UNSPECIFIC)\n",
+					i, r, FILTER_DENIED_UNSPECIFIC);
+			err++;
+		}
+
+		if ((logmsg == NULL) || (strcmp(logmsg, expected_logmsg) != 0)) {
+			fprintf(stderr, "cb_wildcardns() with MX IP set to wildcard entry %u set logmsg to '%s' instead of '%s'\n",
+					i, logmsg, expected_logmsg);
+			err++;
+		}
+
+		frommx.count = 2;
+
+		r = cb_wildcardns(&ds, &logmsg, &t);
+		if (r != FILTER_PASSED) {
+			fprintf(stderr, "cb_wildcardns() with MX IP set to wildcard entry %u and one valid returned %i instead of %i (FILTER_PASSED)\n",
+					i, r, FILTER_DENIED_UNSPECIFIC);
+			err++;
+		}
 	}
 
 	return err;
