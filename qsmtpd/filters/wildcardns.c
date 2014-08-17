@@ -80,13 +80,13 @@ loadjokers(struct dns_wc **wcs)
 	return 0;
 }
 
-static struct dns_wc *dns_wildcards;
-
 enum filter_result
 cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
 	struct ips *thismx;
 	unsigned short s;
+	struct dns_wc *dns_wildcards;
+	int match = 0;
 
 	/* we can't check the from domain on a bounce message */
 	if (!xmitstat.mailfrom.len || !xmitstat.frommx)
@@ -96,13 +96,11 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 	if (getsettingglobal(ds, "block_wildcardns", t) <= 0)
 		return FILTER_PASSED;
 
-	if (!dns_wildcards)
-		if (loadjokers(&dns_wildcards))
-			return FILTER_ERROR;
+	if (loadjokers(&dns_wildcards))
+		return FILTER_ERROR;
 
 	FOREACH_STRUCT_IPS(thismx, s, xmitstat.frommx) {
 		struct dns_wc *this;
-		int match = 0;
 
 		for (this = dns_wildcards; this != NULL; this = this->next) {
 			if (xmitstat.mailfrom.len < this->len + 1)
@@ -120,9 +118,17 @@ cb_wildcardns(const struct userconf *ds, const char **logmsg, enum config_domain
 		}
 
 		if (!match)
-			return FILTER_PASSED;
+			break;
 	}
 
+	while (dns_wildcards != NULL) {
+		struct dns_wc *next = dns_wildcards->next;
+		free(dns_wildcards);
+		dns_wildcards = next;
+	}
+
+	if (!match)
+		return FILTER_PASSED;
 	*logmsg = "MX is wildcard NS entry";
 	return FILTER_DENIED_UNSPECIFIC;
 }
