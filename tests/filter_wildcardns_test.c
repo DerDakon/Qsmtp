@@ -55,8 +55,18 @@ static const char *jokers[] = {
 };
 
 int
-loadlistfd(int fd __attribute__ ((unused)), char ***buf, checkfunc cf __attribute__ ((unused)))
+loadlistfd(int fd __attribute__ ((unused)), char ***buf, checkfunc cf)
 {
+	unsigned int i;
+
+	for (i = 0; jokers[i] != NULL; i++)
+		if (cf(jokers[i]) != 0) {
+			fprintf(stderr, "checker rejected input line %s\n",
+					jokers[i]);
+			errno = EINVAL;
+			return -1;
+		}
+
 	*buf = malloc(sizeof(jokers));
 	if (*buf == NULL)
 		exit(ENOMEM);

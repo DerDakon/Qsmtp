@@ -19,20 +19,19 @@ struct dns_wc {
 		size_t len;		/**< length of tld */
 };
 
-static int __attribute__ ((pure))
+static int
 validns(const char *inp)
 {
-	int i = 0;
+	unsigned int i = 0;
+	struct in6_addr ip;
 
 	while (((inp[i] >= 'a') && (inp[i] <= 'z')) || ((inp[i] >= 'A') && (inp[i] <= 'Z')))
 		i++;
 	if ((inp[i] != '_') || (i > MAXTLDLEN))
 		return 1;
 	i++;
-	while (((inp[i] >= 'a') && (inp[i] <= 'f')) || ((inp[i] >= 'A') && (inp[i] <= 'F')) ||
-				((inp[i] >= '0') && (inp[i] <= '9')) || (inp[i] == ':') || (inp[i] == '.'))
-		i++;
-	return inp[i];
+
+	return inet_pton(AF_INET6, inp + i, &ip) > 0 ? 0 : 1;
 }
 
 /**
@@ -75,14 +74,11 @@ loadjokers(struct dns_wc **wcs)
 		t->tld[j] = '\0';
 		t->len = j++;
 
-		/* simply ignore all invalid entries */
-		if (inet_pton(AF_INET6, inputs[i] + j, &t->ip) > 0)
-			cnt++;
+		/* this was checked before, so it will work */
+		inet_pton(AF_INET6, inputs[i] + j, &t->ip);
+		cnt++;
 	}
 	free(inputs);
-
-	/* no need to shrink the array in case there are unused entries at
-	 * the end: the array will be iterated over and then freed anyway */
 
 	return cnt;
 }
