@@ -24,7 +24,6 @@ extern enum filter_result cb_usersize(const struct userconf *, const char **, en
 extern enum filter_result cb_forceesmtp(const struct userconf *, const char **, enum config_domain *);
 extern enum filter_result cb_namebl(const struct userconf *, const char **, enum config_domain *);
 extern enum filter_result cb_wildcardns(const struct userconf *, const char **, enum config_domain *);
-/*extern enum filter_result cb_postfix(const struct userconf *, const char **, enum config_domain *);*/
 
 /** the user filters will be called in the order in this array */
 rcpt_cb rcpt_cbs[] = {
