@@ -1,4 +1,4 @@
-PROJECT(Qs_user_vpopm)
+PROJECT(Qs_user_vpopm C)
 
 ADD_LIBRARY(Qsmtpd_user_vpopm STATIC
 	getfile.c

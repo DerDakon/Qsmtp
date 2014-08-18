@@ -1,4 +1,4 @@
-PROJECT(Qs_auth_chkpw)
+PROJECT(Qs_auth_chkpw C)
 
 ADD_LIBRARY(Qsmtpd_auth_checkpassword STATIC
 	qsauth_backend_cp.c
