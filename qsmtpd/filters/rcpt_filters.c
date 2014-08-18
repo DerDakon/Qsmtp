@@ -40,8 +40,6 @@ rcpt_cb rcpt_cbs[] = {
 			cb_badmailfrom,
 			cb_badcc,
 			cb_fromdomain,
-/* now postfix policy daemons: they may be on- or offline */
-/*			cb_postfix,*/
 /* now online checks */
 			cb_dnsbl,
 			cb_forceesmtp,
