@@ -48,6 +48,8 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	if (p <= 0)
 		return FILTER_PASSED;
 
+	*logmsg = NULL;
+
 /* there is no official SPF entry: go and check if someone else provided one, e.g. rspf.rhsbl.docsnyder.de. */
 	if (spfs == SPF_NONE) {
 		char **a;
