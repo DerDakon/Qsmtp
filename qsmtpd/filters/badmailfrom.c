@@ -43,7 +43,7 @@ lookupbmf(char *at, char **a)
 			size_t k = strlen(a[i]);
 
 			if (k < xmitstat.mailfrom.len) {
-				char *c = xmitstat.mailfrom.s + (xmitstat.mailfrom.len - k);
+				const char *c = xmitstat.mailfrom.s + (xmitstat.mailfrom.len - k);
 
 				/* compare a[i] with the last k bytes of xmitstat.mailfrom.s */
 				if (!strcasecmp(c, a[i])) {

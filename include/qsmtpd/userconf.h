@@ -65,7 +65,7 @@ int userconf_get_buffer(const struct userconf *ds, const char *key, char ***valu
  * @retval >0 the domain was found in the configuration
  * @retval <0 negative error code
  */
-int userconf_find_domain(const struct userconf *ds, const char *key, char *domain, const int useglobal) __attribute__ ((nonnull (1,2,3)));
+int userconf_find_domain(const struct userconf *ds, const char *key, const char *domain, const int useglobal) __attribute__ ((nonnull (1,2,3)));
 
 /**
  * @brief initialize the backend to query for local users

@@ -223,7 +223,7 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 
 int
 userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const char *key __attribute__ ((unused)),
-		char *domain __attribute__ ((unused)), const int useglobal __attribute__ ((unused)))
+		const char *domain __attribute__ ((unused)), const int useglobal __attribute__ ((unused)))
 {
 	return 0;
 }

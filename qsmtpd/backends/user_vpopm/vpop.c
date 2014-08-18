@@ -502,7 +502,7 @@ userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, 
 }
 
 int
-userconf_find_domain(const struct userconf *ds, const char *key, char *domain, const int useglobal)
+userconf_find_domain(const struct userconf *ds, const char *key, const char *domain, const int useglobal)
 {
 	enum config_domain type;
 	int fd;

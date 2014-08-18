@@ -44,8 +44,8 @@ struct xmitstat {
 	char *tlsclient;		/**< TLS client authenticated by certificate for relaying */
 	string remotehost;		/**< the reverse lookup of the remote host */
 	char remoteip[INET6_ADDRSTRLEN];/**< ip of the remote host as set in the environment */
-	char *remoteinfo;		/**< info gathered by tcpserver like remote username */
-	char *remoteport;		/**< port used by remote host */
+	const char *remoteinfo;		/**< info gathered by tcpserver like remote username */
+	const char *remoteport;		/**< port used by remote host */
 	string helostr;			/**< the helo string sent by the client if different from the reverse lookup
 					 * if the helo is identical to remotehost this is {NULL, 0} */
 	struct in6_addr sremoteip;	/**< parsed remote ip */

@@ -59,7 +59,7 @@ userconf_get_buffer(const struct userconf *ds __attribute__ ((unused)), const ch
 
 int
 userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const char *key,
-		char *domain __attribute__ ((unused)), const int useglobal)
+		const char *domain __attribute__ ((unused)), const int useglobal)
 {
 	assert(useglobal == 1);
 
