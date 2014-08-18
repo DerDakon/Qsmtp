@@ -87,7 +87,7 @@ main(void)
 {
 	int err = 0;
 	struct userconf ds;
-	const char *logmsg;
+	const char *logmsg = NULL;
 	int r;
 	enum config_domain t = CONFIG_NONE;
 

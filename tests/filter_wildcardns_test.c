@@ -96,7 +96,7 @@ addjokerips(const unsigned int first, const unsigned int last, struct in6_addr *
 int
 main(void)
 {
-	const char *logmsg;
+	const char *logmsg = NULL;
 	enum config_domain t;
 	struct userconf ds;
 	int r;
