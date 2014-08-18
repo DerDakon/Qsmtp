@@ -449,6 +449,7 @@ ADD_TEST(NAME "Filter-FromDomain"
 ADD_EXECUTABLE(testcase_filter_spf
 		filter_spf.c
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/spf.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/filters/rcpt_filters.c
 )
 TARGET_LINK_LIBRARIES(testcase_filter_spf
 		testcase_io_lib)

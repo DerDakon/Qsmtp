@@ -38,6 +38,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	long p;				/* spf policy */
 	const char *fromdomain = NULL;	/* pointer to the beginning of the domain in xmitstat.mailfrom.s */
 	int spfs = xmitstat.spf;	/* the spf status to check, either global or local one */
+	enum config_domain tmpt;
 
 	if ((spfs == SPF_PASS) || (spfs == SPF_IGNORE))
 		return FILTER_PASSED;
@@ -160,7 +161,7 @@ block:
 			return FILTER_ERROR;
 	}
 
-	if ((r == FILTER_DENIED_TEMPORARY) && !getsetting(ds, "fail_hard_on_temp", t)) {
+	if ((r == FILTER_DENIED_TEMPORARY) && (getsetting(ds, "fail_hard_on_temp", &tmpt) <= 0)) {
 		*logmsg = "temp SPF";
 		if (netwrite("451 4.4.3 temporary error when checking the SPF policy\r\n") != 0)
 			return FILTER_ERROR;
