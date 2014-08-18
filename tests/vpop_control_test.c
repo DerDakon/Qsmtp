@@ -478,12 +478,22 @@ test_finddomain(void)
 	/* the file content does not match the domain */
 	r = userconf_find_domain(&ds, EXISTING_FILENAME_CONTENT, EXISTING_FILE_CONTENT, 0);
 	if (r != CONFIG_USER) {
-		fprintf(stderr, "searching file with matching domain returned %i instead of CONFIG_USER\n",
-				r);
+		fprintf(stderr, "searching file with matching domain returned %i instead of %i (CONFIG_USER)\n",
+				r, CONFIG_USER);
 		ret++;
 	}
 
-	close(ds.userdirfd);
+	/* the file content does not match the domain */
+	ds.domaindirfd = ds.userdirfd;
+	ds.userdirfd = -1;
+	r = userconf_find_domain(&ds, EXISTING_FILENAME_CONTENT, EXISTING_FILE_CONTENT, 0);
+	if (r != CONFIG_DOMAIN) {
+		fprintf(stderr, "searching file with matching domain returned %i instead of (%i) CONFIG_DOMAIN\n",
+				r, CONFIG_DOMAIN);
+		ret++;
+	}
+
+	close(ds.domaindirfd);
 
 	return ret;
 }

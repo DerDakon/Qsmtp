@@ -521,5 +521,5 @@ userconf_find_domain(const struct userconf *ds, const char *key, char *domain, c
 	if ((r < 0) && (errno == 0))
 		return CONFIG_NONE;
 	else
-		return r;
+		return (r > 0) ? type : r;
 }
