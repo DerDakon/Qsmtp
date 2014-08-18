@@ -285,14 +285,12 @@ test_success(void)
 	if (r != s) {
 		fprintf(stderr, "dnstlsa(foo.example.com, 587, NULL) returned %i, with pointer it returned %i\n",
 				s, r);
-		free(val);
 		ret++;
 	}
 
 	if (r != 3) {
 		fprintf(stderr, "dnstlsa(foo.example.com, 587, &val) returned %i, but 3 was expected\n",
 				r);
-		free(val);
 		ret++;
 	}
 
