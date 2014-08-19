@@ -185,9 +185,9 @@ lookupipbl(int x __attribute__ ((unused)))
 }
 
 void
-freeips(struct ips *x __attribute__ ((unused)))
+freeips(struct ips *x)
 {
-	abort();
+	assert(x == NULL);
 }
 
 /* checker functions */
@@ -307,6 +307,17 @@ userconf_load_configs(struct userconf *ds __attribute__ ((unused)))
 	expected_uc_load = -1;
 
 	return r;
+}
+
+int
+test_ask_dnsmx(const char *domain, struct ips **ips)
+{
+	if (strcmp(domain, "example.com") == 0) {
+		*ips = NULL;
+		return 0;
+	}
+
+	return 1;
 }
 
 static const char *second_log_write_msg;
@@ -558,6 +569,22 @@ main(void)
 			.tarpit = 1,
 			.rcpt_result = EINVAL
 		},
+		/* remote user, relaying permitted, but target domain not existent */
+		{
+			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
+			},
+			.input = "RCPT TO:<abc@notthere.example.com>",
+			.tls_verify = 1,
+			.tls_verify_result = 1,
+			.rcpt_result = EDONE,
+			.netmsg = "451 4.4.3 cannot find a mail exchanger for notthere.example.com\r\n",
+			.logmsg1 = "temporarily rejected message to <abc@notthere.example.com> from <baz@example.org> from IP [] {no target MX}",
+			.log_prio1 = LOG_INFO
+		},
 		{
 			.input = NULL
 		}
@@ -566,6 +593,7 @@ main(void)
 
 	TAILQ_INIT(&head);
 
+	testcase_setup_ask_dnsmx(test_ask_dnsmx);
 	testcase_setup_net_writen(testcase_net_writen_combine);
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 	testcase_setup_log_writen(testcase_log_writen_combine);

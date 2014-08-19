@@ -341,6 +341,32 @@ smtp_rcpt(void)
 			userconf_free(&ds);
 			tarpit();
 			return netwrite("551 5.7.1 relaying denied\r\n") ? errno : EBOGUS;
+		} else {
+			const char *todomain = strchr(tmp.s, '@') + 1;
+			struct ips *tomx;
+
+			switch (ask_dnsmx(todomain, &tomx)) {
+			case DNS_ERROR_LOCAL:
+				free(tmp.s);
+				userconf_free(&ds);
+				return errno;
+			case 1:
+				{
+				const char *netmsg[] = { "451 4.4.3 cannot find a mail exchanger for ",
+						todomain, NULL };
+
+				logmsg[8] = "no target MX}";
+				logmsg[9] = NULL;
+
+				log_writen(LOG_INFO, logmsg);
+				userconf_free(&ds);
+				e = net_writen(netmsg);
+				free(tmp.s);
+				return e ? errno : EDONE;
+				}
+			case 0:
+				freeips(tomx);
+			}
 		}
 	}
 	/* we do not support any ESMTP extensions adding data behind the RCPT TO (now)
