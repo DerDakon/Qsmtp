@@ -309,6 +309,19 @@ userconf_load_configs(struct userconf *ds __attribute__ ((unused)))
 	return r;
 }
 
+static const char *second_log_write_msg;
+static int second_log_write_prio;
+
+void
+test_log_write(int priority, const char *msg)
+{
+	testcase_log_write_compare(priority, msg);
+
+	log_write_msg = second_log_write_msg;
+	log_write_priority = second_log_write_prio;
+	second_log_write_msg = NULL;
+}
+
 int
 main(void)
 {
@@ -324,7 +337,11 @@ main(void)
 		int flush_rcpt;	/* clear the recipient list after this test */
 		int rcpt_result;	/* expected result of smtp_rcpt() */
 		int uc_load;
-		const char *netmsg;
+		const char *netmsg;	/* expected network message */
+		const char *logmsg1;	/* first expected log message */
+		const char *logmsg2;	/* second expected log message */
+		int log_prio1;		/* first expected log priority */
+		int log_prio2;		/* second expected log priority */
 	} testdata[] = {
 		/* simple acceptance */
 		{
@@ -350,7 +367,9 @@ main(void)
 			},
 			.input = "RCPT TO:<bar@example.org>",
 			.tarpit = 1,
-			.netmsg = "450 4.7.0 mail temporary denied for policy reasons\r\n"
+			.netmsg = "450 4.7.0 mail temporary denied for policy reasons\r\n",
+			.logmsg1 = "temporarily rejected message to <bar@example.org> from <baz@example.org> from IP [] {third filter, global policy}",
+			.log_prio1 = LOG_INFO
 		},
 		/* fail_hard_on_temp, all filters but one pass, that one is temp */
 		{
@@ -363,7 +382,9 @@ main(void)
 			},
 			.input = "RCPT TO:<xfx@example.org>",
 			.tarpit = 1,
-			.netmsg = "550 5.7.1 mail denied for policy reasons\r\n"
+			.netmsg = "550 5.7.1 mail denied for policy reasons\r\n",
+			.logmsg1 = "rejected message to <xfx@example.org> from <baz@example.org> from IP [] {third filter, global policy}",
+			.log_prio1 = LOG_INFO
 		},
 		/* permanent rejection */
 		{
@@ -376,7 +397,9 @@ main(void)
 			},
 			.input = "RCPT TO:<bar@example.org>",
 			.tarpit = 1,
-			.netmsg = "550 5.7.1 mail denied for policy reasons\r\n"
+			.netmsg = "550 5.7.1 mail denied for policy reasons\r\n",
+			.logmsg1 = "rejected message to <bar@example.org> from <baz@example.org> from IP [] {second filter, domain policy}",
+			.log_prio1 = LOG_INFO
 		},
 		/* permanent rejection, user pretends to not exist */
 		{
@@ -389,7 +412,9 @@ main(void)
 			},
 			.input = "RCPT TO:<xxn@example.org>",
 			.tarpit = 1,
-			.netmsg = "550 5.1.1 no such user <xxn@example.org>\r\n"
+			.netmsg = "550 5.1.1 no such user <xxn@example.org>\r\n",
+			.logmsg1 = "rejected message to <xxn@example.org> from <baz@example.org> from IP [] {second filter, domain policy}",
+			.log_prio1 = LOG_INFO
 		},
 		/* fail_hard_on_temp + nonexist_on_block, all filters but one pass, that one is temp */
 		{
@@ -402,7 +427,9 @@ main(void)
 			},
 			.input = "RCPT TO:<xfn@example.org>",
 			.tarpit = 1,
-			.netmsg = "550 5.1.1 no such user <xfn@example.org>\r\n"
+			.netmsg = "550 5.1.1 no such user <xfn@example.org>\r\n",
+			.logmsg1 = "rejected message to <xfn@example.org> from <baz@example.org> from IP [] {third filter, global policy}",
+			.log_prio1 = LOG_INFO
 		},
 		/* fail_hard_on_temp + nonexist_on_block, but whitelisted even if there is a temporary error */
 		{
@@ -429,7 +456,11 @@ main(void)
 			},
 			.input = "RCPT TO:<xxx@example.org>",
 			.tarpit = 1,
-			.netmsg = "450 4.7.0 mail temporary denied for policy reasons\r\n"
+			.netmsg = "450 4.7.0 mail temporary denied for policy reasons\r\n",
+			.logmsg1 = "error 1024 in filter 1 for user xxx@example.org",
+			.logmsg2 = "temporarily rejected message to <xxx@example.org> from <baz@example.org> from IP [] {third filter, global policy}",
+			.log_prio1 = LOG_WARNING,
+			.log_prio2 = LOG_INFO
 		},
 		/* user does not exist */
 		{
@@ -441,7 +472,9 @@ main(void)
 			},
 			.input = "RCPT TO:<nothere@example.org>",
 			.tarpit = 1,
-			.rcpt_result = EBOGUS
+			.rcpt_result = EBOGUS,
+			.logmsg1 = "rejected message to <nothere@example.org> from <baz@example.org> from IP [] {no such user}",
+			.log_prio1 = LOG_INFO
 			/* no netmsg, it would be written by addrparse() */
 		},
 		/* remote user, relaying denied */
@@ -456,7 +489,9 @@ main(void)
 			.tarpit = 1,
 			.tls_verify = 1,
 			.rcpt_result = EBOGUS,
-			.netmsg = "551 5.7.1 relaying denied\r\n"
+			.netmsg = "551 5.7.1 relaying denied\r\n",
+			.logmsg1 = "rejected message to <abc@example.com> from <baz@example.org> from IP [] {relaying denied}",
+			.log_prio1 = LOG_INFO
 		},
 		/* remote user, relaying permitted */
 		{
@@ -485,7 +520,11 @@ main(void)
 			.tarpit = 1,
 			.rcpt_result = EBOGUS,
 			.badbounce = 1,
-			.netmsg = "550 5.5.3 bounce messages must not have more than one recipient\r\n"
+			.netmsg = "550 5.5.3 bounce messages must not have more than one recipient\r\n",
+			.logmsg1 = "rejected message to <foo@example.org> from <> from IP [] {bad bounce}",
+			.logmsg2 = "rejected message to <foo@example.org> from <> from IP [] {bad bounce}",
+			.log_prio1 = LOG_INFO,
+			.log_prio2 = LOG_INFO
 		},
 		/* once again because of it's beauty */
 		{
@@ -495,7 +534,9 @@ main(void)
 			.rcpt_result = EBOGUS,
 			.badbounce = 1,
 			.flush_rcpt = 1,
-			.netmsg = "550 5.5.3 bounce messages must not have more than one recipient\r\n"
+			.netmsg = "550 5.5.3 bounce messages must not have more than one recipient\r\n",
+			.logmsg1 = "rejected message to <foo@example.org> from <> from IP [] {bad bounce}",
+			.log_prio1 = LOG_INFO
 		},
 		/* maximum number of recipients reached */
 		{
@@ -527,8 +568,8 @@ main(void)
 
 	testcase_setup_net_writen(testcase_net_writen_combine);
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
-	/* FIXME: replace this by a checker */
-	testcase_setup_log_writen(testcase_log_writen_console);
+	testcase_setup_log_writen(testcase_log_writen_combine);
+	testcase_setup_log_write(test_log_write);
 
 	for (i = 0; testdata[i].input != NULL; i++) {
 		int r;
@@ -548,6 +589,10 @@ main(void)
 		expected_tls_verify = testdata[i].tls_verify;
 		tls_verify_result = testdata[i].tls_verify_result;
 		netnwrite_msg = testdata[i].netmsg;
+		log_write_msg = testdata[i].logmsg1;
+		log_write_priority = testdata[i].log_prio1;
+		second_log_write_msg = testdata[i].logmsg2;
+		second_log_write_prio = testdata[i].log_prio2;
 		if (testdata[i].maxrcpt)
 			oldcnt = rcptcount = MAXRCPT;
 
@@ -597,6 +642,12 @@ main(void)
 
 		snprintf(ulbuf, sizeof(ulbuf), "%u", i);
 		errcnt += testcase_netnwrite_check(ulbuf);
+
+		if (log_write_msg != NULL) {
+			fprintf(stderr, "%u: smtp_rcpt() did not write the expected log string '%s'\n",
+					i, log_write_msg);
+			errcnt++;
+		}
 
 		/* flush on request and on last test */
 		if (testdata[i].flush_rcpt || (testdata[i + 1].input == NULL)) {

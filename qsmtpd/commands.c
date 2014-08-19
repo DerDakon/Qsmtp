@@ -317,10 +317,11 @@ smtp_rcpt(void)
 
 	userconf_init(&ds);
 	i = addrparse(linein.s + 9 + bugoffset, 1, &tmp, &more, &ds, rcpthosts, rcpthsize);
+	logmsg[2] = tmp.s;
+
 	if  (i > 0) {
 		return i;
 	} else if (i == -1) {
-		logmsg[2] = tmp.s;
 		logmsg[8] = "no such user}";
 		logmsg[9] = NULL;
 		log_writen(LOG_INFO, logmsg + 1);
@@ -332,10 +333,10 @@ smtp_rcpt(void)
 		if (i < 0) {
 			return -i;
 		} else if (i == 0) {
-			const char *logmess[] = {"rejected message to <", tmp.s, "> from <", MAILFROM,
-					"> from IP [", xmitstat.remoteip, "] {relaying denied}", NULL};
+			logmsg[8] = "relaying denied}";
+			logmsg[9] = NULL;
 
-			log_writen(LOG_INFO, logmess);
+			log_writen(LOG_INFO, logmsg + 1);
 			free(tmp.s);
 			userconf_free(&ds);
 			tarpit();
@@ -457,19 +458,6 @@ smtp_rcpt(void)
 
 	/* handle rejection */
 	e = errno;
-	if (filter_denied(fr)) {
-		if (errmsg != NULL) {
-			logmsg[2] = r->to.s;
-			logmsg[8] = errmsg;
-			logmsg[10] = blocktype[bt];
-			if (fr == FILTER_DENIED_TEMPORARY)
-				log_writen(LOG_INFO, logmsg);
-			else
-				log_writen(LOG_INFO, logmsg + 1);
-		}
-		tarpit();
-	}
-
 	switch (fr) {
 	case FILTER_DENIED_TEMPORARY:
 		{
@@ -478,6 +466,9 @@ smtp_rcpt(void)
 			if ( (i = netwrite("450 4.7.0 mail temporary denied for policy reasons\r\n")) )
 				e = errno;
 			break;
+		} else {
+			/* change filter type to get correct log message */
+			fr = FILTER_DENIED_UNSPECIFIC;
 		}
 		}
 		/* fallthrough */
@@ -504,6 +495,19 @@ smtp_rcpt(void)
 		i = 0;
 		break;
 	}
+
+	if (filter_denied(fr)) {
+		if (errmsg != NULL) {
+			logmsg[8] = errmsg;
+			logmsg[10] = blocktype[bt];
+			if (fr == FILTER_DENIED_TEMPORARY)
+				log_writen(LOG_INFO, logmsg);
+			else
+				log_writen(LOG_INFO, logmsg + 1);
+		}
+		tarpit();
+	}
+
 	return i ? e : 0;
 }
 
