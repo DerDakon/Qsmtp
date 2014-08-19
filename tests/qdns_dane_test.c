@@ -292,6 +292,8 @@ test_success(void)
 		fprintf(stderr, "dnstlsa(foo.example.com, 587, &val) returned %i, but 3 was expected\n",
 				r);
 		ret++;
+		if (r > 3)
+			r = 3;
 	}
 
 	for (s = 0; s < r; s++) {
