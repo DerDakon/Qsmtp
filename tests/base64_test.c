@@ -270,7 +270,6 @@ iface_test(void)
 {
 	string indata;
 	string outdata;
-	const char junk = 'j';
 	int err = 0;
 
 	puts("== Running base64 interface tests");
@@ -284,7 +283,7 @@ iface_test(void)
 		err++;
 	}
 
-	if (b64decode(&junk, 0, &outdata) != 0) {
+	if (b64decode(NULL, 0, &outdata) != 0) {
 		puts("Error: decoding empty junk string failed");
 		err++;
 	}
