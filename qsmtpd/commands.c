@@ -236,9 +236,12 @@ smtp_ehlo(void)
 		/* authtypes already includes trailing CRLF */
 		msg[next++] = authtypes;
 	}
-/* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
+	/* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
 	if (!ssl && ((localport == NULL) || (strcmp(localport, "465") != 0))) {
 		const size_t oldlen = strlen(certfilename);
+		/* here we can use openat(), but the SSL functions can't,
+		 * so the directory name must still be part of certfilename,
+		 * but we can skip over it here. */
 		const size_t diroffs = strlen("control/");
 		size_t iplen;
 		int fd;
@@ -275,7 +278,7 @@ smtp_ehlo(void)
 			msg[next++] = "250-STARTTLS\r\n";
 	}
 
-/* this must stay last: it begins with "250 " */
+	/* this must stay last: it begins with "250 " */
 	if (databytes) {
 		msg[next++] = "250 SIZE ";
 		ultostr(databytes, sizebuf);
@@ -308,6 +311,8 @@ smtp_rcpt(void)
 	const char *okmsg[] = { "250 2.1.0 recipient <", NULL, "> OK", NULL };
 	size_t bugoffset = 0;
 
+	/* Check for spaces between ':' and '<'. That's an RfC violation and will
+	 * be used as input for the smtp_space_bug filter */
 	while ((bugoffset < linein.len - 8) && (linein.s[8 + bugoffset] == ' '))
 		bugoffset++;
 	if (linein.s[8 + bugoffset] != '<')
@@ -342,6 +347,8 @@ smtp_rcpt(void)
 			tarpit();
 			return netwrite("551 5.7.1 relaying denied\r\n") ? errno : EBOGUS;
 		} else {
+			/* Check if the destination address exists. If not the mail would
+			 * sit in the queue for 5 days and would then be bounced anyway. */
 			const char *todomain = strchr(tmp.s, '@') + 1;
 			struct ips *tomx;
 
@@ -416,7 +423,7 @@ smtp_rcpt(void)
 		return EBOGUS;
 	}
 
-/* load user and domain "filterconf" file */
+	/* load user and domain "filterconf" file */
 	i = userconf_load_configs(&ds);
 	if (i != 0) {
 		userconf_free(&ds);
@@ -537,6 +544,14 @@ smtp_rcpt(void)
 	return i ? e : 0;
 }
 
+/**
+ * @brief check for additional parameters after MAIL FROM:<>
+ * @param more the remainder of the MAIL FROM: line after the closing '>'
+ * @param validlength counter for valid total line length
+ * @return if line was syntactically correct
+ * @retval 0 line was correct, xmitstat was updated
+ * @retval >0 error code
+ */
 static int
 smtp_from_extensions(const char *more, unsigned int *validlength)
 {
@@ -712,6 +727,7 @@ smtp_from_inner(void)
 		s = HELOSTR;
 	}
 
+	/* check if SPF should be ignored, or get the SPF status otherwise */
 	i = lookupipbl_name(connection_is_ipv4() ? "spffriends" : "spffriends6");
 	if (i < 0) {
 		return -i;
@@ -744,6 +760,7 @@ smtp_from(void)
 	r = smtp_from_inner();
 
 	if (r != 0) {
+		/* make sure nothing is left behind */
 		freeips(xmitstat.frommx);
 		xmitstat.frommx = NULL;
 		xmitstat.fromdomain = 0;
@@ -773,6 +790,7 @@ int
 smtp_rset(void)
 {
 #ifdef CHUNKING
+	/* this means after the first BDAT command, but before the BDAT ... LAST */
 	if (comstate == 0x0800)
 		queue_reset();
 #endif /* CHUNKING */
@@ -815,6 +833,7 @@ smtp_quit(void)
 int
 http_post(void)
 {
+	/* be a bit more gentle if this is not the initial message from the client */
 	if (comstate != 0x001)
 		return EINVAL;
 	if (!strncmp(" / HTTP/1.", linein.s + 4, 10)) {
