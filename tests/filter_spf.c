@@ -80,6 +80,7 @@ userconf_get_buffer(const struct userconf *ds __attribute__ ((unused)), const ch
 
 static const char hostname_spfignore[] = "spfignore.example.com";
 static const char hostname_spfignore_fail[] = "failure.spfignore.example.com";
+static const char hostname_spfstrict[] = "spfstrict.example.com";
 
 int
 userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const char *key,
@@ -95,6 +96,10 @@ userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const c
 		else
 			return CONFIG_NONE;
 	} else if (strcmp(key, "spfstrict") == 0) {
+		if (strcmp(domain, hostname_spfstrict) == 0)
+			return CONFIG_DOMAIN;
+		else
+			return CONFIG_NONE;
 	}
 
 	abort();
@@ -198,6 +203,47 @@ main(void)
 	if (r != FILTER_PASSED) {
 		fprintf(stderr, "cb_spf() with spf == SPF_TEMP_ERROR and host in spfignore returned %i instead of %i (FILTER_PASSED)\n",
 				r, FILTER_PASSED);
+		err++;
+	}
+
+	xmitstat.spf = SPF_SOFTFAIL;
+	xmitstat.helostr.s = "example.net";
+	xmitstat.helostr.len = strlen(xmitstat.helostr.s);
+	xmitstat.mailfrom.s = NULL;
+	xmitstat.mailfrom.len = 0;
+	xmitstat.remotehost.s = NULL;
+	xmitstat.remotehost.len = 0;
+
+	r = cb_spf(&ds, &logmsg, &t);
+	if (r != FILTER_PASSED) {
+		fprintf(stderr, "cb_spf() with spf == SPF_SOFTFAIL returned %i instead of %i (FILTER_PASSED)\n",
+				r, FILTER_PASSED);
+		err++;
+	}
+
+	xmitstat.spf = SPF_SOFTFAIL;
+	xmitstat.mailfrom.s = "someone@spfstrict.example.com";
+	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
+	xmitstat.remotehost.s = (char *)hostname_spfstrict;
+	xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
+	netnwrite_msg = "550 5.7.1 mail denied by SPF policy\r\n";
+
+	r = cb_spf(&ds, &logmsg, &t);
+	if (r != FILTER_DENIED_WITH_MESSAGE) {
+		fprintf(stderr, "cb_spf() with spf == SPF_SOFTFAIL and spfstrict host returned %i instead of %i (FILTER_DENIED_WITH_MESSAGE)\n",
+				r, FILTER_DENIED_WITH_MESSAGE);
+		err++;
+	}
+
+	if ((logmsg == NULL) || (strcmp(logmsg, "SPF") != 0)) {
+		fprintf(stderr, "cb_spf() with spf == SPF_SOFTFAIL and spfstrict host set logmsg to '%s' instead of 'SPF'\n",
+				logmsg);
+		err++;
+	}
+
+	if (t != CONFIG_DOMAIN) {
+		fprintf(stderr, "cb_spf() with spf == SPF_SOFTFAIL and spfstrict host set t to %i instead of %i (CONFIG_DOMAIN)\n",
+				t, CONFIG_DOMAIN);
 		err++;
 	}
 
