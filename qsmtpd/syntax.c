@@ -88,7 +88,7 @@ sync_pipelining(void)
 	if (i == 0)
 		return;
 	if (i < 0)
-		dieerror(errno);
+		dieerror(-i);
 
 	/* if we are not using ESMTP PIPELINING isn't allowed. Use a different
 	 * error code. */
@@ -120,12 +120,10 @@ sync_pipelining(void)
 int
 hasinput(const int quitloop)
 {
-	int rc;
+	int rc = data_pending();
 
-	if ( (rc = data_pending()) < 0)
-		return errno;
-	if (!rc)
-		return 0;
+	if (rc <= 0)
+		return -rc;
 
 	/* there is input data pending. This means the client sent some before our
 	 * reply. His SMTP engine is broken so we don't let him send the mail */

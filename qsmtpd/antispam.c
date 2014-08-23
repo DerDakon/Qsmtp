@@ -154,7 +154,7 @@ tarpit(void)
 	if (i > 0)
 		return;
 	if (i < 0)
-		dieerror(errno);
+		dieerror(-i);
 	if (ssl) {
 		/* SSL encoding is too much overhead for worms and friends, so at the other side we can expect a real
 		 * mail server. We just have to check here if there is data pending (he's using PIPELINING) or not. */

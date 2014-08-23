@@ -37,7 +37,7 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		 * to them. */
 		s = data_pending();
 		if (s < 0) {
-			switch (errno) {
+			switch (-s) {
 			case ENOMEM:
 				err_mem(0);
 			case ECONNRESET:

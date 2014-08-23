@@ -931,8 +931,8 @@ test_pending_socketpair(void)
 	}
 
 	i = data_pending();
-	if ((i != -1) || (errno != ECONNRESET)) {
-		fprintf(stderr, "data_pending() on closed socket returned %i/%i instead of -1/%i (ECONNRESET)\n", i, errno, ECONNRESET);
+	if (i != -ECONNRESET) {
+		fprintf(stderr, "data_pending() on closed socket returned %i instead of %i (-ECONNRESET)\n", i, -ECONNRESET);
 		ret++;
 	}
 
@@ -1092,8 +1092,8 @@ main(int argc, char **argv)
 	close(socketd);
 
 	i = data_pending();
-	if ((i != -1) || (errno != EBADF)) {
-		fprintf(stderr, "data_pending() on closed fd returned %i/%i instead of -1/%i (EBADF)\n", i, errno, EBADF);
+	if (i != -EBADF) {
+		fprintf(stderr, "data_pending() on closed fd returned %i instead of %i (-EBADF)\n", i, -EBADF);
 		ret++;
 	}
 

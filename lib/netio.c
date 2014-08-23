@@ -706,10 +706,9 @@ net_readline(size_t num, char *buf)
  * @returns if there is data available
  * @retval 0 if no data
  * @retval 1 if data
- * @retval -1 on error
+ * @retval <0 error code
  *
- * This will return -1 and errno set to ECONNRESET if the connection has
- * been closed by the remote end.
+ * This will return -ECONNRESET if the connection has been closed by the remote end.
  */
 int
 data_pending(void)
@@ -717,7 +716,8 @@ data_pending(void)
 	if (linenlen) {
 		return 1;
 	} else if (ssl) {
-		return SSL_pending(ssl);
+		int i = SSL_pending(ssl);
+		return (i < 0) ? -errno : i;
 	} else {
 		fd_set rfds;
 		struct timeval tv = {
@@ -731,18 +731,17 @@ data_pending(void)
 
 		i = select(1, &rfds, NULL, NULL, &tv);
 		if (i <= 0)
-			return i;
+			return i < 0 ? -errno : 0;
 
 		/* verify that there is really data available and that the
 		 * connection was not simply closed. */
 		i = read(0, lineinn, 1);
 		if (i < 0)
-			return i;
+			return -errno;
 		if (i > 0) {
 			linenlen = i;
 			return 1;
 		}
-		errno = ECONNRESET;
-		return -1;
+		return -ECONNRESET;
 	}
 }
