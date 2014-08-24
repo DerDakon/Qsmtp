@@ -2462,6 +2462,48 @@ test_parse()
 			.key = "invalid-exists-with-net4.example.net",
 			.value = "v=spf1 exists:foo.example.com/16",
 		},
+		/* not in the test suite: exactly 9 terms causing DNS lookups */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "dns9.example.net",
+			.value = "v=spf1 a a a a a a a a a"
+		},
+		/* not in the test suite: exactly 10 terms causing DNS lookups */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "dns10.example.net",
+			.value = "v=spf1 a a a a a a a a a a +all"
+		},
+		/* not in the test suite: exactly 10 terms causing DNS lookups, using include */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "dns10i.example.net",
+			.value = "v=spf1 include:dns9.example.net +all"
+		},
+		/* not in the test suite: exactly 10 terms causing DNS lookups, using redirect */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "dns10r.example.net",
+			.value = "v=spf1 redirect=dns9.example.net"
+		},
+		/* not in the test suite: exactly 11 terms causing DNS lookups, using include */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "dns11i.example.net",
+			.value = "v=spf1 include:dns10.example.net +all"
+		},
+		/* not in the test suite: exactly 11 terms causing DNS lookups, using recirect */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "dns11r.example.net",
+			.value = "v=spf1 redirect=dns10.example.net"
+		},
+		/* not in the test suite: exactly 11 terms causing DNS lookups, during a */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "dns11a.example.net",
+			.value = "v=spf1 include:dns9.example.net a a"
+		},
 		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
@@ -2469,7 +2511,7 @@ test_parse()
 		}
 	};
 	static int spfresults[] = {
-		SPF_FAIL_MALF,
+		SPF_FAIL_PERM,
 		SPF_FAIL_MALF,
 		SPF_NONE,
 		SPF_FAIL_MALF,
@@ -2507,7 +2549,15 @@ test_parse()
 		SPF_FAIL_PERM,
 		SPF_FAIL_PERM,
 		SPF_FAIL_MALF,
-		SPF_FAIL_MALF
+		SPF_FAIL_MALF,
+		SPF_NEUTRAL,
+		SPF_PASS,
+		SPF_PASS,
+		SPF_NEUTRAL,
+		SPF_FAIL_PERM,
+		SPF_FAIL_PERM,
+		SPF_FAIL_PERM,
+		SPF_NONE
 	};
 	int err = 0;
 	unsigned int i = 0;

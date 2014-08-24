@@ -1601,27 +1601,23 @@ record_bad_token(const char *token)
  * look up SPF records for domain
  *
  * @param domain no idea what this might be for
- * @param rec recursion level
+ * @param queries number of DNS queries done
  * @return one of the SPF_* constants defined in include/antispam.h or -1 on ENOMEM
  */
 static int
-spflookup(const char *domain, const int rec)
+spflookup(const char *domain, unsigned int *queries)
 {
 	char *txt, *token, *valid = NULL, *redirect = NULL;
 	int i, result = SPF_NONE, prefix;
 	const char *mechanism = NULL;
 
-	if (rec >= 20)
-		return SPF_FAIL_MALF;
-
 	/* don't enforce valid domains on redirects */
-	if (!rec && domainvalid(domain))
-		return SPF_FAIL_MALF;
-
-	if (rec > 0) {
-		i = txtlookup(&txt, domain);
-	} else {
+	if (*queries == 0) {
+		if (domainvalid(domain))
+			return SPF_FAIL_MALF;
 		i = dnstxt(&txt, domain);
+	} else {
+		i = txtlookup(&txt, domain);
 	}
 
 	if (i) {
@@ -1659,6 +1655,12 @@ spflookup(const char *domain, const int rec)
 	token = valid;
 	while (*token && (result != SPF_PASS)) {
 		size_t mechlen;
+
+		if (*queries > 10) {
+			prefix = SPF_FAIL_PERM;
+			result = SPF_PASS;
+			break;
+		}
 
 		while (WSPACE(*token)) {
 			token++;
@@ -1701,11 +1703,13 @@ spflookup(const char *domain, const int rec)
 				prefix = SPF_FAIL_PERM;
 				break;
 			}
+			*queries += 1;
 		} else if ( (mechlen = match_mechanism(token, "ptr", ":/")) != 0) {
 			token += mechlen;
 
 			result = spfptr(domain, token);
 			mechanism = "PTR";
+			*queries += 1;
 		} else if ( (mechlen = match_mechanism(token, "exists", ":")) != 0) {
 			token += mechlen;
 
@@ -1715,6 +1719,7 @@ spflookup(const char *domain, const int rec)
 			} else {
 				result = SPF_FAIL_MALF;
 			}
+			*queries += 1;
 		} else if ( (mechlen = match_mechanism(token, "all", "")) != 0) {
 			token += mechlen;
 			result = SPF_PASS;
@@ -1724,6 +1729,7 @@ spflookup(const char *domain, const int rec)
 
 			result = spfa(domain, token);
 			mechanism = "A";
+			*queries += 1;
 		} else if ( (mechlen = match_mechanism(token, "ip4", ":/")) != 0) {
 			token += mechlen;
 
@@ -1754,7 +1760,8 @@ spflookup(const char *domain, const int rec)
 					if ((ip4l >= 0) || (ip6l >= 0)) {
 						result = SPF_FAIL_MALF;
 					} else {
-						result = spflookup(n, rec + 1);
+						*queries += 1;
+						result = spflookup(n, queries);
 					}
 					free(n);
 				}
@@ -1775,6 +1782,16 @@ spflookup(const char *domain, const int rec)
 			case SPF_PASS:
 			case -1:
 				break;
+			case SPF_FAIL_PERM:
+				/* permanent errors usually only mean that the include did
+				 * not match, but in case it is because of excessive DNS
+				 * queries we keep the result */
+				if (*queries > 10) {
+					prefix = SPF_FAIL_PERM;
+					result = SPF_PASS;
+					break;
+				}
+				/* fallthrough */
 			default:
 				result = SPF_NONE;
 			}
@@ -1864,10 +1881,12 @@ spflookup(const char *domain, const int rec)
 		result = spf_domainspec(domain, redirect, &domspec, &i4, &i6);
 
 		if (result == 0) {
-			if ((i4 != -1) || (i6 != -1))
+			if ((i4 != -1) || (i6 != -1)) {
 				result = SPF_FAIL_MALF;
-			else
-				result = spflookup(domspec, rec + 1);
+			} else {
+				*queries += 1;
+				result = spflookup(domspec, queries);
+			}
 			free(domspec);
 		}
 	} else {
@@ -1889,5 +1908,10 @@ spflookup(const char *domain, const int rec)
 int
 check_host(const char *domain)
 {
-	return spflookup(domain, 0);
+	/* RfC 7208, section 4.6.4:
+	 * SPF implementations MUST limit the total number of those terms to 10
+	 * during SPF evaluation */
+	unsigned int queries = 0;
+
+	return spflookup(domain, &queries);
 }
