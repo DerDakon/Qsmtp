@@ -30,7 +30,6 @@ enum dnstype {
 	DNSTYPE_MX,
 	DNSTYPE_NAME,
 	DNSTYPE_TXT,
-	DNSTYPE_SPF,
 	DNSTYPE_TIMEOUT,
 	DNSTYPE_NONE /* end marker */
 };
@@ -310,19 +309,7 @@ dns_resolve_txt(char **out, const char *host, const enum dnstype stype)
 int
 dnstxt(char **out, const char *host)
 {
-	int r = dns_resolve_txt(out, host, DNSTYPE_TXT);
-
-	// only for the moment until the SPF library does this calls itself
-	if (r == -1 && errno == ENOENT)
-		r = dns_resolve_txt(out, host, DNSTYPE_SPF);
-
-	return r;
-}
-
-int
-dnsspf(char **out, const char *host)
-{
-	return dns_resolve_txt(out, host, DNSTYPE_SPF);
+	return dns_resolve_txt(out, host, DNSTYPE_TXT);
 }
 
 struct spftestcase {
@@ -1135,19 +1122,21 @@ test_suite_makro()
 {
 	/* makro expansion tests taken from SPF test suite 2009.10
 	 * http://www.openspf.org/svn/project/test-suite/rfc4408-tests-2009.10.yml */
+	/* All SPF records have been replaced by TXT records as SPF DNS records
+	 * are considered depcrecated. */
 	const struct dnsentry makroentries[] = {
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "example.com.d.spf.example.com",
 			.value = "v=spf1 redirect=a.spf.example.com"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "a.spf.example.com",
 			.value = "v=spf1 include:o.spf.example.com. ~all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "o.spf.example.com",
 			.value = "v=spf1 ip4:192.168.218.40"
 		},
@@ -1157,7 +1146,7 @@ test_suite_makro()
 			.value = "::ffff:192.168.218.40"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "example.com",
 			.value = "v=spf1 redirect=%{d}.d.spf.example.com."
 		},
@@ -1167,7 +1156,7 @@ test_suite_makro()
 			.value = "::ffff:192.168.90.76"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "exp.example.com",
 			.value = "v=spf1 exp=msg.example.com. -all"
 		},
@@ -1177,12 +1166,12 @@ test_suite_makro()
 			.value = "This is a test."
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e1.example.com",
 			.value = "v=spf1 -exists:%(ir).sbl.example.com ?all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e1a.example.com",
 			.value = "v=spf1 a:macro%%percent%_%_space%-url-space.example.com -all"
 		},
@@ -1192,12 +1181,12 @@ test_suite_makro()
 			.value = "::ffff:1.2.3.4"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e2.example.com",
 			.value = "v=spf1 -all exp=%{r}.example.com"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e3.example.com",
 			.value = "v=spf1 -all exp=%{ir}.example.com"
 		},
@@ -1207,7 +1196,7 @@ test_suite_makro()
 			.value = "Connections from %{c} not authorized."
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "somewhat.long.exp.example.com",
 			.value = "v=spf1 -all exp=foobar.%{o}.%{o}.%{o}.%{o}.%{o}.%{o}.%{o}.%{o}.example.com"
 		},
@@ -1217,7 +1206,7 @@ test_suite_makro()
 			.value = "Congratulations!  That was tricky."
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e4.example.com",
 			.value = "v=spf1 -all exp=e4msg.example.com"
 		},
@@ -1227,12 +1216,12 @@ test_suite_makro()
 			.value = "%{c} is queried as %{ir}.%{v}.arpa"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e5.example.com",
 			.value = "v=spf1 a:%{a}.example.com -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e6.example.com",
 			.value = "v=spf1 -all exp=e6msg.example.com"
 		},
@@ -1292,12 +1281,12 @@ test_suite_makro()
 			.value = "::ffff:127.0.0.2"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e7.example.com",
 			.value = "v=spf1 exists:%{p}.should.example.com ~exists:%{p}.ok.example.com"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e8.example.com",
 			.value = "v=spf1 -all exp=msg8.%{D2}"
 		},
@@ -1307,22 +1296,22 @@ test_suite_makro()
 			.value = "http://example.com/why.html?l=%{L}"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e9.example.com",
 			.value = "v=spf1 a:%{H} -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e10.example.com",
 			.value = "v=spf1 -include:_spfh.%{d2} ip4:1.2.3.0/24 -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "_spfh.example.com",
 			.value = "v=spf1 -a:%{h} +all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e11.example.com",
 			.value = "v=spf1 exists:%{i}.%{l2r-}.user.%{d2}"
 		},
@@ -1332,7 +1321,7 @@ test_suite_makro()
 			.value = "::ffff:127.0.0.2"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e12.example.com",
 			.value = "v=spf1 exists:%{l2r+-}.user.%{d2}"
 		},
@@ -1555,27 +1544,27 @@ test_suite_all()
 			.value = "::ffff:1.2.3.4"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e1.example.com",
 			.value = "v=spf1 -all."
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e2.example.com",
 			.value = "v=spf1 -all:foobar"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e3.example.com",
 			.value = "v=spf1 -all/8"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e4.example.com",
 			.value = "v=spf1 ?all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e5.example.com",
 			.value = "v=spf1 all -all"
 		},
@@ -1652,12 +1641,12 @@ test_suite_ptr()
 			.value = "::ffff:1.2.3.4"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e1.example.com",
 			.value = "v=spf1 ptr/0 -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e2.example.com",
 			.value = "v=spf1 ptr:example.com -all"
 		},
@@ -1682,17 +1671,17 @@ test_suite_ptr()
 			.value = "CAFE:BABE::1"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e3.example.com",
 			.value = "v=spf1 ptr -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e4.example.com",
 			.value = "v=spf1 ptr -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e5.example.com",
 			.value = "v=spf1 ptr:"
 		},
@@ -1777,7 +1766,7 @@ test_suite_a()
 			.value = "::ffff:1.2.3.4"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e1.example.com",
 			.value = "v=spf1 a/0 -all"
 		},
@@ -1792,7 +1781,7 @@ test_suite_a()
 			.value = "1234::2"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e2.example.com",
 			.value = "v=spf1 a/0 -all"
 		},
@@ -1802,7 +1791,7 @@ test_suite_a()
 			.value = "1234::1"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e2a.example.com",
 			.value = "v=spf1 a//0 -all"
 		},
@@ -1812,57 +1801,57 @@ test_suite_a()
 			.value = "::ffff:1.1.1.1"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e2b.example.com",
 			.value = "v=spf1 a//0 -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e3.example.com",
 			.value = "v=spf1 a:foo.example.com\0"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e4.example.com",
 			.value = "v=spf1 a:111.222.33.44"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e5.example.com",
 			.value = "v=spf1 a:abc.123"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e5a.example.com",
 			.value = "v=spf1 a:museum"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e5b.example.com",
 			.value = "v=spf1 a:museum."
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e6.example.com",
 			.value = "v=spf1 a//33 -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e6a.example.com",
 			.value = "v=spf1 a/33 -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e7.example.com",
 			.value = "v=spf1 a//129 -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e9.example.com",
 			.value = "v=spf1 a:example.com:8080"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e10.example.com",
 			.value = "v=spf1 a:foo.example.com/24"
 		},
@@ -1872,7 +1861,7 @@ test_suite_a()
 			.value = "::ffff:1.1.1.1;::ffff:1.2.3.5"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e11.example.com",
 			.value = "v=spf1 a:foo:bar/baz.example.com"
 		},
@@ -1882,17 +1871,17 @@ test_suite_a()
 			.value = "::ffff:1.2.3.4"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e12.example.com",
 			.value = "v=spf1 a:example.-com"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e13.example.com",
 			.value = "v=spf1 a:"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e14.example.com",
 			.value = "v=spf1 a:foo.example.xn--zckzah -all"
 		},
@@ -2099,17 +2088,17 @@ test_suite_include()
 			.value = "::ffff:1.2.3.4"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "ip5.example.com",
 			.value = "v=spf1 ip4:1.2.3.5 -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "ip6.example.com",
 			.value = "v=spf1 ip4:1.2.3.6 ~all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "ip7.example.com",
 			.value = "v=spf1 ip4:1.2.3.7 ?all"
 		},
@@ -2119,47 +2108,47 @@ test_suite_include()
 			.value = "v=spfl am not an SPF record"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e1.example.com",
 			.value = "v=spf1 include:ip5.example.com ~all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e2.example.com",
 			.value = "v=spf1 include:ip6.example.com all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e3.example.com",
 			.value = "v=spf1 include:ip7.example.com -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e4.example.com",
 			.value = "v=spf1 include:ip8.example.com -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e5.example.com",
 			.value = "v=spf1 include:e6.example.com -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e6.example.com",
 			.value = "v=spf1 include +all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e7.example.com",
 			.value = "v=spf1 include:erehwon.example.com -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e8.example.com",
 			.value = "v=spf1 include: -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e9.example.com",
 			.value = "v=spf1 include:ip5.example.com/24 -all"
 		},
@@ -2658,12 +2647,12 @@ test_behavior()
 			.value = "e.example.com"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "e6.example.com",
 			.value = "v=spf1 ptr -all"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "invalid.example.com",
 			.value = "v=spf1 ptr:..: -all"
 		},
@@ -2680,7 +2669,7 @@ test_behavior()
 					"m.example.org;n.example.org;o.example.org;p.example.org"
 		},
 		{
-			.type = DNSTYPE_SPF,
+			.type = DNSTYPE_TXT,
 			.key = "domainspec-nonalpha.example.com",
 			.value = "v=spf1 include:foo.bar- -all"
 		},
