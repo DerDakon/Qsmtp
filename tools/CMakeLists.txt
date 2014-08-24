@@ -28,6 +28,12 @@ TARGET_LINK_LIBRARIES(testspf
 	qsmtp_io_lib
 )
 
+ADD_EXECUTABLE(spfquery spfquery.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
+TARGET_LINK_LIBRARIES(spfquery
+	qsmtp_lib
+	qsmtp_io_lib
+)
+
 ADD_EXECUTABLE(qpencode
 	qp.c
 	${CMAKE_SOURCE_DIR}/qremote/mime.c
