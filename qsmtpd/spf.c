@@ -1874,6 +1874,9 @@ spflookup(const char *domain, unsigned int *queries)
 		return prefix;
 	}
 
+	/* redirect is handled last as it has to be ignored if any "all"
+	 * record is present _anywhere_ in the record.
+	 * See: RfC 7208, section 6.1 */
 	if (redirect) {
 		char *domspec;
 		int i4, i6;

@@ -2493,6 +2493,20 @@ test_parse()
 			.key = "dns11a.example.net",
 			.value = "v=spf1 include:dns9.example.net a a"
 		},
+		/* RfC 7208, section 6.1: Any "redirect" modifier MUST be ignored if there
+		 * is an "all" mechanism anywhere in the record. */
+		/* not in the test suite: redirect+all */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "redirect-before-all.example.net",
+			.value = "v=spf1 redirect=allpass.example.net -all"
+		},
+		/* not in the test suite: all+redirect */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "redirect-after-all.example.net",
+			.value = "v=spf1 +all redirect=allfail.example.net"
+		},
 		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
@@ -2546,6 +2560,8 @@ test_parse()
 		SPF_FAIL_PERM,
 		SPF_FAIL_PERM,
 		SPF_FAIL_PERM,
+		SPF_FAIL_PERM,
+		SPF_PASS,
 		SPF_NONE
 	};
 	int err = 0;
