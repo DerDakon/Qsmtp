@@ -147,22 +147,49 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 		else
 			return r;
 	} else {
-		int c;
+		const char *end = strchr(value, ';');
 
-		*ips = malloc(sizeof(**ips));
+		if (end == NULL)
+			end = value + strlen(value);
 
-		if (*ips == NULL)
-			return DNS_ERROR_LOCAL;
+		do {
+			char namebuf[256];
+			const size_t l = end - value;
+			struct ips *t;
+			struct in6_addr *ipa;
+			int cnt;
 
-		(*ips)->addr = parsein6(value, &c);
-		if ((*ips)->addr == NULL) {
-			free(*ips);
-			return DNS_ERROR_LOCAL;
-		}
-		(*ips)->next = NULL;
-		(*ips)->count = (unsigned short)c;
-		(*ips)->priority = 42;
-		(*ips)->name = strdup(domain);
+			assert(l < sizeof(namebuf));
+			assert(l > 0);
+			strncpy(namebuf, value, l);
+			namebuf[l] = '\0';
+
+			cnt = ask_dnsaaaa(namebuf, &ipa);
+			if (cnt < 0) {
+				freeips(*ips);
+				*ips = NULL;
+				return cnt;
+			}
+
+			t = in6_to_ips(ipa, cnt, 42);
+			if (t == NULL) {
+				freeips(*ips);
+				*ips = NULL;
+				return DNS_ERROR_LOCAL;
+			}
+
+			t->next = *ips;
+			*ips = t;
+
+			if (*end == '\0') {
+				end = NULL;
+			} else {
+				value = end + 1;
+				end = strchr(value, ';');
+				if (end == NULL)
+					end = value + strlen(value);
+			}
+		} while (end != NULL);
 	}
 
 	return 0;
@@ -347,9 +374,14 @@ static struct spftestcase spftest_sfmail = {
 	.badip = "::ffff:192.0.2.62",
 	.dns = {
 		{
+			.type = DNSTYPE_A,
+			.key = "mx.sf-mail.de",
+			.value = "::ffff:192.0.2.61"
+		},
+		{
 			.type = DNSTYPE_MX,
 			.key = "sf-mail.de",
-			.value = "::ffff:192.0.2.61"
+			.value = "mx.sf-mail.de"
 		},
 		{
 			.type = DNSTYPE_TXT,
@@ -850,6 +882,7 @@ test_parse_ip6()
 static int
 test_parse_mx()
 {
+	static const char toomany[] = "toomany.example.net";
 	struct dnsentry mxentries[] = {
 		{
 			.type = DNSTYPE_TXT,
@@ -859,20 +892,40 @@ test_parse_mx()
 		{
 			.type = DNSTYPE_MX,
 			.key = "mxtest.example.net",
+			.value = "mxtest.example.net"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "mxtest.example.net",
 			.value = "::ffff:10.42.42.42"
 		},
 		{
 			.type = DNSTYPE_MX,
+			.key = "mxtestother.example.net",
+			.value = "mxtestother.example.net"
+		},
+		{
+			.type = DNSTYPE_A,
 			.key = "mxtestother.example.net",
 			.value = "::ffff:10.42.42.40"
 		},
 		{
 			.type = DNSTYPE_MX,
 			.key = "mxtest6.example.net",
-			.value = "::ffff:10.42.42.40;cafe:babe::1"
+			.value = "mxtestother.example.net;mxtest6.example.net"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "mxtest6.example.net",
+			.value = "cafe:babe::1"
 		},
 		{
 			.type = DNSTYPE_MX,
+			.key = "mxtest6b.example.net",
+			.value = "mxtest6b.example.net"
+		},
+		{
+			.type = DNSTYPE_A,
 			.key = "mxtest6b.example.net",
 			.value = "::ffff:10.42.42.48;cafe:babe::42;::ffff:10.42.42.40"
 		},
@@ -885,6 +938,14 @@ test_parse_mx()
 			.type = DNSTYPE_TXT,
 			.key = "expmakro.example.net",
 			.value = "This should be percent-space-percent20: %%%_%-"
+		},
+		{
+			.type = DNSTYPE_MX,
+			.key = toomany,
+			.value = "mxtest.example.net;mxtest.example.net;"
+					"mxtestother.example.net;mxtestother.example.net;"
+					"mxtest6.example.net;mxtest6.example.net;mxtest6.example.net;"
+					"mxtest6b.example.net;mxtest6b.example.net;mxtest6b.example.net;mxtest6b.example.net"
 		},
 		{
 			.type = DNSTYPE_NONE,
@@ -908,6 +969,7 @@ test_parse_mx()
 		NULL
 	};
 	const char *mxvalid[] = {
+		"v=spf1 mx",
 		"v=spf1 mx/31 -all",
 		"v=spf1 mx//12 -all",
 		"v=spf1 mx/12//64 -all",
@@ -994,6 +1056,14 @@ test_parse_mx()
 		}
 
 		i++;
+	}
+
+	mxentries[0].key = toomany;
+	mxentries[0].value = mxvalid[0];
+	r = check_host(toomany);
+	if (r != SPF_FAIL_PERM) {
+		fprintf(stderr, "check_host(toomany.example.net) did not reject with permanent error, but returned %i\n", r);
+		err++;
 	}
 
 	return err;

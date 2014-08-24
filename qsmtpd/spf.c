@@ -1063,6 +1063,7 @@ spfmx(const char *domain, const char *token)
 	int i;
 	struct ips *mx;
 	char *domainspec = NULL;
+	struct ips *cur;
 
 	switch (may_have_domainspec(token)) {
 	case 0:
@@ -1107,8 +1108,26 @@ spfmx(const char *domain, const char *token)
 		freeips(mx);
 		return SPF_NONE;
 	}
+
+	/* RfC 7208 section 4.6.4:
+	 * In addition to that limit, the evaluation of each "MX" record MUST
+	 * NOT result in querying more than 10 address records -- either "A"
+	 * or "AAAA" resource records.  If this limit is exceeded, the "mx"
+	 * mechanism MUST produce a "permerror" result.
+	 */
+	i = 1;
+	cur = mx;
+	while (cur != NULL) {
+		cur = cur->next;
+		i++;
+	}
+
+	if (i > 10) {
+		freeips(mx);
+		return SPF_FAIL_PERM;
+	}
+
 	if (connection_is_ipv4()) {
-		struct ips *cur;
 		unsigned short s;
 
 		FOREACH_STRUCT_IPS(cur, s, mx) {
@@ -1121,7 +1140,6 @@ spfmx(const char *domain, const char *token)
 		}
 #ifndef IPV4ONLY
 	} else {
-		struct ips *cur;
 		unsigned short s;
 
 		FOREACH_STRUCT_IPS(cur, s, mx) {
@@ -1676,6 +1694,13 @@ spflookup(const char *domain, const int rec)
 
 			result = spfmx(domain, token);
 			mechanism = "MX";
+			/* MX mechanism may return permanent failure in case there are
+			 * too many A records */
+			if (result == SPF_FAIL_PERM) {
+				result = SPF_PASS;
+				prefix = SPF_FAIL_PERM;
+				break;
+			}
 		} else if ( (mechlen = match_mechanism(token, "ptr", ":/")) != 0) {
 			token += mechlen;
 
