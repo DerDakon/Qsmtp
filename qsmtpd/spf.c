@@ -134,9 +134,9 @@ spfreceived(int fd, const int spf)
 	}
 	WRITE(fd, ";\n\thelo=");
 	WRITEl(fd, HELOSTR, HELOLEN);
-	WRITE(fd, "; envelope-from=<");
+	WRITE(fd, "; envelope-from=\"");
 	WRITEl(fd, xmitstat.mailfrom.s, xmitstat.mailfrom.len);
-	WRITE(fd, ">\n");
+	WRITE(fd, "\"\n");
 	return 0;
 }
 
