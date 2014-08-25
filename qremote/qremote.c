@@ -194,7 +194,7 @@ setup(void)
 			err_conf("parse error in control/outgoingip");
 
 		if (!IN6_IS_ADDR_V4MAPPED(&outip))
-			err_conf("compiled for IPv4 only but control/outgoingip has IPv6 address");
+			err_conf("found IPv6 address in control/outgoingip");
 	} else {
 		outip = in6addr_any;
 	}
