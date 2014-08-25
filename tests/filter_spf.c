@@ -120,6 +120,93 @@ main(void)
 	int r;
 	enum config_domain t = CONFIG_NONE;
 	struct recip rcpt;
+	unsigned int i;
+	struct {
+		/* input values */
+		const char *name;
+		const char *remotehost;
+		const char *helo;
+		const char *mailfrom;
+
+		const unsigned int spf:4;		/* the SPF status to test */
+		const unsigned int use_rcpt:1;	/* set thisrecip */
+		const unsigned int use_params:1;	/* set userconf, logmsg and t parameters */
+
+		/* output */
+		const int expected_result;
+
+		const int expected_errno;
+		const enum config_domain expected_t;
+
+		const char *expected_logmsg;
+		const char *expected_netmsg;
+		const char *expected_syslogmsg;
+
+		const int expected_syslogprio;
+	} testpatterns[] = {
+		{
+			.name = "spf == SPF_PASS",
+			.spf = SPF_PASS,
+			.expected_result = FILTER_PASSED
+		},
+		{
+			.name = "spf == SPF_IGNORE",
+			.spf = SPF_IGNORE,
+			.expected_result = FILTER_PASSED
+		},
+		{
+			.name = "spf == SPF_NONE",
+			.spf = SPF_IGNORE,
+			.expected_result = FILTER_PASSED
+		},
+		{
+			.name = "spf == SPF_TEMP_ERROR",
+			.spf = SPF_TEMP_ERROR,
+			.use_params = 1,
+			.expected_result = FILTER_DENIED_WITH_MESSAGE,
+			.expected_logmsg = "temp SPF",
+			.expected_netmsg = "451 4.4.3 temporary error when checking the SPF policy\r\n",
+			.expected_t = CONFIG_GLOBAL
+		},
+		{
+			.name = "error in userconf_find_domain()",
+			.remotehost = hostname_spfignore_fail,
+			.spf = SPF_TEMP_ERROR,
+			.use_params = 1,
+			.expected_result = FILTER_ERROR,
+			.expected_errno = ENOTBLK
+		},
+		{
+			.name = "hostname in spfignore",
+			.remotehost = hostname_spfignore,
+			.spf = SPF_TEMP_ERROR,
+			.use_rcpt = 1,
+			.use_params = 1,
+			.expected_result = FILTER_PASSED,
+			.expected_syslogmsg = "not rejected message to <someone@example.org> from <> from IP [] {SPF blocked by global policy, whitelisted by user policy}",
+			.expected_syslogprio = LOG_INFO
+		},
+		{
+			.name = "spf == SPF_SOFTFAIL",
+			.spf = SPF_SOFTFAIL,
+			.helo = "example.net",
+			.expected_result = FILTER_PASSED
+		},
+		{
+			.name = "spf == SPF_SOFTFAIL",
+			.remotehost = hostname_spfstrict,
+			.mailfrom = "someone@spfstrict.example.com",
+			.spf = SPF_SOFTFAIL,
+			.use_params = 1,
+			.expected_result = FILTER_DENIED_WITH_MESSAGE,
+			.expected_netmsg = "550 5.7.1 mail denied by SPF policy\r\n",
+			.expected_logmsg = "SPF",
+			.expected_t = CONFIG_DOMAIN
+		},
+		{
+			.name = NULL
+		}
+	};
 
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 	testcase_setup_log_writen(testcase_log_writen_combine);
@@ -127,124 +214,94 @@ main(void)
 
 	memset(&ds, 0, sizeof(ds));
 	memset(&rcpt, 0, sizeof(rcpt));
-
-	xmitstat.spf = SPF_PASS;
-
-	r = cb_spf(NULL, NULL, NULL);
-	if (r != FILTER_PASSED) {
-		fprintf(stderr, "cb_spf(NULL, NULL, NULL) with spf == SPF_PASS returned %i instead of %i (FILTER_PASSED)\n",
-				r, FILTER_PASSED);
-		err++;
-	}
-
-	xmitstat.spf = SPF_IGNORE;
-
-	r = cb_spf(NULL, NULL, NULL);
-	if (r != FILTER_PASSED) {
-		fprintf(stderr, "cb_spf(NULL, NULL, NULL) with spf == SPF_IGNORE returned %i instead of %i (FILTER_PASSED)\n",
-				r, FILTER_PASSED);
-		err++;
-	}
-
-	xmitstat.spf = SPF_NONE;
-
-	r = cb_spf(NULL, NULL, NULL);
-	if (r != FILTER_PASSED) {
-		fprintf(stderr, "cb_spf() with getsettingglobal() returning 0 returned %i instead of %i (FILTER_PASSED)\n",
-				r, FILTER_PASSED);
-		err++;
-	}
-
-	xmitstat.spf = SPF_TEMP_ERROR;
-	netnwrite_msg = "451 4.4.3 temporary error when checking the SPF policy\r\n";
-
-	r = cb_spf(&ds, &logmsg, &t);
-	if (r != FILTER_DENIED_WITH_MESSAGE) {
-		fprintf(stderr, "cb_spf() with spf == SPF_TEMP_ERROR returned %i instead of %i (FILTER_DENIED_WITH_MESSAGE)\n",
-				r, FILTER_DENIED_WITH_MESSAGE);
-		err++;
-	}
-
-	if ((logmsg == NULL) || (strcmp(logmsg, "temp SPF") != 0)) {
-		fprintf(stderr, "cb_spf() with spf == SPF_TEMP_ERROR set logmsg to '%s' instead of 'temp SPF'\n",
-				logmsg);
-		err++;
-	}
-
-	if (t != CONFIG_GLOBAL) {
-		fprintf(stderr, "cb_spf() with spf == SPF_TEMP_ERROR set t to %i instead of %i (CONFIG_GLOBAL)\n",
-				t, CONFIG_GLOBAL);
-		err++;
-	}
-
-	err += testcase_netnwrite_check("cb_spf() with spf == SPF_TEMP_ERROR");
-
-	xmitstat.remotehost.s = (char *)hostname_spfignore_fail;
-	xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
-	thisrecip = &rcpt;
 	rcpt.to.s = "someone@example.org";
 	rcpt.to.len = strlen(rcpt.to.s);
-	logmsg = NULL;
 
-	r = cb_spf(&ds, &logmsg, &t);
-	if ((r != FILTER_ERROR) || (errno != ENOTBLK)) {
-		fprintf(stderr, "cb_spf() with spf == SPF_TEMP_ERROR returned %i/%i instead of %i/%i (FILTER_ERROR/ENOTBLK)\n",
-				r, errno, FILTER_ERROR, ENOTBLK);
-		err++;
-	}
+	for (i = 0; testpatterns[i].name != NULL; i++) {
+		struct userconf *pds = testpatterns[i].use_params ? &ds : NULL;
+		const char **plogmsg = testpatterns[i].use_params ? &logmsg : NULL;
+		enum config_domain *pt = testpatterns[i].use_params ? &t : NULL;
 
-	xmitstat.remotehost.s = (char *)hostname_spfignore;
-	xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
+		xmitstat.spf = testpatterns[i].spf;
+		netnwrite_msg = testpatterns[i].expected_netmsg;
+		log_write_msg = testpatterns[i].expected_syslogmsg;
+		log_write_priority = testpatterns[i].expected_syslogprio;
+		xmitstat.remotehost.s = (char *)testpatterns[i].remotehost;
+		if (testpatterns[i].remotehost != NULL)
+			xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
+		else
+			xmitstat.remotehost.len = 0;
+		xmitstat.helostr.s = (char *)testpatterns[i].helo;
+		if (testpatterns[i].helo != NULL)
+			xmitstat.helostr.len = strlen(testpatterns[i].helo);
+		else
+			xmitstat.helostr.len = 0;
+		xmitstat.mailfrom.s = (char *)testpatterns[i].mailfrom;
+		if (testpatterns[i].mailfrom != NULL)
+			xmitstat.mailfrom.len = strlen(testpatterns[i].mailfrom);
+		else
+			xmitstat.mailfrom.len = 0;
+		logmsg = NULL;
+		t = CONFIG_NONE;
+		if (testpatterns[i].use_rcpt)
+			thisrecip = &rcpt;
+		else
+			thisrecip = NULL;
 
-	log_write_msg = "not rejected message to <someone@example.org> from <> from IP [] {SPF blocked by global policy, whitelisted by user policy}";
-	log_write_priority = LOG_INFO;
+		printf("testing: %s\n", testpatterns[i].name);
 
-	r = cb_spf(&ds, &logmsg, &t);
-	if (r != FILTER_PASSED) {
-		fprintf(stderr, "cb_spf() with spf == SPF_TEMP_ERROR and host in spfignore returned %i instead of %i (FILTER_PASSED)\n",
-				r, FILTER_PASSED);
-		err++;
-	}
+		r = cb_spf(pds, plogmsg, pt);
+		if (r != testpatterns[i].expected_result) {
+			fprintf(stderr, "test %s: cb_spf(%s, %s, %s) returned %i instead of %i\n",
+					testpatterns[i].name,
+					pds ? "&ds" : "NULL", plogmsg ? "&logmsg" : "NULL", pt ? "&t" : "NULL",
+					r, testpatterns[i].expected_result);
+			err++;
+		}
 
-	xmitstat.spf = SPF_SOFTFAIL;
-	xmitstat.helostr.s = "example.net";
-	xmitstat.helostr.len = strlen(xmitstat.helostr.s);
-	xmitstat.mailfrom.s = NULL;
-	xmitstat.mailfrom.len = 0;
-	xmitstat.remotehost.s = NULL;
-	xmitstat.remotehost.len = 0;
+		if ((testpatterns[i].expected_result == FILTER_PASSED) || (testpatterns[i].expected_result == FILTER_ERROR)) {
+			assert(testpatterns[i].expected_logmsg == NULL);
+			assert(testpatterns[i].expected_t == 0);
+			if (testpatterns[i].expected_result == FILTER_PASSED) {
+				assert(testpatterns[i].expected_errno == 0);
+			} else {
+				assert(testpatterns[i].expected_errno != 0);
+				if (errno != testpatterns[i].expected_errno) {
+					fprintf(stderr, "test %s: cb_spf(%s, %s, %s) set errno to %i instead of %i\n",
+							testpatterns[i].name,
+							pds ? "&ds" : "NULL", plogmsg ? "&logmsg" : "NULL", pt ? "&t" : "NULL",
+							errno, testpatterns[i].expected_errno);
+					err++;
+				}
+			}
+		} else {
+			assert(testpatterns[i].expected_logmsg != NULL);
+			assert(testpatterns[i].expected_t != CONFIG_NONE);
+			assert(testpatterns[i].expected_errno == 0);
 
-	r = cb_spf(&ds, &logmsg, &t);
-	if (r != FILTER_PASSED) {
-		fprintf(stderr, "cb_spf() with spf == SPF_SOFTFAIL returned %i instead of %i (FILTER_PASSED)\n",
-				r, FILTER_PASSED);
-		err++;
-	}
+			if ((logmsg == NULL) || (strcmp(logmsg, testpatterns[i].expected_logmsg) != 0)) {
+				fprintf(stderr, "test %s: cb_spf(%s, %s, %s) set logmsg to '%s' instead of '%s'\n",
+						testpatterns[i].name,
+						pds ? "&ds" : "NULL", plogmsg ? "&logmsg" : "NULL", pt ? "&t" : "NULL",
+						logmsg, testpatterns[i].expected_logmsg);
+				err++;
+			}
 
-	xmitstat.spf = SPF_SOFTFAIL;
-	xmitstat.mailfrom.s = "someone@spfstrict.example.com";
-	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
-	xmitstat.remotehost.s = (char *)hostname_spfstrict;
-	xmitstat.remotehost.len = strlen(xmitstat.remotehost.s);
-	netnwrite_msg = "550 5.7.1 mail denied by SPF policy\r\n";
+			if (t != testpatterns[i].expected_t) {
+				fprintf(stderr, "test %s: cb_spf(%s, %s, %s) set t to %i instead of %i\n",
+						testpatterns[i].name,
+						pds ? "&ds" : "NULL", plogmsg ? "&logmsg" : "NULL", pt ? "&t" : "NULL",
+						t, testpatterns[i].expected_t);
+				err++;
+			}
+		}
 
-	r = cb_spf(&ds, &logmsg, &t);
-	if (r != FILTER_DENIED_WITH_MESSAGE) {
-		fprintf(stderr, "cb_spf() with spf == SPF_SOFTFAIL and spfstrict host returned %i instead of %i (FILTER_DENIED_WITH_MESSAGE)\n",
-				r, FILTER_DENIED_WITH_MESSAGE);
-		err++;
-	}
-
-	if ((logmsg == NULL) || (strcmp(logmsg, "SPF") != 0)) {
-		fprintf(stderr, "cb_spf() with spf == SPF_SOFTFAIL and spfstrict host set logmsg to '%s' instead of 'SPF'\n",
-				logmsg);
-		err++;
-	}
-
-	if (t != CONFIG_DOMAIN) {
-		fprintf(stderr, "cb_spf() with spf == SPF_SOFTFAIL and spfstrict host set t to %i instead of %i (CONFIG_DOMAIN)\n",
-				t, CONFIG_DOMAIN);
-		err++;
+		err += testcase_netnwrite_check(testpatterns[i].name);
+		if (log_write_msg != NULL) {
+			fprintf(stderr, "test %s: expected syslog message '%s' was not sent\n",
+					testpatterns[i].name, testpatterns[i].expected_syslogmsg);
+			err++;
+		}
 	}
 
 	return err;
