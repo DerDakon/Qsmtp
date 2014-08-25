@@ -156,7 +156,7 @@ main(void)
 		},
 		{
 			.name = "spf == SPF_NONE",
-			.spf = SPF_IGNORE,
+			.spf = SPF_NONE,
 			.expected_result = FILTER_PASSED
 		},
 		{
@@ -189,6 +189,7 @@ main(void)
 		{
 			.name = "spf == SPF_SOFTFAIL",
 			.spf = SPF_SOFTFAIL,
+			.use_params = 1,
 			.helo = "example.net",
 			.expected_result = FILTER_PASSED
 		},
