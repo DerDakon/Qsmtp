@@ -130,7 +130,7 @@ main(void)
 
 		const unsigned int spf:4;		/* the SPF status to test */
 		const unsigned int use_rcpt:1;	/* set thisrecip */
-		const unsigned int use_params:1;	/* set userconf, logmsg and t parameters */
+		const unsigned int no_params:1;	/* pass NULL values for all parameters */
 
 		/* output */
 		const int expected_result;
@@ -147,22 +147,24 @@ main(void)
 		{
 			.name = "spf == SPF_PASS",
 			.spf = SPF_PASS,
+			.no_params = 1,
 			.expected_result = FILTER_PASSED
 		},
 		{
 			.name = "spf == SPF_IGNORE",
 			.spf = SPF_IGNORE,
+			.no_params = 1,
 			.expected_result = FILTER_PASSED
 		},
 		{
 			.name = "spf == SPF_NONE",
 			.spf = SPF_NONE,
+			.no_params = 1,
 			.expected_result = FILTER_PASSED
 		},
 		{
 			.name = "spf == SPF_TEMP_ERROR",
 			.spf = SPF_TEMP_ERROR,
-			.use_params = 1,
 			.expected_result = FILTER_DENIED_WITH_MESSAGE,
 			.expected_logmsg = "temp SPF",
 			.expected_netmsg = "451 4.4.3 temporary error when checking the SPF policy\r\n",
@@ -172,7 +174,6 @@ main(void)
 			.name = "error in userconf_find_domain()",
 			.remotehost = hostname_spfignore_fail,
 			.spf = SPF_TEMP_ERROR,
-			.use_params = 1,
 			.expected_result = FILTER_ERROR,
 			.expected_errno = ENOTBLK
 		},
@@ -181,7 +182,6 @@ main(void)
 			.remotehost = hostname_spfignore,
 			.spf = SPF_TEMP_ERROR,
 			.use_rcpt = 1,
-			.use_params = 1,
 			.expected_result = FILTER_PASSED,
 			.expected_syslogmsg = "not rejected message to <someone@example.org> from <> from IP [] {SPF blocked by global policy, whitelisted by user policy}",
 			.expected_syslogprio = LOG_INFO
@@ -189,7 +189,6 @@ main(void)
 		{
 			.name = "spf == SPF_SOFTFAIL",
 			.spf = SPF_SOFTFAIL,
-			.use_params = 1,
 			.helo = "example.net",
 			.expected_result = FILTER_PASSED
 		},
@@ -198,7 +197,6 @@ main(void)
 			.remotehost = hostname_spfstrict,
 			.mailfrom = "someone@spfstrict.example.com",
 			.spf = SPF_SOFTFAIL,
-			.use_params = 1,
 			.expected_result = FILTER_DENIED_WITH_MESSAGE,
 			.expected_netmsg = "550 5.7.1 mail denied by SPF policy\r\n",
 			.expected_logmsg = "SPF",
@@ -219,10 +217,6 @@ main(void)
 	rcpt.to.len = strlen(rcpt.to.s);
 
 	for (i = 0; testpatterns[i].name != NULL; i++) {
-		struct userconf *pds = testpatterns[i].use_params ? &ds : NULL;
-		const char **plogmsg = testpatterns[i].use_params ? &logmsg : NULL;
-		enum config_domain *pt = testpatterns[i].use_params ? &t : NULL;
-
 		xmitstat.spf = testpatterns[i].spf;
 		netnwrite_msg = testpatterns[i].expected_netmsg;
 		log_write_msg = testpatterns[i].expected_syslogmsg;
@@ -251,11 +245,13 @@ main(void)
 
 		printf("testing: %s\n", testpatterns[i].name);
 
-		r = cb_spf(pds, plogmsg, pt);
+		if (testpatterns[i].no_params)
+			r = cb_spf(NULL, NULL, NULL);
+		else
+			r = cb_spf(&ds, &logmsg, &t);
 		if (r != testpatterns[i].expected_result) {
-			fprintf(stderr, "test %s: cb_spf(%s, %s, %s) returned %i instead of %i\n",
+			fprintf(stderr, "test %s: cb_spf() returned %i instead of %i\n",
 					testpatterns[i].name,
-					pds ? "&ds" : "NULL", plogmsg ? "&logmsg" : "NULL", pt ? "&t" : "NULL",
 					r, testpatterns[i].expected_result);
 			err++;
 		}
@@ -268,9 +264,8 @@ main(void)
 			} else {
 				assert(testpatterns[i].expected_errno != 0);
 				if (errno != testpatterns[i].expected_errno) {
-					fprintf(stderr, "test %s: cb_spf(%s, %s, %s) set errno to %i instead of %i\n",
+					fprintf(stderr, "test %s: cb_spf() set errno to %i instead of %i\n",
 							testpatterns[i].name,
-							pds ? "&ds" : "NULL", plogmsg ? "&logmsg" : "NULL", pt ? "&t" : "NULL",
 							errno, testpatterns[i].expected_errno);
 					err++;
 				}
@@ -281,17 +276,15 @@ main(void)
 			assert(testpatterns[i].expected_errno == 0);
 
 			if ((logmsg == NULL) || (strcmp(logmsg, testpatterns[i].expected_logmsg) != 0)) {
-				fprintf(stderr, "test %s: cb_spf(%s, %s, %s) set logmsg to '%s' instead of '%s'\n",
+				fprintf(stderr, "test %s: cb_spf() set logmsg to '%s' instead of '%s'\n",
 						testpatterns[i].name,
-						pds ? "&ds" : "NULL", plogmsg ? "&logmsg" : "NULL", pt ? "&t" : "NULL",
 						logmsg, testpatterns[i].expected_logmsg);
 				err++;
 			}
 
 			if (t != testpatterns[i].expected_t) {
-				fprintf(stderr, "test %s: cb_spf(%s, %s, %s) set t to %i instead of %i\n",
+				fprintf(stderr, "test %s: cb_spf() set t to %i instead of %i\n",
 						testpatterns[i].name,
-						pds ? "&ds" : "NULL", plogmsg ? "&logmsg" : "NULL", pt ? "&t" : "NULL",
 						t, testpatterns[i].expected_t);
 				err++;
 			}
