@@ -34,7 +34,7 @@
 enum filter_result
 cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 {
-	enum filter_result r = FILTER_PASSED;	/* return code */
+	enum filter_result r = FILTER_DENIED_WITH_MESSAGE;	/* return code */
 	long p;				/* spf policy */
 	const char *fromdomain = NULL;	/* pointer to the beginning of the domain in xmitstat.mailfrom.s */
 	int spfs = xmitstat.spf;	/* the spf status to check, either global or local one */
@@ -158,7 +158,7 @@ block:
 
 		if (net_writen(netmsg) != 0)
 			return FILTER_ERROR;
-	} else if (r == FILTER_PASSED) {
+	} else if (r == FILTER_DENIED_WITH_MESSAGE) {
 		if (netwrite("550 5.7.1 mail denied by SPF policy\r\n") != 0)
 			return FILTER_ERROR;
 	}
@@ -172,5 +172,5 @@ block:
 
 	if (!*logmsg)
 		*logmsg = "SPF";
-	return (r != FILTER_PASSED) ? r : FILTER_DENIED_WITH_MESSAGE;
+	return r;
 }
