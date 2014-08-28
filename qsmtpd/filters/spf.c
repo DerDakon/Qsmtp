@@ -66,6 +66,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			char spfname[256];
 			int v = 0;
 			size_t fromlen;	/* strlen(fromdomain) */
+			int olderror = SPF_NONE;
 
 			if (xmitstat.mailfrom.len) {
 				fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
@@ -78,19 +79,29 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			spfname[fromlen++] = '.';
 
 			/* First match wins. */
-			while (a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR))) {
+			while (a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR) || (spfs == SPF_FAIL_MALF))) {
 				memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
+				if ((spfs != SPF_NONE) && (olderror == SPF_NONE))
+					olderror = spfs;
 				spfs = check_host(spfname);
 				v++;
 			}
 			free(a);
-			if ((spfs == SPF_PASS) || (spfs < 0))
-				return FILTER_PASSED;
 
-			if (spfs == SPF_HARD_ERROR) {
+			switch (spfs) {
+			default:
+				if (spfs >= 0) {
+					if (spfs == SPF_NONE)
+						spfs = olderror;
+					*logmsg = "rSPF";
+					break;
+				}
+				/* fallthrough */
+			case SPF_PASS: /* no match in rSPF filters */
+				return FILTER_PASSED;
+			case SPF_HARD_ERROR: /* last rSPF filter is not reachable */
 				spfs = SPF_NONE;
-			} else {
-				*logmsg = "rSPF";
+				break;
 			}
 		}
 	}
