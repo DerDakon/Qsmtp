@@ -50,6 +50,19 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 
 	*logmsg = NULL;
 
+	if (xmitstat.remotehost.len) {
+		int u;				/* if it is the user or domain policy */
+
+		u = userconf_find_domain(ds, "spfignore", xmitstat.remotehost.s, 1);
+		if (u < 0) {
+			errno = -u;
+			return FILTER_ERROR;
+		} else if (u != CONFIG_NONE) {
+			logwhitelisted("SPF", *t, u);
+			return FILTER_PASSED;
+		}
+	}
+
 /* there is no official SPF entry: go and check if someone else provided one, e.g. rspf.rhsbl.docsnyder.de. */
 	if (spfs == SPF_NONE) {
 		char **a;
@@ -150,18 +163,6 @@ strict:
 		return FILTER_PASSED;
 	}
 block:
-	if (xmitstat.remotehost.len) {
-		int u;				/* if it is the user or domain policy */
-
-		u = userconf_find_domain(ds, "spfignore", xmitstat.remotehost.s, 1);
-		if (u < 0) {
-			errno = -u;
-			return FILTER_ERROR;
-		} else if (u != CONFIG_NONE) {
-			logwhitelisted("SPF", *t, u);
-			return FILTER_PASSED;
-		}
-	}
 	if ((xmitstat.spfexp != NULL) && (spfs != SPF_HARD_ERROR)) {
 		const char *netmsg[] = {"550 5.7.1 mail denied by SPF policy, SPF record says: ",
 								xmitstat.spfexp, NULL};
