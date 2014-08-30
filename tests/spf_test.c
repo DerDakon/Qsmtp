@@ -2349,6 +2349,394 @@ test_suite_a()
 }
 
 static int
+test_suite_modifiers()
+{
+	/* Semantics of exp and other modifiers tests taken from SPF test suite 2014.05
+	 * http://www.openspf.org/svn/project/test-suite/rfc7208-tests-2014.05.yml */
+	const struct dnsentry modentries[] = {
+		{
+			.type = DNSTYPE_A,
+			.key = "mail.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e1.example.com",
+			.value = "v=spf1 exp=exp1.example.com redirect=e2.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e2.example.com",
+			.value = "v=spf1 -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e3.example.com",
+			.value = "v=spf1 exp=exp1.example.com redirect=e4.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e4.example.com",
+			.value = "v=spf1 -all exp=exp2.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "exp1.example.com",
+			.value = "No-see-um"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "exp2.example.com",
+			.value = "See me."
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "exp3.example.com",
+			.value = "Correct!"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "exp4.example.com",
+			.value = "%{l} in implementation"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e5.example.com",
+			.value = "v=spf1 1up=foo"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e6.example.com",
+			.value = "v=spf1 =all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e7.example.com",
+			.value = "v=spf1 include:e3.example.com -all exp=exp3.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e8.example.com",
+			.value = "v=spf1 -all exp=exp4.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e9.example.com",
+			.value = "v=spf1 -all foo=%abc"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e10.example.com",
+			.value = "v=spf1 redirect=erehwon.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e11.example.com",
+			.value = "v=spf1 -all exp=e11msg.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e11msg.example.com",
+			.value = "Answer a fool according to his folly."
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e11msg.example.com",
+			.value = "Do not answer a fool according to his folly."
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e12.example.com",
+			.value = "v=spf1 exp= -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e13.example.com",
+			.value = "v=spf1 exp=e13msg.example.com -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e13msg.example.com",
+			.value = "The %{x}-files."
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e14.example.com",
+			.value = "v=spf1 exp=e13msg.example.com -all exp=e11msg.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e15.example.com",
+			.value = "v=spf1 redirect=e12.example.com -all redirect=e12.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e16.example.com",
+			.value = "v=spf1 exp=-all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e17.example.com",
+			.value = "v=spf1 redirect=-all ?all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e18.example.com",
+			.value = "v=spf1 ?all redirect="
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e19.example.com",
+			.value = "v=spf1 default=pass"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e20.example.com",
+			.value = "v=spf1 default=+"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e21.example.com",
+			.value = "v=spf1 exp=e21msg.example.com -all"
+		},
+		{
+			.type = DNSTYPE_TIMEOUT,
+			.key = "e21msg.example.com",
+			.value = ""
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e22.example.com",
+			.value = "v=spf1 exp=mail.example.com -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "nonascii.example.com",
+			.value = "v=spf1 exp=badexp.example.com -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "badexp.example.com",
+			.value = "ï»¿Explanation"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "tworecs.example.com",
+			.value = "v=spf1 exp=twoexp.example.com -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "twoexp.example.com",
+			.value = "one"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "twoexp.example.com",
+			.value = "two"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e23.example.com",
+			.value = "v=spf1 a:erehwon.example.com a:foobar.com exp=nxdomain.com -all"
+		},
+		{
+			.type = DNSTYPE_NONE
+		}
+	};
+	const struct suite_testcase modtestcases[] = {
+		{
+			.name = "redirect-none",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e10.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "redirect-cancels-exp",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e1.example.com",
+			.result = SPF_FAIL_PERM
+		},
+#if 0
+		{
+			.name = "redirect-syntax-error",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e17.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+#endif
+		{
+			.name = "include-ignores-exp",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e7.example.com",
+			.exp = "Correct!",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "redirect-cancels-prior-exp",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e3.example.com",
+			.exp = "See me.",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "invalid-modifier",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e5.example.com",
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "empty-modifier-name",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e6.example.com",
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "dorky-sentinel",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "Macro Error@e8.example.com",
+			.exp = "Macro Error in implementation",
+			.result = SPF_FAIL_PERM
+		},
+#if 0
+		/* failing because multi-record detection does not work */
+		{
+			.name = "exp-multiple-txt",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e11.example.com",
+			.result = SPF_FAIL_PERM
+		},
+#endif
+		{
+			.name = "exp-no-txt",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e22.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "exp-dns-error",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e21.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "exp-empty-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e12.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "explanation-syntax-error",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e13.example.com",
+			.result = SPF_FAIL_PERM
+		},
+#if 0
+		{
+			.name = "exp-syntax-error",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e16.example.com",
+			.result = SPF_FAIL_PERM
+		},
+#endif
+		{
+			.name = "exp-twice",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e14.example.com",
+			.result = SPF_FAIL_PERM
+		},
+#if 0
+		{
+			.name = "redirect-empty-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e18.example.com",
+			.result = SPF_FAIL_PERM
+		},
+#endif
+		{
+			.name = "redirect-twice",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e15.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "unknown-modifier-syntax",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e9.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "default-modifier-obsolete",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e19.example.com",
+			.result = SPF_NEUTRAL
+		},
+		{
+			.name = "default-modifier-obsolete2",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e20.example.com",
+			.result = SPF_NEUTRAL
+		},
+		{
+			.name = "non-ascii-exp",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foobar@nonascii.example.com",
+			.result = SPF_FAIL_PERM
+		},
+#if 0
+		/* failing because multi-record detection does not work */
+		{
+			.name = "two-exp-records",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foobar@tworecs.example.com",
+			.result = SPF_FAIL_PERM
+		},
+#endif
+		/* failing because multi-record detection does not work */
+		{
+			.name = "exp-void",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e23.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.helo = NULL,
+			.remoteip = NULL,
+			.mailfrom = NULL,
+			.exp = NULL,
+			.result = -1
+		}
+	};
+
+	dnsdata = modentries;
+
+	return run_suite_test(modtestcases);
+}
+
+static int
 test_suite_include()
 {
 	/* INCLUDE mechanism syntax tests taken from SPF test suite 2009.10
@@ -3098,6 +3486,7 @@ test_suite(void)
 	err += test_suite_a();
 	err += test_suite_exists();
 	err += test_suite_include();
+	err += test_suite_modifiers();
 
 	return err;
 }

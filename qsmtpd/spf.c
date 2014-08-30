@@ -665,7 +665,7 @@ spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned 
 			return -1;
 		break;
 	default:
-		APPEND(7, "unknown");
+		PARSEERR;
 	}
 
 	return p - q;
@@ -1861,6 +1861,25 @@ spflookup(const char *domain, unsigned int *queries)
 							/* if this fails the standard answer will be used */
 							(void)spf_makro(exp, domain, 1, &xmitstat.spfexp);
 							free(exp);
+
+							/* RfC 7208, section 6.2:
+							 * Since the  explanation string is intended for an SMTP
+							 * response [...], the explanation string MUST be limited
+							 * to [US-ASCII].
+							 */
+							if (xmitstat.spfexp != NULL) {
+								size_t pos;
+								for (pos = 0; pos < strlen(xmitstat.spfexp); pos++) {
+									/* replace unsafe characters */
+									if ((unsigned char)(xmitstat.spfexp[pos]) < ' ') {
+										xmitstat.spfexp[pos] = '%';
+									} else if (xmitstat.spfexp[pos] < 0) {
+										free(xmitstat.spfexp);
+										xmitstat.spfexp = NULL;
+										break;
+									}
+								}
+							}
 						}
 					}
 					free(target);
@@ -1891,6 +1910,14 @@ spflookup(const char *domain, unsigned int *queries)
 			} else {
 				*queries += 1;
 				result = spflookup(domspec, queries);
+				/* RfC 7208, section 6.1:
+				 *   The result of this new evaluation of check_host() is then considered
+				 *   the result of the current evaluation with the exception that if no
+				 *   SPF record is found, or if the <target-name> is malformed, the result
+				 *   is a "permerror" rather than "none". 
+				 */
+				if (result == SPF_NONE)
+					result = SPF_FAIL_PERM;
 			}
 			free(domspec);
 		}
