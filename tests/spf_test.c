@@ -170,15 +170,17 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 				return cnt;
 			}
 
-			t = in6_to_ips(ipa, cnt, 42);
-			if (t == NULL) {
-				freeips(*ips);
-				*ips = NULL;
-				return DNS_ERROR_LOCAL;
-			}
+			if (cnt > 0) {
+				t = in6_to_ips(ipa, cnt, 42);
+				if (t == NULL) {
+					freeips(*ips);
+					*ips = NULL;
+					return DNS_ERROR_LOCAL;
+				}
 
-			t->next = *ips;
-			*ips = t;
+				t->next = *ips;
+				*ips = t;
+			}
 
 			if (*end == '\0') {
 				end = NULL;
@@ -1782,6 +1784,238 @@ test_suite_exists()
 	dnsdata = existsentries;
 
 	return run_suite_test(existstestcases);
+}
+
+static int
+test_suite_mx()
+{
+	/* ALL mechanism syntax tests taken from SPF test suite 2009.10
+	 * http://www.openspf.org/svn/project/test-suite/rfc4408-tests-2009.10.yml */
+	const struct dnsentry mxentries[] = {
+		{
+			.type = DNSTYPE_A,
+			.key = "mail.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_MX,
+			.key = "mail.example.com",
+			.value = ""
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "mail.example.com",
+			.value = "v=spf1 mx"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e1.example.com",
+			.value = "v=spf1 mx/0 -all"
+		},
+		{
+			.type = DNSTYPE_MX,
+			.key = "e1.example.com",
+			.value = "e1.example.com"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "e2.example.com",
+			.value = "::ffff:1.1.1.1"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e2.example.com",
+			.value = "1234::2"
+		},
+		{
+			.type = DNSTYPE_MX,
+			.key = "e2.example.com",
+			.value = "e2.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e2.example.com",
+			.value = "v=spf1 mx/0 -all"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e2a.example.com",
+			.value = "1234::1"
+		},
+		{
+			.type = DNSTYPE_MX,
+			.key = "e2a.example.com",
+			.value = "e2a.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e2a.example.com",
+			.value = "v=spf1 mx//0 -all"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "e2b.example.com",
+			.value = "::ffff:1.1.1.1"
+		},
+		{
+			.type = DNSTYPE_MX,
+			.key = "e2b.example.com",
+			.value = "e2b.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e2b.example.com",
+			.value = "v=spf1 mx//0 -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e3.example.com",
+			.value = "v=spf1 mx:foo.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e4.example.com",
+			.value = "v=spf1 mx"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "e4.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e5.example.com",
+			.value = "v=spf1 mx:abc.123"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e6.example.com",
+			.value = "v=spf1 mx//33 -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e6a.example.com",
+			.value = "v=spf1 mx/33 -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e7.example.com",
+			.value = "v=spf1 mx//129 -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e9.example.com",
+			.value = "v=spf1 mx:example.com:8080"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e10.example.com",
+			.value = "v=spf1 mx:foo.example.com/24"
+		},
+		{
+			.type = DNSTYPE_MX,
+			.key = "foo.example.com",
+			.value = "foo1.example.com"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "foo1.example.com",
+			.value = "::ffff:1.1.1.1;::ffff:1.2.3.5"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e11.example.com",
+			.value = "v=spf1 mx:foo:bar/baz.example.com"
+		},
+		{
+			.type = DNSTYPE_MX,
+			.key = "foo:bar/baz.example.com",
+			.value = "foo:bar/baz.example.com"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "foo:bar/baz.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e12.example.com",
+			.value = "v=spf1 mx:example.-com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e13.example.com",
+			.value = "v=spf1 mx: -all"
+		},
+		{
+			.type = DNSTYPE_NONE
+		}
+	};
+	const struct suite_testcase mxtestcases[] = {
+		{
+			.name = "mx-cidr6",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e6.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "mx-bad-cidr4",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e6a.example.com",
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "mx-bad-cidr6",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e7.example.com",
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "mx-multi-ip1",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e10.example.com",
+			.result = SPF_PASS
+		},
+		{
+			.name = "mx-multi-ip2",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.1.1.4", /* probably a bug in the test suite */
+			.mailfrom = "foo@e10.example.com",
+			.result = SPF_PASS
+		},
+		{
+			.name = "mx-bad-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4", /* probably a bug in the test suite */
+			.mailfrom = "foo@e9.example.com",
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "mx-nxdomain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4", /* probably a bug in the test suite */
+			.mailfrom = "foo@e1.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "mx-cidr4-0",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4", /* probably a bug in the test suite */
+			.mailfrom = "foo@e2.example.com",
+			.result = SPF_PASS
+		},
+		{
+			.result = -1
+		}
+	};
+
+	dnsdata = mxentries;
+
+	return run_suite_test(mxtestcases);
 }
 
 static int
@@ -3487,6 +3721,7 @@ test_suite(void)
 	err += test_suite_exists();
 	err += test_suite_include();
 	err += test_suite_modifiers();
+	err += test_suite_mx();
 
 	return err;
 }
