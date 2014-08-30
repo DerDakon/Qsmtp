@@ -163,18 +163,17 @@ strict:
 		return FILTER_PASSED;
 	}
 block:
-	if ((xmitstat.spfexp != NULL) && (spfs != SPF_HARD_ERROR)) {
-		const char *netmsg[] = {"550 5.7.1 mail denied by SPF policy, SPF record says: ",
-								xmitstat.spfexp, NULL};
+	if (r == FILTER_DENIED_WITH_MESSAGE) {
+		const char *netmsg[] = {"550 5.7.1 mail denied by SPF policy", ", SPF record says: ",
+				xmitstat.spfexp, NULL};
+
+		/* if there was a hard DNS error ignore the spfexp string, it may be inappropriate */
+		if ((xmitstat.spfexp == NULL) || (spfs == SPF_HARD_ERROR))
+			netmsg[1] = NULL;
 
 		if (net_writen(netmsg) != 0)
 			return FILTER_ERROR;
-	} else if (r == FILTER_DENIED_WITH_MESSAGE) {
-		if (netwrite("550 5.7.1 mail denied by SPF policy\r\n") != 0)
-			return FILTER_ERROR;
-	}
-
-	if ((r == FILTER_DENIED_TEMPORARY) && (getsetting(ds, "fail_hard_on_temp", &tmpt) <= 0)) {
+	} else if ((r == FILTER_DENIED_TEMPORARY) && (getsetting(ds, "fail_hard_on_temp", &tmpt) <= 0)) {
 		*logmsg = "temp SPF";
 		if (netwrite("451 4.4.3 temporary error when checking the SPF policy\r\n") != 0)
 			return FILTER_ERROR;

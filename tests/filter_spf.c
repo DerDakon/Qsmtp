@@ -155,6 +155,7 @@ main(void)
 		const char *remotehost;
 		const char *helo;
 		const char *mailfrom;
+		const char *spfexp;
 
 		const unsigned int spf:4;		/* the SPF status to test */
 		const unsigned int use_rcpt:1;	/* set thisrecip */
@@ -206,6 +207,17 @@ main(void)
 			.expected_t = CONFIG_GLOBAL
 		},
 		{
+			.name = "spf == SPF_TEMP_ERROR with fail_hard_on_temp",
+			.spf = SPF_TEMP_ERROR,
+			.spfpolicy = 1,
+			.tempsetting = 1,
+			.cd_policy = CONFIG_GLOBAL,
+			.cd_temp = CONFIG_USER,
+			.expected_result = FILTER_DENIED_TEMPORARY,
+			.expected_logmsg = "SPF",
+			.expected_t = CONFIG_GLOBAL
+		},
+		{
 			.name = "error in userconf_find_domain()",
 			.remotehost = hostname_spfignore_fail,
 			.spf = SPF_TEMP_ERROR,
@@ -246,11 +258,35 @@ main(void)
 			.expected_t = CONFIG_DOMAIN
 		},
 		{
+			.name = "simple reject",
+			.spf = SPF_FAIL_PERM,
+			.helo = "example.net",
+			.spfpolicy = 2,
+			.cd_policy = CONFIG_USER,
+			.expected_result = FILTER_DENIED_WITH_MESSAGE,
+			.expected_netmsg = "550 5.7.1 mail denied by SPF policy\r\n",
+			.expected_logmsg = "SPF",
+			.expected_t = CONFIG_USER
+		},
+		{
+			.name = "simple reject with message",
+			.spf = SPF_FAIL_PERM,
+			.spfexp = "SPFEXP message",
+			.helo = "example.net",
+			.spfpolicy = 2,
+			.cd_policy = CONFIG_USER,
+			.expected_result = FILTER_DENIED_WITH_MESSAGE,
+			.expected_netmsg = "550 5.7.1 mail denied by SPF policy, SPF record says: SPFEXP message\r\n",
+			.expected_logmsg = "SPF",
+			.expected_t = CONFIG_USER
+		},
+		{
 			.name = NULL
 		}
 	};
 
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
+	testcase_setup_net_writen(testcase_net_writen_combine);
 	testcase_setup_log_writen(testcase_log_writen_combine);
 	testcase_setup_log_write(testcase_log_write_compare);
 
@@ -261,6 +297,7 @@ main(void)
 
 	for (i = 0; testpatterns[i].name != NULL; i++) {
 		xmitstat.spf = testpatterns[i].spf;
+		xmitstat.spfexp = (char *)testpatterns[i].spfexp;
 		netnwrite_msg = testpatterns[i].expected_netmsg;
 		log_write_msg = testpatterns[i].expected_syslogmsg;
 		log_write_priority = testpatterns[i].expected_syslogprio;
