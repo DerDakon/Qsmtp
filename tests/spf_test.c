@@ -1630,6 +1630,132 @@ test_suite_all()
 }
 
 static int
+test_suite_exists()
+{
+	/* Exists mechanism syntax tests taken from SPF test suite 2014.05
+	 * http://www.openspf.org/svn/project/test-suite/rfc7208-tests-2014.05.yml */
+	const struct dnsentry existsentries[] = {
+		{
+			.type = DNSTYPE_A,
+			.key = "mail.example.com",
+			.value = "::ffff:1.2.3.4"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "mail6.example.com",
+			.value = "CAFE:BABE::4"
+		},
+		{
+			.type = DNSTYPE_TIMEOUT,
+			.key = "err.example.com",
+			.value = ""
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e1.example.com",
+			.value = "v=spf1 exists:"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e2.example.com",
+			.value = "v=spf1 exists"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e3.example.com",
+			.value = "v=spf1 exists:mail.example.com/24"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e4.example.com",
+			.value = "v=spf1 exists:mail.example.com"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e5.example.com",
+			.value = "v=spf1 exists:mail6.example.com -all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e6.example.com",
+			.value = "v=spf1 exists:err.example.com -all"
+		},
+		{
+			.type = DNSTYPE_NONE
+		}
+	};
+	const struct suite_testcase existstestcases[] = {
+		{
+			.name = "exists-empty-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e1.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "exists-implicit",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e2.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "exists-cidr",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e3.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "exists-ip4",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e4.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.name = "exists-ip6",
+			.helo = "mail.example.com",
+			.remoteip = "CAFE:BABE::3",
+			.mailfrom = "foo@e4.example.com",
+			.exp = NULL,
+			.result = SPF_PASS
+		},
+		{
+			.name = "exists-ip6only",
+			.helo = "mail.example.com",
+			.remoteip = "CAFE:BABE::3",
+			.mailfrom = "foo@e5.example.com",
+			.exp = NULL,
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "exists-dnserr",
+			.helo = "mail.example.com",
+			.remoteip = "CAFE:BABE::3",
+			.mailfrom = "foo@e6.example.com",
+			.exp = NULL,
+			.result = SPF_TEMP_ERROR
+		},
+		{
+			.helo = NULL,
+			.remoteip = NULL,
+			.mailfrom = NULL,
+			.exp = NULL,
+			.result = -1
+		}
+	};
+
+	dnsdata = existsentries;
+
+	return run_suite_test(existstestcases);
+}
+
+static int
 test_suite_ptr()
 {
 	/* PTR mechanism syntax tests taken from SPF test suite 2009.10
@@ -2941,6 +3067,7 @@ test_suite(void)
 	err += test_suite_all();
 	err += test_suite_ptr();
 	err += test_suite_a();
+	err += test_suite_exists();
 	err += test_suite_include();
 
 	return err;
