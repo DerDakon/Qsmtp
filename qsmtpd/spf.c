@@ -296,7 +296,7 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 		return -1;
 	memcpy(news, s, sl);
 	news[sl] = '\0';
-/* first: go and replace all delimiters with '.' */
+	/* first: go and replace all delimiters with '.' */
 	/* delim == 1 means only '.' is delimiter so we only have to count them */
 	if (delim == 1) {
 		int j = sl;
@@ -814,11 +814,11 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 {
 	*ip4cidr = -1;
 	*ip6cidr = -1;
-/* if there is nothing we don't need to do anything */
+	/* if there is nothing we don't need to do anything */
 	*domainspec = NULL;
 	if (!*token || WSPACE(*token)) {
 		return 0;
-/* search for a domain in token */
+	/* search for a domain in token */
 	} else if (*token != '/') {
 		enum spf_makro_expansion i = SPF_MAKRO_NONE;
 		const char *t = token;
@@ -972,7 +972,8 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 		}
 		token = t;
 	}
-/* check if there is a cidr length given */
+
+	/* check if there is a cidr length given */
 	if (*token == '/') {
 		const char *c = token + 1;
 
@@ -1340,9 +1341,9 @@ spfptr(const char *domain, const char *token)
 			}
 		} else if (validdomains[j][dlen - dslen - 1] == '.') {
 			/* This mechanism matches if the <target-name> is
-				* either an ancestor of a validated domain name or
-				* if the <target-name> and a validated domain name
-				* are the same. */
+			 * either an ancestor of a validated domain name or
+			 * if the <target-name> and a validated domain name
+			 * are the same. */
 			if (strcmp(validdomains[j] + dlen - dslen, checkdom) == 0) {
 				r = SPF_PASS;
 				break;
@@ -1826,7 +1827,7 @@ spflookup(const char *domain, unsigned int *queries)
 				}
 			}
 		}
-/* skip to the end of this token */
+		/* skip to the end of this token */
 		while (*token && !WSPACE(*token)) {
 			token++;
 		}
