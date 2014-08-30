@@ -1091,7 +1091,8 @@ run_suite_test(const struct suite_testcase *testcases)
 				fprintf(stderr, "Test %s should return SPF exp, but it did not\n", testcases[i].name);
 				err++;
 			} else if (strcmp(xmitstat.spfexp, testcases[i].exp) != 0) {
-				fprintf(stderr, "Test %s did not return the expected SPF exp, but %s\n", testcases[i].name, xmitstat.spfexp);
+				fprintf(stderr, "Test %s did not return the expected SPF exp '%s', but '%s'\n",
+						testcases[i].name, testcases[i].exp, xmitstat.spfexp);
 				err++;
 			}
 		} else if ((xmitstat.spfexp != NULL) && (r != SPF_FAIL_MALF)) {
@@ -1169,6 +1170,16 @@ test_suite_makro()
 			.type = DNSTYPE_TXT,
 			.key = "e1.example.com",
 			.value = "v=spf1 -exists:%(ir).sbl.example.com ?all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e1e.example.com",
+			.value = "v=spf1 exists:foo%(ir).sbl.example.com ?all"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e1t.example.com",
+			.value = "v=spf1 exists:foo%.sbl.example.com ?all"
 		},
 		{
 			.type = DNSTYPE_TXT,
@@ -1331,9 +1342,7 @@ test_suite_makro()
 			.value = "::ffff:127.0.0.2"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		}
 	};
 	const struct suite_testcase makrotestcases[] = {
@@ -1367,6 +1376,20 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e1.example.com",
 			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "invalid-embedded-macro-char",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@e1e.example.com",
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "invalid-trailing-macro-char",
+			.helo = "msgbas2x.cos.example.com",
+			.remoteip = "::ffff:192.168.218.40",
+			.mailfrom = "test@e1t.example.com",
 			.result = SPF_FAIL_MALF
 		},
 		{
@@ -1452,16 +1475,14 @@ test_suite_makro()
 			.exp = "connect from mx.example.com",
 			.result = SPF_FAIL_PERM
 		},
-#if 0
 		{
 			.name = "p-macro-multiple",
 			.helo = "msgbas2x.cos.example.com",
 			.remoteip = "::ffff:192.168.218.42",
 			.mailfrom = "test@e7.example.com",
 			.exp = NULL,
-			.result = SPF_PASS
+			.result = SPF_SOFTFAIL /* or SPF_PASS */
 		},
-#endif
 		{
 			.name = "upper-macro",
 			.helo = "msgbas2x.cos.example.com",
