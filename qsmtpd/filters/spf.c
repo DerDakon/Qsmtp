@@ -3,6 +3,7 @@
  */
 #include <qsmtpd/userfilters.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 #include <syslog.h>
@@ -39,6 +40,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	const char *fromdomain = NULL;	/* pointer to the beginning of the domain in xmitstat.mailfrom.s */
 	int spfs = xmitstat.spf;	/* the spf status to check, either global or local one */
 	enum config_domain tmpt;
+	char *exps = xmitstat.spfexp;	/* SPF explanation string */
 
 	if ((spfs == SPF_PASS) || (spfs == SPF_IGNORE))
 		return FILTER_PASSED;
@@ -66,6 +68,8 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 /* there is no official SPF entry: go and check if someone else provided one, e.g. rspf.rhsbl.docsnyder.de. */
 	if (spfs == SPF_NONE) {
 		char **a;
+
+		assert(exps == NULL);
 
 		*t = userconf_get_buffer(ds, "rspf", &a, domainvalid, 1);
 		if (((int)*t) < 0) {
@@ -96,7 +100,15 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 				memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
 				if ((spfs != SPF_NONE) && (olderror == SPF_NONE))
 					olderror = spfs;
+
+				/* In case you have an SPF_FAIL_MALF rSPF and afterwards a different
+				 * error code the information how the record was malformed is lost. */
+				free(exps);
 				spfs = check_host(spfname);
+				/* check_host() will record the exp= modifier result in xmitstat,
+				 * make sure it does not leak to another user */
+				exps = xmitstat.spfexp;
+				xmitstat.spfexp = NULL;
 				v++;
 			}
 			free(a);
@@ -111,6 +123,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 				}
 				/* fallthrough */
 			case SPF_PASS: /* no match in rSPF filters */
+				free(exps);
 				return FILTER_PASSED;
 			case SPF_HARD_ERROR: /* last rSPF filter is not reachable */
 				spfs = SPF_NONE;
@@ -165,19 +178,29 @@ strict:
 block:
 	if (r == FILTER_DENIED_WITH_MESSAGE) {
 		const char *netmsg[] = {"550 5.7.1 mail denied by SPF policy", ", SPF record says: ",
-				xmitstat.spfexp, NULL};
+				exps, NULL};
+		int n;
 
 		/* if there was a hard DNS error ignore the spfexp string, it may be inappropriate */
-		if ((xmitstat.spfexp == NULL) || (spfs == SPF_HARD_ERROR))
+		if ((exps == NULL) || (spfs == SPF_HARD_ERROR))
 			netmsg[1] = NULL;
 
-		if (net_writen(netmsg) != 0)
+		n = net_writen(netmsg);
+		/* only free the string if is was set from rSPF */
+		if (xmitstat.spfexp == NULL)
+			free(exps);
+		if (n != 0)
 			return FILTER_ERROR;
 	} else if ((r == FILTER_DENIED_TEMPORARY) && (getsetting(ds, "fail_hard_on_temp", &tmpt) <= 0)) {
 		*logmsg = "temp SPF";
+		if (xmitstat.spfexp == NULL)
+			free(exps);
 		if (netwrite("451 4.4.3 temporary error when checking the SPF policy\r\n") != 0)
 			return FILTER_ERROR;
 		return FILTER_DENIED_WITH_MESSAGE;
+	} else {
+		if (xmitstat.spfexp == NULL)
+			free(exps);
 	}
 
 	if (!*logmsg)
