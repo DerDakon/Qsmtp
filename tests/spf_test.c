@@ -488,19 +488,27 @@ check_received(int spfstatus, int log)
 	}
 	tmp++;
 	if (spfstatus == SPF_FAIL_MALF) {
-		const char *tbegin = tmp;
 		const char percentwarn[] = "unsafe characters may have been replaced by '%'";
-		size_t len;
-		/* skip the invalid token that is logged here */
-		while ((*tmp != '\n') && (*tmp != ' ') && (*tmp != '('))
-			tmp++;
-
-		len = tmp - tbegin;
+		const char *percentmatch;
+		int mismatch = 0;
 
 		/* If '%' is in the message, then the warning message has to be, too.
 		 * If no '%' is in the message, then no warning message should be there. */
-		if ((memchr(tbegin,  '%', len) != NULL) != (strstr(tbegin, percentwarn) != NULL)) {
-			fputs("'%' character and warning message mismatch\n", stderr);
+		percentmatch = strstr(tmp, percentwarn);
+		if (percentmatch != NULL) {
+			/* there should be no % signns before the warning, but some after */
+			if (memchr(tmp, '%', percentmatch - tmp) != NULL) {
+				fprintf(stderr, "unexpected %% characters before the warning message: %s\n",
+					tmp);
+				return 1;
+			}
+			mismatch = (strchr(percentmatch + strlen(percentwarn), '%') == NULL);
+		} else {
+			mismatch = (strchr(buf, '%') != NULL);
+		}
+
+		if (mismatch) {
+			fprintf(stderr, "'%%' character and warning message mismatch: %s\n", tmp);
 			return 1;
 		}
 	}

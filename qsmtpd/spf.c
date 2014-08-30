@@ -61,11 +61,6 @@ spfreceived(int fd, const int spf)
 	WRITE(fd, "Received-SPF: ");
 	WRITE(fd, result[spf]);
 
-	if ((spf == SPF_FAIL_MALF) && (xmitstat.spfexp != NULL)) {
-		WRITE(fd, " ");
-		WRITE(fd, xmitstat.spfexp);
-	}
-
 	WRITE(fd, " (");
 	WRITEl(fd, heloname.s, heloname.len);
 	WRITE(fd, ": ");
@@ -80,9 +75,15 @@ spfreceived(int fd, const int spf)
 	case SPF_FAIL_MALF:
 		WRITE(fd, "domain of\n\t");
 		WRITEl(fd, spfdomain, spfdomainlen);
-		WRITE(fd, " uses mechanism not recognized by this client");
-		if ((xmitstat.spfexp != NULL) && (strchr(xmitstat.spfexp, '%') != NULL)) {
-			WRITE(fd, ", unsafe characters may have been replaced by '%'");
+		WRITE(fd, " has malformed SPF record");
+		if (xmitstat.spfexp != NULL) {
+			if (strchr(xmitstat.spfexp, '%') != NULL) {
+				WRITE(fd, ", unsafe characters may have been replaced by '%': ");
+			} else {
+				WRITE(fd, ": ");
+			}
+
+			WRITE(fd, xmitstat.spfexp);
 		}
 		WRITE(fd, ")\n");
 		break;
@@ -1590,7 +1591,7 @@ record_bad_token(const char *token)
 
 		for (tpos = 0; tpos < toklen; tpos++) {
 			/* filter out everything that is not a valid entry in a MIME header */
-			if (TSPECIAL(token[tpos]) || (token[tpos] <= ' ') || (token[tpos] >= 127))
+			if (TSPECIAL(token[tpos]) || (token[tpos] < ' ') || (token[tpos] >= 127))
 				xmitstat.spfexp[tpos] = '%';
 			else
 				xmitstat.spfexp[tpos] = token[tpos];
