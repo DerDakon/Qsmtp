@@ -1806,6 +1806,21 @@ test_suite_a()
 			.value = "v=spf1 a//0 -all"
 		},
 		{
+			.type = DNSTYPE_AAAA,
+			.key = "ipv6.example.com",
+			.value = "1234::1"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "ipv6.example.com",
+			.value = "::ffff:1.1.1.1"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "ipv6.example.com",
+			.value = "v=spf1 a -all"
+		},
+		{
 			.type = DNSTYPE_TXT,
 			.key = "e3.example.com",
 			.value = "v=spf1 a:foo.example.com\0"
@@ -1844,6 +1859,66 @@ test_suite_a()
 			.type = DNSTYPE_TXT,
 			.key = "e7.example.com",
 			.value = "v=spf1 a//129 -all"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "e8.example.com",
+			.value = "::ffff:1.2.3.5"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e8.example.com",
+			.value = "2001:db8:1234::dead:beef"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e8.example.com",
+			.value = "v=spf1 a/24//64 -all"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "e8e.example.com",
+			.value = "::ffff:1.2.3.5"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e8e.example.com",
+			.value = "2001:db8:1234::dead:beef"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e8e.example.com",
+			.value = "v=spf1 a/24/64 -all"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "e8a.example.com",
+			.value = "::ffff:1.2.3.5"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e8a.example.com",
+			.value = "2001:db8:1234::dead:beef"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e8a.example.com",
+			.value = "v=spf1 a/24 -all"
+		},
+		{
+			.type = DNSTYPE_A,
+			.key = "e8b.example.com",
+			.value = "::ffff:1.2.3.5"
+		},
+		{
+			.type = DNSTYPE_AAAA,
+			.key = "e8b.example.com",
+			.value = "2001:db8:1234::dead:beef"
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "e8b.example.com",
+			.value = "v=spf1 a//64 -all"
 		},
 		{
 			.type = DNSTYPE_TXT,
@@ -1894,7 +1969,7 @@ test_suite_a()
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
-		},
+		}
 	};
 	const struct suite_testcase atestcases[] = {
 		{
@@ -1920,6 +1995,41 @@ test_suite_a()
 			.mailfrom = "foo@e7.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "a-dual-cidr-ip4-match",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e8.example.com",
+			.result = SPF_PASS
+		},
+		{
+			.name = "a-dual-cidr-ip4-err",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e8e.example.com",
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "a-dual-cidr-ip6-match",
+			.helo = "mail.example.com",
+			.remoteip = "2001:db8:1234::cafe:babe",
+			.mailfrom = "foo@e8.example.com",
+			.result = SPF_PASS
+		},
+		{
+			.name = "a-dual-cidr-ip4-default",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e8b.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "a-dual-cidr-ip6-default",
+			.helo = "mail.example.com",
+			.remoteip = "2001:db8:1234::cafe:babe",
+			.mailfrom = "foo@e8a.example.com",
+			.result = SPF_FAIL_PERM
 		},
 		{
 			.name = "a-multi-ip1",
@@ -2003,6 +2113,13 @@ test_suite_a()
 			.mailfrom = "foo@e2b.example.com",
 			.exp = NULL,
 			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "a-ip6-dualstack",
+			.helo = "mail.example.com",
+			.remoteip = "1234::1",
+			.mailfrom = "foo@ipv6.example.com",
+			.result = SPF_PASS
 		},
 		{
 			.name = "a-numeric",
