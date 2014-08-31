@@ -1905,6 +1905,8 @@ spflookup(const char *domain, unsigned int *queries)
 					char *exp;
 					if (txtlookup(&exp, target) == 0) {
 						/* if this fails the standard answer will be used */
+						free(xmitstat.spfexp);
+						xmitstat.spfexp = NULL;
 						(void)spf_makro(exp, domain, 1, &xmitstat.spfexp);
 						free(exp);
 
