@@ -1496,22 +1496,17 @@ match_mechanism(const char *token, const char *mechanism, const char *delimiters
 {
 	const size_t mechlen = strlen(mechanism);
 	const char * const nextchar = token + mechlen;
-	unsigned int i = 0;
+	unsigned int i;
 
 	if (strncasecmp(token, mechanism, mechlen) != 0)
 		return 0;
 
-	if (WSPACE(*nextchar))
+	if (WSPACE(*nextchar) || (*nextchar == '\0'))
 		return mechlen;
 
-	if (*nextchar == '\0')
-		return mechlen;
-
-	while (delimiters[i] != '\0') {
+	for (i = 0; delimiters[i] != '\0'; i++)
 		if (*nextchar == delimiters[i])
 			return mechlen;
-		i++;
-	}
 
 	return 0;
 }
