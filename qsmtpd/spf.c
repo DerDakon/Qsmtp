@@ -1532,7 +1532,7 @@ spf_modifier_name(const char *token)
 		return 0;
 
 	/* modifier name is ALPHA *( ALPHA / DIGIT / "-" / "_" / "." ), i.e.
-		* ([a-zA-Z][a-zA-Z0-9-_\.]*) */
+	 * ([a-zA-Z][a-zA-Z0-9-_\.]*) */
 	if (!(((*token >= 'a') && (*token <= 'z')) ||
 			((*token >= 'A') && (*token <= 'Z'))))
 		return 0;
@@ -1543,12 +1543,12 @@ spf_modifier_name(const char *token)
 		if (token[res] == '=')
 			return res;
 
-		if (((*token >= 'a') && (*token <= 'z')) ||
-				((*token >= 'A') && (*token <= 'Z')) ||
-				((*token >= '0') && (*token <= '9')) ||
-				(*token == '_') ||
-				(*token == '-') ||
-				(*token == '.')) {
+		if (((token[res] >= 'a') && (token[res] <= 'z')) ||
+				((token[res] >= 'A') && (token[res] <= 'Z')) ||
+				((token[res] >= '0') && (token[res] <= '9')) ||
+				(token[res] == '_') ||
+				(token[res] == '-') ||
+				(token[res] == '.')) {
 			res++;
 		} else {
 			break;
@@ -1810,7 +1810,11 @@ spflookup(const char *domain, unsigned int *queries)
 			} else {
 				char *mres = NULL;
 
-				result = spf_makro(token + eq + 1, domain, 0, &mres);
+				/* modifier must not have qualification */
+				if (!WSPACE(*(token - 1)))
+					result = SPF_FAIL_MALF;
+				else
+					result = spf_makro(token + eq + 1, domain, 0, &mres);
 				if (result == SPF_FAIL_MALF) {
 					prefix = SPF_FAIL_MALF;
 					result = SPF_PASS;

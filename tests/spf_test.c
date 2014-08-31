@@ -2899,6 +2899,24 @@ test_suite_modifiers()
 			.key = "control-exp.example.com",
 			.value = "v=spf1 exp=control-exp-msg.example.com -all"
 		},
+		/* not in testsuite: check for valid modifier name */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "bad-mod1.example.com",
+			.value = "v=spf1 _exp=e11msg.example.com -all"
+		},
+		/* not in testsuite: check for valid modifier name */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "bad-mod2.example.com",
+			.value = "v=spf1 e?xp=e11msg.example.com -all"
+		},
+		/* not in testsuite: modifiers may not have qualification */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "bad-mod3.example.com",
+			.value = "v=spf1 ~exp=e11msg.example.com -all"
+		},
 		{
 			.type = DNSTYPE_NONE
 		}
@@ -3097,6 +3115,30 @@ test_suite_modifiers()
 			.mailfrom = "foo@control-exp.example.com",
 			.exp = "message%with%control%chars",
 			.result = SPF_FAIL_PERM
+		},
+		/* not in testsuite: check for valid modifier name */
+		{
+			.name = "modifier-bad-start",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@bad-mod1.example.com",
+			.result = SPF_FAIL_MALF
+		},
+		/* not in testsuite: check for valid modifier name */
+		{
+			.name = "modifier-bad-intermediate",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@bad-mod2.example.com",
+			.result = SPF_FAIL_MALF
+		},
+		/* not in testsuite: modifiers may not have qualification */
+		{
+			.name = "modifier-with-qualification",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@bad-mod3.example.com",
+			.result = SPF_FAIL_MALF
 		},
 		{
 			.result = -1
