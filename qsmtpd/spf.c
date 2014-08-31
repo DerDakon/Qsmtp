@@ -1762,8 +1762,8 @@ spflookup(const char *domain, unsigned int *queries)
 		} else if ( (mechlen = match_mechanism(token, "exists", ":")) != 0) {
 			token += mechlen;
 
-			if (*token++ == ':') {
-				result = spfexists(domain, token);
+			if (*token == ':') {
+				result = spfexists(domain, ++token);
 				mechanism = "exists";
 			} else {
 				result = SPF_FAIL_MALF;
@@ -1782,8 +1782,8 @@ spflookup(const char *domain, unsigned int *queries)
 		} else if ( (mechlen = match_mechanism(token, "ip4", ":/")) != 0) {
 			token += mechlen;
 
-			if (*token++ == ':') {
-				result = spfip4(token);
+			if (*token == ':') {
+				result = spfip4(++token);
 				mechanism = "IP4";
 			} else {
 				result = SPF_FAIL_MALF;
@@ -1791,8 +1791,8 @@ spflookup(const char *domain, unsigned int *queries)
 		} else if ( (mechlen = match_mechanism(token, "ip6", ":/")) != 0) {
 			token += mechlen;
 
-			if (*token++ == ':') {
-				result = spfip6(token);
+			if (*token == ':') {
+				result = spfip6(++token);
 				mechanism = "IP6";
 			} else {
 				result = SPF_FAIL_MALF;
