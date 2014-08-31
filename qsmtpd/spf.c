@@ -1528,9 +1528,6 @@ spf_modifier_name(const char *token)
 {
 	size_t res = 0;
 
-	if (!*token)
-		return 0;
-
 	/* modifier name is ALPHA *( ALPHA / DIGIT / "-" / "_" / "." ), i.e.
 	 * ([a-zA-Z][a-zA-Z0-9-_\.]*) */
 	if (!(((*token >= 'a') && (*token <= 'z')) ||
