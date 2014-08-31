@@ -2881,6 +2881,12 @@ test_suite_modifiers()
 			.key = "e23.example.com",
 			.value = "v=spf1 a:erehwon.example.com a:foobar.com exp=nxdomain.com -all"
 		},
+		/* not in testsuite: check that really exp= is given */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "no-exp.example.com",
+			.value = "v=spf1 nexp=e11msg.example.com -all"
+		},
 		{
 			.type = DNSTYPE_NONE
 		}
@@ -3056,12 +3062,19 @@ test_suite_modifiers()
 			.result = SPF_FAIL_PERM
 		},
 #endif
-		/* failing because multi-record detection does not work */
 		{
 			.name = "exp-void",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e23.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		/* not in testsuite: check that really exp= is given */
+		{
+			.name = "no-exp-but-nexp",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@no-exp.example.com",
 			.result = SPF_FAIL_PERM
 		},
 		{

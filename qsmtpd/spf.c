@@ -1845,7 +1845,7 @@ spflookup(const char *domain, unsigned int *queries)
 		if (prefix == SPF_FAIL_PERM) {
 			char *ex = strcasestr(txt, "exp=");
 
-			if (ex != NULL) {
+			if ((ex != NULL) && (WSPACE(*(ex - 1)))) {
 				char *target;
 
 				switch (spf_makro(ex + 4, domain, 0, &target)) {
