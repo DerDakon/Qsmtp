@@ -607,13 +607,14 @@ setup_transfer(const char *helo, const char *from, const char *remoteip)
 {
 	memset(&xmitstat, 0, sizeof(xmitstat));
 
-	if (newstr(&xmitstat.mailfrom, strlen(from)))
+	if (newstr(&xmitstat.mailfrom, (from == NULL) ? 0 : strlen(from)))
 		exit(ENOMEM);
 
 	if (newstr(&xmitstat.helostr, strlen(helo)))
 		exit(ENOMEM);
 
-	memcpy(xmitstat.mailfrom.s, from, strlen(from));
+	if (from != NULL)
+		memcpy(xmitstat.mailfrom.s, from, strlen(from));
 	memcpy(xmitstat.helostr.s, helo, strlen(helo));
 
 	assert(strlen(remoteip) < sizeof(xmitstat.remoteip));
@@ -1086,13 +1087,14 @@ run_suite_test(const struct suite_testcase *testcases)
 
 	while (testcases[i].helo != NULL) {
 		int r;
+		const char *domain = (testcases[i].mailfrom != NULL) ? strchr(testcases[i].mailfrom, '@') + 1 : testcases[i].helo;
 
 		setup_transfer(testcases[i].helo, testcases[i].mailfrom, testcases[i].remoteip);
 
-		r = check_host(strchr(testcases[i].mailfrom, '@') + 1);
+		r = check_host(domain);
 
 		if (r != testcases[i].result) {
-			fprintf(stderr, "makro test %s returned %i but %i was expected\n", testcases[i].name, r, testcases[i].result);
+			fprintf(stderr, "Test %s returned %i but %i was expected\n", testcases[i].name, r, testcases[i].result);
 			err++;
 		}
 
@@ -1108,7 +1110,7 @@ run_suite_test(const struct suite_testcase *testcases)
 		} else if ((xmitstat.spfexp != NULL) && (r != SPF_FAIL_MALF)) {
 			/* hard error writes what it didn't understand into spfexp */
 
-			fprintf(stderr, "no SPF exp was expected for test %s, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
+			fprintf(stderr, "Test %s: no SPF exp was expected, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
 			err++;
 		}
 
@@ -1789,8 +1791,8 @@ test_suite_exists()
 static int
 test_suite_mx()
 {
-	/* ALL mechanism syntax tests taken from SPF test suite 2009.10
-	 * http://www.openspf.org/svn/project/test-suite/rfc4408-tests-2009.10.yml */
+	/* MX mechanism syntax tests taken from SPF test suite 2014.05
+	 * http://www.openspf.org/svn/project/test-suite/rfc7208-tests-2014.05.yml */
 	const struct dnsentry mxentries[] = {
 		{
 			.type = DNSTYPE_A,
@@ -1800,7 +1802,6 @@ test_suite_mx()
 		{
 			.type = DNSTYPE_MX,
 			.key = "mail.example.com",
-			.value = ""
 		},
 		{
 			.type = DNSTYPE_TXT,
@@ -1870,7 +1871,7 @@ test_suite_mx()
 		{
 			.type = DNSTYPE_TXT,
 			.key = "e3.example.com",
-			.value = "v=spf1 mx:foo.example.com"
+			.value = "v=spf1 mx:foo.example.com\0"
 		},
 		{
 			.type = DNSTYPE_TXT,
@@ -1983,30 +1984,129 @@ test_suite_mx()
 		{
 			.name = "mx-multi-ip2",
 			.helo = "mail.example.com",
-			.remoteip = "::ffff:1.1.1.4", /* probably a bug in the test suite */
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e10.example.com",
 			.result = SPF_PASS
 		},
 		{
 			.name = "mx-bad-domain",
 			.helo = "mail.example.com",
-			.remoteip = "::ffff:1.2.3.4", /* probably a bug in the test suite */
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e9.example.com",
 			.result = SPF_FAIL_MALF
 		},
 		{
 			.name = "mx-nxdomain",
 			.helo = "mail.example.com",
-			.remoteip = "::ffff:1.2.3.4", /* probably a bug in the test suite */
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e1.example.com",
 			.result = SPF_FAIL_PERM
 		},
 		{
 			.name = "mx-cidr4-0",
 			.helo = "mail.example.com",
-			.remoteip = "::ffff:1.2.3.4", /* probably a bug in the test suite */
+			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e2.example.com",
 			.result = SPF_PASS
+		},
+		{
+			.name = "mx-cidr4-0-ip6",
+			.helo = "mail.example.com",
+			.remoteip = "1234::1",
+			.mailfrom = "foo@e2.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "mx-cidr6-0-ip4",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e2a.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "mx-cidr6-0-ip4mapped",
+			.helo = "mail.example.com",
+			.remoteip = "::FFFF:1.2.3.4",
+			.mailfrom = "foo@e2a.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		{
+			.name = "mx-cidr6-0-ip6",
+			.helo = "mail.example.com",
+			.remoteip = "1234::1",
+			.mailfrom = "foo@e2a.example.com",
+			.result = SPF_PASS
+		},
+#if 0
+		/* ip6/0 also matches all V4mapped IPv6 addresses */
+		{
+			.name = "mx-cidr6-0-nxdomain",
+			.helo = "mail.example.com",
+			.remoteip = "1234::1",
+			.mailfrom = "foo@e2b.example.com",
+			.result = SPF_FAIL_PERM
+		},
+		/* \0 in the string is not detected */
+		{
+			.name = "mx-null",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.5",
+			.mailfrom = "foo@e3.example.com",
+			.result = SPF_FAIL_MALF
+		},
+#endif
+		{
+			.name = "mx-numeric-top-label",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e5.example.com",
+			.result = SPF_FAIL_MALF
+		},
+#if 0
+		/* the same as mx-colon-domain-ip4mapped as this implementation is
+		 * basically IPv6-only. */
+		{
+			.name = "mx-colon-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e11.example.com",
+			.result = SPF_PASS
+		},
+		/* doesn't work because domain check is too strict. */
+		{
+			.name = "mx-colon-domain-ip4mapped",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e11.example.com",
+			.result = SPF_PASS
+		},
+#endif
+		{
+			.name = "mx-bad-toplab",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e12.example.com",
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "mx-empty",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.result = SPF_NEUTRAL
+		},
+		{
+			.name = "mx-implicit",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e4.example.com",
+			.result = SPF_NEUTRAL
+		},
+		{
+			.name = "mx-empty-domain",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@e13.example.com",
+			.result = SPF_FAIL_MALF
 		},
 		{
 			.result = -1
