@@ -1107,11 +1107,16 @@ run_suite_test(const struct suite_testcase *testcases)
 						testcases[i].name, testcases[i].exp, xmitstat.spfexp);
 				err++;
 			}
-		} else if ((xmitstat.spfexp != NULL) && (r != SPF_FAIL_MALF)) {
-			/* hard error writes what it didn't understand into spfexp */
-
-			fprintf(stderr, "Test %s: no SPF exp was expected, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
-			err++;
+		} else if (xmitstat.spfexp != NULL) {
+			if (r != SPF_FAIL_MALF) {
+				/* hard error writes what it didn't understand into spfexp,
+				 * but that will never contain whitespace */
+				fprintf(stderr, "Test %s: no SPF exp was expected, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
+				err++;
+			} else if (strchr(xmitstat.spfexp, ' ') != NULL) {
+				fprintf(stderr, "Test %s: exp record was not ignored on parse error: '%s'\n", testcases[i].name, xmitstat.spfexp);
+				err++;
+			}
 		}
 
 		free(xmitstat.remotehost.s);
@@ -1374,13 +1379,16 @@ test_suite_makro()
 			.exp = "This is a test.",
 			.result = SPF_FAIL_PERM
 		},
+		/* testsuite says result is hard error, but RfC 7208 says:
+		 * "If [...] there are syntax errors in the explanation string,
+		 * then proceed as if no "exp" modifier was given */
 		{
 			.name = "exp-only-macro-char",
 			.helo = "msgbas2x.cos.example.com",
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e2.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_FAIL_PERM
 		},
 		{
 			.name = "invalid-macro-char",
@@ -3684,6 +3692,16 @@ test_behavior()
 			.value = "v=spf1 include:foo.bar- -all"
 		},
 		{
+			.type = DNSTYPE_TXT,
+			.key = "exp.example.org",
+			.value = "you should not see this."
+		},
+		{
+			.type = DNSTYPE_TXT,
+			.key = "withexp.example.org",
+			.value = "v=spf1 ip4: exp=exp.example.org"
+		},
+		{
 			.type = DNSTYPE_NONE,
 			.key = NULL,
 			.value = NULL
@@ -3736,6 +3754,13 @@ test_behavior()
 			.remoteip = "::ffff:1.2.9.9",
 			.mailfrom = "foo@domainspec-nonalpha.example.com",
 			.exp = NULL,
+			.result = SPF_FAIL_MALF
+		},
+		{
+			.name = "no-exp-on-parse error",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@withexp.example.org",
 			.result = SPF_FAIL_MALF
 		},
 		{

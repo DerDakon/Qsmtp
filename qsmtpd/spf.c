@@ -1842,7 +1842,7 @@ spflookup(const char *domain, unsigned int *queries)
 		return result;
 	}
 	if (result == SPF_PASS) {
-		if (SPF_FAIL(prefix)) {
+		if (prefix == SPF_FAIL_PERM) {
 			char *ex = strcasestr(txt, "exp=");
 
 			if (ex != NULL) {
@@ -1885,8 +1885,6 @@ spflookup(const char *domain, unsigned int *queries)
 					free(target);
 					break;
 					}
-				case SPF_FAIL_MALF:
-					prefix = SPF_FAIL_MALF;
 				}
 			}
 		}
