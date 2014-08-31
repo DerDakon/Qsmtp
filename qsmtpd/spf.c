@@ -1592,6 +1592,28 @@ record_bad_token(const char *token)
 }
 
 /**
+ * @brief find the given modifier in the given string
+ * @param s the string to search
+ * @param mod the modifier to search
+ * @return the first modifier match
+ * @retval NULL modifier was not found
+ */
+static const char *
+find_modifier(const char *s, const char *mod)
+{
+	const char *r = strcasestr(s, mod);
+
+	while (r != NULL) {
+		if (WSPACE(*(r - 1)))
+			return r;
+
+		r = strcasestr(r + strlen(mod), mod);
+	}
+
+	return r;
+}
+
+/**
  * look up SPF records for domain
  *
  * @param domain no idea what this might be for
@@ -1601,7 +1623,8 @@ record_bad_token(const char *token)
 static int
 spflookup(const char *domain, unsigned int *queries)
 {
-	char *txt, *token, *valid = NULL, *redirect = NULL;
+	char *txt, *token, *valid = NULL;
+	const char *redirect = NULL, *expl = NULL;
 	int i, result = SPF_NONE, prefix;
 	const char *mechanism = NULL;
 
@@ -1647,6 +1670,38 @@ spflookup(const char *domain, unsigned int *queries)
 		return SPF_NONE;
 	}
 	token = valid;
+
+	/* RfC 7208, section 6:
+	 * These two modifiers [exp and redirect] MUST NOT appear in a record more than once
+	 * each.  If they do, then check_host() exits with a result of "permerror".
+	 */
+	redirect = find_modifier(token, "redirect=");
+	if (redirect != NULL) {
+		const char *next = redirect + strlen("redirect=");
+		if (WSPACE(*next) || (*next == '\0') ||
+				(find_modifier(next, "redirect=") != NULL)) {
+			free(txt);
+			return SPF_FAIL_MALF;
+		}
+		redirect = next;
+	}
+	expl = find_modifier(token, "exp=");
+	if (expl != NULL) {
+		const char *next = expl + strlen("exp=");
+		if (find_modifier(next, "exp=") != NULL) {
+			free(txt);
+			return SPF_FAIL_MALF;
+		}
+		/* RfC 7208, section 6.2
+		 * [I]f there are syntax errors in the explanation string,
+		 * then proceed as if no "exp" modifier was given.
+		 */
+		if (WSPACE(*next) || (*next == '\0'))
+			expl = NULL;
+		else
+			expl = next;
+	}
+
 	while (*token && (result != SPF_PASS)) {
 		size_t mechlen;
 
@@ -1816,8 +1871,6 @@ spflookup(const char *domain, unsigned int *queries)
 				} else if (result == 0) {
 					/* we don't need it here */
 					free(mres);
-					if (!redirect && (strncasecmp(token, "redirect", strlen("redirect")) == 0))
-						redirect = token + eq + 1;
 					token += eq + 1;
 				} else {
 					break;
@@ -1838,49 +1891,45 @@ spflookup(const char *domain, unsigned int *queries)
 		return result;
 	}
 	if (result == SPF_PASS) {
-		if (prefix == SPF_FAIL_PERM) {
-			char *ex = strcasestr(txt, "exp=");
+		if ((prefix == SPF_FAIL_PERM) && (expl != NULL)) {
+			char *target;
 
-			if ((ex != NULL) && (WSPACE(*(ex - 1)))) {
-				char *target;
+			switch (spf_makro(expl, domain, 0, &target)) {
+			case 0:
+				{
+				size_t dlen = strlen(target);
+				while ((dlen > 0) && (target[dlen - 1] == '.')) {
+					target[--dlen] = '\0';
+				}
+				if (dlen > 0) {
+					char *exp;
+					if (txtlookup(&exp, target) == 0) {
+						/* if this fails the standard answer will be used */
+						(void)spf_makro(exp, domain, 1, &xmitstat.spfexp);
+						free(exp);
 
-				switch (spf_makro(ex + 4, domain, 0, &target)) {
-				case 0:
-					{
-					size_t dlen = strlen(target);
-					while ((dlen > 0) && (target[dlen - 1] == '.')) {
-						target[--dlen] = '\0';
-					}
-					if (dlen > 0) {
-						char *exp;
-						if (txtlookup(&exp, target) == 0) {
-							/* if this fails the standard answer will be used */
-							(void)spf_makro(exp, domain, 1, &xmitstat.spfexp);
-							free(exp);
-
-							/* RfC 7208, section 6.2:
-							 * Since the  explanation string is intended for an SMTP
-							 * response [...], the explanation string MUST be limited
-							 * to [US-ASCII].
-							 */
-							if (xmitstat.spfexp != NULL) {
-								size_t pos;
-								for (pos = 0; pos < strlen(xmitstat.spfexp); pos++) {
-									/* replace unsafe characters */
-									if ((unsigned char)(xmitstat.spfexp[pos]) < ' ') {
-										xmitstat.spfexp[pos] = '%';
-									} else if (xmitstat.spfexp[pos] < 0) {
-										free(xmitstat.spfexp);
-										xmitstat.spfexp = NULL;
-										break;
-									}
+						/* RfC 7208, section 6.2:
+						 * Since the  explanation string is intended for an SMTP
+						 * response [...], the explanation string MUST be limited
+						 * to [US-ASCII].
+						 */
+						if (xmitstat.spfexp != NULL) {
+							size_t pos;
+							for (pos = 0; pos < strlen(xmitstat.spfexp); pos++) {
+								/* replace unsafe characters */
+								if ((unsigned char)(xmitstat.spfexp[pos]) < ' ') {
+									xmitstat.spfexp[pos] = '%';
+								} else if (xmitstat.spfexp[pos] < 0) {
+									free(xmitstat.spfexp);
+									xmitstat.spfexp = NULL;
+									break;
 								}
 							}
 						}
 					}
-					free(target);
-					break;
-					}
+				}
+				free(target);
+				break;
 				}
 			}
 		}
@@ -1903,6 +1952,12 @@ spflookup(const char *domain, unsigned int *queries)
 				result = SPF_FAIL_MALF;
 			} else {
 				*queries += 1;
+				/* RfC 7208, section 6.2
+				 * In contrast, when executing a "redirect" modifier, an "exp"
+				 * modifier from the original domain MUST NOT be used.
+				 */
+				free(xmitstat.spfexp);
+				xmitstat.spfexp = NULL;
 				result = spflookup(domspec, queries);
 				/* RfC 7208, section 6.1:
 				 *   The result of this new evaluation of check_host() is then considered

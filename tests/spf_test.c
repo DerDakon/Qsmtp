@@ -1100,7 +1100,7 @@ run_suite_test(const struct suite_testcase *testcases)
 
 		if (testcases[i].exp != NULL) {
 			if (xmitstat.spfexp == NULL) {
-				fprintf(stderr, "Test %s should return SPF exp, but it did not\n", testcases[i].name);
+				fprintf(stderr, "Test %s should return SPF exp '%s', but it did not\n", testcases[i].name, testcases[i].exp);
 				err++;
 			} else if (strcmp(xmitstat.spfexp, testcases[i].exp) != 0) {
 				fprintf(stderr, "Test %s did not return the expected SPF exp '%s', but '%s'\n",
@@ -2917,6 +2917,18 @@ test_suite_modifiers()
 			.key = "bad-mod3.example.com",
 			.value = "v=spf1 ~exp=e11msg.example.com -all"
 		},
+		/* not in testsuite: make sure redirect matches exactly */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "dont-come-here.example.com",
+			.value = "+all"
+		},
+		/* not in testsuite: make sure redirect matches exactly */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "not-really-redirect.example.com", 
+			.value = "v=spf1 redirectt=dont-come-here.example.com"
+		},
 		{
 			.type = DNSTYPE_NONE
 		}
@@ -3036,30 +3048,28 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e14.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL_MALF
 		},
-#if 0
 		{
 			.name = "redirect-empty-domain",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e18.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL_MALF
 		},
-#endif
 		{
 			.name = "redirect-twice",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e15.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL_MALF
 		},
 		{
 			.name = "unknown-modifier-syntax",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e9.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL_PERM /* FIXME: should be SPF_FAIL_MALF */
 		},
 		{
 			.name = "default-modifier-obsolete",
@@ -3139,6 +3149,14 @@ test_suite_modifiers()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@bad-mod3.example.com",
 			.result = SPF_FAIL_MALF
+		},
+		/* not in testsuite: make sure redirect matches exactly */
+		{
+			.name = "not-really-redirect",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@not-really-redirect.example.com",
+			.result = SPF_NEUTRAL
 		},
 		{
 			.result = -1
