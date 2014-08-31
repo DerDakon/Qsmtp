@@ -2887,6 +2887,18 @@ test_suite_modifiers()
 			.key = "no-exp.example.com",
 			.value = "v=spf1 nexp=e11msg.example.com -all"
 		},
+		/* not in testsuite: check replacement of ASCII control-chars */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "control-exp-msg.example.com",
+			.value = "message\nwith\rcontrol\tchars"
+		},
+		/* not in testsuite: check replacement of ASCII control-chars */
+		{
+			.type = DNSTYPE_TXT,
+			.key = "control-exp.example.com",
+			.value = "v=spf1 exp=control-exp-msg.example.com -all"
+		},
 		{
 			.type = DNSTYPE_NONE
 		}
@@ -3077,11 +3089,16 @@ test_suite_modifiers()
 			.mailfrom = "foo@no-exp.example.com",
 			.result = SPF_FAIL_PERM
 		},
+		/* not in testsuite: check replacement of ASCII control-chars */
 		{
-			.helo = NULL,
-			.remoteip = NULL,
-			.mailfrom = NULL,
-			.exp = NULL,
+			.name = "exp-with-control-chars",
+			.helo = "mail.example.com",
+			.remoteip = "::ffff:1.2.3.4",
+			.mailfrom = "foo@control-exp.example.com",
+			.exp = "message%with%control%chars",
+			.result = SPF_FAIL_PERM
+		},
+		{
 			.result = -1
 		}
 	};
