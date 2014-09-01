@@ -96,12 +96,12 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			spfname[fromlen++] = '.';
 
 			/* First match wins. */
-			while (a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMP_ERROR) || (spfs == SPF_HARD_ERROR) || (spfs == SPF_FAIL_MALF))) {
+			while (a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMPERROR) || (spfs == SPF_DNS_HARD_ERROR) || (spfs == SPF_PERMERROR))) {
 				memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
 				if ((spfs != SPF_NONE) && (olderror == SPF_NONE))
 					olderror = spfs;
 
-				/* In case you have an SPF_FAIL_MALF rSPF and afterwards a different
+				/* In case you have an SPF_PERMERROR rSPF and afterwards a different
 				 * error code the information how the record was malformed is lost. */
 				free(exps);
 				spfs = check_host(spfname);
@@ -125,14 +125,14 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			case SPF_PASS: /* no match in rSPF filters */
 				free(exps);
 				return FILTER_PASSED;
-			case SPF_HARD_ERROR: /* last rSPF filter is not reachable */
+			case SPF_DNS_HARD_ERROR: /* last rSPF filter is not reachable */
 				spfs = SPF_NONE;
 				break;
 			}
 		}
 	}
 
-	if (spfs == SPF_TEMP_ERROR) {
+	if (spfs == SPF_TEMPERROR) {
 		r = FILTER_DENIED_TEMPORARY;
 		goto block;
 	}
@@ -142,7 +142,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		goto block;
 	if (p == 2)
 		goto strict;
-	if (spfs == SPF_HARD_ERROR) {
+	if (spfs == SPF_DNS_HARD_ERROR) {
 		*logmsg = "bad SPF";
 		if (netwrite("550 5.5.2 syntax error in SPF record\r\n") != 0)
 			return FILTER_ERROR;
@@ -182,7 +182,7 @@ block:
 		int n;
 
 		/* if there was a hard DNS error ignore the spfexp string, it may be inappropriate */
-		if ((exps == NULL) || (spfs == SPF_HARD_ERROR))
+		if ((exps == NULL) || (spfs == SPF_DNS_HARD_ERROR))
 			netmsg[1] = NULL;
 
 		n = net_writen(netmsg);

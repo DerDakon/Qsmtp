@@ -19,19 +19,21 @@ extern int lookupipbl(int);
 extern int check_host(const char *);
 extern int spfreceived(int, const int);
 
-#define SPF_NONE	0	/**< no SPF policy given */
-#define SPF_PASS	1	/**< host matches SPF policy */
-#define SPF_NEUTRAL	2	/**< host has neutral match in SPF policy */
-#define SPF_SOFTFAIL	3	/**< host has softfail match in SPF policy */
-#define SPF_FAIL_PERM	4	/**< host is denied by SPF policy */
-#define SPF_FAIL_MALF	5	/**< SPF entry is malformed */
-#define SPF_TEMP_ERROR	7	/**< temporary DNS error while SPF testing */
-#define SPF_HARD_ERROR	8	/**< permanent DNS error while SPF testing */
-#define SPF_IGNORE	15	/**< SPF policy for this host will not be tested */
+enum spf_eval_result {
+	SPF_NONE = 0,	/**< no SPF policy given */
+	SPF_PASS = 1,	/**< host matches SPF policy */
+	SPF_NEUTRAL = 2,	/**< host has neutral match in SPF policy */
+	SPF_SOFTFAIL = 3,	/**< host has softfail match in SPF policy */
+	SPF_FAIL = 4,	/**< host is denied by SPF policy */
+	SPF_PERMERROR = 5,	/**< SPF entry is malformed */
+	SPF_TEMPERROR = 7,	/**< temporary DNS error while SPF testing */
+	SPF_DNS_HARD_ERROR = 8,	/**< permanent DNS error while SPF testing */
+	SPF_IGNORE = 15	/**< SPF policy for this host will not be tested */
+};
 
 /** \def SPF_IS_FAILURE
  check if one of the conditions is given to fail SPF policy
  */
-#define SPF_IS_FAILURE(x) (((x) == SPF_FAIL_PERM) || ((x) == SPF_FAIL_MALF))
+#define SPF_IS_FAILURE(x) (((x) == SPF_FAIL) || ((x) == SPF_PERMERROR))
 
 #endif

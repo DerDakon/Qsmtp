@@ -409,7 +409,7 @@ check_received(int spfstatus, int log)
 	const char *spfstates[] = { "pass", "fail", "softfail", "none", "neutral", "temperror", "permerror", NULL };
 	const char *tmp;
 
-	if ((spfstatus < SPF_NONE) || ((spfstatus > SPF_HARD_ERROR) && (spfstatus != SPF_IGNORE))) {
+	if ((spfstatus < SPF_NONE) || ((spfstatus > SPF_DNS_HARD_ERROR) && (spfstatus != SPF_IGNORE))) {
 		fprintf(stderr, "invalid SPF status code: %i\n", spfstatus);
 		return 1;
 	}
@@ -489,7 +489,7 @@ check_received(int spfstatus, int log)
 		return 1;
 	}
 	tmp++;
-	if (spfstatus == SPF_FAIL_MALF) {
+	if (spfstatus == SPF_PERMERROR) {
 		const char percentwarn[] = "unsafe characters may have been replaced by '%'";
 		const char *percentmatch;
 		int mismatch = 0;
@@ -727,7 +727,7 @@ test_parse_ip4()
 		ip4entries[0].value = ip4invalid[i];
 
 		r = check_host(ip4entries[0].key);
-		if (r != SPF_FAIL_MALF) {
+		if (r != SPF_PERMERROR) {
 			fprintf(stderr, "check_host() did not reject invalid IPv4 entry '%s' as malformed, but returned %i\n", ip4invalid[i], r);
 			err++;
 		}
@@ -755,7 +755,7 @@ test_parse_ip4()
 		ip4entries[0].value = ip4valid_reject[i];
 
 		r = check_host(ip4entries[0].key);
-		if (r != SPF_FAIL_PERM) {
+		if (r != SPF_FAIL) {
 			fprintf(stderr, "check_host() did not properly reject '%s', but returned %i\n", ip4valid_reject[i], r);
 			err++;
 		}
@@ -768,7 +768,7 @@ test_parse_ip4()
 	ip4entries[0].value = ip4valid[0];
 
 	r = check_host(ip4entries[0].key);
-	if (r != SPF_FAIL_PERM) {
+	if (r != SPF_FAIL) {
 		fprintf(stderr, "check_host() should reject '%s' with IPv6 address, but returned %i\n", ip4valid[0], r);
 		err++;
 	}
@@ -828,7 +828,7 @@ test_parse_ip6()
 		ip6entries[0].value = ip6invalid[i];
 
 		r = check_host(ip6entries[0].key);
-		if (r != SPF_FAIL_MALF) {
+		if (r != SPF_PERMERROR) {
 			fprintf(stderr, "check_host() did not reject invalid IPv6 entry '%s' as malformed, but returned %i\n", ip6invalid[i], r);
 			err++;
 		}
@@ -856,7 +856,7 @@ test_parse_ip6()
 		ip6entries[0].value = ip6valid_reject[i];
 
 		r = check_host(ip6entries[0].key);
-		if (r != SPF_FAIL_PERM) {
+		if (r != SPF_FAIL) {
 			fprintf(stderr, "check_host() did not properly reject '%s', but returned %i\n", ip6valid_reject[i], r);
 			err++;
 		}
@@ -869,7 +869,7 @@ test_parse_ip6()
 	ip6entries[0].value = ip6valid[0];
 
 	r = check_host(ip6entries[0].key);
-	if (r != SPF_FAIL_PERM) {
+	if (r != SPF_FAIL) {
 		fprintf(stderr, "check_host() should reject '%s' with IPv4 address, but returned %i\n", ip6valid[0], r);
 		err++;
 	}
@@ -1000,7 +1000,7 @@ test_parse_mx()
 		mxentries[0].value = mxinvalid[i];
 
 		r = check_host(mxentries[0].key);
-		if (r != SPF_FAIL_MALF) {
+		if (r != SPF_PERMERROR) {
 			fprintf(stderr, "check_host() did not reject invalid MX entry '%s' as malformed, but returned %i\n", mxinvalid[i], r);
 			err++;
 		}
@@ -1028,7 +1028,7 @@ test_parse_mx()
 		mxentries[0].value = mxvalid_reject[i];
 
 		r = check_host(mxentries[0].key);
-		if (r != SPF_FAIL_PERM) {
+		if (r != SPF_FAIL) {
 			fprintf(stderr, "check_host() did not properly reject '%s', but returned %i\n", mxvalid_reject[i], r);
 			err++;
 		}
@@ -1059,7 +1059,7 @@ test_parse_mx()
 	mxentries[0].key = toomany;
 	mxentries[0].value = mxvalid[0];
 	r = check_host(toomany);
-	if (r != SPF_FAIL_PERM) {
+	if (r != SPF_FAIL) {
 		fprintf(stderr, "check_host(toomany.example.net) did not reject with permanent error, but returned %i\n", r);
 		err++;
 	}
@@ -1108,7 +1108,7 @@ run_suite_test(const struct suite_testcase *testcases)
 				err++;
 			}
 		} else if (xmitstat.spfexp != NULL) {
-			if (r != SPF_FAIL_MALF) {
+			if (r != SPF_PERMERROR) {
 				/* hard error writes what it didn't understand into spfexp,
 				 * but that will never contain whitespace */
 				fprintf(stderr, "Test %s: no SPF exp was expected, but %s was returned\n", testcases[i].name, xmitstat.spfexp);
@@ -1377,7 +1377,7 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@exp.example.com",
 			.exp = "This is a test.",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		/* testsuite says result is hard error, but RfC 7208 says:
 		 * "If [...] there are syntax errors in the explanation string,
@@ -1388,7 +1388,7 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e2.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "invalid-macro-char",
@@ -1396,21 +1396,21 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e1.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "invalid-embedded-macro-char",
 			.helo = "msgbas2x.cos.example.com",
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e1e.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "invalid-trailing-macro-char",
 			.helo = "msgbas2x.cos.example.com",
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e1t.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "macro-mania-in-domain",
@@ -1426,7 +1426,7 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e3.example.com",
 			.exp = "Connections from 192.168.218.40 not authorized.",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "domain-name-truncation",
@@ -1434,7 +1434,7 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@somewhat.long.exp.example.com",
 			.exp = "Congratulations!  That was tricky.",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "v-macro-ip4",
@@ -1442,7 +1442,7 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e4.example.com",
 			.exp = "192.168.218.40 is queried as 40.218.168.192.in-addr.arpa",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			/* Note: the dotted IP address is converted to lowercase in the exp string
@@ -1453,7 +1453,7 @@ test_suite_makro()
 			.remoteip = "CAFE:BABE::1",
 			.mailfrom = "test@e4.example.com",
 			.exp = "cafe:babe::1 is queried as 1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.e.b.a.b.e.f.a.c.ip6.arpa",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "undef-macro",
@@ -1461,7 +1461,7 @@ test_suite_makro()
 			.remoteip = "CAFE:BABE::192.168.218.40",
 			.mailfrom = "test@e5.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "p-macro-ip4-novalid",
@@ -1469,7 +1469,7 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e6.example.com",
 			.exp = "connect from unknown",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "p-macro-ip4-valid",
@@ -1477,7 +1477,7 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.41",
 			.mailfrom = "test@e6.example.com",
 			.exp = "connect from mx.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "p-macro-ip6-novalid",
@@ -1485,7 +1485,7 @@ test_suite_makro()
 			.remoteip = "cafe:babe::1",
 			.mailfrom = "test@e6.example.com",
 			.exp = "connect from unknown",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "p-macro-ip6-valid",
@@ -1493,7 +1493,7 @@ test_suite_makro()
 			.remoteip = "cafe:babe::3",
 			.mailfrom = "test@e6.example.com",
 			.exp = "connect from mx.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "p-macro-multiple",
@@ -1509,7 +1509,7 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.42",
 			.mailfrom = "jack&jill=up@e8.example.com",
 			.exp = "http://example.com/why.html?l=jack%26jill%3Dup",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "hello-macro",
@@ -1525,7 +1525,7 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e9.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "hello-domain-literal",
@@ -1533,7 +1533,7 @@ test_suite_makro()
 			.remoteip = "::ffff:192.168.218.40",
 			.mailfrom = "test@e9.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "require-valid-helo",
@@ -1541,7 +1541,7 @@ test_suite_makro()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "test@e10.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "macro-reverse-split-on-dash",
@@ -1622,7 +1622,7 @@ test_suite_all()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e1.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "all-arg",
@@ -1630,7 +1630,7 @@ test_suite_all()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e2.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "all-cidr",
@@ -1638,7 +1638,7 @@ test_suite_all()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e3.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "all-neutral",
@@ -1732,7 +1732,7 @@ test_suite_exists()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e1.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "exists-implicit",
@@ -1740,7 +1740,7 @@ test_suite_exists()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e2.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "exists-cidr",
@@ -1748,7 +1748,7 @@ test_suite_exists()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e3.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "exists-ip4",
@@ -1772,7 +1772,7 @@ test_suite_exists()
 			.remoteip = "CAFE:BABE::3",
 			.mailfrom = "foo@e5.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "exists-dnserr",
@@ -1780,7 +1780,7 @@ test_suite_exists()
 			.remoteip = "CAFE:BABE::3",
 			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
-			.result = SPF_TEMP_ERROR
+			.result = SPF_TEMPERROR
 		},
 		{
 			.helo = NULL,
@@ -1966,21 +1966,21 @@ test_suite_mx()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e6.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "mx-bad-cidr4",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e6a.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "mx-bad-cidr6",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e7.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "mx-multi-ip1",
@@ -2001,14 +2001,14 @@ test_suite_mx()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e9.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "mx-nxdomain",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e1.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "mx-cidr4-0",
@@ -2022,21 +2022,21 @@ test_suite_mx()
 			.helo = "mail.example.com",
 			.remoteip = "1234::1",
 			.mailfrom = "foo@e2.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "mx-cidr6-0-ip4",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e2a.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "mx-cidr6-0-ip4mapped",
 			.helo = "mail.example.com",
 			.remoteip = "::FFFF:1.2.3.4",
 			.mailfrom = "foo@e2a.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "mx-cidr6-0-ip6",
@@ -2052,7 +2052,7 @@ test_suite_mx()
 			.helo = "mail.example.com",
 			.remoteip = "1234::1",
 			.mailfrom = "foo@e2b.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		/* \0 in the string is not detected */
 		{
@@ -2060,7 +2060,7 @@ test_suite_mx()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.5",
 			.mailfrom = "foo@e3.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 #endif
 		{
@@ -2068,7 +2068,7 @@ test_suite_mx()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e5.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 #if 0
 		/* the same as mx-colon-domain-ip4mapped as this implementation is
@@ -2094,7 +2094,7 @@ test_suite_mx()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e12.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "mx-empty",
@@ -2114,7 +2114,7 @@ test_suite_mx()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e13.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.result = -1
@@ -2195,7 +2195,7 @@ test_suite_ptr()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e1.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "ptr-match-target",
@@ -2219,7 +2219,7 @@ test_suite_ptr()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e4.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "ptr-match-ip6",
@@ -2235,7 +2235,7 @@ test_suite_ptr()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e5.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.helo = NULL,
@@ -2475,7 +2475,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "a-bad-cidr4",
@@ -2483,7 +2483,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e6a.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "a-bad-cidr6",
@@ -2491,7 +2491,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e7.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "a-dual-cidr-ip4-match",
@@ -2505,7 +2505,7 @@ test_suite_a()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e8e.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "a-dual-cidr-ip6-match",
@@ -2519,14 +2519,14 @@ test_suite_a()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e8b.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "a-dual-cidr-ip6-default",
 			.helo = "mail.example.com",
 			.remoteip = "2001:db8:1234::cafe:babe",
 			.mailfrom = "foo@e8a.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "a-multi-ip1",
@@ -2551,7 +2551,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e9.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "a-nxdomain",
@@ -2559,7 +2559,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e1.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "a-cidr4-0",
@@ -2575,7 +2575,7 @@ test_suite_a()
 			.remoteip = "1234::1",
 			.mailfrom = "foo@e2.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "a-cidr6-0-ip4",
@@ -2583,7 +2583,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e2a.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			/* since Qsmtp handles IPv4 connections alsways as IPv4mapped
@@ -2593,7 +2593,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e2a.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "a-cidr6-0-ip6",
@@ -2609,7 +2609,7 @@ test_suite_a()
 			.remoteip = "1234::1",
 			.mailfrom = "foo@e2b.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "a-ip6-dualstack",
@@ -2624,7 +2624,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e4.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "a-numeric-toplabel",
@@ -2632,7 +2632,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e5.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "a-bad-toplabel",
@@ -2640,7 +2640,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e12.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "a-only-toplabel",
@@ -2648,7 +2648,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e5a.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "a-only-toplabel-trailing-dot",
@@ -2656,7 +2656,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e5b.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 #if 0
 		{
@@ -2674,7 +2674,7 @@ test_suite_a()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e11.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.helo = NULL,
@@ -2939,14 +2939,14 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e10.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "redirect-cancels-exp",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e1.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 #if 0
 		{
@@ -2955,7 +2955,7 @@ test_suite_modifiers()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e17.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 #endif
 		{
@@ -2964,7 +2964,7 @@ test_suite_modifiers()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e7.example.com",
 			.exp = "Correct!",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "redirect-cancels-prior-exp",
@@ -2972,21 +2972,21 @@ test_suite_modifiers()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e3.example.com",
 			.exp = "See me.",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "invalid-modifier",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e5.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "empty-modifier-name",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e6.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "dorky-sentinel",
@@ -2994,7 +2994,7 @@ test_suite_modifiers()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "Macro Error@e8.example.com",
 			.exp = "Macro Error in implementation",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 #if 0
 		/* failing because multi-record detection does not work */
@@ -3003,7 +3003,7 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e11.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 #endif
 		{
@@ -3011,28 +3011,28 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e22.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "exp-dns-error",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e21.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "exp-empty-domain",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e12.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "explanation-syntax-error",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e13.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 #if 0
 		{
@@ -3040,7 +3040,7 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e16.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 #endif
 		{
@@ -3048,28 +3048,28 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e14.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "redirect-empty-domain",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e18.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "redirect-twice",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e15.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "unknown-modifier-syntax",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e9.example.com",
-			.result = SPF_FAIL_PERM /* FIXME: should be SPF_FAIL_MALF */
+			.result = SPF_FAIL /* FIXME: should be SPF_PERMERROR */
 		},
 		{
 			.name = "default-modifier-obsolete",
@@ -3090,7 +3090,7 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foobar@nonascii.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 #if 0
 		/* failing because multi-record detection does not work */
@@ -3099,7 +3099,7 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foobar@tworecs.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 #endif
 		{
@@ -3107,7 +3107,7 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e23.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		/* not in testsuite: check that really exp= is given */
 		{
@@ -3115,7 +3115,7 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@no-exp.example.com",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		/* not in testsuite: check replacement of ASCII control-chars */
 		{
@@ -3124,7 +3124,7 @@ test_suite_modifiers()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@control-exp.example.com",
 			.exp = "message%with%control%chars",
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		/* not in testsuite: check for valid modifier name */
 		{
@@ -3132,7 +3132,7 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@bad-mod1.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		/* not in testsuite: check for valid modifier name */
 		{
@@ -3140,7 +3140,7 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@bad-mod2.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		/* not in testsuite: modifiers may not have qualification */
 		{
@@ -3148,7 +3148,7 @@ test_suite_modifiers()
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@bad-mod3.example.com",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		/* not in testsuite: make sure redirect matches exactly */
 		{
@@ -3278,7 +3278,7 @@ test_suite_include()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e3.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "include-temperror",
@@ -3286,7 +3286,7 @@ test_suite_include()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e4.example.com",
 			.exp = NULL,
-			.result = SPF_TEMP_ERROR
+			.result = SPF_TEMPERROR
 		},
 		{
 			.name = "include-syntax-error",
@@ -3294,7 +3294,7 @@ test_suite_include()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "include-permerror",
@@ -3302,7 +3302,7 @@ test_suite_include()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e5.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "include-cidr",
@@ -3310,7 +3310,7 @@ test_suite_include()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e9.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "include-none",
@@ -3318,7 +3318,7 @@ test_suite_include()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e7.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "include-empty-domain",
@@ -3326,7 +3326,7 @@ test_suite_include()
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@e8.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.helo = NULL,
@@ -3606,53 +3606,53 @@ test_parse()
 		}
 	};
 	static int spfresults[] = {
-		SPF_FAIL_PERM,
-		SPF_FAIL_MALF,
+		SPF_FAIL,
+		SPF_PERMERROR,
 		SPF_NONE,
-		SPF_FAIL_MALF,
+		SPF_PERMERROR,
 		SPF_NEUTRAL,
 		SPF_NEUTRAL,
-		SPF_FAIL_PERM,
+		SPF_FAIL,
 		SPF_SOFTFAIL,
 		SPF_PASS,
 		SPF_PASS,
-		SPF_FAIL_MALF,
+		SPF_PERMERROR,
 		SPF_SOFTFAIL,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
 		SPF_NEUTRAL,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
-		SPF_FAIL_PERM,
-		SPF_FAIL_PERM,
-		SPF_FAIL_PERM,
-		SPF_FAIL_MALF,
-		SPF_FAIL_MALF,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
+		SPF_FAIL,
+		SPF_FAIL,
+		SPF_FAIL,
+		SPF_PERMERROR,
+		SPF_PERMERROR,
 		SPF_NEUTRAL,
 		SPF_PASS,
 		SPF_PASS,
 		SPF_NEUTRAL,
-		SPF_FAIL_PERM,
-		SPF_FAIL_PERM,
-		SPF_FAIL_PERM,
-		SPF_FAIL_PERM,
+		SPF_FAIL,
+		SPF_FAIL,
+		SPF_FAIL,
+		SPF_FAIL,
 		SPF_PASS,
 		SPF_NONE
 	};
@@ -3692,11 +3692,11 @@ test_parse()
 	}
 
 	r = check_host("garbage..domain");
-	if (r != SPF_FAIL_MALF) {
-		fprintf(stderr, "check_host() with invalid domain did not fail with SPF_FAIL_MALF, but %i\n", r);
+	if (r != SPF_PERMERROR) {
+		fprintf(stderr, "check_host() with invalid domain did not fail with SPF_PERMERROR, but %i\n", r);
 		err++;
 	}
-	err += (check_received(SPF_FAIL_MALF, 0) ? 1 : 0);
+	err += (check_received(SPF_PERMERROR, 0) ? 1 : 0);
 
 	while (parseentries[i].key != NULL) {
 		int c;
@@ -3804,7 +3804,7 @@ test_behavior()
 			.remoteip = "::ffff:1.2.3.7",
 			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "ptr-no-reverse-lookup",
@@ -3812,7 +3812,7 @@ test_behavior()
 			.remoteip = "::ffff:1.2.3.3",
 			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "ptr-short-validated-domain",
@@ -3820,7 +3820,7 @@ test_behavior()
 			.remoteip = "::ffff:1.2.8.3",
 			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "ptr-invalid-domainspec",
@@ -3828,7 +3828,7 @@ test_behavior()
 			.remoteip = "::ffff:1.2.8.3",
 			.mailfrom = "foo@invalid.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "ptr-many-names",
@@ -3836,7 +3836,7 @@ test_behavior()
 			.remoteip = "::ffff:1.2.9.9",
 			.mailfrom = "foo@e6.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_PERM
+			.result = SPF_FAIL
 		},
 		{
 			.name = "domainspec-nonalpha",
@@ -3844,14 +3844,14 @@ test_behavior()
 			.remoteip = "::ffff:1.2.9.9",
 			.mailfrom = "foo@domainspec-nonalpha.example.com",
 			.exp = NULL,
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.name = "no-exp-on-parse error",
 			.helo = "mail.example.com",
 			.remoteip = "::ffff:1.2.3.4",
 			.mailfrom = "foo@withexp.example.org",
-			.result = SPF_FAIL_MALF
+			.result = SPF_PERMERROR
 		},
 		{
 			.helo = NULL,
@@ -3898,7 +3898,7 @@ test_received()
 	}
 	memcpy(xmitstat.mailfrom.s, mailfrom, strlen(mailfrom));
 
-	for (i = SPF_NONE; i <= SPF_HARD_ERROR; i++) {
+	for (i = SPF_NONE; i <= SPF_DNS_HARD_ERROR; i++) {
 		if (i == 6)	/* this was SPF_FAIL_NONEX */
 			continue;
 		memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));

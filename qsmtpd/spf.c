@@ -72,7 +72,7 @@ spfreceived(int fd, const int spf)
 	}
 
 	switch (spf) {
-	case SPF_FAIL_MALF:
+	case SPF_PERMERROR:
 		WRITE(fd, "domain of\n\t");
 		WRITEl(fd, spfdomain, spfdomainlen);
 		WRITE(fd, " has malformed SPF record");
@@ -87,8 +87,8 @@ spfreceived(int fd, const int spf)
 		}
 		WRITE(fd, ")\n");
 		break;
-	case SPF_HARD_ERROR:
-	case SPF_TEMP_ERROR:
+	case SPF_DNS_HARD_ERROR:
+	case SPF_TEMPERROR:
 		WRITE(fd, "error in processing during lookup of ");
 		WRITEl(fd, spfdomain, spfdomainlen);
 		WRITE(fd, ": DNS problem)\n");
@@ -99,7 +99,7 @@ spfreceived(int fd, const int spf)
 		WRITE(fd, " does not designate permitted sender hosts)\n");
 		return 0;
 	case SPF_SOFTFAIL:
-	case SPF_FAIL_PERM:
+	case SPF_FAIL:
 		WRITE(fd, "domain of ");
 		WRITEl(fd, spfdomain, spfdomainlen);
 		WRITE(fd, " does not designate ");
@@ -494,7 +494,7 @@ validate_domain(char ***domainlist)
 		memcpy(*res + oldl, addstr, addlen);\
 	}
 
-#define PARSEERR	do { free(*res); return -SPF_FAIL_MALF; } while (0)
+#define PARSEERR	do { free(*res); return -SPF_PERMERROR; } while (0)
 
 /**
  * expand a SPF makro letter
@@ -629,9 +629,9 @@ spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned 
 		case -1:
 			return -1;
 		case -2:
-			return SPF_TEMP_ERROR;
+			return SPF_TEMPERROR;
 		case -3:
-			return SPF_HARD_ERROR;
+			return SPF_DNS_HARD_ERROR;
 		default:
 			{
 			int k = spf_appendmakro(res, l, validdomains[0],
@@ -685,7 +685,7 @@ spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned 
 	}
 
 #undef PARSEERR
-#define PARSEERR	{free(res); return SPF_FAIL_MALF;}
+#define PARSEERR	{free(res); return SPF_PERMERROR;}
 
 
 /**
@@ -698,7 +698,7 @@ spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned 
  * @return if makro is valid or not
  * @retval 0 makro is valid, result is set
  * @retval -1 internal error (ENOMEM)
- * @retval SPF_FAIL_MALF syntax error
+ * @retval SPF_PERMERROR syntax error
  *
  * not static, is called from targets/testspf.c
  */
@@ -761,8 +761,8 @@ spf_makro(const char *token, const char *domain, int ex, char **result)
 				z = spf_makroletter(++p, domain, ex, &res, &l);
 				if (z == -1) {
 					return z;
-				} else if (z == -SPF_FAIL_MALF) {
-					return SPF_FAIL_MALF;
+				} else if (z == -SPF_PERMERROR) {
+					return SPF_PERMERROR;
 				} else if (!z || (*(p + z) != '}')) {
 					PARSEERR;
 				}
@@ -770,7 +770,7 @@ spf_makro(const char *token, const char *domain, int ex, char **result)
 				break;
 			default:
 				free(res);
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 			}
 			if (*p != '%') {
 				const char *oldp = p;
@@ -807,7 +807,7 @@ enum spf_makro_expansion {
  * @param ip6cidr same for IPv6 net length
  * @returns if domainspec is valid or not
  * @retval -1 error (ENOMEM)
- * @retval SPF_FAIL_MALF domainspec is syntactically invalid
+ * @retval SPF_PERMERROR domainspec is syntactically invalid
  * @retval 0 everything is fine, domainspec is set
  */
 static int
@@ -827,7 +827,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 
 		while (*t && !WSPACE(*t) && (*t != '/')) {
 			if (*t < 0)
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 
 			switch (i) {
 			case SPF_MAKRO_NONE:
@@ -837,7 +837,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 					/* fallthrough */
 				} else {
 					if ((*t < 0x21) || (*t > 0x7e))
-						return SPF_FAIL_MALF;
+						return SPF_PERMERROR;
 					t++;
 					continue;
 				}
@@ -854,7 +854,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 					t++;
 					break;
 				default:
-					return SPF_FAIL_MALF;
+					return SPF_PERMERROR;
 				}
 				/* fallthrough */
 			case SPF_MAKRO_BRACE:
@@ -875,7 +875,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 					t++;
 					break;
 				default:
-					return SPF_FAIL_MALF;
+					return SPF_PERMERROR;
 				}
 				/* fallthrough */
 			case SPF_MAKRO_LETTER:
@@ -917,13 +917,13 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 					t++;
 					continue;
 				default:
-					return SPF_FAIL_MALF;
+					return SPF_PERMERROR;
 				}
 			}
 		}
 
 		if (i != SPF_MAKRO_NONE)
-			return SPF_FAIL_MALF;
+			return SPF_PERMERROR;
 
 		/* domainspec must end in toplabel or macro-expand */
 		if ((tokenend == NULL) || (t != tokenend + 1)) {
@@ -943,29 +943,29 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 
 			/* domainspec may not be only toplabel */
 			if (*dot != '.')
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 
 			/* toplabel may not be empty */
 			if (dot + 1 >= last)
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 
 			/* toplabel must begin and end with alphanum,
 			 * enforce C locale here */
 			if (!isalnum(*(dot + 1)))
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 			if (!isalnum(*last))
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 
 			/* toplabel mal only be alphanum or '-' and
 			 * must have at least one ALPHA */
 			for (tmp = dot + 1; tmp <= last; tmp++) {
 				hasalpha |= isalpha(*tmp);
 				if (!isalnum(*tmp) && (*tmp != '-'))
-					return SPF_FAIL_MALF;
+					return SPF_PERMERROR;
 			}
 
 			if (!hasalpha)
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 		}
 
 		if ((i = spf_makro(token, domain, 0, domainspec))) {
@@ -982,12 +982,12 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 			char *cend;
 			if ((*c == '\0') || WSPACE(*c)) {
 				free(*domainspec);
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 			}
 			*ip4cidr = strtol(c, &cend, 10);
 			if ((*ip4cidr > 32) || (!WSPACE(*cend) && (*cend != '/') && (*cend != '\0'))) {
 				free(*domainspec);
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 			}
 			c = cend;
 		} else {
@@ -999,16 +999,16 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 			char *cend;
 			if (*c++ != '/') {
 				free(*domainspec);
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 			}
 			if ((*c == '\0') || WSPACE(*c)) {
 				free(*domainspec);
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 			}
 			*ip6cidr = strtol(c, &cend, 10);
 			if ((*ip6cidr > 128) || !(WSPACE(*cend) || (*cend == '\0'))) {
 				free(*domainspec);
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 			}
 		}
 	}
@@ -1021,7 +1021,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
  * @returns if domainspec is present
  * @retval 0 no domainspec present
  * @retval 1 domainspec is present
- * @retval -SPF_FAIL_MALF invalid characters detected
+ * @retval -SPF_PERMERROR invalid characters detected
  *
  * This does not check the domainspec itself, it only checks if one is given.
  */
@@ -1037,7 +1037,7 @@ may_have_domainspec(const char *token)
 	if (*token == ':') {
 		token++;
 		if ((*token == '\0') || WSPACE(*token))
-			return SPF_FAIL_MALF;
+			return SPF_PERMERROR;
 		return 1;
 	}
 
@@ -1046,7 +1046,7 @@ may_have_domainspec(const char *token)
 	if (*token == '/')
 		return 1;
 
-	return SPF_FAIL_MALF;
+	return SPF_PERMERROR;
 }
 
 /* the SPF routines
@@ -1054,7 +1054,7 @@ may_have_domainspec(const char *token)
  * return values:
  *  SPF_NONE: no match
  *  SPF_PASS: match
- *  SPF_FAIL_MALF: parse error
+ *  SPF_PERMERROR: parse error
  * -1: error (ENOMEM)
  */
 static int
@@ -1078,7 +1078,7 @@ spfmx(const char *domain, const char *token)
 			return i;
 		break;
 	default:
-		return SPF_FAIL_MALF;
+		return SPF_PERMERROR;
 	}
 
 	if (ip4l < 0)
@@ -1096,9 +1096,9 @@ spfmx(const char *domain, const char *token)
 	case 1:
 		return SPF_NONE;
 	case DNS_ERROR_TEMP:
-		return SPF_TEMP_ERROR;
+		return SPF_TEMPERROR;
 	case DNS_ERROR_PERM:
-		return SPF_HARD_ERROR;
+		return SPF_DNS_HARD_ERROR;
 	case DNS_ERROR_LOCAL:
 		return -1;
 	}
@@ -1126,7 +1126,7 @@ spfmx(const char *domain, const char *token)
 
 	if (i > 10) {
 		freeips(mx);
-		return SPF_FAIL_PERM;
+		return SPF_FAIL;
 	}
 
 	if (connection_is_ipv4()) {
@@ -1179,7 +1179,7 @@ spfa(const char *domain, const char *token)
 			return i;
 		break;
 	default:
-		return SPF_FAIL_MALF;
+		return SPF_PERMERROR;
 	}
 
 	if (ip4l < 0) {
@@ -1204,12 +1204,12 @@ spfa(const char *domain, const char *token)
 	case 0:
 		return SPF_NONE;
 	case DNS_ERROR_TEMP:
-		return SPF_TEMP_ERROR;
+		return SPF_TEMPERROR;
 	case DNS_ERROR_LOCAL:
 		return -1;
 	default:
 		if (i < 0)
-			return SPF_HARD_ERROR;
+			return SPF_DNS_HARD_ERROR;
 	}
 
 	r = SPF_NONE;
@@ -1244,7 +1244,7 @@ spfexists(const char *domain, const char *token)
 	}
 	if ((ip4l > 0) || (ip6l > 0) || !domainspec) {
 		free(domainspec);
-		return SPF_FAIL_MALF;
+		return SPF_PERMERROR;
 	}
 	i = ask_dnsa(domainspec, NULL);
 	free(domainspec);
@@ -1254,14 +1254,14 @@ spfexists(const char *domain, const char *token)
 		r = SPF_NONE;
 		break;
 	case DNS_ERROR_TEMP:
-		r = SPF_TEMP_ERROR;
+		r = SPF_TEMPERROR;
 		break;
 	case DNS_ERROR_LOCAL:
 		r = -1;
 		break;
 	default:
 		if (i < 0)
-			r = SPF_HARD_ERROR;
+			r = SPF_DNS_HARD_ERROR;
 		else
 			r = SPF_PASS;
 	}
@@ -1290,12 +1290,12 @@ spfptr(const char *domain, const char *token)
 			return i;
 		if ((ip4l >= 0) || (ip6l >= 0)) {
 			free(domainspec);
-			return SPF_FAIL_MALF;
+			return SPF_PERMERROR;
 		}
 		break;
 		}
 	default:
-		return SPF_FAIL_MALF;
+		return SPF_PERMERROR;
 	}
 
 	if (!xmitstat.remotehost.len) {
@@ -1312,10 +1312,10 @@ spfptr(const char *domain, const char *token)
 		r = -1;
 		break;
 	case -2:
-		r = SPF_TEMP_ERROR;
+		r = SPF_TEMPERROR;
 		break;
 	case -3:
-		r = SPF_HARD_ERROR;
+		r = SPF_DNS_HARD_ERROR;
 		break;
 	}
 
@@ -1379,25 +1379,25 @@ spfip4(const char *domain)
 
 	ip4len = sl - domain;
 	if ((ip4len >= sizeof(ip4buf)) || (ip4len < 7))
-		return SPF_FAIL_MALF;
+		return SPF_PERMERROR;
 
 	if (*sl == '/') {
 		char *q;
 
 		u = strtoul(sl + 1, &q, 10);
 		if ((u < 8) || (u > 32) || (!WSPACE(*q) && (*q != '\0')))
-			return SPF_FAIL_MALF;
+			return SPF_PERMERROR;
 	} else if (WSPACE(*sl) || !*sl) {
 		u = 32;
 	} else {
-		return SPF_FAIL_MALF;
+		return SPF_PERMERROR;
 	}
 
 	memset(ip4buf, 0, sizeof(ip4buf));
 	memcpy(ip4buf, domain, ip4len);
 
 	if (!inet_pton(AF_INET, ip4buf, &net))
-		return SPF_FAIL_MALF;
+		return SPF_PERMERROR;
 
 	return ip4_matchnet(&xmitstat.sremoteip, &net, u) ? SPF_PASS : SPF_NONE;
 }
@@ -1420,24 +1420,24 @@ spfip6(const char *domain)
 
 	ip6len = sl - domain;
 	if ((ip6len >= sizeof(ip6buf)) || (ip6len < 3))
-		return SPF_FAIL_MALF;
+		return SPF_PERMERROR;
 
 	if (*sl == '/') {
 		char *endp;
 		u = strtoul(sl + 1, &endp, 10);
 		if ((u < 8) || (u > 128) || (!WSPACE(*endp) && (*endp != '\0')))
-			return SPF_FAIL_MALF;
+			return SPF_PERMERROR;
 	} else if (WSPACE(*sl) || !*sl) {
 		u = 128;
 	} else {
-		return SPF_FAIL_MALF;
+		return SPF_PERMERROR;
 	}
 
 	memset(ip6buf, 0, sizeof(ip6buf));
 	memcpy(ip6buf, domain, ip6len);
 
 	if (!inet_pton(AF_INET6, ip6buf, &net))
-		return SPF_FAIL_MALF;
+		return SPF_PERMERROR;
 
 	return ip6_matchnet(&xmitstat.sremoteip, &net, (unsigned char) (u & 0xff)) ? SPF_PASS : SPF_NONE;
 }
@@ -1639,7 +1639,7 @@ spflookup(const char *domain, unsigned int *queries)
 	/* don't enforce valid domains on redirects */
 	if (*queries == 0) {
 		if (domainvalid(domain))
-			return SPF_FAIL_MALF;
+			return SPF_PERMERROR;
 		i = dnstxt(&txt, domain);
 	} else {
 		i = txtlookup(&txt, domain);
@@ -1653,9 +1653,9 @@ spflookup(const char *domain, unsigned int *queries)
 		case EIO:
 		case ECONNREFUSED:
 		case EAGAIN:
-			return SPF_TEMP_ERROR;
+			return SPF_TEMPERROR;
 		case EINVAL:
-			return SPF_HARD_ERROR;
+			return SPF_DNS_HARD_ERROR;
 		case ENOMEM:
 		default:
 			return -1;
@@ -1667,7 +1667,7 @@ spflookup(const char *domain, unsigned int *queries)
 	while ((token = strstr(token, "v=spf1"))) {
 		if (valid) {
 			free(txt);
-			return SPF_FAIL_MALF;
+			return SPF_PERMERROR;
 		} else {
 			token += 6;
 			valid = token;
@@ -1689,7 +1689,7 @@ spflookup(const char *domain, unsigned int *queries)
 		if (WSPACE(*next) || (*next == '\0') ||
 				(find_modifier(next, "redirect=") != NULL)) {
 			free(txt);
-			return SPF_FAIL_MALF;
+			return SPF_PERMERROR;
 		}
 		redirect = next;
 	}
@@ -1698,7 +1698,7 @@ spflookup(const char *domain, unsigned int *queries)
 		const char *next = expl + strlen("exp=");
 		if (find_modifier(next, "exp=") != NULL) {
 			free(txt);
-			return SPF_FAIL_MALF;
+			return SPF_PERMERROR;
 		}
 		/* RfC 7208, section 6.2
 		 * [I]f there are syntax errors in the explanation string,
@@ -1714,7 +1714,7 @@ spflookup(const char *domain, unsigned int *queries)
 		size_t mechlen;
 
 		if (*queries > 10) {
-			prefix = SPF_FAIL_PERM;
+			prefix = SPF_FAIL;
 			result = SPF_PASS;
 			break;
 		}
@@ -1726,18 +1726,22 @@ spflookup(const char *domain, unsigned int *queries)
 			mechanism = "default";
 			break;
 		}
-		switch(*token) {
+		switch (*token) {
 		case '-':
-			token++; prefix = SPF_FAIL_PERM;
+			token++;
+			prefix = SPF_FAIL;
 			break;
 		case '~':
-			token++; prefix = SPF_SOFTFAIL;
+			token++;
+			prefix = SPF_SOFTFAIL;
 			break;
 		case '+':
-			token++; prefix = SPF_PASS;
+			token++;
+			prefix = SPF_PASS;
 			break;
 		case '?':
-			token++; prefix = SPF_NEUTRAL;
+			token++;
+			prefix = SPF_NEUTRAL;
 			break;
 		default:
 			if (((*token >= 'a') && (*token <= 'z')) ||
@@ -1745,7 +1749,7 @@ spflookup(const char *domain, unsigned int *queries)
 				prefix = SPF_PASS;
 			} else {
 				free(txt);
-				return SPF_FAIL_MALF;
+				return SPF_PERMERROR;
 			}
 		}
 		if ( (mechlen = match_mechanism(token, "mx", ":/")) != 0) {
@@ -1755,9 +1759,9 @@ spflookup(const char *domain, unsigned int *queries)
 			mechanism = "MX";
 			/* MX mechanism may return permanent failure in case there are
 			 * too many A records */
-			if (result == SPF_FAIL_PERM) {
+			if (result == SPF_FAIL) {
 				result = SPF_PASS;
-				prefix = SPF_FAIL_PERM;
+				prefix = SPF_FAIL;
 				break;
 			}
 			*queries += 1;
@@ -1774,7 +1778,7 @@ spflookup(const char *domain, unsigned int *queries)
 				result = spfexists(domain, ++token);
 				mechanism = "exists";
 			} else {
-				result = SPF_FAIL_MALF;
+				result = SPF_PERMERROR;
 			}
 			*queries += 1;
 		} else if ( (mechlen = match_mechanism(token, "all", "")) != 0) {
@@ -1794,7 +1798,7 @@ spflookup(const char *domain, unsigned int *queries)
 				result = spfip4(++token);
 				mechanism = "IP4";
 			} else {
-				result = SPF_FAIL_MALF;
+				result = SPF_PERMERROR;
 			}
 		} else if ( (mechlen = match_mechanism(token, "ip6", ":/")) != 0) {
 			token += mechlen;
@@ -1803,7 +1807,7 @@ spflookup(const char *domain, unsigned int *queries)
 				result = spfip6(++token);
 				mechanism = "IP6";
 			} else {
-				result = SPF_FAIL_MALF;
+				result = SPF_PERMERROR;
 			}
 		} else if ( (mechlen = match_mechanism(token, "include", ":")) != 0) {
 			token += mechlen;
@@ -1815,7 +1819,7 @@ spflookup(const char *domain, unsigned int *queries)
 				result = spf_domainspec(domain, token + 1, &n, &ip4l, &ip6l);
 				if (result == 0) {
 					if ((ip4l >= 0) || (ip6l >= 0)) {
-						result = SPF_FAIL_MALF;
+						result = SPF_PERMERROR;
 					} else {
 						*queries += 1;
 						result = spflookup(n, queries);
@@ -1823,28 +1827,28 @@ spflookup(const char *domain, unsigned int *queries)
 					free(n);
 				}
 			} else {
-				result = SPF_FAIL_MALF;
+				result = SPF_PERMERROR;
 			}
 
 			switch (result) {
 			case SPF_NONE:
 				result = SPF_PASS;
-				prefix = SPF_FAIL_MALF;
+				prefix = SPF_PERMERROR;
 				break;
-			case SPF_TEMP_ERROR:
-			case SPF_FAIL_MALF:
+			case SPF_TEMPERROR:
+			case SPF_PERMERROR:
 				prefix = result;
 				result = SPF_PASS;
 				break;
 			case SPF_PASS:
 			case -1:
 				break;
-			case SPF_FAIL_PERM:
+			case SPF_FAIL:
 				/* permanent errors usually only mean that the include did
 				 * not match, but in case it is because of excessive DNS
 				 * queries we keep the result */
 				if (*queries > 10) {
-					prefix = SPF_FAIL_PERM;
+					prefix = SPF_FAIL;
 					result = SPF_PASS;
 					break;
 				}
@@ -1860,7 +1864,7 @@ spflookup(const char *domain, unsigned int *queries)
 
 			if (eq == 0) {
 				record_bad_token(token);
-				prefix = SPF_FAIL_MALF;
+				prefix = SPF_PERMERROR;
 				result = SPF_PASS;
 				break;
 			} else {
@@ -1868,11 +1872,11 @@ spflookup(const char *domain, unsigned int *queries)
 
 				/* modifier must not have qualification */
 				if (!WSPACE(*(token - 1)))
-					result = SPF_FAIL_MALF;
+					result = SPF_PERMERROR;
 				else
 					result = spf_makro(token + eq + 1, domain, 0, &mres);
-				if (result == SPF_FAIL_MALF) {
-					prefix = SPF_FAIL_MALF;
+				if (result == SPF_PERMERROR) {
+					prefix = SPF_PERMERROR;
 					result = SPF_PASS;
 
 					record_bad_token(token);
@@ -1890,7 +1894,7 @@ spflookup(const char *domain, unsigned int *queries)
 		while (*token && !WSPACE(*token)) {
 			token++;
 		}
-		if ((result == SPF_TEMP_ERROR) || (result == SPF_HARD_ERROR) || (result == SPF_FAIL_MALF)) {
+		if ((result == SPF_TEMPERROR) || (result == SPF_DNS_HARD_ERROR) || (result == SPF_PERMERROR)) {
 			prefix = result;
 			result = SPF_PASS;
 		}
@@ -1900,7 +1904,7 @@ spflookup(const char *domain, unsigned int *queries)
 		return result;
 	}
 	if (result == SPF_PASS) {
-		if ((prefix == SPF_FAIL_PERM) && (expl != NULL)) {
+		if ((prefix == SPF_FAIL) && (expl != NULL)) {
 			char *target;
 
 			switch (spf_makro(expl, domain, 0, &target)) {
@@ -1960,7 +1964,7 @@ spflookup(const char *domain, unsigned int *queries)
 
 		if (result == 0) {
 			if ((i4 != -1) || (i6 != -1)) {
-				result = SPF_FAIL_MALF;
+				result = SPF_PERMERROR;
 			} else {
 				*queries += 1;
 				/* RfC 7208, section 6.2
@@ -1977,7 +1981,7 @@ spflookup(const char *domain, unsigned int *queries)
 				 *   is a "permerror" rather than "none". 
 				 */
 				if (result == SPF_NONE)
-					result = SPF_FAIL_PERM;
+					result = SPF_FAIL;
 			}
 			free(domspec);
 		}

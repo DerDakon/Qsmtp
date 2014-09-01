@@ -197,8 +197,8 @@ main(void)
 			.expected_result = FILTER_PASSED
 		},
 		{
-			.name = "spf == SPF_TEMP_ERROR",
-			.spf = SPF_TEMP_ERROR,
+			.name = "spf == SPF_TEMPERROR",
+			.spf = SPF_TEMPERROR,
 			.spfpolicy = 1,
 			.cd_policy = CONFIG_GLOBAL,
 			.expected_result = FILTER_DENIED_WITH_MESSAGE,
@@ -207,8 +207,8 @@ main(void)
 			.expected_t = CONFIG_GLOBAL
 		},
 		{
-			.name = "spf == SPF_TEMP_ERROR with fail_hard_on_temp",
-			.spf = SPF_TEMP_ERROR,
+			.name = "spf == SPF_TEMPERROR with fail_hard_on_temp",
+			.spf = SPF_TEMPERROR,
 			.spfpolicy = 1,
 			.tempsetting = 1,
 			.cd_policy = CONFIG_GLOBAL,
@@ -220,7 +220,7 @@ main(void)
 		{
 			.name = "error in userconf_find_domain()",
 			.remotehost = hostname_spfignore_fail,
-			.spf = SPF_TEMP_ERROR,
+			.spf = SPF_TEMPERROR,
 			.spfpolicy = 1,
 			.cd_policy = CONFIG_USER,
 			.expected_result = FILTER_ERROR,
@@ -229,7 +229,7 @@ main(void)
 		{
 			.name = "hostname in spfignore",
 			.remotehost = hostname_spfignore,
-			.spf = SPF_TEMP_ERROR,
+			.spf = SPF_TEMPERROR,
 			.use_rcpt = 1,
 			.spfpolicy = 1,
 			.cd_policy = CONFIG_GLOBAL,
@@ -259,7 +259,7 @@ main(void)
 		},
 		{
 			.name = "simple reject",
-			.spf = SPF_FAIL_PERM,
+			.spf = SPF_FAIL,
 			.helo = "example.net",
 			.spfpolicy = 2,
 			.cd_policy = CONFIG_USER,
@@ -270,7 +270,7 @@ main(void)
 		},
 		{
 			.name = "simple reject with message",
-			.spf = SPF_FAIL_PERM,
+			.spf = SPF_FAIL,
 			.spfexp = "SPFEXP message",
 			.helo = "example.net",
 			.spfpolicy = 2,
