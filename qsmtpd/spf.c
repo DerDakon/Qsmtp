@@ -244,10 +244,9 @@ urlencode(const char *token, char **result)
 	}
 	if (!len) {
 		/* nothing has changed */
-		*result = malloc(strlen(otoken) + 1);
+		*result = strdup(otoken);
 		if (*result == NULL)
 			return -1;
-		strcpy(*result, otoken);
 		return 0;
 	}
 	if (token - last) {
