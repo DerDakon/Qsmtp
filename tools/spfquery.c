@@ -45,7 +45,7 @@ main(int argc, char *argv[])
 	if (argc > 1) {
 		if (strcmp(argv[1], "-4") == 0) {
 			if (argc > 2) {
-				i = inet_pton(AF_INET, argv[2], &xmitstat.remoteip);
+				i = inet_pton(AF_INET, argv[2], xmitstat.sremoteip.s6_addr32 + 3);
 				if (i <= 0) {
 					fprintf(stderr, "failed to parse '%s' as IPv4 address\n", argv[2]);
 					return EINVAL;
@@ -54,15 +54,16 @@ main(int argc, char *argv[])
 				fprintf(stderr, "argument '-4' given but no IP address\n");
 				return EINVAL;
 			}
-				strcpy(xmitstat.remoteip, argv[2]);
+			xmitstat.sremoteip.s6_addr32[0] = htonl(0);
+			xmitstat.sremoteip.s6_addr32[1] = htonl(0);
+			xmitstat.sremoteip.s6_addr32[2] = htonl(0xffff);
 		} else if (strcmp(argv[1], "-6") == 0) {
 			if (argc > 2) {
-				i = inet_pton(AF_INET6, argv[2], &xmitstat.remoteip);
+				i = inet_pton(AF_INET6, argv[2], &xmitstat.sremoteip);
 				if (i <= 0) {
 					fprintf(stderr, "failed to parse '%s' as IPv6 address\n", argv[2]);
 					return EINVAL;
 				}
-				strcpy(xmitstat.remoteip, argv[2]);
 			} else {
 				fprintf(stderr, "argument '-6' given but no IP address\n");
 				return EINVAL;
@@ -71,6 +72,7 @@ main(int argc, char *argv[])
 			fprintf(stderr, "unknown argument '%s'\n", argv[1]);
 			return EINVAL;
 		}
+		inet_ntop(AF_INET6, &xmitstat.sremoteip, xmitstat.remoteip, sizeof(xmitstat.remoteip));
 	} else {
 		strcpy(xmitstat.remoteip, "5f05:2000:80ad:5800::1");
 		inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.remoteip);
