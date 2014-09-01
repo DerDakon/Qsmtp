@@ -169,7 +169,7 @@ tarpit(void)
 		/* don't care about the return value here: if something goes wrong we will only not
 		 * sleep long enough here. If something is really bad (ENOMEM or something) the error
 		 * will happen again and will be caught at another place */
-		poll(&rfd, 1, (5 + tarpitcount) * 1000);
+		(void) poll(&rfd, 1, (5 + tarpitcount) * 1000);
 	}
 
 	/* maximum sleep time is 4 minutes */
