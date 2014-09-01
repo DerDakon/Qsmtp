@@ -29,9 +29,9 @@ extern int spfreceived(int, const int);
 #define SPF_HARD_ERROR	8	/**< permanent DNS error while SPF testing */
 #define SPF_IGNORE	15	/**< SPF policy for this host will not be tested */
 
-/** \def SPF_FAIL
+/** \def SPF_IS_FAILURE
  check if one of the conditions is given to fail SPF policy
  */
-#define SPF_FAIL(x) (((x) == SPF_FAIL_PERM) || ((x) == SPF_FAIL_MALF))
+#define SPF_IS_FAILURE(x) (((x) == SPF_FAIL_PERM) || ((x) == SPF_FAIL_MALF))
 
 #endif

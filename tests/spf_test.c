@@ -641,7 +641,7 @@ runtest(struct spftestcase *tc)
 	dnsdata = tc->dns;
 
 	int r = check_host(strchr(tc->from, '@') + 1);
-	if (SPF_FAIL(r)) {
+	if (SPF_IS_FAILURE(r)) {
 		fprintf(stderr, "good IP did not pass for %s\n", tc->helo);
 		err++;
 	}
@@ -656,7 +656,7 @@ runtest(struct spftestcase *tc)
 	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 
 	r = check_host(strchr(tc->from, '@') + 1);
-	if (!SPF_FAIL(r)) {
+	if (!SPF_IS_FAILURE(r)) {
 		fprintf(stderr, "bad IP passed for %s\n", tc->helo);
 		err++;
 	}

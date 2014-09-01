@@ -138,7 +138,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	}
 	if (p == 1)
 		goto strict;
-	if (SPF_FAIL(spfs))
+	if (SPF_IS_FAILURE(spfs))
 		goto block;
 	if (p == 2)
 		goto strict;
