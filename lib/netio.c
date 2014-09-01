@@ -2,6 +2,8 @@
  \brief functions for network I/O
  */
 
+#define _GNU_SOURCE /* to get POLLRDHUP if possible */
+
 #include <netio.h>
 
 #include <log.h>
@@ -10,9 +12,15 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <poll.h>
 #include <string.h>
-#include <sys/select.h>
 #include <unistd.h>
+
+#ifdef POLLRDHUP
+#define POLL_IN_OR_ERROR (POLLIN | POLLRDHUP)
+#else
+#define POLL_IN_OR_ERROR POLLIN
+#endif
 
 static char lineinbuf[1002];		/**< buffer for the line to read: max 1000 chars including CRLF,
 					 * leading extra '.', closing '\\0' */
@@ -119,26 +127,23 @@ static size_t
 readinput(char *buffer, const size_t len)
 {
 	size_t retval;
-	fd_set rfds;
-	struct timeval tv = {
-		.tv_sec = timeout,
-		.tv_usec = 0,
-	};
 
 	if (ssl) {
-		retval = ssl_timeoutread(tv.tv_sec, buffer, len - 1);
+		retval = ssl_timeoutread(timeout, buffer, len - 1);
 	} else {
-		FD_ZERO(&rfds);
-		FD_SET(0, &rfds);
+		struct pollfd rfd = {
+			.fd = 0,
+			.events = POLLIN
+		};
 
-		retval = select(1, &rfds, NULL, NULL, &tv);
-
-		if (!retval) {
+		switch (poll(&rfd, 1, timeout * 1000)) {
+		case 0:
 			dieerror(ETIMEDOUT);
-		} else if (retval == (size_t) -1) {
-			return retval;
+		case -1:
+			return -1;
 		}
-		retval = read(0, buffer, len - 1);
+
+		retval = read(rfd.fd, buffer, len - 1);
 	}
 	if (!retval) {
 		dieerror(ECONNRESET);
@@ -370,31 +375,27 @@ net_read(void)
 int
 netnwrite(const char *s, const size_t l)
 {
-	fd_set wfds;
-	struct timeval tv = {
-		.tv_sec = timeout,
-		.tv_usec = 0,
-	};
-	int retval;
-
 	DEBUG_OUT(s, l);
 
 	if (ssl) {
-		if (ssl_timeoutwrite(tv.tv_sec, s, l) <= 0) {
+		if (ssl_timeoutwrite(timeout, s, l) <= 0) {
 			errno = EPROTO;
 			return -1;
 		}
 		return 0;
+	} else {
+		struct pollfd wfd = {
+			.fd = socketd,
+			.events = POLLOUT
+		};
+
+		switch (poll(&wfd, 1, timeout * 1000)) {
+		case 0:
+			dieerror(ETIMEDOUT);
+		case -1:
+			return -1;
+		}
 	}
-	FD_ZERO(&wfds);
-	FD_SET(socketd, &wfds);
-
-	retval = select(socketd + 1, NULL, &wfds, NULL, &tv);
-
-	if (retval == -1)
-		return retval;
-	else if (!retval)
-		dieerror(ETIMEDOUT);
 
 	if (write(socketd, s, l) < 0) {
 		if (errno == EPIPE)
@@ -719,23 +720,24 @@ data_pending(void)
 		int i = SSL_pending(ssl);
 		return (i < 0) ? -errno : i;
 	} else {
-		fd_set rfds;
-		struct timeval tv = {
-			.tv_sec = 0,
-			.tv_usec = 0,
+		struct pollfd rfd = {
+		      .fd = 0,
+		      .events = POLL_IN_OR_ERROR
 		};
 		int i;
 
-		FD_ZERO(&rfds);
-		FD_SET(0, &rfds);
-
-		i = select(1, &rfds, NULL, NULL, &tv);
+		i = poll(&rfd, 1, 0);
 		if (i <= 0)
 			return i < 0 ? -errno : 0;
 
+#ifdef POLLRDHUP
+		if (rfd.revents & POLLRDHUP)
+			return -ECONNRESET;
+#endif
+
 		/* verify that there is really data available and that the
 		 * connection was not simply closed. */
-		i = read(0, lineinn, 1);
+		i = read(rfd.fd, lineinn, 1);
 		if (i < 0)
 			return -errno;
 		if (i > 0) {

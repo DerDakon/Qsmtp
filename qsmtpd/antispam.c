@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <openssl/ssl.h>
+#include <poll.h>
 #include <string.h>
 #include <sys/file.h>
 #include <sys/mman.h>
@@ -160,18 +161,15 @@ tarpit(void)
 		 * mail server. We just have to check here if there is data pending (he's using PIPELINING) or not. */
 		sleep(5 + tarpitcount);
 	} else {
-		fd_set rfds;
-		struct timeval tv = {
-			.tv_sec = 5 + tarpitcount,
-			.tv_usec = 0,
+		struct pollfd rfd = {
+			.fd = 0,
+			.events = POLLIN
 		};
 
-		FD_ZERO(&rfds);
-		FD_SET(0, &rfds);
 		/* don't care about the return value here: if something goes wrong we will only not
 		 * sleep long enough here. If something is really bad (ENOMEM or something) the error
 		 * will happen again and will be caught at another place */
-		select(1, &rfds, NULL, NULL, &tv);
+		poll(&rfd, 1, (5 + tarpitcount) * 1000);
 	}
 
 	/* maximum sleep time is 4 minutes */

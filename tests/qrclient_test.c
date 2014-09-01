@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <poll.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -167,9 +168,11 @@ static int
 check_cr(const char *msg, const int statuse, const int statusc)
 {
 	int ret = 0;
-	fd_set fds;
+	struct pollfd fds = {
+		.fd = statusfdout,
+		.events = POLLIN
+	};
 	int i;
-	struct timeval tout = { 0, 0 };
 
 	if (statusc != statuse) {
 		fprintf(stderr, "checkreply() returned %i, but %i was expected\n",
@@ -177,9 +180,7 @@ check_cr(const char *msg, const int statuse, const int statusc)
 		ret++;
 	}
 
-	FD_ZERO(&fds);
-	FD_SET(statusfdout, &fds);
-	i = select(statusfdout + 1, &fds, NULL, NULL, &tout);
+	i = poll(&fds, 1, 0);
 
 	if (i == 0) {
 		/* nothing sent to statusfd */
@@ -216,7 +217,7 @@ check_cr(const char *msg, const int statuse, const int statusc)
 			}
 		}
 	} else {
-		fprintf(stderr, "error %i from select\n", errno);
+		fprintf(stderr, "error %i from poll()\n", errno);
 		ret++;
 	}
 

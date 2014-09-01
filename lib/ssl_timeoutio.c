@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <sys/select.h>
+#include <poll.h>
 
 #define ndelay_on(fd)  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
 #define ndelay_off(fd) fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) & ~O_NONBLOCK)
@@ -31,39 +31,34 @@ ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 {
 	int n = 0;
 	const time_t end = t + time(NULL);
-	int rfd = -1, wfd = -1;
+	struct pollfd fds[2] = {
+		{
+			.fd = SSL_get_rfd(ssl),
+			.events = POLLIN
+		},
+		{
+			.fd = SSL_get_wfd(ssl),
+			.events = POLLOUT
+		}
+	};
+
+	assert(fds[0].fd >= 0);
+	assert(fds[1].fd >= 0);
 
 	do {
-		fd_set fds;
-		struct timeval tv;
 		const int r = buf ? fun(ssl, buf, len) : fun(ssl);
 
 		if (r > 0)
 			return r;
 
 		t = end - time(NULL);
-		if (t < 0)
-			break;
-		tv.tv_sec = t;
-		tv.tv_usec = 0;
 
-		FD_ZERO(&fds);
 		switch (SSL_get_error(ssl, r)) {
 		case SSL_ERROR_WANT_READ:
-			if (rfd < 0) {
-				rfd = SSL_get_rfd(ssl);
-				assert(rfd >= 0);
-			}
-			FD_SET(rfd, &fds);
-			n = select(rfd + 1, &fds, NULL, NULL, &tv);
+			n = poll(fds, 1, t * 1000);
 			break;
 		case SSL_ERROR_WANT_WRITE:
-			if (wfd < 0) {
-				wfd = SSL_get_wfd(ssl);
-				assert(wfd >= 0);
-			}
-			FD_SET(wfd, &fds);
-			n = select(wfd + 1, NULL, &fds, NULL, &tv);
+			n = poll(fds + 1, 1, t * 1000);
 			break;
 		default:
 			return r; /* some other error */
