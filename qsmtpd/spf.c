@@ -1562,7 +1562,7 @@ record_bad_token(const char *token)
 	 * and copy that to spfexp so it can be recorded in the
 	 * Received-SPF line if the user still accepts the mail. We
 	 * know there is at least one whitespace after the v=spf1
-	 * token. Then go back until the next whitespace or to the
+	 * token. Then go forward until the next whitespace or to the
 	 * end, replace any unsafe char by '%' */
 
 	const char *tokenend = token;
@@ -1582,8 +1582,16 @@ record_bad_token(const char *token)
 		xmitstat.spfexp[toklen] = '\0';
 
 		for (tpos = 0; tpos < toklen; tpos++) {
-			/* filter out everything that is not a valid entry in a MIME header */
-			if (TSPECIAL(token[tpos]) || (token[tpos] < ' ') || (token[tpos] >= 127))
+			/* filter out everything that is not a valid entry in a MIME header comment */
+				/* control characters without horizontal tab,
+				 * since it is a signed char it also matches all non-ASCII */
+			if (((token[tpos] != '\t') && (token[tpos] < ' ')) ||
+				/* delete, non-ASCII to be sure ;) */
+					(token[tpos] >= 127) ||
+				/* braces as they are the comment limiter */
+					(token[tpos] == '(') || (token[tpos] == ')') ||
+				/* backslash as escape character */
+					(token[tpos] == '\\'))
 				xmitstat.spfexp[tpos] = '%';
 			else
 				xmitstat.spfexp[tpos] = token[tpos];
@@ -1851,6 +1859,7 @@ spflookup(const char *domain, unsigned int *queries)
 			size_t eq = spf_modifier_name(token);
 
 			if (eq == 0) {
+				record_bad_token(token);
 				prefix = SPF_FAIL_MALF;
 				result = SPF_PASS;
 				break;
