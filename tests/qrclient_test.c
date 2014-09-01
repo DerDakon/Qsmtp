@@ -192,7 +192,7 @@ check_cr(const char *msg, const int statuse, const int statusc)
 	} else if (i > 0) {
 		char buf[1024];
 
-		ssize_t r = read(statusfdout, buf, sizeof(buf));
+		ssize_t r = read(statusfdout, buf, sizeof(buf) - 1);
 		buf[r > 0 ? r : 0] = '\0';
 
 		assert(i == 1);
