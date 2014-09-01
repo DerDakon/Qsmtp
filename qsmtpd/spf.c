@@ -671,6 +671,8 @@ spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned 
 	return p - q;
 }
 
+#undef PARSEERR
+
 #undef APPEND
 #define APPEND(addlen, addstr) \
 	{\
@@ -683,10 +685,6 @@ spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned 
 		res = r2;\
 		memcpy(res + oldl, addstr, addlen);\
 	}
-
-#undef PARSEERR
-#define PARSEERR	{free(res); return SPF_PERMERROR;}
-
 
 /**
  * expand a SPF makro
@@ -764,7 +762,8 @@ spf_makro(const char *token, const char *domain, int ex, char **result)
 				} else if (z == -SPF_PERMERROR) {
 					return SPF_PERMERROR;
 				} else if (!z || (*(p + z) != '}')) {
-					PARSEERR;
+					free(res);
+					return SPF_PERMERROR;
 				}
 				p += z + 1;
 				break;
