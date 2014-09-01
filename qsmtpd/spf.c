@@ -1710,12 +1710,11 @@ spflookup(const char *domain, unsigned int *queries)
 			expl = next;
 	}
 
-	while (*token && (result != SPF_PASS)) {
+	while (*token && (result == SPF_NONE)) {
 		size_t mechlen;
 
 		if (*queries > 10) {
-			prefix = SPF_FAIL;
-			result = SPF_PASS;
+			result = SPF_FAIL;
 			break;
 		}
 
@@ -1757,13 +1756,6 @@ spflookup(const char *domain, unsigned int *queries)
 
 			result = spfmx(domain, token);
 			mechanism = "MX";
-			/* MX mechanism may return permanent failure in case there are
-			 * too many A records */
-			if (result == SPF_FAIL) {
-				result = SPF_PASS;
-				prefix = SPF_FAIL;
-				break;
-			}
 			*queries += 1;
 		} else if ( (mechlen = match_mechanism(token, "ptr", ":/")) != 0) {
 			token += mechlen;
@@ -1816,8 +1808,10 @@ spflookup(const char *domain, unsigned int *queries)
 				char *n = NULL;
 				int ip4l, ip6l;
 
-				result = spf_domainspec(domain, token + 1, &n, &ip4l, &ip6l);
-				if (result == 0) {
+				i = spf_domainspec(domain, token + 1, &n, &ip4l, &ip6l);
+				if (i != 0) {
+					result = i;
+				} else {
 					if ((ip4l >= 0) || (ip6l >= 0)) {
 						result = SPF_PERMERROR;
 					} else {
@@ -1832,14 +1826,10 @@ spflookup(const char *domain, unsigned int *queries)
 
 			switch (result) {
 			case SPF_NONE:
-				result = SPF_PASS;
-				prefix = SPF_PERMERROR;
+				result = SPF_PERMERROR;
 				break;
 			case SPF_TEMPERROR:
 			case SPF_PERMERROR:
-				prefix = result;
-				result = SPF_PASS;
-				break;
 			case SPF_PASS:
 			case -1:
 				break;
@@ -1847,11 +1837,8 @@ spflookup(const char *domain, unsigned int *queries)
 				/* permanent errors usually only mean that the include did
 				 * not match, but in case it is because of excessive DNS
 				 * queries we keep the result */
-				if (*queries > 10) {
-					prefix = SPF_FAIL;
-					result = SPF_PASS;
+				if (*queries > 10)
 					break;
-				}
 				/* fallthrough */
 			default:
 				result = SPF_NONE;
@@ -1864,28 +1851,28 @@ spflookup(const char *domain, unsigned int *queries)
 
 			if (eq == 0) {
 				record_bad_token(token);
-				prefix = SPF_PERMERROR;
-				result = SPF_PASS;
+				result = SPF_PERMERROR;
 				break;
 			} else {
 				char *mres = NULL;
 
 				/* modifier must not have qualification */
-				if (!WSPACE(*(token - 1)))
+				if (!WSPACE(*(token - 1))) {
 					result = SPF_PERMERROR;
-				else
-					result = spf_makro(token + eq + 1, domain, 0, &mres);
-				if (result == SPF_PERMERROR) {
-					prefix = SPF_PERMERROR;
-					result = SPF_PASS;
-
-					record_bad_token(token);
-					break;
-				} else if (result == 0) {
-					/* we don't need it here */
-					free(mres);
-					token += eq + 1;
 				} else {
+					i = spf_makro(token + eq + 1, domain, 0, &mres);
+					if (i == 0) {
+						/* token is valid, but not evaluated here */
+						free(mres);
+						token += eq + 1;
+					} else {
+						/* some error condition */
+						result = i;
+					}
+				}
+
+				if (result == SPF_PERMERROR) {
+					record_bad_token(token);
 					break;
 				}
 			}
@@ -1894,17 +1881,15 @@ spflookup(const char *domain, unsigned int *queries)
 		while (*token && !WSPACE(*token)) {
 			token++;
 		}
-		if ((result == SPF_TEMPERROR) || (result == SPF_DNS_HARD_ERROR) || (result == SPF_PERMERROR)) {
-			prefix = result;
-			result = SPF_PASS;
-		}
 	}
 	if (result < 0) {
 		free(txt);
 		return result;
 	}
-	if (result == SPF_PASS) {
-		if ((prefix == SPF_FAIL) && (expl != NULL)) {
+	if (result != SPF_NONE) {
+		if (result == SPF_PASS)
+			result = prefix;
+		if ((result == SPF_FAIL) && (expl != NULL)) {
 			char *target;
 
 			switch (spf_makro(expl, domain, 0, &target)) {
@@ -1950,7 +1935,7 @@ spflookup(const char *domain, unsigned int *queries)
 		}
 		free(txt);
 		xmitstat.spfmechanism = mechanism;
-		return prefix;
+		return result;
 	}
 
 	/* redirect is handled last as it has to be ignored if any "all"
