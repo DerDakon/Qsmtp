@@ -30,6 +30,7 @@ main(int argc, char *argv[])
 	xmitstat.mailfrom.s = getenv("SENDER");
 	if (!xmitstat.mailfrom.s) {
 		xmitstat.mailfrom.s = "strong-bad@email.example.com";
+		s = strchr(xmitstat.mailfrom.s, '@');
 	} else {
 		s = strchr(xmitstat.mailfrom.s, '@');
 		if (s == NULL) {
