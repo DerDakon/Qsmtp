@@ -5,6 +5,7 @@
 #include <qsmtpd/starttls.h>
 
 #include <control.h>
+#include <log.h>
 #include <netio.h>
 #include <qdns.h>
 #include <qsmtpd/addrparse.h>
@@ -134,9 +135,12 @@ tls_verify(void)
 		}
 
 		/* renegotiate to force the client to send it's certificate */
-		if (ssl_timeoutrehandshake(timeout) <= 0) {
+		n = ssl_timeoutrehandshake(timeout);
+		if (n == -ETIMEDOUT) {
+			dieerror(ETIMEDOUT);
+		} else if (n < 0) {
 			const char *err = ssl_strerror();
-			tlsrelay = tls_out("rehandshake failed", err) ? -errno : -EPROTO;
+			tlsrelay = tls_out("rehandshake failed", err) ? -errno : n;
 			break;
 		}
 
@@ -291,7 +295,10 @@ tls_init()
 
 	/* can't set ssl earlier, else netwrite above would try to send the data encrypted with the unfinished ssl */
 	ssl = myssl;
-	if (ssl_timeoutaccept(timeout) <= 0) {
+	j = ssl_timeoutaccept(timeout);
+	if (j == -ETIMEDOUT) {
+		dieerror(ETIMEDOUT);
+	} else if (j < 0) {
 		/* neither cleartext nor any other response here is part of a standard */
 		const char *err = ssl_strerror();
 

@@ -4,13 +4,13 @@
 
 #include <ssl_timeoutio.h>
 
-#include <log.h>
 #include <tls.h>
 
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <openssl/err.h>
 
 #define ndelay_on(fd)  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
 #define ndelay_off(fd) fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) & ~O_NONBLOCK)
@@ -18,16 +18,19 @@
 /**
  * call SSL function for given data buffer
  *
- * @param fun OpenSSL function to call
+ * @param func OpenSSL function to call
  * @param t timeout
  * @param buf data buffer
  * @param len length of buf
- * @return return code of fun
+ * @return if call to func was successful
+ * @retval >0 the call was successful
+ * @retval <0 error code
+ * @retval -EPROTO there was a SSL-level protocol error
  *
- * on timeout program is terminated
+ * This function never returns 0.
  */
 static int __attribute__ ((nonnull (1)))
-ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
+ssl_timeoutio(int (*func)(), time_t t, char *buf, const int len)
 {
 	int n = 0;
 	const time_t end = t + time(NULL);
@@ -46,7 +49,10 @@ ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 	assert(fds[1].fd >= 0);
 
 	do {
-		const int r = buf ? fun(ssl, buf, len) : fun(ssl);
+		int r;
+
+		errno = 0;
+		r = buf ? func(ssl, buf, len) : func(ssl);
 
 		if (r > 0)
 			return r;
@@ -64,19 +70,41 @@ ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 		case SSL_ERROR_WANT_WRITE:
 			n = poll(fds + 1, 1, t);
 			break;
+		case SSL_ERROR_ZERO_RETURN:
+			return -ECONNRESET;
+		case SSL_ERROR_SYSCALL:
+			if (ERR_get_error() == 0) {
+				switch (r) {
+				case -1:
+					/* OpenSSL docs say it is set */
+					assert(errno != 0);
+					return -errno;
+				case 0:
+					return -ECONNRESET;
+				}
+			}
+			/* fallthrough */
 		default:
-			return r; /* some other error */
+			return -EPROTO; /* some other error */
 		}
 
 		/* n is the number of descriptors that changed status */
 	} while (n > 0);
 
-	if (!n)
-		dieerror(ETIMEDOUT);
+	if (n == 0)
+		return -ETIMEDOUT;
 
-	return n;
+	assert(errno != 0);
+	return -errno;
 }
 
+/**
+ * @brief accept the request for SSL
+ * @param t timeout in seconds
+ * @return if the call was successful
+ * @retval 0 the call was successful
+ * @retval <0 error code
+ */
 int
 ssl_timeoutaccept(time_t t)
 {
@@ -86,21 +114,26 @@ ssl_timeoutaccept(time_t t)
 
 	/* if connection is established, keep NDELAY */
 	if (ndelay_on(ssl_rfd) == -1 || ndelay_on(ssl_wfd) == -1)
-		return -1;
+		return -errno;
 	r = ssl_timeoutio(SSL_accept, t, NULL, 0);
 
-	if (r <= 0) {
-		int j, k;
-		j = ndelay_off(ssl_rfd);
-		k = ndelay_off(ssl_wfd);
-		if (r == 0)
-			r = j ? j : k;
-	} else
+	if (r < 0) {
+		ndelay_off(ssl_rfd);
+		ndelay_off(ssl_wfd);
+		return r;
+	} else {
 		SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
-
-	return r;
+		return 0;
+	}
 }
 
+/**
+ * @brief establish SSL protocol to remote host
+ * @param t timeout in seconds
+ * @return if the call was successful
+ * @retval 0 the call was successful
+ * @retval <0 error code
+ */
 int
 ssl_timeoutconn(time_t t)
 {
@@ -110,22 +143,26 @@ ssl_timeoutconn(time_t t)
 
 	/* if connection is established, keep NDELAY */
 	if ( (ndelay_on(ssl_rfd) == -1) || (ndelay_on(ssl_wfd) == -1) )
-		return -1;
+		return -errno;
 	r = ssl_timeoutio(SSL_connect, t, NULL, 0);
 
-	if (r <= 0) {
-		int j, k;
-		j = ndelay_off(ssl_rfd);
-		k = ndelay_off(ssl_wfd);
-		if (r == 0)
-			r = j ? j : k;
+	if (r < 0) {
+		ndelay_off(ssl_rfd);
+		ndelay_off(ssl_wfd);
+		return r;
 	} else {
 		SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
+		return 0;
 	}
-
-	return r;
 }
 
+/**
+ * @brief do a new SSL handshake
+ * @param t timeout in seconds
+ * @return if handshake was successful
+ * @retval >0 handshake was successful
+ * @retval <0 error code
+ */
 int
 ssl_timeoutrehandshake(time_t t)
 {
@@ -133,7 +170,7 @@ ssl_timeoutrehandshake(time_t t)
 
 	SSL_renegotiate(ssl);
 	r = ssl_timeoutio(SSL_do_handshake, t, NULL, 0);
-	if (r <= 0 || ssl->type == SSL_ST_CONNECT)
+	if ((r < 0) || (ssl->type == SSL_ST_CONNECT))
 		return r;
 
 	/* this is for the server only */

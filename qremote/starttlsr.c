@@ -175,8 +175,8 @@ tls_init(void)
 	}
 
 	ssl = myssl;
-	if (ssl_timeoutconn(timeout) <= 0) {
-		const char *msg[] = { "TLS connection failed at : ", rhost, ": ", ssl_strerror(), NULL };
+	if (ssl_timeoutconn(timeout) < 0) {
+		const char *msg[] = { "TLS connection failed at ", rhost, ": ", ssl_strerror(), NULL };
 
 		free(servercert);
 		log_writen(LOG_ERR, msg);

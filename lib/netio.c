@@ -129,7 +129,22 @@ readinput(char *buffer, const size_t len)
 	size_t retval;
 
 	if (ssl) {
-		retval = ssl_timeoutread(timeout, buffer, len - 1);
+		int r = ssl_timeoutread(timeout, buffer, len - 1);
+
+		switch (r) {
+		case -ECONNRESET:
+			retval = 0;
+			break;
+		case -ETIMEDOUT:
+			dieerror(ETIMEDOUT);
+		default:
+			if (r < 0) {
+				errno = -r;
+				retval = -1;
+			} else {
+				retval = r;
+			}
+		}
 	} else {
 		struct pollfd rfd = {
 			.fd = 0,
@@ -378,11 +393,19 @@ netnwrite(const char *s, const size_t l)
 	DEBUG_OUT(s, l);
 
 	if (ssl) {
-		if (ssl_timeoutwrite(timeout, s, l) <= 0) {
-			errno = EPROTO;
-			return -1;
+		int r = ssl_timeoutwrite(timeout, s, l);
+		switch (r) {
+		case -ETIMEDOUT:
+		case -ECONNRESET:
+			dieerror(-r);
+		default:
+			if (r < 0) {
+				errno = -r;
+				return -1;
+			} else {
+				return 0;
+			}
 		}
-		return 0;
 	} else {
 		struct pollfd wfd = {
 			.fd = socketd,
