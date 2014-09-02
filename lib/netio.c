@@ -263,7 +263,7 @@ loop_long(int has_cr)
  * @retval 0 on success
  * @retval -1 on error (errno is set)
  *
- * does not return on timeout, programm will be cancelled
+ * does not return on timeout, program will be cancelled
  */
 int
 net_read(void)
@@ -370,7 +370,7 @@ net_read(void)
  * @retval 0 on success
  * @retval -1 on error (errno is set)
  *
- * does not return on timeout, programm will be cancelled
+ * does not return on timeout, program will be cancelled
  */
 int
 netnwrite(const char *s, const size_t l)
@@ -414,7 +414,7 @@ netnwrite(const char *s, const size_t l)
  * @retval 0 on success
  * @retval -1 on error (errno is set)
  *
- * does not return on timeout, programm will be cancelled
+ * does not return on timeout, program will be cancelled
  *
  * \warning s[0] must be short enough to fit completely into the buffer
  * \warning s[0] must contain the whole status code as well as the following space (' ') or hyphen ('-')
@@ -494,7 +494,7 @@ net_writen(const char *const *s)
  * the intermediate buffer the lines may be send in smaller chunks, which is
  * less efficient but is no other loss in functionality.
  *
- * Does not return on timeout, programm will be cancelled.
+ * Does not return on timeout, program will be cancelled.
  *
  * If one part or multiple consecutive parts covers a whole SMTP line this line
  * must conform to the SMTP line length limit (512 bytes).
