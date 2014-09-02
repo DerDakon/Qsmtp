@@ -89,7 +89,7 @@ int
 ssl_timeoutconn(time_t t __attribute__((unused)))
 {
 	if (strncmp(linein.s, "220", 3) == 0)
-		return -1;
+		return -ETIMEDOUT;
 	exit(EFAULT);
 }
 

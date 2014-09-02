@@ -12,7 +12,7 @@
 
 extern struct string linein;
 
-extern int net_read(void);
+extern int net_read(const int fatal);
 extern int net_writen(const char *const *) __attribute__ ((nonnull (1)));
 extern int net_write_multiline(const char *const *) __attribute__ ((nonnull (1)));
 static inline int netwrite(const char *) __attribute__ ((nonnull (1)));

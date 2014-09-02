@@ -58,7 +58,7 @@ wait_for_quit(void)
 	/* this is the bastard version of the main command loop */
 	while (1) {
 		/* once again we don't care for the return code here as we only want to get rid of this session */
-		(void) net_read();
+		(void) net_read(1);
 
 		if (!strncasecmp(linein.s, quitcmd, strlen(quitcmd))) {
 			if (!linein.s[strlen(quitcmd)])
@@ -129,7 +129,7 @@ hasinput(const int quitloop)
 	 * reply. His SMTP engine is broken so we don't let him send the mail */
 	/* first: consume the first line of input so client will trigger the bad
 	 * commands counter if he ignores everything we send */
-	rc = net_read() ? errno : 0;
+	rc = net_read(1) ? errno : 0;
 	if (rc)
 		return rc;
 

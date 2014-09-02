@@ -37,9 +37,10 @@ dieerror(int error)
 }
 
 int
-ssl_timeoutread(time_t a __attribute__ ((unused)), char *b  __attribute__ ((unused)), const int c  __attribute__ ((unused)))
+ssl_timeoutread(time_t a __attribute__ ((unused)), char *b  __attribute__ ((unused)),
+		const int c  __attribute__ ((unused)), const int f __attribute__ ((unused)))
 {
-	dieerror(EFAULT);
+	abort();
 }
 
 int
@@ -85,7 +86,7 @@ send_test_data(const char *buf, const size_t len)
 static int
 read_check(const char *data)
 {
-	if (net_read() != 0) {
+	if (net_read(0) != 0) {
 		fprintf(stderr, "%s: reading good data did not succeed\n", testname);
 		return 1;
 	} else if ((linein.len != strlen(data)) || (strcmp(linein.s, data) != 0)) {
@@ -98,7 +99,7 @@ read_check(const char *data)
 static int
 read_check_error(const int errcode)
 {
-	if (net_read() != -1) {
+	if (net_read(0) != -1) {
 		fprintf(stderr, "%s: reading damaged data did not fail\n", testname);
 		return 1;
 	} else if (errno != errcode) {
@@ -172,7 +173,7 @@ test_pending()
 
 	send_all_test_data(dummydata);
 
-	if (net_read() != 0) {
+	if (net_read(0) != 0) {
 		fprintf(stderr, "cannot read test data on first try\n");
 		return ++ret;
 	}
@@ -191,7 +192,7 @@ test_pending()
 	}
 
 	/* read the data */
-	if (net_read() != 0) {
+	if (net_read(0) != 0) {
 		fprintf(stderr, "cannot read test data on second try\n");
 		return ++ret;
 	}
@@ -901,18 +902,21 @@ test_net_write_multiline(void)
 }
 
 /**
- * @brief test using a socketpair if a socket closed by the remote end is properly detected
+ * @brief create a socketpair between 0 and the return value
+ * @return a socket descriptor
+ * @retval <0 creating the socketpair failed
+ *
+ * This will return one descriptor of a socketpair, the other half is always
+ * at fd 0.
  */
 static int
-test_pending_socketpair(void)
+setup_socketpair(void)
 {
 	int sfd[2];
-	int i;
-	int ret = 0;
 
 	if (socketpair(AF_UNIX, SOCK_STREAM, 0, sfd) != 0) {
 		fprintf(stderr, "cannot create socket pair: %i\n", errno);
-		return 1;
+		return -1;
 	}
 
 	if ((sfd[0] != 0) && (sfd[1] != 0)) {
@@ -920,19 +924,60 @@ test_pending_socketpair(void)
 			fprintf(stderr, "cannot move socket to fd 0: %i\n", errno);
 			close(sfd[0]);
 			close(sfd[1]);
-			return 1;
+			return -1;
 		}
-		close(sfd[1]);
-		close(sfd[0]);
+		return sfd[1];
 	} else if (sfd[0] == 0) {
-		close(sfd[1]);
+		return sfd[1];
 	} else {
-		close(sfd[0]);
+		return sfd[0];
 	}
+}
+
+/**
+ * @brief test using a sopcketpair that data_pending() detects a socket closed by the remote end
+ */
+static int
+test_pending_socketpair(void)
+{
+	int i;
+	int ret = 0;
+
+	i = setup_socketpair();
+	if (i < 0)
+		return ++ret;
+
+	close(i);
 
 	i = data_pending();
 	if (i != -ECONNRESET) {
 		fprintf(stderr, "data_pending() on closed socket returned %i instead of %i (-ECONNRESET)\n", i, -ECONNRESET);
+		ret++;
+	}
+
+	close(0);
+
+	return ret;
+}
+
+/**
+ * @brief test using a sopcketpair that net_read() detects a socket closed by the remote end
+ */
+static int
+test_netread_socketpair(void)
+{
+	int i;
+	int ret = 0;
+
+	i = setup_socketpair();
+	if (i < 0)
+		return ++ret;
+
+	close(i);
+
+	i = net_read(0);
+	if ((i != -1) || (errno != ECONNRESET)) {
+		fprintf(stderr, "net_read() on closed socket returned %i/%i instead of -1/%i (ECONNRESET)\n", i, errno, ECONNRESET);
 		ret++;
 	}
 
@@ -995,7 +1040,7 @@ test_chunks(char *exe)
 
 	timeout = 2;
 	while (read_chunks[i] != NULL) {
-		int k = net_read();
+		int k = net_read(0);
 
 		if (k != 0) {
 			fprintf(stderr, "%s: read %u returned %i\n", __func__, i, k);
@@ -1098,6 +1143,7 @@ main(int argc, char **argv)
 	}
 
 	ret += test_pending_socketpair();
+	ret += test_netread_socketpair();
 	ret += test_chunks(argv[1]);
 
 	return ret;

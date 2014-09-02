@@ -15,7 +15,6 @@ char *rhost;
 static int wpipe = -1;
 unsigned int smtpext;
 static int greet_result, next_greet_result;
-static int pending_result;
 static int quitnext;
 static int tls_result = -1;
 unsigned int targetport = 428;
@@ -137,13 +136,10 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		quitnext = 1;
 		break;
 	case 12:
-		msg = -220;
-		break;
-	case 13:
-		greet_result = esmtp_8bitmime;
-		msg = 220;
-		tls_result = 1;
 		quitnext = 1;
+		return -EINVAL;
+	case 13:
+		msg = -220;
 		break;
 	case 14:
 		greet_result = esmtp_8bitmime | esmtp_starttls;
@@ -152,15 +148,29 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		quitnext = 1;
 		break;
 	case 15:
-		msg = -220;
+		greet_result = esmtp_8bitmime | esmtp_starttls;
+		msg = 220;
+		tls_result = 1;
+		quitnext = 1;
 		break;
 	case 16:
+		msg = -220;
+		break;
+	case 17:
+		close(socketd);
+		socketd = -1;
+		printf("simulating ECONNRESET\n");
+		return -ECONNRESET;
+	case 18:
+		msg = -220;
+		break;
+	case 19:
 		greet_result = esmtp_8bitmime | esmtp_starttls;
 		msg = 220;
 		tls_result = 0;
 		next_greet_result = esmtp_8bitmime;
 		break;
-	case 17:
+	case 20:
 		greet_result = esmtp_8bitmime;
 		msg = 220;
 		tls_result = 0;
@@ -191,13 +201,8 @@ tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 	mx->name = namebuf;
 	snprintf(namebuf, sizeof(namebuf), "prio%u.example.org", mx->priority);
 
-	switch (mx->priority) {
-	case 5:
-		pending_result = -ECONNRESET;
-		break;
-	case 0:
+	if (mx->priority == 0)
 		return -ENOENT;
-	}
 
 	mx->priority--;
 
@@ -207,18 +212,6 @@ tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 	wpipe = p[0];
 
 	return p[1];
-}
-
-int
-test_data_pending(void)
-{
-	if (pending_result < 0) {
-		errno = -pending_result;
-		pending_result = 0;
-		return -1;
-	}
-
-	return 0;
 }
 
 void
@@ -246,14 +239,13 @@ main(void)
 	int ret = 0;
 	int i;
 
-	// run the first 8 subtests (one more because of the data_pending() failure in between */
+	// run the first 9 subtests (one more because of the data_pending() failure in between */
 	memset(mx, 0, sizeof(mx));
-	mx[0].priority = 9;
+	mx[0].priority = 10;
 	mx[0].next = mx + 1;
 	mx[1].next = mx + 2;
 
 	testcase_ignore_log_writen();
-	testcase_setup_data_pending(test_data_pending);
 
 	i = connect_mx(mx, NULL, NULL);
 	if (i != -ENOENT) {

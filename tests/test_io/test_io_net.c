@@ -13,15 +13,15 @@ struct string linein = {
 const char *netnwrite_msg;
 
 int
-net_read(void)
+net_read(const int fatal)
 {
 	ASSERT_CALLBACK(testcase_net_read);
 
-	return testcase_net_read();
+	return testcase_net_read(fatal);
 }
 
 int
-tc_ignore_net_read(void)
+tc_ignore_net_read(const int fatal __attribute__((unused)))
 {
 	return 0;
 }

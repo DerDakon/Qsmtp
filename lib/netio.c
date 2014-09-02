@@ -120,11 +120,12 @@ void DEBUG_OUT(const char *s, const size_t l)
  *
  * @param buffer buffer to put the data in
  * @param len maximum length of data to read (one char less is read, the last one is set to '\0')
+ * @param fatal if connection errors should lead to program termination
  * @return number of bytes read
  * @retval -1 on error (errno is set)
  */
 static size_t
-readinput(char *buffer, const size_t len)
+readinput(char *buffer, const size_t len, const int fatal)
 {
 	size_t retval;
 
@@ -136,7 +137,9 @@ readinput(char *buffer, const size_t len)
 			retval = 0;
 			break;
 		case -ETIMEDOUT:
-			dieerror(ETIMEDOUT);
+			if (fatal)
+				dieerror(ETIMEDOUT);
+			/* fallthrough */
 		default:
 			if (r < 0) {
 				errno = -r;
@@ -148,20 +151,37 @@ readinput(char *buffer, const size_t len)
 	} else {
 		struct pollfd rfd = {
 			.fd = 0,
-			.events = POLLIN
+			.events = POLL_IN_OR_ERROR
 		};
 
 		switch (poll(&rfd, 1, timeout * 1000)) {
 		case 0:
-			dieerror(ETIMEDOUT);
+			if (fatal) {
+				dieerror(ETIMEDOUT);
+			} else {
+				errno = ETIMEDOUT;
+				return -1;
+			}
 		case -1:
 			return -1;
 		}
 
+#ifdef POLLRDHUP
+		if (!fatal && (rfd.revents & POLLRDHUP)) {
+			errno = ECONNRESET;
+			return -1;
+		}
+#endif
+
 		retval = read(rfd.fd, buffer, len - 1);
 	}
 	if (!retval) {
-		dieerror(ECONNRESET);
+		if (fatal) {
+			dieerror(ECONNRESET);
+		} else {
+			errno = ECONNRESET;
+			return -1;
+		}
 	} else if (retval != (size_t) -1) {
 		buffer[retval] = '\0';
 	}
@@ -242,7 +262,7 @@ loop_long(int has_cr)
 		/* The idea here is to read input until we find a valid line end (CRLF),
 		 * drop everything until this point (i.e. the too long line) and keep
 		 * the rest in the buffer, but still return with an error code. */
-		linenlen = readinput(lineinbuf, sizeof(lineinbuf));
+		linenlen = readinput(lineinbuf, sizeof(lineinbuf), 1);
 
 		if (linenlen == (size_t) -1) {
 			/* reset that to 0, otherwise it will confuse net_read() */
@@ -273,15 +293,15 @@ loop_long(int has_cr)
 }
 
 /**
- * read one line from the network
- *
+ * @brief read one line from the network
+ * @param fatal if connection errors should lead to program termination
  * @retval 0 on success
  * @retval -1 on error (errno is set)
  *
  * does not return on timeout, program will be cancelled
  */
 int
-net_read(void)
+net_read(const int fatal)
 {
 	size_t readoffset = 0;
 	const char *p;
@@ -314,7 +334,7 @@ net_read(void)
 	}
 
 	do {
-		size_t datain = readinput(lineinbuf + readoffset, sizeof(lineinbuf) - readoffset);
+		size_t datain = readinput(lineinbuf + readoffset, sizeof(lineinbuf) - readoffset, fatal);
 		/* now the first readoffset characters of linein are filled with the stuff from the last buffer (if any),
 		 * the next datain characters are filled with the data just read, then there is a '\0' */
 
@@ -588,7 +608,7 @@ net_readbin(size_t num, char *buf)
 	while (num) {
 		size_t r;
 
-		r = readinput(buf + offs, num + 1);
+		r = readinput(buf + offs, num + 1, 1);
 		if (r == (size_t) -1)
 			return -1;
 		offs += r;
@@ -673,7 +693,7 @@ net_readline(size_t num, char *buf)
 		/* do not directly read into the output buffer here. readinput()
 		 * needs to be able to write the trailing '\0', so use the other
 		 * buffer to make sure we can fill the entire caller buffer */
-		linenlen = readinput(lineinn, sizeof(lineinn));
+		linenlen = readinput(lineinn, sizeof(lineinn), 1);
 		if (linenlen == (size_t) -1)
 			return -1;
 

@@ -257,7 +257,7 @@ smtp_data(void)
 	 * -we reach the empty line between header and body
 	 * -we reach the end of the transmission
 	 */
-	if (net_read())
+	if (net_read(1))
 		goto loop_data;
 	/* write the data to mail */
 	while (!((linein.len == 1) && (linein.s[0] == '.')) && (msgsize <= maxbytes) && (linein.len > 0) && (hops <= MAXHOPS)) {
@@ -336,7 +336,7 @@ smtp_data(void)
 		WRITEL("\n");
 		/* this has to stay here and can't be combined with the net_read before the while loop:
 		 * if we combine them we add an extra new line for the line that ends the transmission */
-		if (net_read())
+		if (net_read(1))
 			goto loop_data;
 	}
 	if (submission_mode) {
@@ -384,7 +384,7 @@ smtp_data(void)
 	if (linein.len == 0) {
 		/* if(linelen) message has no body and we already are at the end */
 		WRITEL("\n");
-		if (net_read())
+		if (net_read(1))
 			goto loop_data;
 		while (!((linein.len == 1) && (linein.s[0] == '.')) && (msgsize <= maxbytes)) {
 			int offset;
@@ -403,7 +403,7 @@ smtp_data(void)
 			msgsize += linein.len + 2 - offset;
 
 			WRITEL("\n");
-			if (net_read())
+			if (net_read(1))
 				goto loop_data;
 		}
 	}
@@ -445,7 +445,7 @@ loop_data:
 		msgsize += linein.len + 2;
 		if (linein.s[0] == '.')
 			msgsize--;
-		net_read();
+		net_read(1);
 	} while ((linein.len != 1) && (linein.s[0] != '.'));
 	close(queuefd_hdr);
 	ultostr(msgsize, s);
@@ -476,7 +476,7 @@ err_write:
 
 /* first check, then read: if the error happens on the last line nothing will be read here */
 	while ((linein.len != 1) || (linein.s[0] != '.')) {
-		if (net_read())
+		if (net_read(1))
 			break;
 	}
 

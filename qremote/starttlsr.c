@@ -44,8 +44,9 @@ match_partner(const char *s, size_t len)
  * @brief send STARTTLS and handle the connection setup
  * @return if connection was successfully established
  * @retval 0 SSL mode successfully set up
- * @retval 1 SSL setup failed (non-local fault, e.g. network or reply error)
+ * @retval >0 SSL setup failed (non-local fault, e.g. network or reply error)
  * @retval <0 SSL setup failed (local fault, e.g. unable to load file)
+ * @retval EDONE a network error happened but the connection may still be intact
  *
  * If the return value is <0 a status code for qmail-rspawn was already written.
  */
@@ -159,7 +160,10 @@ tls_init(void)
 	while ((i > 0) && (linein.s[3] == '-')) {
 		int k = netget(0);
 		if (i != k) {
-			i = -1;
+			if (k < 0)
+				i = k;
+			else
+				i = -EDONE;
 			break;
 		}
 	}
@@ -171,16 +175,17 @@ tls_init(void)
 		free(servercert);
 		log_writen(LOG_ERR, msg);
 
-		return 1;
+		return i < 0 ? -i : EDONE;
 	}
 
 	ssl = myssl;
-	if (ssl_timeoutconn(timeout) < 0) {
+	i = ssl_timeoutconn(timeout);
+	if (i < 0) {
 		const char *msg[] = { "TLS connection failed at ", rhost, ": ", ssl_strerror(), NULL };
 
 		free(servercert);
 		log_writen(LOG_ERR, msg);
-		return 1;
+		return i < 0 ? -i : EDONE;
 	}
 
 	if (servercert) {
@@ -194,7 +199,7 @@ tls_init(void)
 
 			log_writen(LOG_ERR, msg);
 			free(servercert);
-			return 1;
+			return EDONE;
 		}
 		free(servercert);
 
@@ -204,7 +209,7 @@ tls_init(void)
 					": no certificate provided", NULL };
 
 			log_writen(LOG_ERR, msg);
-			return 1;
+			return EDONE;
 		}
 
 		/* RFC 2595 section 2.4: find a matching name
@@ -242,7 +247,7 @@ tls_init(void)
 
 				X509_free(peercert);
 				log_writen(LOG_ERR, msg);
-				return 1;
+				return EDONE;
 			}
 			if (!match_partner(peer.s, peer.len)) {
 				char buf[peer.len + 1];
@@ -259,7 +264,7 @@ tls_init(void)
 				buf[peer.len] = '\0';
 				X509_free(peercert);
 				log_writen(LOG_ERR, msg);
-				return 1;
+				return EDONE;
 			}
 		}
 

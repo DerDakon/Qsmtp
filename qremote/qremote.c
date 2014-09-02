@@ -56,7 +56,7 @@ quitmsg(void)
 	netwrite("QUIT\r\n");
 	do {
 		/* don't care about what he replies: we want to quit, if he don't want us to he must pay money *eg* */
-		if (net_read()) {
+		if (net_read(0)) {
 			log_write(LOG_ERR, "network read error while waiting for QUIT reply");
 			break;
 		}
@@ -218,18 +218,40 @@ setup(void)
 #endif
 }
 
+static void
+err_network(int error)
+{
+	const char *logmsg[] = { "connection to ", rhost, NULL, NULL };
+
+	switch (error) {
+	case ETIMEDOUT:
+		logmsg[2] = " timed out";
+		log_writen(LOG_ERR, logmsg);
+		break;
+	case ECONNRESET:
+		logmsg[2] = " died";
+		log_writen(LOG_ERR, logmsg);
+		break;
+	}
+}
+
 int
 netget(const unsigned int terminate)
 {
 	int q, r;
 
-	if (net_read()) {
+	if (net_read(terminate)) {
 		switch (errno) {
 		case ENOMEM:
 			err_mem(1);
 		case EINVAL:
 		case E2BIG:
 			goto syntax;
+		case ECONNRESET:
+		case ETIMEDOUT:
+			r = errno;
+			err_network(r);
+			return -r;
 		default:
 			if (terminate) {
 				const char *tmp[] = { "Z4.3.0 ", strerror(errno) };
@@ -274,18 +296,14 @@ syntax:
 void
 dieerror(int error)
 {
-	const char *logmsg[] = { "connection to ", rhost, NULL, NULL };
+	err_network(error);
 
 	switch (error) {
 	case ETIMEDOUT:
-		write_status("Z4.4.1 connection to remote timed out");
-		logmsg[2] = " timed out";
-		log_writen(LOG_WARNING, logmsg);
+		write_status("Z4.4.1 connection to remote server timed out");
 		break;
 	case ECONNRESET:
 		write_status("Z4.4.1 connection to remote server died");
-		logmsg[2] = " died";
-		log_writen(LOG_WARNING, logmsg);
 		break;
 	}
 	net_conn_shutdown(shutdown_abort);

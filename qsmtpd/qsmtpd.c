@@ -513,7 +513,7 @@ smtploop(void)
 			/* There was a communication error. Announce temporary error. */
 			(void) net_writen(msg);
 
-			(void) net_read();
+			(void) net_read(1);
 
 			/* explicitely catch QUIT here: responding with 450 here is bogus */
 			if (!strncasecmp(linein.s, commands[1].name, commands[1].len)) {
@@ -533,7 +533,7 @@ smtploop(void)
 		unsigned int i;
 /* read the line (but only if there is not already an error condition, in this case handle the error first) */
 		if (!flagbogus) {
-			flagbogus = net_read();
+			flagbogus = net_read(1);
 
 /* sanity checks */
 			/* we are not in DATA here so there MUST NOT be a non-ASCII character,

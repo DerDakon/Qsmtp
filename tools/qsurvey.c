@@ -182,7 +182,7 @@ quitmsg(void)
 	netwrite("QUIT\r\n");
 	do {
 /* don't care about what he replies: we want to quit, if he don't want us to he must pay money *eg* */
-		if (net_read()) {
+		if (net_read(0)) {
 			log_write(LOG_ERR, "network read error while waiting for QUIT reply");
 			break;
 		}
@@ -201,7 +201,7 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 {
 	int q, r;
 
-	if (net_read()) {
+	if (net_read(1)) {
 		switch (errno) {
 		case ENOMEM:	err_mem(1);
 		case EINVAL:

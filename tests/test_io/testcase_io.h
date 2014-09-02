@@ -15,7 +15,7 @@
 struct ips;
 struct in6_addr;
 
-typedef int (func_net_read)(void);
+typedef int (func_net_read)(const int);
 DECLARE_TC_SETUP(net_read);
 
 typedef int (func_net_writen)(const char *const *);

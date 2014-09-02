@@ -17,6 +17,23 @@
 #include <syslog.h>
 #include <unistd.h>
 
+/**
+ * @brief send QUIT to the remote server if there still is a connection
+ * @param error the negative error code of the last message
+ */
+static void
+quitmsg_if_net(const int error)
+{
+	switch (error) {
+	case -ECONNRESET:
+	case -ETIMEDOUT:
+		break;
+	default:
+		quitmsg();
+		break;
+	}
+}
+
 int
 connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *outip6)
 {
@@ -31,22 +48,25 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 			return socketd;
 		dup2(socketd, 0);
 
-		/* This is only an intermediate solution: check if the remote server accepts
-		 * the connection and then closes it. The proper check would be to let the
-		 * ECONNRESET/ETIMEDOUT cases go through in the netget calls and then react
-		 * to them. */
-		s = data_pending();
+		s = netget(0);
 		if (s < 0) {
 			switch (-s) {
-			case ENOMEM:
-				err_mem(0);
 			case ECONNRESET:
 				{
+				/* try next MX */
 				const char *logmsg[] = { "connection to ", rhost, " died", NULL };
 
 				close(socketd);
 				socketd = -1;
 				log_writen(LOG_WARNING, logmsg);
+				continue;
+				}
+			case EINVAL:
+				{
+				const char *dropmsg[] = { "invalid greeting from ", rhost, NULL };
+
+				log_writen(LOG_WARNING, dropmsg);
+				quitmsg();
 				continue;
 				}
 			default:
@@ -56,8 +76,6 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 			}
 		}
 
-		s = netget(1);
-
 		/* consume the rest of the replies */
 		while (linein.s[3] == '-') {
 			int t = netget(0);
@@ -66,6 +84,8 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 			if (t > 0)
 				continue;
 
+			/* save t, it may be an error code */
+			s = t;
 			/* if the reply was invalid in itself (i.e. parse error or such)
 			 * we can't know what the remote server will do next, so break out
 			 * and immediately send quit. Since the initial result of netget()
@@ -78,13 +98,15 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 
 				log_writen(LOG_WARNING, dropmsg);
 			}
-			quitmsg();
+
+			quitmsg_if_net(s);
+
 			continue;
 		}
 
 		flagerr = greeting();
 		if (flagerr < 0) {
-			quitmsg();
+			quitmsg_if_net(flagerr);
 			continue;
 		}
 
@@ -98,14 +120,14 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 				net_conn_shutdown(shutdown_clean);
 
 			if (flagerr != 0) {
-				quitmsg();
+				quitmsg_if_net(-flagerr);
 				continue;
 			}
 
 			flagerr = greeting();
 
 			if (flagerr < 0) {
-				quitmsg();
+				quitmsg_if_net(flagerr);
 				continue;
 			} else {
 				smtpext = flagerr;
