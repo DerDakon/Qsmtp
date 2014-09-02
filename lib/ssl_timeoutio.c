@@ -51,14 +51,18 @@ ssl_timeoutio(int (*fun)(), time_t t, char *buf, const int len)
 		if (r > 0)
 			return r;
 
-		t = end - time(NULL);
+		t = (end - time(NULL)) * 1000;
+		/* If the timeout expired look again if there is a pending
+		 * transmission right now, otherwise fail the normal way. */
+		if (t < 0)
+			t = 0;
 
 		switch (SSL_get_error(ssl, r)) {
 		case SSL_ERROR_WANT_READ:
-			n = poll(fds, 1, t * 1000);
+			n = poll(fds, 1, t);
 			break;
 		case SSL_ERROR_WANT_WRITE:
-			n = poll(fds + 1, 1, t * 1000);
+			n = poll(fds + 1, 1, t);
 			break;
 		default:
 			return r; /* some other error */
