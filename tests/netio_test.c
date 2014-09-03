@@ -993,12 +993,12 @@ test_netread_socketpair_closed(void)
 static int
 test_netread_socketpair_timeout(void)
 {
-	int i;
+	int i, j;
 	int ret = 0;
 	time_t t1, t2;
 
-	i = setup_socketpair();
-	if (i < 0)
+	j = setup_socketpair();
+	if (j < 0)
 		return ++ret;
 
 	timeout = 1;
@@ -1015,7 +1015,7 @@ test_netread_socketpair_timeout(void)
 		ret++;
 	}
 
-	close(i);
+	close(j);
 	close(0);
 
 	return ret;
