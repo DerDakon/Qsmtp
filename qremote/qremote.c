@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/mman.h>
@@ -135,10 +136,22 @@ setup(void)
 	int j;
 	unsigned long chunk;
 	char *ipbuf;
+	sigset_t mask;
 
 #ifdef USESYSLOG
 	openlog("Qremote", LOG_PID, LOG_MAIL);
 #endif
+
+	/* Block SIGPIPE, otherwise the process will get killed when the remote
+	 * end cancels the connection improperly. */
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGPIPE);
+
+	if (sigprocmask(SIG_BLOCK, &mask, NULL) == -1) {
+		write_status("Z4.3.0 Cannot block SIGPIPE.");
+
+		net_conn_shutdown(shutdown_abort);
+	}
 
 	if (chdir(AUTOQMAIL))
 		err_conf("cannot chdir to qmail directory");
