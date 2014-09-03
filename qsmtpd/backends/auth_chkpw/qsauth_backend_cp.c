@@ -62,7 +62,6 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 	pid_t child;
 	int wstat;
 	int pi[2];
-	struct sigaction sa;
 
 	if (pipe(pi) == -1)
 		return err_pipe();
@@ -73,15 +72,20 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 		close(pi[1]);
 		return err_fork();
 	case 0:
+		{
+		sigset_t mask;
+
 		if (pipe_move(pi, 3) != 0)
 			_exit(1);
 
-		memset(&sa, 0, sizeof(sa));
-		sa.sa_handler = SIG_DFL;
-		sigemptyset(&(sa.sa_mask));
-		sigaction(SIGPIPE, &sa, NULL);
+		sigemptyset(&mask);
+		sigaddset(&mask, SIGPIPE);
+		if (sigprocmask(SIG_UNBLOCK, &mask, NULL) != 0)
+			_exit(1);
+
 		execlp(auth_check, auth_check, *auth_sub, NULL);
 		_exit(1);
+		}
 	}
 	if (close(pi[0]) != 0)
 		return err_write();

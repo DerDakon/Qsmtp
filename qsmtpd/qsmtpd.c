@@ -148,11 +148,11 @@ static int
 setup(void)
 {
 	int j;
-	struct sigaction sa;
 	char *tmp;
 	unsigned long tl;
 	char **tmpconf;
 	int rcpthfd;		/* file descriptor of control/rcpthosts */
+	sigset_t mask;
 
 #ifdef USESYSLOG
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
@@ -334,11 +334,12 @@ setup(void)
 	if (j != 0)
 		return j;
 
-	/* block sigpipe. If we don't we can't handle the errors in smtp_data() correctly and remote host
+	/* Block SIGPIPE, otherwise write errors can't be handled correctly and remote host
 	 * will see a connection drop on error (which is bad and violates RfC) */
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = SIG_IGN;
-	j = sigaction(SIGPIPE, &sa, NULL);
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGPIPE);
+	j = sigprocmask(SIG_BLOCK, &mask, NULL);
+
 	relayclient = 0;
 
 	return j;
