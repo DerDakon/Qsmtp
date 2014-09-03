@@ -14,6 +14,8 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <stdio.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 char *rhost;
@@ -23,6 +25,7 @@ unsigned int smtpext;
 string heloname;
 static unsigned int conf_error_expected;
 static const char *netget_result = "421 ";
+static int other_socket_end = -1;
 
 void
 err_conf(const char *errmsg)
@@ -85,14 +88,6 @@ write_status_m(const char **strs, const unsigned int count)
 	write_status(strs[count - 1]);
 }
 
-int
-ssl_timeoutconn(time_t t __attribute__((unused)))
-{
-	if (strncmp(linein.s, "220", 3) == 0)
-		return -ETIMEDOUT;
-	exit(EFAULT);
-}
-
 const char *
 test_ssl_strerror(void)
 {
@@ -104,6 +99,11 @@ test_net_conn_shutdown(const enum conn_shutdown_type sd_type __attribute__((unus
 {
 	if (ssl != NULL)
 		ssl_free(ssl);
+	close(controldir_fd);
+	if (socketd >= 0)
+		close(socketd);
+	if (other_socket_end >= 0)
+		close(other_socket_end);
 }
 
 void
@@ -155,6 +155,7 @@ int main(int argc, char **argv)
 	rhostlen = strlen(rhost);
 
 	controldir_fd = open("control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	timeout = 1;
 
 	netnwrite_msg = "STARTTLS\r\n";
 
@@ -162,6 +163,18 @@ int main(int argc, char **argv)
 	testcase_setup_ssl_free(test_ssl_free);
 	testcase_setup_net_conn_shutdown(test_net_conn_shutdown);
 	testcase_setup_log_writen(testcase_log_writen_console);
+
+	if (strncmp(netget_result, "220", 3) == 0) {
+		int sfd[2];
+
+		if (socketpair(AF_UNIX, SOCK_STREAM, 0, sfd) != 0) {
+			fprintf(stderr, "cannot create socket pair: %i\n", errno);
+			return -1;
+		}
+
+		socketd = sfd[0];
+		other_socket_end = sfd[1];
+	}
 
 	r = tls_init();
 

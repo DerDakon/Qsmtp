@@ -795,6 +795,7 @@ ADD_TEST(NAME "Qrclient"
 
 ADD_EXECUTABLE(testcase_starttlsr
 		starttlsr_test.c
+		../lib/ssl_timeoutio.c
 		../qremote/starttlsr.c)
 TARGET_LINK_LIBRARIES(testcase_starttlsr
 		testcase_io_lib
