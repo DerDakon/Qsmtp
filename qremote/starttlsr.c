@@ -185,7 +185,7 @@ tls_init(void)
 
 		free(servercert);
 		log_writen(LOG_ERR, msg);
-		return i < 0 ? -i : EDONE;
+		return -i;
 	}
 
 	if (servercert) {
