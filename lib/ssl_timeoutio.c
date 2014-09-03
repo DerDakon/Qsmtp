@@ -13,7 +13,7 @@
 #include <openssl/err.h>
 
 #define ndelay_on(fd)  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
-#define ndelay_off(fd) fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) & ~O_NONBLOCK)
+#define ndelay_off(fd) (void) fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) & ~O_NONBLOCK)
 
 /**
  * call SSL function for given data buffer
@@ -147,8 +147,7 @@ ssl_timeoutconn(time_t t)
 	r = ssl_timeoutio(SSL_connect, t, NULL, 0);
 
 	if (r < 0) {
-		ndelay_off(ssl_rfd);
-		ndelay_off(ssl_wfd);
+		/* keep nonblocking, the socket is closed anyway */
 		return r;
 	} else {
 		SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
