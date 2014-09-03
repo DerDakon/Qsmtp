@@ -25,6 +25,7 @@ static void
 quitmsg_if_net(const int error)
 {
 	switch (error) {
+	case -EPIPE:
 	case -ECONNRESET:
 	case -ETIMEDOUT:
 		break;

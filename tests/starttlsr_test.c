@@ -13,6 +13,7 @@
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/evp.h>
+#include <signal.h>
 #include <stdio.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -131,9 +132,22 @@ test_ssl_error(void)
 	return "expected SSL testcase error";
 }
 
-int main(int argc, char **argv)
+int
+main(int argc, char **argv)
 {
 	int r;
+	sigset_t mask;
+
+	/* Block SIGPIPE, otherwise the process will get killed when trying to
+	 * read from a socket where the remote end was closed. */
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGPIPE);
+
+	if (sigprocmask(SIG_BLOCK, &mask, NULL) == -1) {
+		int e = errno;
+		fprintf(stderr, "Cannot block SIGPIPE, error %i\n", e);
+		return e;
+	}
 
 	if (argc > 3) {
 		fprintf(stderr, "Usage: %s [partner_fqdn [netget_result]]\n", argv[0]);
@@ -173,17 +187,26 @@ int main(int argc, char **argv)
 		}
 
 		socketd = sfd[0];
-		other_socket_end = sfd[1];
+		if (netget_result[3] == ' ')
+			other_socket_end = sfd[1];
+		else
+			close(sfd[1]);
 	}
 
 	r = tls_init();
 
 	test_net_conn_shutdown(shutdown_clean);
 
-	if (r == ETIMEDOUT)
+	switch (r) {
+	case ETIMEDOUT:
 		printf("RETURN VALUE: ETIMEDOUT\n");
-	else
+		break;
+	case EPIPE:
+		printf("RETURN VALUE: EPIPE\n");
+		break;
+	default:
 		printf("RETURN VALUE: %i\n", r);
+	}
 
 	return r;
 }
