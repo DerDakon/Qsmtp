@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <sys/wait.h>
 #include <signal.h>
 
@@ -938,7 +939,7 @@ setup_socketpair(void)
  * @brief test using a sopcketpair that data_pending() detects a socket closed by the remote end
  */
 static int
-test_pending_socketpair(void)
+test_pending_socketpair_closed(void)
 {
 	int i;
 	int ret = 0;
@@ -964,7 +965,7 @@ test_pending_socketpair(void)
  * @brief test using a sopcketpair that net_read() detects a socket closed by the remote end
  */
 static int
-test_netread_socketpair(void)
+test_netread_socketpair_closed(void)
 {
 	int i;
 	int ret = 0;
@@ -981,6 +982,40 @@ test_netread_socketpair(void)
 		ret++;
 	}
 
+	close(0);
+
+	return ret;
+}
+
+/**
+ * @brief test using a sopcketpair that net_read() detects a socket closed by the remote end
+ */
+static int
+test_netread_socketpair_timeout(void)
+{
+	int i;
+	int ret = 0;
+	time_t t1, t2;
+
+	i = setup_socketpair();
+	if (i < 0)
+		return ++ret;
+
+	timeout = 1;
+	t1 = time(NULL);
+	i = net_read(0);
+	t2 = time(NULL);
+	if ((i != -1) || (errno != ETIMEDOUT)) {
+		fprintf(stderr, "net_read() on timeout returned %i/%i instead of -1/%i (ETIMEDOUT)\n", i, errno, ETIMEDOUT);
+		ret++;
+	}
+
+	if ((t2 - t1 > 2) || (t2 - t1 < 0)) {
+		fprintf(stderr, "net_read() for timeout 1 took %li seconds\n", (long)(t2 - t1));
+		ret++;
+	}
+
+	close(i);
 	close(0);
 
 	return ret;
@@ -1142,8 +1177,9 @@ main(int argc, char **argv)
 		ret++;
 	}
 
-	ret += test_pending_socketpair();
-	ret += test_netread_socketpair();
+	ret += test_pending_socketpair_closed();
+	ret += test_netread_socketpair_closed();
+	ret += test_netread_socketpair_timeout();
 	ret += test_chunks(argv[1]);
 
 	return ret;
