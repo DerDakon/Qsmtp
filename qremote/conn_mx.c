@@ -28,6 +28,8 @@ quitmsg_if_net(const int error)
 	case -EPIPE:
 	case -ECONNRESET:
 	case -ETIMEDOUT:
+		close(socketd);
+		socketd = -1;
 		break;
 	default:
 		quitmsg();
