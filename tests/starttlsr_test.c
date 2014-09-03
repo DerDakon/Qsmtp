@@ -167,7 +167,10 @@ int main(int argc, char **argv)
 
 	test_net_conn_shutdown(shutdown_clean);
 
-	printf("RETURN VALUE: %i\n", r);
+	if (r == ETIMEDOUT)
+		printf("RETURN VALUE: ETIMEDOUT\n");
+	else
+		printf("RETURN VALUE: %i\n", r);
 
 	return r;
 }

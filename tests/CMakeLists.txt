@@ -858,7 +858,7 @@ ADD_TEST(NAME "STARTTLSr_conn_failure_multiline"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
 
 SET_TESTS_PROPERTIES(STARTTLSr_conn_failure STARTTLSr_conn_failure_multiline PROPERTIES
-		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: TLS connection failed at testcert\\.example\\.org: expected error case\nRETURN VALUE: 110\n$")
+		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: TLS connection failed at testcert\\.example\\.org: expected error case\nRETURN VALUE: ETIMEDOUT\n$")
 
 # the last 220 should never be read, the tests checks that the 221 line will be shown
 ADD_TEST(NAME "STARTTLSr_invalid_multiline"
