@@ -43,14 +43,7 @@ log_writen(int priority, const char **s)
 		buf[i++] = '\n';
 		buf[i] = '\0';
 	}
-#ifdef USESYSLOG
-	syslog(priority, "%s", buf);
-#else
-	(void)priority;
-#endif
-#ifndef NOSTDERR
-	write(2, buf, i);
-#endif
+	log_write(priority, buf);
 	free(buf);
 }
 
@@ -61,9 +54,15 @@ log_writen(int priority, const char **s)
  * @param s message to write
  * @see log_writen
  */
-inline void
+void
 log_write(int priority, const char *s)
 {
-	const char *t[] = {s, NULL};
-	log_writen(priority, t);
+#ifdef USESYSLOG
+	syslog(priority, "%s", s);
+#else
+	(void)priority;
+#endif
+#ifndef NOSTDERR
+	write(2, s, strlen(s));
+#endif
 }
