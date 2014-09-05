@@ -166,9 +166,13 @@ tls_verify(void)
 		}
 
 		if (email.len != 0) {
-			unsigned int i = 0;
+			unsigned int i;
 
-			while (clients[i]) {
+			for (i = 0; clients[i] != NULL; i++) {
+				/* protect against malicious '\0' chars in the cert fields */
+				if (strlen(clients[i]) != email.len)
+					continue;
+
 				if (strcmp(email.s, clients[i]) == 0) {
 					xmitstat.tlsclient = strdup(email.s);
 
@@ -178,7 +182,6 @@ tls_verify(void)
 						tlsrelay = 1;
 					break;
 				}
-				i++;
 			}
 		}
 
