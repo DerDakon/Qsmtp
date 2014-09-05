@@ -64,5 +64,7 @@ log_write(int priority, const char *s)
 #endif
 #ifndef NOSTDERR
 	write(2, s, strlen(s));
+#elif !defined(USESYSLOG) && defined(REALLY_NO_LOGGING)
+	(void) s;
 #endif
 }

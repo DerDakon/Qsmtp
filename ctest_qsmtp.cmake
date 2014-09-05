@@ -128,7 +128,7 @@ ctest_update()
 # avoid spamming the dashboard with doxygen warnings: BUILD_DOC off
 # get coverage: debug build
 ctest_configure(
-		OPTIONS "-DUSESYSLOG=Off;-DBUILD_DOC=Off;-DAUTHCRAM=On;-DCMAKE_BUILD_TYPE=Debug;-DAUTOQMAIL=${CTEST_BINARY_DIRECTORY}/var/qmail"
+		OPTIONS "-DUSESYSLOG=Off;-DNOSTDERR=On;-DREALLY_NO_LOGGING=On;-DBUILD_DOC=Off;-DAUTHCRAM=On;-DCMAKE_BUILD_TYPE=Debug;-DAUTOQMAIL=${CTEST_BINARY_DIRECTORY}/var/qmail"
 )
 ctest_build()
 
