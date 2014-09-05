@@ -81,9 +81,6 @@ IF (NOT HAS_OPENAT)
 ENDIF ()
 
 OPTION(NOSTDERR "Do not print error messages to stderr" ON)
-IF(NOSTDERR)
-	ADD_DEFINITIONS(-DNOSTDERR)
-ENDIF(NOSTDERR)
 
 OPTION(USESYSLOG "Use syslog() for logging" ON)
 IF(USESYSLOG)
