@@ -82,16 +82,16 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	if (!st.st_size) {
 		return close(fd);
 	}
-	oldlen = st.st_size + 1;
-	inbuf = malloc(oldlen);
+	oldlen = st.st_size;
+	inbuf = malloc(oldlen + 1);
 	if (!inbuf) {
 		close(fd);
 		errno = ENOMEM;
 		return -1;
 	}
 	j = 0;
-	while (j < oldlen - 1) {
-		const ssize_t k = read(fd, inbuf + j, oldlen - 1 - j);
+	while (j < oldlen) {
+		const ssize_t k = read(fd, inbuf + j, oldlen - j);
 		if (k == -1) {
 			int e = errno;
 
@@ -104,7 +104,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 			j += k;
 	}
 	close(fd);
-	inbuf[--oldlen] = '\0'; /* if file has no newline at the end */
+	inbuf[oldlen] = '\0'; /* if file has no newline at the end */
 	if (!striptab) {
 		*buf = inbuf;
 		return oldlen;
@@ -138,15 +138,26 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		size_t k;
 		/* compact the buffer */
 		j = k = 0;
+		/* skip over any leading 0-bytes, i.e. deleted entries */
 		while ((j < oldlen) && !inbuf[j])
 			j++;
+
 		while (j < oldlen) {
-			while (inbuf[j])
-				inbuf[k++] = inbuf[j++];
+			const size_t jlen = strnlen(inbuf + j, oldlen - j);
+
+			/* only copy if not already at the right place */
+			if (j != k)
+				memmove(inbuf + k, inbuf + j, jlen);
+
+			j += jlen + 1; /* skip over the trailing 0-byte */
+			k += jlen;
+
 			inbuf[k++] = '\0';
+
 			while ((j < oldlen) && !inbuf[j])
 				j++;
 		}
+		/* file consists only of comments and whitespace */
 		if (!k) {
 			free(inbuf);
 			return 0;

@@ -195,6 +195,10 @@ test_lload()
 	int i;
 	size_t sz;
 	const char comment[] = "# comment\n";
+	const char *compactable[] = {
+		"# comment\n\n\t \nfoo\n\n#another comment\n\n \nbar",
+		"foo\n\nbar\n\n"
+	};
 
 	puts("== Running tests for lloadfilefd()");
 
@@ -217,7 +221,7 @@ test_lload()
 
 	fd = open("emptyfile", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
-		fputs("Can not open temporary file for reading\n", stderr);
+		fprintf(stderr, "%s[%i]: can not open temporary file for reading: %i\n", __func__, __LINE__, errno);
 		return err + 1;
 	}
 	buf = &ch;
@@ -255,7 +259,7 @@ test_lload()
 
 	fd = open("emptyfile", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
-		fputs("Can not open temporary file for reading\n", stderr);
+		fprintf(stderr, "%s[%i]: can not open temporary file for reading: %i\n", __func__, __LINE__, errno);
 		return err + 1;
 	}
 	buf = &ch;
@@ -272,7 +276,7 @@ test_lload()
 
 	fd = open("emptyfile", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
-		fputs("Can not open temporary file for reading\n", stderr);
+		fprintf(stderr, "%s[%i]: can not open temporary file for reading: %i\n", __func__, __LINE__, errno);
 		return err + 1;
 	}
 	buf = &ch;
@@ -292,7 +296,7 @@ test_lload()
 	createTestFile("lloadfile_test", "a b");
 	fd = open("lloadfile_test", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
-		fputs("Can not open temporary file for reading\n", stderr);
+		fprintf(stderr, "%s[%i]: can not open temporary file for reading: %i\n", __func__, __LINE__, errno);
 		return err + 1;
 	}
 
@@ -312,7 +316,7 @@ test_lload()
 	createTestFile("lloadfile_test", comment);
 	fd = open("lloadfile_test", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
-		fputs("Can not open temporary file for reading\n", stderr);
+		fprintf(stderr, "%s[%i]: can not open temporary file for reading: %i\n", __func__, __LINE__, errno);
 		return err + 1;
 	}
 
@@ -334,6 +338,57 @@ test_lload()
 		err++;
 	}
 	free(buf);
+
+	fd = open("lloadfile_test", O_RDONLY | O_CLOEXEC);
+	if (fd == -1) {
+		fprintf(stderr, "%s[%i]: can not open temporary file for reading: %i\n", __func__, __LINE__, errno);
+		return err + 1;
+	}
+
+	buf = &ch;
+	sz = lloadfilefd(fd, &buf, 1);
+	if (sz != 0) {
+		fprintf(stderr, "reading a file with only comment and striptab set to 1 did not return size 0, but %zu\n", sz);
+		err++;
+	}
+	if (buf != NULL) {
+		fputs("lloadfilefd() on a file with only comment did not set the buf pointer to NULL\n", stderr);
+		err++;
+		if (buf != &ch)
+			free(buf);
+	}
+
+	unlink("lloadfile_test");
+
+	for (i = 0; i < 2; i++) {
+		createTestFile("lloadfile_test_compactable", compactable[i]);
+		fd = open("lloadfile_test_compactable", O_RDONLY | O_CLOEXEC);
+		if (fd == -1) {
+			fprintf(stderr, "%s[%i]: can not open temporary file %s for reading: %i\n", __func__, __LINE__, "lloadfile_test_compactable", errno);
+			return err + 1;
+		}
+
+		buf = &ch;
+		sz = lloadfilefd(fd, &buf, 3);
+		if (buf == &ch) {
+			fputs("lloadfilefd() with striptabs 3 did not return set buffer\n", stderr);
+			err++;
+			buf = NULL;
+		} else if (buf == NULL) {
+			fputs("lloadfilefd() with striptabs 3 did not return a buffer\n", stderr);
+			err++;
+		}
+		if (sz != sizeof("foo\0bar")) {
+			fputs("lloadfilefd() with striptabs 3 did not return correct size\n", stderr);
+			err++;
+		} else if ((buf != NULL) && (memcmp(buf, "foo\0bar", sz) != 0)) {
+			fputs("lloadfilefd() with striptabs 3 did not return correct contents\n", stderr);
+			err++;
+		}
+		free(buf);
+
+		unlink("lloadfile_test_compactable");
+	}
 
 	return err;
 }
