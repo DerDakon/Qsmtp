@@ -25,7 +25,7 @@ extern time_t timeout;
 extern int socketd;
 
 enum conn_shutdown_type {
-	shutdown_clean,		/**< do a normal shutdown and notice the partner about the shutdown */
+	shutdown_clean,		/**< do a normal shutdown and notify the partner about the shutdown */
 	shutdown_abort		/**< do hard abort of connection */
 };
 
