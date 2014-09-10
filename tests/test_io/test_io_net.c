@@ -3,6 +3,7 @@
 
 #include <netio.h>
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -11,6 +12,8 @@ struct string linein = {
 	.s = lineinbuf
 };
 const char *netnwrite_msg;
+const char *net_read_msg;
+int net_read_fatal;
 
 int
 net_read(const int fatal)
@@ -18,6 +21,42 @@ net_read(const int fatal)
 	ASSERT_CALLBACK(testcase_net_read);
 
 	return testcase_net_read(fatal);
+}
+
+int
+testcase_net_read_simple(const int fatal)
+{
+	if (net_read_msg == NULL) {
+		qs_backtrace();
+		abort();
+	}
+
+	if ((fatal != 0) && (fatal != 1)) {
+		qs_backtrace();
+		abort();
+	}
+
+	if (net_read_fatal != fatal) {
+		qs_backtrace();
+		abort();
+	}
+
+	net_read_fatal = -1;
+
+	if ((uintptr_t)net_read_msg < 4096) {
+		errno = (int)(uintptr_t)net_read_msg;
+		net_read_msg = NULL;
+		return -1;
+	}
+
+	assert(strlen(net_read_msg) < sizeof(lineinbuf));
+
+	strcpy(linein.s, net_read_msg);
+	linein.len = strlen(net_read_msg);
+
+	net_read_msg = NULL;
+
+	return 0;
 }
 
 int

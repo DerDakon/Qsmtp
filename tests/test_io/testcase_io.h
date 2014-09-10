@@ -18,6 +18,21 @@ struct in6_addr;
 typedef int (func_net_read)(const int);
 DECLARE_TC_SETUP(net_read);
 
+extern const char *net_read_msg;	/**< the message that will be used the next time net_read() is called */
+extern int net_read_fatal;	/**< the value of the fatal parameter that is expected on the next call to net_read() */
+/**
+ * @brief a simple checker for net_read
+ *
+ * This function may be passed to testcase_setup_net_read() to have a simple
+ * checker for net_read(). If net_read_msg is set it's contents are passed to
+ * the caller and net_read_msg is reset. Otherwise the program is aborted.
+ *
+ * If net_read_msg is a value smaller than 4096 then no string will be
+ * returned, but errno will be set to the value cast to an int and -1 is
+ * returned.
+ */
+extern int testcase_net_read_simple(const int fatal);
+
 typedef int (func_net_writen)(const char *const *);
 DECLARE_TC_SETUP(net_writen);
 
