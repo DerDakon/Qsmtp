@@ -431,6 +431,7 @@ netnwrite(const char *s, const size_t l)
 			.fd = socketd,
 			.events = POLLOUT
 		};
+		size_t p = 0;
 
 		switch (poll(&wfd, 1, timeout * 1000)) {
 		case 0:
@@ -438,16 +439,20 @@ netnwrite(const char *s, const size_t l)
 		case -1:
 			return -1;
 		}
-	}
 
-	if (write(socketd, s, l) < 0) {
-		if (errno == EPIPE)
-			dieerror(ECONNRESET);
-		else if ((errno == ECONNRESET) || (errno == ETIMEDOUT))
-			dieerror(errno);
-		return -1;
+		while (p < l) {
+			const ssize_t r = write(socketd, s + p, l - p);
+			if (r < 0) {
+				if (errno == EPIPE)
+					dieerror(ECONNRESET);
+				else if ((errno == ECONNRESET) || (errno == ETIMEDOUT))
+					dieerror(errno);
+				return -1;
+			}
+			p += r;
+		}
+		return 0;
 	}
-	return 0;
 }
 
 /**
