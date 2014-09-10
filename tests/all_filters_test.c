@@ -40,6 +40,12 @@ dnstxt(char **a __attribute__ ((unused)), const char *b __attribute__ ((unused))
 	return -1;
 }
 
+void
+dieerror(int a __attribute__ ((unused)))
+{
+	abort();
+}
+
 static struct {
 	const char *mailfrom;		/**< the from address to set */
 	const char *failmsg;		/**< the expected failure message to log */

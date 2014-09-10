@@ -12,6 +12,7 @@ SET(QREMOTE_SRCS
 	conn_mx.c
 	mime.c
 	qrdata.c
+	reply.c
 	smtproutes.c
 	starttlsr.c
 	status.c

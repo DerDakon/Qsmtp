@@ -22,7 +22,6 @@ DECLARE_TC_PTR(net_conn_shutdown);
 
 DECLARE_TC_PTR(log_writen);
 DECLARE_TC_PTR(log_write);
-DECLARE_TC_PTR(dieerror);
 
 DECLARE_TC_PTR(ssl_free);
 DECLARE_TC_PTR(ssl_exit);

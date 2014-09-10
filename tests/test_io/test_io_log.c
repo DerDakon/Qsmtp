@@ -96,17 +96,3 @@ testcase_log_write_compare(int priority, const char *a)
 
 	log_write_msg = NULL;
 }
-
-void
-dieerror(int error)
-{
-	ASSERT_CALLBACK(testcase_dieerror);
-
-	testcase_dieerror(error);
-	exit(error);
-}
-
-void
-tc_ignore_dieerror(int error __attribute__((unused)))
-{
-}

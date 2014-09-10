@@ -11,6 +11,12 @@
 
 struct xmitstat xmitstat;
 
+void
+dieerror(int a __attribute__ ((unused)))
+{
+	abort();
+}
+
 static unsigned int logcount;
 
 static const char **dnsentries;

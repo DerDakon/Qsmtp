@@ -25,7 +25,6 @@ TC_SETUP(net_conn_shutdown);
 
 TC_SETUP(log_writen);
 TC_SETUP(log_write);
-TC_SETUP(dieerror);
 
 TC_SETUP(ssl_free);
 TC_SETUP(ssl_exit);

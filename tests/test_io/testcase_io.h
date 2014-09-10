@@ -116,9 +116,6 @@ extern int log_write_priority;		/**< the priority of the next message in log_wri
  */
 extern void testcase_log_write_compare(int priority, const char *a);
 
-typedef void (func_dieerror)(int error);
-DECLARE_TC_SETUP(dieerror);
-
 typedef void (func_ssl_free)(SSL *myssl);
 DECLARE_TC_SETUP(ssl_free);
 

@@ -24,6 +24,12 @@ write_status(const char *str)
 	exit(EFAULT);
 }
 
+void
+dieerror(int a __attribute__ ((unused)))
+{
+	abort();
+}
+
 enum dnstype {
 	DNSTYPE_A,
 	DNSTYPE_AAAA,

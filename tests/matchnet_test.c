@@ -20,6 +20,12 @@
 
 struct xmitstat xmitstat;
 
+void
+dieerror(int a __attribute__ ((unused)))
+{
+	abort();
+}
+
 static int
 ip6_test_match(const char *ipstr, const char *matchstr, const int expect)
 {
