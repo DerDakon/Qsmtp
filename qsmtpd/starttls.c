@@ -235,13 +235,11 @@ tls_init()
 
 	saciphers.len = lloadfilefd(openat(controldir_fd, ciphfn, O_RDONLY | O_CLOEXEC), &(saciphers.s), 1);
 	if (saciphers.len == (size_t)-1) {
-		if (errno != ENOENT) {
-			int e = errno;
-			SSL_CTX_free(ctx);
-			err_control2("control/", ciphfn);
-			errno = e;
-			return -1;
-		}
+		int e = errno;
+		SSL_CTX_free(ctx);
+		err_control2("control/", ciphfn);
+		errno = e;
+		return -1;
 	} else if (saciphers.len) {
 		/* convert all '\0's except the last one to ':' */
 		size_t i;
