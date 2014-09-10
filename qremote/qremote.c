@@ -231,11 +231,10 @@ setup(void)
 #endif
 }
 
-static const char *mailerrmsg[] = {"Connected to ", NULL, " but sender was rejected", NULL};
-
 int
 main(int argc, char *argv[])
 {
+	const char *mailerrmsg[] = { "Connected to ", NULL, " but sender was rejected", NULL };
 	const char *netmsg[10];
 	int rcptstat = 1;	/* this means: all recipients have been rejected */
 	struct ips *mx = NULL;
