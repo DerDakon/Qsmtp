@@ -922,3 +922,22 @@ TARGET_LINK_LIBRARIES(testcase_cmd_from
 
 ADD_TEST(NAME "Qsmtpd_cmd_FROM"
 		COMMAND testcase_cmd_from)
+
+ADD_EXECUTABLE(testcase_ssl_pp
+		ssl_pp.c
+		${CMAKE_SOURCE_DIR}/qremote/reply.c
+		${CMAKE_SOURCE_DIR}/qremote/starttlsr.c
+		${CMAKE_SOURCE_DIR}/qsmtpd/starttls.c
+		${CMAKE_SOURCE_DIR}/lib/tls.c
+		${CMAKE_SOURCE_DIR}/lib/netio.c
+		${CMAKE_SOURCE_DIR}/lib/ssl_timeoutio.c
+)
+
+TARGET_LINK_LIBRARIES(testcase_ssl_pp
+		qsmtp_lib
+		${OPENSSL_LIBRARIES}
+)
+
+ADD_TEST(NAME "SSL_pingpong"
+		COMMAND testcase_ssl_pp
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp")
