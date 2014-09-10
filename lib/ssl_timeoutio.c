@@ -122,7 +122,6 @@ ssl_timeoutaccept(time_t t)
 		ndelay_off(ssl_wfd);
 		return r;
 	} else {
-		SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
 		return 0;
 	}
 }
@@ -150,7 +149,6 @@ ssl_timeoutconn(time_t t)
 		/* keep nonblocking, the socket is closed anyway */
 		return r;
 	} else {
-		SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
 		return 0;
 	}
 }
