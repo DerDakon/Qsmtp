@@ -21,13 +21,15 @@ err_network(int error)
 	switch (error) {
 	case ETIMEDOUT:
 		logmsg[2] = " timed out";
-		log_writen(LOG_ERR, logmsg);
 		break;
 	case ECONNRESET:
 		logmsg[2] = " died";
-		log_writen(LOG_ERR, logmsg);
 		break;
+	default:
+		return;
 	}
+
+	log_writen(LOG_ERR, logmsg);
 }
 
 int

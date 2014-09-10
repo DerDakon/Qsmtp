@@ -793,6 +793,18 @@ TARGET_LINK_LIBRARIES(testcase_qrclient
 ADD_TEST(NAME "Qrclient"
 		COMMAND testcase_qrclient)
 
+ADD_EXECUTABLE(testcase_qrreply
+		qrreply_test.c
+		../qremote/reply.c
+)
+TARGET_LINK_LIBRARIES(testcase_qrreply
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES}
+)
+
+ADD_TEST(NAME "Qrreply"
+		COMMAND testcase_qrreply)
+
 ADD_EXECUTABLE(testcase_starttlsr
 		starttlsr_test.c
 		../lib/ssl_timeoutio.c
