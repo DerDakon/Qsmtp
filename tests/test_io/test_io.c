@@ -27,7 +27,6 @@ TC_SETUP(log_writen);
 TC_SETUP(log_write);
 
 TC_SETUP(ssl_free);
-TC_SETUP(ssl_exit);
 TC_SETUP(ssl_error);
 TC_SETUP(ssl_strerror);
 

@@ -21,23 +21,6 @@ tc_ignore_ssl_free(SSL *myssl __attribute__((unused)))
 {
 }
 
-#undef _exit
-
-void
-ssl_exit(int status)
-{
-	ASSERT_CALLBACK(testcase_ssl_exit);
-
-	testcase_ssl_exit(status);
-
-	exit(status);
-}
-
-void
-tc_ignore_ssl_exit(int status __attribute__((unused)))
-{
-}
-
 const char *
 ssl_error(void)
 {

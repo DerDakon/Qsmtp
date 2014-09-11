@@ -24,13 +24,6 @@ void ssl_free(SSL *myssl)
 	ssl_library_destroy();
 }
 
-void ssl_exit(int status)
-{
-	if (ssl)
-		ssl_free(ssl);
-	_exit(status);
-}
-
 /**
  * @brief free internal check memory of the SSL library
  *

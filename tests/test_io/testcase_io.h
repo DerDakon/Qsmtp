@@ -134,9 +134,6 @@ extern void testcase_log_write_compare(int priority, const char *a);
 typedef void (func_ssl_free)(SSL *myssl);
 DECLARE_TC_SETUP(ssl_free);
 
-typedef void (func_ssl_exit)(int status);
-DECLARE_TC_SETUP(ssl_exit);
-
 typedef const char *(func_ssl_error)(void);
 DECLARE_TC_SETUP(ssl_error);
 

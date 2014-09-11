@@ -50,11 +50,9 @@ static struct in6_addr outip6;
 void
 err_mem(const int doquit)
 {
-	if (doquit)
-		quitmsg();
-/* write text including 0 byte */
+	/* write text including 0 byte */
 	write_status("Z4.3.0 Out of memory.");
-	ssl_exit(0);
+	net_conn_shutdown(doquit ? shutdown_clean : shutdown_abort);
 }
 
 void
@@ -64,7 +62,7 @@ err_confn(const char **errmsg, void *freebuf)
 	free(freebuf);
 	/* write text including 0 byte */
 	write_status("Z4.3.0 Configuration error.");
-	ssl_exit(0);
+	net_conn_shutdown(shutdown_abort);
 }
 
 void
@@ -82,6 +80,10 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 	} else if (socketd >= 0) {
 		close(socketd);
 		socketd = -1;
+		if (ssl) {
+			ssl_free(ssl);
+			ssl = NULL;
+		}
 	}
 
 	freeips(mx);
@@ -89,7 +91,7 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 	if (logdirfd >= 0)
 		close(logdirfd);
 
-	ssl_exit(0);
+	exit(0);
 }
 
 /*
@@ -187,6 +189,10 @@ quitmsg(void)
 			break;
 		}
 	} while ((linein.len >= 4) && (linein.s[3] == '-'));
+	if (ssl) {
+		ssl_free(ssl);
+		ssl = NULL;
+	}
 	close(socketd);
 	socketd = -1;
 }
@@ -255,7 +261,7 @@ dieerror(int error)
 		log_write(LOG_WARNING, "connection died");
 		break;
 	}
-	ssl_exit(0);
+	net_conn_shutdown(shutdown_abort);
 }
 
 static void
