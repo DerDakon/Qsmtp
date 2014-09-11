@@ -19,7 +19,6 @@
 struct xmitstat xmitstat;
 char *partner_fqdn;
 char certfilename[] = "control/clientcert.pem"; /* use the same file for both directions */
-char *protocol;
 char *rhost;
 int socketd;
 
@@ -151,7 +150,7 @@ client(void)
 	if (r != 0)
 		return r;
 
-	printf("CLIENT: init done\n");
+	printf("CLIENT: init done, cipher is %s\n", SSL_get_cipher(ssl));
 
 	net_writen(ping);
 	printf("CLIENT: sent ping\n");
@@ -197,7 +196,7 @@ server(void)
 	if (r != 0)
 		return r;
 
-	printf("SERVER: init done\n");
+	printf("SERVER: init done, cipher is %s\n", SSL_get_cipher(ssl));
 
 	if (net_read(0) != 0) {
 		fprintf(stderr, "server: net_read() failed\n");
@@ -235,7 +234,6 @@ main(void)
 		waitpid(child, &s, 0);
 		if (!WIFEXITED(s) || (WEXITSTATUS(s) != 0))
 			r++;
-		free(protocol);
 	}
 
 	close(controldir_fd);

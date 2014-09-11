@@ -46,7 +46,6 @@ rcpt_cb rcpt_cbs[] = {
 const char *blocktype[] = { (const char *)(uintptr_t)(-1) };
 
 /* make sure they will never be accessed */
-char *protocol = (char *)((uintptr_t)-1);
 string heloname = {
 	.s = (char *)((uintptr_t)-1),
 	.len = -1

@@ -75,7 +75,6 @@ unsigned long databytes;		/**< maximum message size */
 unsigned int goodrcpt;			/**< number of valid recipients */
 int badbounce;				/**< bounce message with more than one recipient */
 struct xmitstat xmitstat;		/**< This contains some flags describing the transmission and it's status. */
-char *protocol;				/**< the protocol string to use (e.g. "ESMTP") */
 const char **globalconf;		/**< contents of the global "filterconf" file (or NULL) */
 string heloname;			/**< the fqdn to show in helo */
 string msgidhost;			/**< the fqdn to use if a message-id is added */
@@ -452,7 +451,6 @@ conn_cleanup(const int rc)
 	userbackend_free();
 	free(xmitstat.authname.s);
 
-	free(protocol);
 	free(globalconf);
 	free(heloname.s);
 	free(msgidhost.s);

@@ -104,7 +104,6 @@ const char *blocktype[] = { (char *)((uintptr_t)-1), "user", "domain", (char *)(
 /* make sure they will never be accessed */
 /* too small for anything, but noone should check */
 unsigned long databytes = 1;
-char *protocol = (char *)((uintptr_t)-1);
 string heloname = {
 	.s = (char *)((uintptr_t)-1),
 	.len = -1

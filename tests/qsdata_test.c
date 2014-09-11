@@ -16,7 +16,6 @@ unsigned long databytes;
 unsigned int goodrcpt;
 int badbounce;
 struct xmitstat xmitstat;
-char *protocol;
 const char **globalconf;
 string heloname;
 string msgidhost;
@@ -185,7 +184,6 @@ check_queueheader(void)
 
 	/* setup */
 	testtime = time2012;
-	protocol = "TEST_PROTOCOL";
 	to.ok = 1;
 	to.to.s = "test@example.com";
 	to.to.len = strlen(to.to.s);
@@ -218,7 +216,7 @@ check_queueheader(void)
 			testname = "minimal";
 			relayclient = 1;
 			expect = "Received: from unknown ([192.0.2.42])\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 1:
@@ -226,7 +224,7 @@ check_queueheader(void)
 			relayclient = 1;
 			xmitstat.remotehost.s = "sender.example.net";
 			expect = "Received: from sender.example.net ([192.0.2.42])\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 2:
@@ -235,7 +233,7 @@ check_queueheader(void)
 			xmitstat.remotehost.s = "sender.example.net";
 			xmitstat.remoteport = "42";
 			expect = "Received: from sender.example.net ([192.0.2.42]:42)\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 3:
@@ -243,7 +241,7 @@ check_queueheader(void)
 			relayclient = 1;
 			xmitstat.helostr.s = "sender";
 			expect = "Received: from unknown ([192.0.2.42] HELO sender)\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 4:
@@ -252,7 +250,7 @@ check_queueheader(void)
 			xmitstat.spf = SPF_PASS;
 			expect = "Received-SPF: testcase, spf 1\n"
 					"Received: from unknown ([192.0.2.42])\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 5:
@@ -260,7 +258,7 @@ check_queueheader(void)
 			relayclient = 1;
 			xmitstat.authname.s = "authuser";
 			expect = "Received: from unknown ([192.0.2.42]) (auth=authuser)\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOLA\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with ESMTPA\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 6:
@@ -270,7 +268,7 @@ check_queueheader(void)
 			authhide = 1;
 			xmitstat.authname.s = "authuser";
 			expect = "Received: from unknown (auth=authuser)\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOLA\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with ESMTPA\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 7:
@@ -280,7 +278,7 @@ check_queueheader(void)
 			authhide = 1;
 			xmitstat.tlsclient = "mail@cert.example.com";
 			expect = "Received: from unknown (cert=mail@cert.example.com)\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 8:
@@ -292,7 +290,7 @@ check_queueheader(void)
 			xmitstat.spf = SPF_PASS;
 			expect = "Received-SPF: testcase, spf 1\n"
 					"Received: from unknown ([192.0.2.42]) (ident=auth=foo)\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 9:
@@ -301,7 +299,7 @@ check_queueheader(void)
 			authhide = 0;
 			xmitstat.remoteinfo = "auth=foo"; /* fake attempt */
 			expect = "Received: from unknown ([192.0.2.42]) (ident=auth=foo)\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 10:
@@ -316,7 +314,7 @@ check_queueheader(void)
 			authhide = 0;
 			xmitstat.tlsclient = "mail@cert.example.com";
 			expect = "Received: from unknown ([192.0.2.42]) (cert=mail@cert.example.com)\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOL\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 12:
@@ -325,7 +323,7 @@ check_queueheader(void)
 			authhide = 0;
 			relayclient = 1;
 			expect = "Received: from unknown ([192.0.2.42])\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) TEST_PROTOCOL\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 13:
@@ -337,7 +335,7 @@ check_queueheader(void)
 			xmitstat.remoteinfo = "auth=foo"; /* fake attempt */
 			xmitstat.authname.s = "authuser";
 			expect = "Received: from unknown (auth=authuser)\n"
-					"\tby testcase.example.net (" VERSIONSTRING ") with TEST_PROTOCOLA\n"
+					"\tby testcase.example.net (" VERSIONSTRING ") with ESMTPA\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		}
@@ -348,6 +346,9 @@ check_queueheader(void)
 			xmitstat.helostr.len = strlen(xmitstat.helostr.s);
 		if (xmitstat.authname.s != NULL)
 			xmitstat.authname.len = strlen(xmitstat.authname.s);
+
+		if ((xmitstat.authname.s != NULL) || chunked)
+			xmitstat.esmtp = 1;
 
 		printf("%s: Running test: %s\n", __func__, testname);
 

@@ -201,12 +201,9 @@ tls_init()
 	SSL *myssl;
 	SSL_CTX *ctx;
 	const char *ciphers = "DEFAULT";
-	const char *prot;
 	string saciphers;
-	unsigned int l;
 	X509_STORE *store;
 	X509_LOOKUP *lookup;
-	char *newprot;
 	const char ciphfn[] = "tlsserverciphers";
 	int j;
 
@@ -307,22 +304,6 @@ tls_init()
 		ssl = NULL;
 		return tls_out("connection failed", err) ? errno : EDONE;
 	}
-
-	prot = SSL_get_cipher(myssl);
-	l = strlen(prot);
-	newprot = realloc(protocol, l + 20);
-	if (!newprot) {
-		ssl_free(ssl);
-		ssl = NULL;
-		return ENOMEM;
-	}
-	protocol = newprot;
-	/* populate the protocol string, used in Received */
-	protocol[0] = '(';
-	memcpy(protocol + 1, prot, l);
-	l++;
-	memcpy(protocol + l, " encrypted) ESMTPS", 18);
-	protocol[l + 18] = '\0';
 
 	/* have to discard the pre-STARTTLS HELO/EHLO argument, if any */
 	return 0;

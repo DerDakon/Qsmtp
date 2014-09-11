@@ -59,7 +59,6 @@ struct xmitstat {
 extern struct smtpcomm *current_command;	/**< the SMTP command currently processed */
 
 extern struct xmitstat xmitstat;
-extern char *protocol;
 extern string heloname;			/**< the fqdn to show in helo */
 extern string msgidhost;			/**< the fqdn to use if a message-id is added */
 extern string liphost;			/**< replacement domain if to address is <foo@[ip]> */

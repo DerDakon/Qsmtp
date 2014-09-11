@@ -11,9 +11,11 @@
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/queue.h>
 #include <qsmtpd/syntax.h>
+#include <tls.h>
 #include <version.h>
 
 #include <errno.h>
+#include <openssl/ssl.h>
 #include <string.h>
 #include <sys/time.h>
 #include <syslog.h>
@@ -142,7 +144,18 @@ write_received(const int chunked)
 	WRITEL(" (" VERSIONSTRING ") with ");
 	if (chunked)
 		WRITEL("(chunked) ");
-	WRITEL(protocol);
+	if (!xmitstat.esmtp) {
+		WRITEL("SMTP");
+	} else if (!ssl) {
+		WRITEL("ESMTP");
+	} else {
+		const char *cipher = SSL_get_cipher(ssl);
+		WRITEL("(");
+		/* avoid trouble in case SSL returns a NULL string */
+		if (cipher)
+			WRITEL(cipher);
+		WRITEL(" encrypted) ESMTPS");
+	}
 	/* add the 'A' to the end of ESMTP or ESMTPS as described in RfC 3848 */
 	if (xmitstat.authname.len != 0) {
 		WRITEL(afterprotauth);

@@ -185,14 +185,8 @@ int
 smtp_helo(void)
 {
 	const char *s[] = {"250 ", heloname.s, NULL};
-	char *tmp;
 
 	freedata();
-	tmp = realloc(protocol, 5);
-	if (tmp == NULL)
-		return ENOMEM;
-	protocol = tmp;
-	memcpy(protocol, "SMTP", 5);
 	xmitstat.esmtp = 0;
 	xmitstat.spf = 0;
 	xmitstat.datatype = 0;
@@ -217,15 +211,6 @@ smtp_ehlo(void)
 	msg[next++] = "250-CHUNKING\r\n";
 #endif
 
-	if (!ssl) {
-		const char *protocol_esmtp = "ESMTP";
-		char *tmp;
-		tmp = realloc(protocol, strlen(protocol_esmtp) + 1);
-		if (tmp == NULL)
-			return ENOMEM;
-		protocol = tmp;
-		memcpy(protocol, protocol_esmtp, strlen(protocol_esmtp) + 1);	/* also copy trailing '\0' */
-	}
 	if (helovalid(linein.s + 5, linein.len - 5) < 0)
 		return errno;
 

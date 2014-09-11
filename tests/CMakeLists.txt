@@ -617,6 +617,7 @@ ADD_EXECUTABLE(testcase_qsdata
 TARGET_LINK_LIBRARIES(testcase_qsdata
 		testcase_io_lib
 		qsmtp_lib
+		${OPENSSL_LIBRARIES}
 		${MEMCHECK_LIBRARIES}
 )
 
