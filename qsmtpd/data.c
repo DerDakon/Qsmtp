@@ -95,10 +95,14 @@ date822(char *buf)
 static int
 write_received(const int chunked)
 {
+	/* There are several cases in this functions where 2 strings are used
+	 * where one string is exactly the begin or end of the other. For
+	 * code clarity those are both spelled out. The compiler will usually
+	 * find this out anyway and will allocate space only for one of them,
+	 * and hopefully merge both code paths and use an offset or something
+	 * like that. */
 	int rc;
 	size_t i = (authhide && is_authenticated_client()) ? 1 : 0;
-	/* do not bother that the next two messages are basically the same:
-	 * the compiler is usually clever enought to find that out, too */
 	const char afterprot[]     =  "\n\tfor <";	/* the string to be written after the protocol */
 	const char afterprotauth[] = "A\n\tfor <";	/* the string to be written after the protocol for authenticated mails*/
 
@@ -117,10 +121,11 @@ write_received(const int chunked)
 	if (!i) {
 		WRITEL(" ([");
 		WRITE(xmitstat.remoteip, strlen(xmitstat.remoteip));
-		WRITEL("]");
 		if (xmitstat.remoteport) {
-			WRITEL(":");
+			WRITEL("]:");
 			WRITEL(xmitstat.remoteport);
+		} else {
+			WRITEL("]");
 		}
 		if (xmitstat.helostr.len) {
 			WRITEL(" HELO ");
@@ -142,15 +147,19 @@ write_received(const int chunked)
 	WRITEL(")\n\tby ");
 	WRITE(heloname.s, heloname.len);
 	WRITEL(" (" VERSIONSTRING ") with ");
-	if (chunked)
-		WRITEL("(chunked) ");
 	if (!xmitstat.esmtp) {
 		WRITEL("SMTP");
 	} else if (!ssl) {
-		WRITEL("ESMTP");
+		if (chunked)
+			WRITEL("(chunked) ESMTP");
+		else
+			WRITEL("ESMTP");
 	} else {
 		const char *cipher = SSL_get_cipher(ssl);
-		WRITEL("(");
+		if (chunked)
+			WRITEL("(chunked ");
+		else
+			WRITEL("(");
 		/* avoid trouble in case SSL returns a NULL string */
 		if (cipher)
 			WRITEL(cipher);

@@ -307,9 +307,8 @@ check_queueheader(void)
 			xmitstat.remoteinfo = "something"; /* should have no effect as tlsclient is set */
 			/* fallthrough */
 		case 11:
-			if (idx == 1) {
+			if (idx == 11)
 				testname = "minimal + cert";
-			}
 			relayclient = 0;
 			authhide = 0;
 			xmitstat.tlsclient = "mail@cert.example.com";
@@ -331,7 +330,6 @@ check_queueheader(void)
 			testname = "auth + authhide + ident";
 			relayclient = 0;
 			authhide = 1;
-			chunked = 0;
 			xmitstat.remoteinfo = "auth=foo"; /* fake attempt */
 			xmitstat.authname.s = "authuser";
 			expect = "Received: from unknown (auth=authuser)\n"
