@@ -62,6 +62,10 @@ quitmsg(void)
 			break;
 		}
 	} while ((linein.len >= 4) && (linein.s[3] == '-'));
+	if (ssl) {
+		ssl_free(ssl);
+		ssl = NULL;
+	}
 	close(socketd);
 	socketd = -1;
 
@@ -79,13 +83,14 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 	} else if (socketd >= 0) {
 		close(socketd);
 		socketd = -1;
+
+		if (ssl != NULL) {
+			ssl_free(ssl);
+			ssl = NULL;
+		}
+
 		free(partner_fqdn);
 		free(rhost);
-	}
-
-	if (ssl != NULL) {
-		ssl_free(ssl);
-		ssl = NULL;
 	}
 
 #ifdef USESYSLOG
