@@ -230,10 +230,10 @@ main(void)
 	} else if (child != 0) {
 		r = client();
 	} else {
-		int stat = -1; /* to keep valgrind silent */
+		int s = -1; /* to keep valgrind silent */
 		r = server();
-		waitpid(child, &stat, 0);
-		if (!WIFEXITED(stat) || (WEXITSTATUS(stat) != 0))
+		waitpid(child, &s, 0);
+		if (!WIFEXITED(s) || (WEXITSTATUS(s) != 0))
 			r++;
 		free(protocol);
 	}
