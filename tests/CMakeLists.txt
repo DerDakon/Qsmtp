@@ -939,6 +939,26 @@ TARGET_LINK_LIBRARIES(testcase_ssl_pp
 		${OPENSSL_LIBRARIES}
 )
 
-ADD_TEST(NAME "SSL_pingpong"
-		COMMAND testcase_ssl_pp
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp")
+FOREACH(_ssl_test IN ITEMS simple simple_clc)
+	SET(_tgt_dir "${CMAKE_CURRENT_BINARY_DIR}/ssl_pp/${_ssl_test}")
+	FILE(MAKE_DIRECTORY "${_tgt_dir}/control")
+
+	FOREACH(_pem IN ITEMS rsa512 dh512 dh1024)
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/${_pem}.pem
+				"${_tgt_dir}/control/${_pem}.pem" COPY_ONLY)
+	ENDFOREACH()
+
+	IF (_ssl_test STREQUAL "simple")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
+				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
+	ELSEIF (_ssl_test STREQUAL "simple_clc")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
+				"${_tgt_dir}/control/clientcert.pem" COPY_ONLY)
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
+				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
+	ENDIF ()
+
+	ADD_TEST(NAME "SSL_pp_${_ssl_test}"
+			COMMAND testcase_ssl_pp
+			WORKING_DIRECTORY "${_tgt_dir}")
+ENDFOREACH()

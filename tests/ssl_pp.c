@@ -18,7 +18,7 @@
 
 struct xmitstat xmitstat;
 char *partner_fqdn;
-char certfilename[] = "control/clientcert.pem"; /* use the same file for both directions */
+char certfilename[] = "control/servercert.pem";
 char *rhost;
 int socketd;
 
