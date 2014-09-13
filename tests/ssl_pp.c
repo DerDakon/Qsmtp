@@ -18,7 +18,7 @@
 #include <sys/wait.h>
 
 struct xmitstat xmitstat;
-char *partner_fqdn;
+char *partner_fqdn = "testcert.example.org";
 char certfilename[] = "control/servercert.pem";
 char *rhost;
 int socketd;
