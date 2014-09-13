@@ -939,7 +939,7 @@ TARGET_LINK_LIBRARIES(testcase_ssl_pp
 		${OPENSSL_LIBRARIES}
 )
 
-FOREACH(_ssl_test IN ITEMS simple simple_clc)
+FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir)
 	SET(_tgt_dir "${CMAKE_CURRENT_BINARY_DIR}/ssl_pp/${_ssl_test}")
 	FILE(MAKE_DIRECTORY "${_tgt_dir}/control")
 
@@ -948,6 +948,7 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc)
 				"${_tgt_dir}/control/${_pem}.pem" COPY_ONLY)
 	ENDFOREACH()
 
+	unset(_ssl_test_arg)
 	IF (_ssl_test STREQUAL "simple")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
 				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
@@ -956,9 +957,14 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc)
 				"${_tgt_dir}/control/clientcert.pem" COPY_ONLY)
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
 				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
+	ELSEIF (_ssl_test STREQUAL "tlsclients_dir")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
+				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
+		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlsclients")
+		SET(_ssl_test_arg "sslauth=EISDIR")
 	ENDIF ()
 
 	ADD_TEST(NAME "SSL_pp_${_ssl_test}"
-			COMMAND testcase_ssl_pp
+			COMMAND testcase_ssl_pp ${_ssl_test_arg}
 			WORKING_DIRECTORY "${_tgt_dir}")
 ENDFOREACH()

@@ -10,6 +10,7 @@
 #include <qremote/qremote.h>
 
 #include <errno.h>
+#include <limits.h>
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -166,6 +167,8 @@ client(void)
 	return r;
 }
 
+static int expect_verify_success;
+
 static int
 server(void)
 {
@@ -206,7 +209,15 @@ server(void)
 		r++;
 	} else {
 		const char *pong[] = { answer, NULL };
+		int v;
+
 		printf("SERVER: got ping\n");
+
+		v = tls_verify();
+		printf("SERVER: verify returned %i\n", v);
+		if (v != expect_verify_success)
+			r++;
+
 		net_writen(pong);
 	}
 
@@ -214,10 +225,29 @@ server(void)
 }
 
 int
-main(void)
+main(int argc, char **argv)
 {
 	pid_t child;
 	int r;
+	const char argprefix[] = "sslauth=";
+
+	if ((argc > 2) || ((argc == 2) && ((strlen(argv[1]) <= strlen(argprefix)) || (strncmp(argv[1], argprefix, strlen(argprefix)) != 0)))) {
+		fprintf(stderr, "Usage: %s [%svalue]", argv[0], argprefix);
+		return 1;
+	} else if (argc == 2) {
+		const char *v = argv[1] + strlen(argprefix);
+		if (strcmp(v, "EISDIR") == 0) {
+			expect_verify_success = -EISDIR;
+		} else {
+			char *endp;
+			unsigned long l = strtoul(v, &endp, 10);
+
+			if ((*endp != '\0') || (l == 0) || (l >= INT_MAX)) {
+				fprintf(stderr, "bad value: %s\n", v);
+				return 1;
+			}
+		}
+	}
 
 	if (setup())
 		return 1;
@@ -226,7 +256,7 @@ main(void)
 	if (child < 0) {
 		puts("fork() failed");
 		r = errno;
-	} else if (child != 0) {
+	} else if (child == 0) {
 		r = client();
 	} else {
 		int s = -1; /* to keep valgrind silent */
