@@ -20,6 +20,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+const char *clientcertname = "control/clientcert.pem";
+
 static int
 match_partner(const char *s, size_t len)
 {
@@ -71,11 +73,10 @@ tls_init(void)
 		memcpy(tmp, "control/tlshosts/", 17);
 		memcpy(tmp + 17, partner_fqdn, fqlen);
 		memcpy(tmp + 17 + fqlen, ".pem", 5);
-		if (stat(tmp, &st)) {
+		if (stat(tmp, &st))
 			free(tmp);
-		} else {
+		else
 			servercert = tmp;
-		}
 	}
 
 	SSL_library_init();
@@ -89,22 +90,20 @@ tls_init(void)
 		return -1;
 	}
 
-	if (servercert) {
-		if (!SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
-			const char *msg[] = { "Z4.5.0 TLS unable to load ", servercert, ": ",
-					ssl_error(),  "; connecting to ", rhost };
+	if (servercert && !SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
+		const char *msg[] = { "Z4.5.0 TLS unable to load ", servercert, ": ",
+				ssl_error(),  "; connecting to ", rhost };
 
-			write_status_m(msg, 6);
-			SSL_CTX_free(ctx);
-			free(servercert);
-			ssl_library_destroy();
-			return -1;
-		}
+		write_status_m(msg, 6);
+		SSL_CTX_free(ctx);
+		free(servercert);
+		ssl_library_destroy();
+		return -1;
 	}
 
 	/* let the other side complain if it needs a cert and we don't have one */
-	if (SSL_CTX_use_certificate_chain_file(ctx, "control/clientcert.pem"))
-		SSL_CTX_use_RSAPrivateKey_file(ctx, "control/clientcert.pem", SSL_FILETYPE_PEM);
+	if (SSL_CTX_use_certificate_chain_file(ctx, clientcertname))
+		SSL_CTX_use_RSAPrivateKey_file(ctx, clientcertname, SSL_FILETYPE_PEM);
 
 	myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);

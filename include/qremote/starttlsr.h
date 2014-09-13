@@ -6,4 +6,6 @@
 
 extern int tls_init(void);
 
+extern const char *clientcertname;	/**< filename of the TLS client certificate */
+
 #endif
