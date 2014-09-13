@@ -31,12 +31,12 @@ match_partner(const char *s, size_t len)
 	if (!strncasecmp(partner_fqdn, s, len) && !partner_fqdn[len])
 		return 1;
 	/* we also match if the name is *.domainname */
-	if (*s == '*') {
-		const char *domain = strchr(partner_fqdn, '.');
+	if ((s[0] == '*') && (s[1] == '.')) {
+		const size_t clen = strlen(s) - 1;
+		const size_t plen = strlen(partner_fqdn);
 
-		if (!domain)
-			return 0;
-		if (!strncasecmp(domain, ++s, --len) && !domain[len])
+		/* match against the end of the string */
+		if ((clen < plen) && (strcasecmp(partner_fqdn + plen - clen, ++s) == 0))
 			return 1;
 	}
 	return 0;
