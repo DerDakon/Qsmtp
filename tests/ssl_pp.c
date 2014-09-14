@@ -252,6 +252,10 @@ server(void)
 		printf("SERVER: verify returned %i\n", v);
 		if (v != expect_verify_success)
 			r++;
+		if (v == 1) {
+			printf("SERVER: TLS client was identified as %s\n", xmitstat.tlsclient);
+			free(xmitstat.tlsclient);
+		}
 
 		net_writen(pong);
 	}
