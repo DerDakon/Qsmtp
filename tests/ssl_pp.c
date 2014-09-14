@@ -229,23 +229,28 @@ main(int argc, char **argv)
 {
 	pid_t child;
 	int r;
-	const char argprefix[] = "sslauth=";
 
-	if ((argc > 2) || ((argc == 2) && ((strlen(argv[1]) <= strlen(argprefix)) || (strncmp(argv[1], argprefix, strlen(argprefix)) != 0)))) {
-		fprintf(stderr, "Usage: %s [%svalue]", argv[0], argprefix);
-		return 1;
-	} else if (argc == 2) {
-		const char *v = argv[1] + strlen(argprefix);
-		if (strcmp(v, "EISDIR") == 0) {
-			expect_verify_success = -EISDIR;
-		} else {
-			char *endp;
-			unsigned long l = strtoul(v, &endp, 10);
+	while ((r = getopt(argc, argv, "s:")) != -1) {
+		switch(r) {
+		case 's':
+			if (strcmp(optarg, "EISDIR") == 0) {
+				expect_verify_success = -EISDIR;
+			} else {
+				char *endp;
+				unsigned long l = strtoul(optarg, &endp, 10);
 
-			if ((*endp != '\0') || (l == 0) || (l >= INT_MAX)) {
-				fprintf(stderr, "bad value: %s\n", v);
-				return 1;
+				if ((*endp != '\0') || (l == 0) || (l >= INT_MAX)) {
+					fprintf(stderr, "bad value: %s\n", optarg);
+					return 1;
+				}
 			}
+			break;
+		case ':':
+			printf("-%c without argument\n", optopt);
+			return 1;
+		case '?':
+			printf("unknown arg %c\n", optopt);
+			return 1;
 		}
 	}
 

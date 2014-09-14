@@ -962,7 +962,7 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir matching_servercert
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
 				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlsclients")
-		SET(_ssl_test_arg "sslauth=EISDIR")
+		SET(_ssl_test_arg "-sEISDIR")
 	ELSEIF (_ssl_test STREQUAL "matching_servercert")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
