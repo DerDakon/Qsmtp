@@ -180,7 +180,7 @@ tls_init(void)
 			if (k < 0)
 				i = k;
 			else
-				i = -EDONE;
+				i = EDONE;
 			break;
 		}
 	}
@@ -257,7 +257,7 @@ tls_init(void)
 				log_failed_peer(&peer);
 				sk_GENERAL_NAME_pop_free(gens, GENERAL_NAME_free);
 				X509_free(peercert);
-				return -EDONE;
+				return EDONE;
 			}
 			sk_GENERAL_NAME_pop_free(gens, GENERAL_NAME_free);
 		}
