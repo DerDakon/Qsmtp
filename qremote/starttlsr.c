@@ -12,6 +12,7 @@
 #include <sstring.h>
 #include <tls.h>
 
+#include <assert.h>
 #include <fcntl.h>
 #include <openssl/x509v3.h>
 #include <string.h>
@@ -25,8 +26,7 @@ const char *clientcertname = "control/clientcert.pem";
 static int
 match_partner(const char *s, size_t len)
 {
-	if (!partner_fqdn)
-		return 0;
+	assert(partner_fqdn != NULL);
 
 	if (!strncasecmp(partner_fqdn, s, len) && !partner_fqdn[len])
 		return 1;
