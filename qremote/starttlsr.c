@@ -255,11 +255,11 @@ tls_init(void)
 			 * commonName is ignored then */
 			if (found_an && !found_match) {
 				log_failed_peer(&peer);
-				sk_GENERAL_NAME_free(gens);
+				sk_GENERAL_NAME_pop_free(gens, GENERAL_NAME_free);
 				X509_free(peercert);
-				return EDONE;
+				return -EDONE;
 			}
-			sk_GENERAL_NAME_free(gens);
+			sk_GENERAL_NAME_pop_free(gens, GENERAL_NAME_free);
 		}
 
 		/* no alternative name matched, look up commonName,
