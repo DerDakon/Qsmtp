@@ -279,6 +279,7 @@ main(int argc, char **argv)
 					fprintf(stderr, "bad value: %s\n", optarg);
 					return 1;
 				}
+				expect_verify_success = l;
 			}
 			break;
 		case 'f':

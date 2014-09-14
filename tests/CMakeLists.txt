@@ -939,9 +939,12 @@ TARGET_LINK_LIBRARIES(testcase_ssl_pp
 		${OPENSSL_LIBRARIES}
 )
 
-FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir matching_servercert
-		matching_wildcard nonmatching_servercert nonmatching_wildcard
-		SubjAN_match SubjAN2_match SubjAN_cn servercert_no_name expired)
+FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
+		simple_clc_tlsclients simple_clc_clientca
+		matching_servercert matching_wildcard
+		nonmatching_servercert nonmatching_wildcard
+		SubjAN_match SubjAN2_match SubjAN_cn
+		servercert_no_name expired)
 	SET(_tgt_dir "${CMAKE_CURRENT_BINARY_DIR}/ssl_pp/${_ssl_test}")
 	FILE(MAKE_DIRECTORY "${_tgt_dir}/control")
 
@@ -964,6 +967,23 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir matching_servercert
 				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlsclients")
 		SET(_ssl_test_arg "-sEISDIR")
+	ELSEIF (_ssl_test STREQUAL "simple_clc_tlsclients" OR _ssl_test STREQUAL "simple_clc_clientca")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
+				"${_tgt_dir}/control/clientcert.pem" COPY_ONLY)
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
+				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
+		FILE(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
+		IF (_ssl_test STREQUAL "simple_clc_clientca")
+			CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.crt
+					"${_tgt_dir}/control/clientca.pem" COPY_ONLY)
+			SET(_ssl_test_arg "-s1")
+		ENDIF ()
+	ELSEIF (_ssl_test STREQUAL "simple_clc_tlsclients")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
+				"${_tgt_dir}/control/clientcert.pem" COPY_ONLY)
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
+				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
+		FILE(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
 	ELSEIF (_ssl_test STREQUAL "matching_servercert")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
@@ -996,14 +1016,12 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir matching_servercert
 				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPY_ONLY)
-# 		SET(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for *.example.org" "-iEDONE")
 	ELSEIF (_ssl_test STREQUAL "SubjAN2_match")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san2.key
 				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san2.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPY_ONLY)
-# 		SET(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for *.example.org" "-iEDONE")
 	ELSEIF (_ssl_test STREQUAL "SubjAN_cn")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san_cn.key
