@@ -22,6 +22,11 @@ char *partner_fqdn = "testcert.example.org";
 char certfilename[] = "control/servercert.pem";
 char *rhost;
 int socketd;
+static const char *logmsg;
+static const char *client_log;
+static const char *server_log;
+static int client_init_result;
+static int is_client;
 
 int
 checkaddr(const char *const a __attribute__((unused)))
@@ -43,15 +48,42 @@ err_conf(const char *m __attribute__ ((unused)))
 }
 
 void
-log_writen(int priority __attribute__ ((unused)), const char **s __attribute__ ((unused)))
+log_writen(int priority, const char **s)
 {
-	abort();
+	unsigned int pos = 0;
+	size_t off = 0;
+
+	if (is_client)
+		printf("CLIENT: log(%i, ", priority);
+	else
+		printf("SERVER: log(%i, ", priority);
+
+	while (s[pos] != NULL)
+		printf("%s", s[pos++]);
+	printf(")\n");
+
+	if (logmsg == NULL)
+		abort();
+
+	pos = 0;
+
+	while (s[pos] != NULL) {
+		const size_t l = strlen(s[pos]);
+		if (strncmp(logmsg + off, s[pos], l) != 0)
+			abort();
+		off += l;
+		pos++;
+	}
+
+	if (logmsg[off] != '\0')
+		abort();
 }
 
 void
-log_write(int priority __attribute__ ((unused)), const char *s __attribute__ ((unused)))
+log_write(int priority, const char *s)
 {
-	abort();
+	const char *msg[] = { s, NULL };
+	log_writen(priority, msg);
 }
 
 void
@@ -137,6 +169,8 @@ client(void)
 	int r, k;
 	const char *ping[] = { query, NULL };
 
+	is_client = 1;
+
 	close(sockets[0]);
 
 	if (dup2(sockets[1], 0) != 0) {
@@ -148,9 +182,10 @@ client(void)
 	socketd = sockets[1];
 
 	r = tls_init();
-	if (r != 0)
-		return r;
+	if (r != client_init_result)
+		return 1;
 
+	r = 0;
 	printf("CLIENT: init done, cipher is %s\n", SSL_get_cipher(ssl));
 
 	net_writen(ping);
@@ -230,11 +265,38 @@ main(int argc, char **argv)
 	pid_t child;
 	int r;
 
-	while ((r = getopt(argc, argv, "s:")) != -1) {
+	while ((r = getopt(argc, argv, "s:f:l:L:i:")) != -1) {
 		switch(r) {
 		case 's':
+			/* result of server tls_verify() */
 			if (strcmp(optarg, "EISDIR") == 0) {
 				expect_verify_success = -EISDIR;
+			} else {
+				char *endp;
+				unsigned long l = strtoul(optarg, &endp, 10);
+
+				if ((*endp != '\0') || (l == 0) || (l >= INT_MAX)) {
+					fprintf(stderr, "bad value: %s\n", optarg);
+					return 1;
+				}
+			}
+			break;
+		case 'f':
+			/* value for partner_fqdn */
+			partner_fqdn = optarg;
+			break;
+		case 'l':
+			/* expected client log message */
+			client_log = optarg;
+			break;
+		case 'L':
+			/* expected server log message */
+			server_log = optarg;
+			break;
+		case 'i':
+			/* expected return value of client tls_init() */
+			if (strcmp(optarg, "EDONE") == 0) {
+				client_init_result = EDONE;
 			} else {
 				char *endp;
 				unsigned long l = strtoul(optarg, &endp, 10);
@@ -261,10 +323,13 @@ main(int argc, char **argv)
 	if (child < 0) {
 		puts("fork() failed");
 		r = errno;
-	} else if (child == 0) {
+	} else if (child != 0) {
+		logmsg = client_log;
+		rhost = partner_fqdn;
 		r = client();
 	} else {
 		int s = -1; /* to keep valgrind silent */
+		logmsg = server_log;
 		r = server();
 		waitpid(child, &s, 0);
 		if (!WIFEXITED(s) || (WEXITSTATUS(s) != 0))

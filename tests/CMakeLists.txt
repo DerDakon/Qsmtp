@@ -940,7 +940,7 @@ TARGET_LINK_LIBRARIES(testcase_ssl_pp
 )
 
 FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir matching_servercert
-		matching_wildcard)
+		matching_wildcard nonmatching_servercert nonmatching_wildcard)
 	SET(_tgt_dir "${CMAKE_CURRENT_BINARY_DIR}/ssl_pp/${_ssl_test}")
 	FILE(MAKE_DIRECTORY "${_tgt_dir}/control")
 
@@ -975,6 +975,20 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir matching_servercert
 				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/wildcard1024.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPY_ONLY)
+	ELSEIF (_ssl_test STREQUAL "nonmatching_servercert")
+		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
+				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.crt
+				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPY_ONLY)
+		SET(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for testcert.example.org" "-iEDONE")
+	ELSEIF (_ssl_test STREQUAL "nonmatching_wildcard")
+		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/wildcard1024.key
+				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/wildcard1024.crt
+				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPY_ONLY)
+		SET(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for *.example.org" "-iEDONE")
 	ENDIF ()
 
 	ADD_TEST(NAME "SSL_pp_${_ssl_test}"
