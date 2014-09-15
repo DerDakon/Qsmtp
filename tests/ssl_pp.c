@@ -236,6 +236,14 @@ server(void)
 
 	printf("SERVER: init done, cipher is %s\n", SSL_get_cipher(ssl));
 
+	r = smtp_starttls();
+	if (r != 1) {
+		fprintf(stderr, "SERVER: second call to smtp_starttls() did not return 1, but %i\n", r);
+		r = 1;
+	} else {
+		r = 0;
+	}
+
 	if (net_read(0) != 0) {
 		fprintf(stderr, "server: net_read() failed\n");
 		r++;
