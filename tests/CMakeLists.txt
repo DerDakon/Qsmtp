@@ -941,7 +941,7 @@ TARGET_LINK_LIBRARIES(testcase_ssl_pp
 
 FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 		simple_clc_tlsclients simple_clc_clientca simple_clientca
-		relay_no_name
+		relay_no_name relay_other
 		matching_servercert matching_wildcard
 		nonmatching_servercert nonmatching_wildcard
 		SubjAN_match SubjAN2_match SubjAN_cn
@@ -982,6 +982,12 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 				"${_tgt_dir}/control/clientca.pem" COPY_ONLY)
 	ELSEIF (_ssl_test STREQUAL "relay_no_name")
 		SET(_ssl_client_key "noname.key")
+		SET(_ssl_server_key "valid1024.key")
+		FILE(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/noname.crt
+				"${_tgt_dir}/control/clientca.pem" COPY_ONLY)
+	ELSEIF (_ssl_test STREQUAL "relay_other")
+		SET(_ssl_client_key "valid1024_san.key")
 		SET(_ssl_server_key "valid1024.key")
 		FILE(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/noname.crt

@@ -82,6 +82,18 @@ tls_err(const char *s)
 static int ssl_verified;
 
 /**
+ * @brief callback for SSL_set_verify() that accepts any certicate
+ * @returns 1
+ *
+ * This will accept any certificate chain, so the SSL session can be reestablished.
+ * The errors will be checked later by calling SSL_get_verify_result(). */
+static int
+verify_callback(int preverify_ok __attribute__ ((unused)), X509_STORE_CTX *x509_ctx __attribute__ ((unused)))
+{
+	return 1;
+}
+
+/**
  * @brief verify is authenticated to relay by SSL certificate
  *
  * @retval <1 error code
@@ -120,7 +132,7 @@ tls_verify(void)
 	/* FIXME: this leaks sk */
 
 	SSL_set_client_CA_list(ssl, sk);
-	SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, NULL);
+	SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, verify_callback);
 
 	do { /* one iteration */
 		X509 *peercert;
