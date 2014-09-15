@@ -940,7 +940,7 @@ TARGET_LINK_LIBRARIES(testcase_ssl_pp
 )
 
 FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
-		simple_clc_tlsclients simple_clc_clientca
+		simple_clc_tlsclients simple_clc_clientca simple_clientca
 		matching_servercert matching_wildcard
 		nonmatching_servercert nonmatching_wildcard
 		SubjAN_match SubjAN2_match SubjAN_cn
@@ -978,6 +978,12 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 					"${_tgt_dir}/control/clientca.pem" COPY_ONLY)
 			SET(_ssl_test_arg "-s1")
 		ENDIF ()
+	ELSEIF (_ssl_test STREQUAL "simple_clientca")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
+				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
+		FILE(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.crt
+				"${_tgt_dir}/control/clientca.pem" COPY_ONLY)
 	ELSEIF (_ssl_test STREQUAL "simple_clc_tlsclients")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.key
 				"${_tgt_dir}/control/clientcert.pem" COPY_ONLY)
