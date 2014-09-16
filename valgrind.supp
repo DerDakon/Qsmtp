@@ -1,7 +1,7 @@
 {
    SSL_crypto_name_leak
    Memcheck:Leak
-   match-leak-kinds: reachable
+#   match-leak-kinds: reachable
    fun:malloc
    fun:CRYPTO_malloc
    fun:sk_new
