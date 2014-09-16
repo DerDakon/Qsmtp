@@ -505,6 +505,7 @@ ADD_TEST(NAME "NetIO"
 
 SET(ROUTES_TESTS nomatch complete_match with_port port_0 port_100k port_char port_char_no_relay
 		no_colon port_only unresolved
+		cert_dir cert_missing_dir
 		complete_match_dir with_port_dir port_0_dir port_100k_dir port_char_dir port_only_dir
 		port_char_no_relay_dir unresolved_dir duplicate_host_dir invalid_entry_dir
 		no_equal_dir start_equal_dir)

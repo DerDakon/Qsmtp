@@ -18,6 +18,7 @@ static int greet_result, next_greet_result;
 static int quitnext;
 static int tls_result = -1;
 unsigned int targetport = 428;
+char *clientcertbuf;
 
 void
 quitmsg(void)
@@ -174,6 +175,12 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		greet_result = esmtp_8bitmime;
 		msg = 220;
 		tls_result = 0;
+		quitnext = 1;
+		break;
+	case 21:
+		greet_result = esmtp_8bitmime;
+		msg = 220;
+		tls_result = 0;
 		break;
 	default:
 		abort();
@@ -266,15 +273,28 @@ main(void)
 
 	if (socketd >= 0)
 		close(socketd);
-	
+
 	mx[0].priority = 1;
-	
+	clientcertbuf = "";
+
+	i = connect_mx(mx, NULL, NULL);
+	if (i != -ENOENT) {
+		fprintf(stderr, "connect_mx() returned %i instead of -ENOENT when expected STARTTLS was not offered\n", i);
+		ret++;
+	}
+
+	if (socketd >= 0)
+		close(socketd);
+
+	mx[0].priority = 1;
+	clientcertbuf = NULL;
+
 	i = connect_mx(mx, NULL, NULL);
 	if (i != 0) {
 		fprintf(stderr, "connect_mx() returned %i instead of 0\n", i);
 		ret++;
 	}
-	
+
 	if (close(socketd) != 0)
 		ret++;
 	if (close(0) != 0)

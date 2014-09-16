@@ -57,6 +57,7 @@ extern string heloname;
 #ifdef CHUNKING
 extern size_t chunksize;
 #endif
+extern char *clientcertbuf;
 
 struct ips *smtproute(const char *, const size_t, unsigned int *);
 void quitmsg(void);

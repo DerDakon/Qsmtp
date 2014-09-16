@@ -10,6 +10,7 @@
 #include <match.h>
 #include <mmap.h>
 #include <qdns.h>
+#include <qremote/starttlsr.h>
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -21,9 +22,12 @@
 #include <syslog.h>
 #include <unistd.h>
 
+char *clientcertbuf;	/* buffer for a user-defined client certificate location */
+
 static const char *tags[] = {
 	"relay",
 	"port",
+	"clientcert",
 	NULL
 };
 
@@ -254,11 +258,35 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 				hv = NULL;
 
 			if (tagmask & 2)
+				/* find port */
 				pv = tagvalue(array, 1);
 			else
 				pv = NULL;
 
-			fd = parse_route_params(&mx, remhost, targetport, array, hv, pv);
+			fd = 0;
+			if (tagmask & 4) {
+				const char *v = tagvalue(array, 2);
+				if (access(v, R_OK) != 0) {
+					const char *logmsg[] = { "invalid certificate '", v,
+								"' given for \"", remhost, "\"", NULL };
+
+					err_confn(logmsg, array);
+				} else {
+					clientcertbuf = strdup(v);
+					if (clientcertbuf == NULL)
+						fd = -ENOMEM;
+					else
+						clientcertname = clientcertbuf;
+				}
+			}
+
+			if (fd == 0) {
+				fd = parse_route_params(&mx, remhost, targetport, array, hv, pv);
+				if (fd != 0) {
+					free(clientcertbuf);
+					clientcertbuf = NULL;
+				}
+			}
 
 			free(array);
 

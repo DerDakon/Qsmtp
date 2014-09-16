@@ -135,6 +135,13 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 			} else {
 				smtpext = flagerr;
 			}
+		} else if (clientcertbuf != NULL) {
+			const char *dropmsg[] = { "no STARTTLS offered by ", rhost, ", but TLS certificate is configured", NULL };
+
+			log_writen(LOG_WARNING, dropmsg);
+
+			quitmsg();
+			continue;
 		} else if ((mx->name != NULL) && (dnstlsa(mx->name, targetport, NULL) > 0)) {
 			const char *dropmsg[] = { "no STARTTLS offered by ", rhost, ", but TLSA record exists", NULL };
 
