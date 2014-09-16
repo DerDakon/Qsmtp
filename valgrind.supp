@@ -10,3 +10,11 @@
    fun:SSL_COMP_get_compression_methods
    fun:SSL_library_init
 }
+{
+   GCov_getenv_on_exit
+   Memcheck:Cond
+   fun:getenv
+   fun:gcov_exit
+   fun:__run_exit_handlers
+   fun:exit
+}
