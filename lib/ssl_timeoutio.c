@@ -165,7 +165,9 @@ ssl_timeoutrehandshake(time_t t)
 {
 	int r;
 
-	SSL_renegotiate(ssl);
+	r = SSL_renegotiate(ssl);
+	if (r <= 0)
+		return -EPROTO;
 	r = ssl_timeoutio(SSL_do_handshake, t, NULL, 0);
 	if ((r < 0) || (ssl->type == SSL_ST_CONNECT))
 		return r;
