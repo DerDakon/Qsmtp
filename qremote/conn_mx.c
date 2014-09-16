@@ -37,6 +37,16 @@ quitmsg_if_net(const int error)
 	}
 }
 
+static void
+connection_died(void)
+{
+	const char *logmsg[] = { "connection to ", rhost, " died", NULL };
+
+	close(socketd);
+	socketd = -1;
+	log_writen(LOG_WARNING, logmsg);
+}
+
 int
 connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *outip6)
 {
@@ -55,15 +65,9 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		if (s < 0) {
 			switch (-s) {
 			case ECONNRESET:
-				{
 				/* try next MX */
-				const char *logmsg[] = { "connection to ", rhost, " died", NULL };
-
-				close(socketd);
-				socketd = -1;
-				log_writen(LOG_WARNING, logmsg);
+				connection_died();
 				continue;
-				}
 			case EINVAL:
 				{
 				const char *dropmsg[] = { "invalid greeting from ", rhost, NULL };
@@ -83,6 +87,11 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		while (linein.s[3] == '-') {
 			int t = netget(0);
 
+			if (t == -ECONNRESET) {
+				s = t;
+				break;
+			}
+
 			flagerr |= (s != t);
 			if (t > 0)
 				continue;
@@ -94,6 +103,10 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 			 * and immediately send quit. Since the initial result of netget()
 			 * must have been positive flagerr will always be set here. */
 			break;
+		}
+		if (s == -ECONNRESET) {
+			connection_died();
+			continue;
 		}
 		if ((s != 220) || (flagerr != 0)) {
 			if (flagerr) {
