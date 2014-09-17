@@ -61,10 +61,14 @@ sync_pipelining(void)
 {
 }
 
+static int queue_reset_expected;
+
 void
 queue_reset(void)
 {
-	exit(EFAULT);
+	if (queue_reset_expected != 1)
+		exit(EFAULT);
+	queue_reset_expected = 0;
 }
 
 static int queue_init_result = -1;
@@ -110,6 +114,21 @@ spfreceived(int fd, const int spf)
 		return 0;
 	else
 		return -1;
+}
+
+int
+test_netnwrite(const char *msg, const size_t len)
+{
+	const char msg354[] = "354 Start mail input; end with <CRLF>.<CRLF>\r\n";
+
+	if (len != strlen(msg354))
+		abort();
+
+	if (strcmp(msg, msg354) != 0)
+		abort();
+
+	errno = 4321;
+	return -1;
 }
 
 static int
@@ -546,7 +565,7 @@ check_check_rfc822_headers(void)
 }
 
 static int
-check_data_badbounce()
+check_data_badbounce(void)
 {
 	int ret = 0;
 	int r;
@@ -567,7 +586,7 @@ check_data_badbounce()
 }
 
 static int
-check_data_no_rcpt()
+check_data_no_rcpt(void)
 {
 	int ret = 0;
 	int r;
@@ -588,7 +607,7 @@ check_data_no_rcpt()
 }
 
 static int
-check_data_qinit_fail()
+check_data_qinit_fail(void)
 {
 	int ret = 0;
 	int r;
@@ -601,6 +620,29 @@ check_data_qinit_fail()
 	r = smtp_data();
 
 	if (r != EDONE)
+		ret++;
+
+	return ret;
+}
+
+static int
+check_data_354_fail(void)
+{
+	int ret = 0;
+	int r;
+
+	printf("%s\n", __func__);
+
+	testcase_setup_netnwrite(test_netnwrite);
+
+	badbounce = 0;
+	goodrcpt = 1;
+	queue_init_result = 0;
+	queue_reset_expected = 1;
+
+	r = smtp_data();
+
+	if (r != 4321)
 		ret++;
 
 	return ret;
@@ -623,6 +665,7 @@ int main()
 	ret += check_data_badbounce();
 	ret += check_data_no_rcpt();
 	ret += check_data_qinit_fail();
+	ret += check_data_354_fail();
 
 	return ret;
 }
