@@ -188,17 +188,21 @@ is_multipart(const cstring *line, cstring *boundary)
 
 	i++;
 	while (1) {
+		const char sboundary[] = "boundary=";
+		const size_t blen = strlen(sboundary);
+
 		ch += i;
 		ch = skipwhitespace(ch, line->len - (ch - line->s));
 		/* multipart/(*) without boundary is invalid */
 		if ((ch == line->s + line->len) || (ch == NULL))
 			return -1;
 		i = mime_param(ch, line->len - (ch - line->s));
-		if (i >= 10) {
-			if (!strncasecmp("boundary=", ch, 9)) {
-				boundary->s = ch + 9;
+		if (i > blen) {
+			if (!strncasecmp(sboundary, ch, blen)) {
 				int quoted;
-				if (*(ch + 9) == '"') {
+
+				boundary->s = ch + blen;
+				if (*(boundary->s) == '"') {
 					const char *e;
 
 					quoted = 1;
