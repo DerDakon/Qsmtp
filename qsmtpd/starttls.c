@@ -129,8 +129,6 @@ tls_verify(void)
 		return 0;
 	}
 
-	/* FIXME: this leaks sk */
-
 	SSL_set_client_CA_list(ssl, sk);
 	SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, verify_callback);
 
