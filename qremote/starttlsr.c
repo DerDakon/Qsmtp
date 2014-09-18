@@ -120,7 +120,7 @@ tls_init(void)
 	}
 
 	/* let the other side complain if it needs a cert and we don't have one */
-	if (SSL_CTX_use_certificate_chain_file(ctx, clientcertname))
+	if (SSL_CTX_use_certificate_chain_file(ctx, clientcertname) == 1)
 		SSL_CTX_use_RSAPrivateKey_file(ctx, clientcertname, SSL_FILETYPE_PEM);
 
 	myssl = SSL_new(ctx);
