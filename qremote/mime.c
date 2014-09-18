@@ -74,8 +74,11 @@ skipwhitespace(const char *line, const size_t len)
 		do {
 			if (!--l)
 				return NULL;
-			if ((*c == '(') && (*(c - 1) != '\\'))
+			if ((*c == '(') && ((c == line) || (*(c - 1) != '\\')))
 				brace++;
+			/* (c - 1) will never underrun here, if this is the first
+			 * character the (*c != '(') check before the loop would
+			 * have already returned */
 			else if ((*c == ')') && (*(c - 1) != '\\'))
 				brace--;
 			c++;
