@@ -292,7 +292,6 @@ main(int argc, char *argv[])
 		freeips(mx);
 		net_conn_shutdown(shutdown_abort);
 	}
-	dup2(0, 42);
 
 	i = connect_mx(mx, &outip, &outip6);
 	freeips(mx);
