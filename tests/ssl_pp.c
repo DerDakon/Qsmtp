@@ -221,7 +221,7 @@ server(void)
 	socketd = sockets[0];
 
 	memset(buf, 0, sizeof(buf));
-	if ((read(socketd, buf, sizeof(buf)) != strlen(stls)) || (strcmp(buf, stls) != 0)) {
+	if ((read(socketd, buf, sizeof(buf)) != (ssize_t)strlen(stls)) || (strcmp(buf, stls) != 0)) {
 		buf[sizeof(buf) - 1] = '\0';
 		fprintf(stderr, "server: did not receive STARTTLS command, but '%s'\n", buf);
 		close(socketd);
