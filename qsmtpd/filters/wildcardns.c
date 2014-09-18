@@ -52,7 +52,7 @@ loadjokers(struct dns_wc **wcs)
 	if (inputs == NULL)
 		return 0;
 
-	for (cnt = 0; inputs[cnt]; cnt++)
+	for (cnt = 1; inputs[cnt]; cnt++)
 		;
 
 	*wcs = calloc(cnt, sizeof(**wcs));
