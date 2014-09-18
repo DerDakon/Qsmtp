@@ -405,6 +405,36 @@ test_multipart_boundary()
 	return ret;
 }
 
+static int
+test_no_multipart(void)
+{
+	int ret = 0;
+	const char *patterns[] = {
+		"multipar",
+		" foo=multipart",
+		" (something) foo/multipart",
+		"multipar/mix; boundary=bar",
+		NULL
+	};
+	unsigned int i;
+
+	for (i = 0; patterns[i] != NULL; i++) {
+		cstring p = {
+			.s = patterns[i],
+			.len = strlen(patterns[i])
+		};
+		cstring rs;
+		int r = is_multipart(&p, &rs);
+		if (r != 0) {
+			fprintf(stderr, "multipart was detected in pattern '%s', result %i\n",
+					patterns[i], r);
+			ret++;
+		}
+	}
+
+	return ret;
+}
+
 int
 main(void)
 {
@@ -414,6 +444,7 @@ main(void)
 	err += test_ws();
 	err += test_multipart_bad();
 	err += test_multipart_boundary();
+	err += test_no_multipart();
 
 	return err;
 }

@@ -165,6 +165,7 @@ int
 is_multipart(const cstring *line, cstring *boundary)
 {
 	const char *ch;
+	size_t i = strlen("multipart/"), j;
 
 	if (!line->len)
 		return 0;
@@ -175,101 +176,99 @@ is_multipart(const cstring *line, cstring *boundary)
 
 	STREMPTY(*boundary);
 
-	if (!strncasecmp(ch, "multipart/", strlen("multipart/"))) {
-		size_t i = strlen("multipart/"), j;
+	if (strncasecmp(ch, "multipart/", i) != 0)
+		return 0;
 
-		j = mime_token(ch + i, line->len - (ch - line->s) - i);
-		i += j;
-		if (!j || (ch[i] == '='))
-			return -1;
-		if (ch[i] != ';') {
-			return -1;
-		}
-		i++;
-		while (1) {
-			ch += i;
-			ch = skipwhitespace(ch, line->len - (ch - line->s));
-			/* multipart/(*) without boundary is invalid */
-			if ((ch == line->s + line->len) || (ch == NULL))
-				return -1;
-			i = mime_param(ch, line->len - (ch - line->s));
-			if (i >= 10) {
-				if (!strncasecmp("boundary=", ch, 9)) {
-					boundary->s = ch + 9;
-					int quoted;
-					if (*(ch + 9) == '"') {
-						const char *e;
-
-						quoted = 1;
-						(boundary->s)++;
-						e = memchr(ch + 10, '"', line->len - 10 - (ch - line->s));
-						/* error would have been detected in mime_param() above */
-						assert(e != NULL);
-						j = e - ch - 10;
-					} else {
-						quoted = 0;
-						j = 0;
-						while (!WSPACE(boundary->s[j]) && (boundary->s[j] != ';') &&
-										(boundary->s + j < line->s + line ->len)) {
-							j++;
-						}
-					}
-					boundary->len = j;
-
-					if (!boundary->len) {
-						write_status("D5.6.3 boundary definition is empty");
-						net_conn_shutdown(shutdown_abort);
-					} else if (boundary->len > 70) {
-						write_status("D5.6.3 boundary definition is too long");
-						net_conn_shutdown(shutdown_abort);
-					} else if ((quoted == 1) && (boundary->s[boundary->len - 1] == ' ')) {
-						write_status("D5.6.3 quoted boundary definition may not end in space");
-						net_conn_shutdown(shutdown_abort);
-					}
-
-					while (j > 0) {
-						j--;
-
-						/* ascii letters are allowed */
-						if (((boundary->s[j] >= 'a') && (boundary->s[j] <= 'z')) ||
-								((boundary->s[j] >= 'A') && (boundary->s[j] <= 'Z')))
-							continue;
-
-						/* spaces are allowed inside quoted strings */
-						if ((quoted == 1) && (boundary->s[j] == ' '))
-							continue;
-
-						/* more allowed chars, defined in RfC 2046, section 5.1.1. */
-							/* +,-./0123456789: */
-						if ((boundary->s[j] >= '+') && (boundary->s[j] <= ':'))
-							continue;
-
-						switch (boundary->s[j]) {
-						case '\'':
-						case '(':
-						case ')':
-						case '_':
-						case '=':
-						case '?':
-							continue;
-						default:
-							write_status("D5.6.3 boundary definition contains invalid character");
-							net_conn_shutdown(shutdown_abort);
-						}
-					}
-					/* we have a valid boundary definition, that's all what we're interested in */
-					return 1;
-				}
-			}
-			if (!i)
-				return -1;
-			if (*(ch + i) == ';')
-				i++;
-		}
+	j = mime_token(ch + i, line->len - (ch - line->s) - i);
+	i += j;
+	if (!j || (ch[i] == '='))
 		return -1;
+	if (ch[i] != ';')
+		return -1;
+
+	i++;
+	while (1) {
+		ch += i;
+		ch = skipwhitespace(ch, line->len - (ch - line->s));
+		/* multipart/(*) without boundary is invalid */
+		if ((ch == line->s + line->len) || (ch == NULL))
+			return -1;
+		i = mime_param(ch, line->len - (ch - line->s));
+		if (i >= 10) {
+			if (!strncasecmp("boundary=", ch, 9)) {
+				boundary->s = ch + 9;
+				int quoted;
+				if (*(ch + 9) == '"') {
+					const char *e;
+
+					quoted = 1;
+					(boundary->s)++;
+					e = memchr(ch + 10, '"', line->len - 10 - (ch - line->s));
+					/* error would have been detected in mime_param() above */
+					assert(e != NULL);
+					j = e - ch - 10;
+				} else {
+					quoted = 0;
+					j = 0;
+					while (!WSPACE(boundary->s[j]) && (boundary->s[j] != ';') &&
+									(boundary->s + j < line->s + line ->len)) {
+						j++;
+					}
+				}
+				boundary->len = j;
+
+				if (!boundary->len) {
+					write_status("D5.6.3 boundary definition is empty");
+					net_conn_shutdown(shutdown_abort);
+				} else if (boundary->len > 70) {
+					write_status("D5.6.3 boundary definition is too long");
+					net_conn_shutdown(shutdown_abort);
+				} else if ((quoted == 1) && (boundary->s[boundary->len - 1] == ' ')) {
+					write_status("D5.6.3 quoted boundary definition may not end in space");
+					net_conn_shutdown(shutdown_abort);
+				}
+
+				while (j > 0) {
+					j--;
+
+					/* ascii letters are allowed */
+					if (((boundary->s[j] >= 'a') && (boundary->s[j] <= 'z')) ||
+							((boundary->s[j] >= 'A') && (boundary->s[j] <= 'Z')))
+						continue;
+
+					/* spaces are allowed inside quoted strings */
+					if ((quoted == 1) && (boundary->s[j] == ' '))
+						continue;
+
+					/* more allowed chars, defined in RfC 2046, section 5.1.1. */
+						/* +,-./0123456789: */
+					if ((boundary->s[j] >= '+') && (boundary->s[j] <= ':'))
+						continue;
+
+					switch (boundary->s[j]) {
+					case '\'':
+					case '(':
+					case ')':
+					case '_':
+					case '=':
+					case '?':
+						continue;
+					default:
+						write_status("D5.6.3 boundary definition contains invalid character");
+						net_conn_shutdown(shutdown_abort);
+					}
+				}
+				/* we have a valid boundary definition, that's all what we're interested in */
+				return 1;
+			}
+		}
+		if (!i)
+			return -1;
+		if (*(ch + i) == ';')
+			i++;
 	}
 
-	return 0;
+	return -1;
 }
 
 /**
