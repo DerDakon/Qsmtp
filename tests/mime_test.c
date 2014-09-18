@@ -180,6 +180,7 @@ test_multipart_bad(void)
 		"Content-Type: multipart/mixed; foo=\"A\"a", /* non-whitespace after quoted string */
 		"Content-Type: multipart/mixed; foo=A:a", /* colon not permitted here */
 		"Content-Type: multipart/mixed; (", /* unfinished comment */
+		"Content-Type: multipart/mixed; foo= bar", /* space after equal */
 #if 0
 		/* not tested because it terminates the program */
 		"Content-Type: multipart/mixed; boundary=abcdefghijklmnopqrstuvwxyz"
