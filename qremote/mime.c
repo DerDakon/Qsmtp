@@ -41,35 +41,16 @@ skipwhitespace(const char *line, const size_t len)
 
 	while (l != 0) {
 		int brace = 0;
-		int ws = 0;	/* found at least one whitespace */
 
 		/* skip whitespaces */
-		if ((*c == ' ') || (*c == '\t')) {
-			while ((*c == ' ') || (*c == '\t')) {
-				c++;
-				if (!--l)
-					return c;
-			}
+		while ((*c == ' ') || (*c == '\t') || (*c == '\r') || (*c == '\n')) {
+			c++;
+			if (!--l)
+				return c;
 		}
 
-		if (*c == '\r') {
-			c++;
-			l--;
-			ws = 1;
-		}
-		if (l && (*c == '\n')) {
-			c++;
-			l--;
-			ws = 1;
-		}
-		if (ws)
-			continue;
-
-		if ((!--l) || (*c != '(')) {
+		if (*c != '(')
 			return c;
-		}
-
-		l++;
 
 		do {
 			if (!--l)
@@ -102,18 +83,17 @@ mime_token(const char *line, const size_t len)
 	size_t i = 0;
 
 	for (; i < len; i++) {
-		if ((line[i] == ';') || (line[i] == '=')) {
+		if ((line[i] == ';') || (line[i] == '='))
 			return i;
-		}
+
 		if ((line[i] == ' ') || (line[i] == '\t') ||
 					(line[i] == '\r') || (line[i] == '\n')) {
 			const char *e = skipwhitespace(line + i, len - i);
 
 			return (e == line + len) ? i : 0;
 		}
-		if ((line[i] <= 32) || TSPECIAL(line[i])) {
+		if ((line[i] <= 32) || TSPECIAL(line[i]))
 			return 0;
-		}
 	}
 	return i;
 }
@@ -189,10 +169,8 @@ is_multipart(const cstring *line, cstring *boundary)
 	if (!line->len)
 		return 0;
 
-	if ( (ch = skipwhitespace(line->s + 13, line->len - 13)) == NULL)
-		return -1;
-
-	if (ch == line->s + line->len)
+	ch = skipwhitespace(line->s + 13, line->len - 13);
+	if ((ch == NULL) || (ch == line->s + line->len))
 		return -1;
 
 	STREMPTY(*boundary);
@@ -212,7 +190,7 @@ is_multipart(const cstring *line, cstring *boundary)
 			ch += i;
 			ch = skipwhitespace(ch, line->len - (ch - line->s));
 			/* multipart/(*) without boundary is invalid */
-			if (ch == line->s + line->len)
+			if ((ch == line->s + line->len) || (ch == NULL))
 				return -1;
 			i = mime_param(ch, line->len - (ch - line->s));
 			if (i >= 10) {
