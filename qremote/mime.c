@@ -74,15 +74,10 @@ skipwhitespace(const char *line, const size_t len)
 		do {
 			if (!--l)
 				return NULL;
-			if (*c == '(') {
-				if (*(c - 1) != '\\')
-					brace++;
-			} else if (*c == ')') {
-				if (*(c - 1) != '\\')
-					brace--;
-			} else if ((*c == '\r') || (*c == '\n')) {
-				ws = 0;
-			}
+			if ((*c == '(') && (*(c - 1) != '\\'))
+				brace++;
+			else if ((*c == ')') && (*(c - 1) != '\\'))
+				brace--;
 			c++;
 		} while (brace);
 	}
