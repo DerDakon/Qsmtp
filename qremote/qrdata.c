@@ -101,25 +101,25 @@ send_plain(const char *buf, const off_t len)
 
 	while (off < len) {
 		while (idx + chunk < sizeof(sendbuf) - 5) {
-			if (off + (off_t) chunk == len) {
+			if (off + (off_t) chunk == len)
 				break;
-			}
-			switch (buf[off + chunk]) {
-			case '\r': {
-					int last = (off + (off_t) ++chunk == len);
 
-					llen = 0;
-					if (!last && (buf[off + chunk] == '\n')) {
-						chunk++;
-					} else {
-						memcpy(sendbuf + idx, buf + off, chunk);
-						off += chunk;
-						idx += chunk;
-						sendbuf[idx++] = '\n';
-						chunk = 0;
-					}
-					break;
+			switch (buf[off + chunk]) {
+			case '\r':
+				llen = 0;
+				chunk++;
+				/* check if there is a next character and that one in LF */
+				if ((off + (off_t) chunk != len) && (buf[off + chunk] == '\n')) {
+					chunk++;
+				} else {
+					/* insert LF */
+					memcpy(sendbuf + idx, buf + off, chunk);
+					off += chunk;
+					idx += chunk;
+					sendbuf[idx++] = '\n';
+					chunk = 0;
 				}
+				break;
 			case '\n':
 				/* bare '\n' */
 				memcpy(sendbuf + idx, buf + off, chunk);
@@ -154,14 +154,10 @@ send_plain(const char *buf, const off_t len)
 			chunk = 0;
 		}
 
-		if (len != off) {
-			netnwrite(sendbuf, idx);
-			lastlf = (sendbuf[idx - 1] == '\n');
-			idx = 0;
-		}
+		netnwrite(sendbuf, idx);
+		lastlf = (sendbuf[idx - 1] == '\n');
+		idx = 0;
 	}
-	lastlf = (sendbuf[idx - 1] == '\n');
-	netnwrite(sendbuf, idx);
 }
 
 static void
