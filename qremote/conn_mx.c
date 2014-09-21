@@ -59,7 +59,8 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		socketd = tryconn(mx, outip4, outip6);
 		if (socketd < 0)
 			return socketd;
-		dup2(socketd, 0);
+		if (dup2(socketd, 0) < 0)
+			net_conn_shutdown(shutdown_abort);
 
 		s = netget(0);
 		if (s < 0) {
