@@ -491,7 +491,8 @@ work:
 		close(dirfd);
 		net_conn_shutdown(shutdown_abort);
 	}
-	dup2(socketd, 0);
+	if (dup2(socketd, 0) < 0)
+		net_conn_shutdown(shutdown_abort);
 	if (netget(1) != 220)
 		net_conn_shutdown(shutdown_clean);
 
