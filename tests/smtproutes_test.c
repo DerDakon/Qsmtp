@@ -112,7 +112,8 @@ verify_route(void)
 	return 0;
 }
 
-int main(void)
+int
+main(void)
 {
 	int fd = open("expected_port", O_RDONLY | O_CLOEXEC);
 	int r;
@@ -121,6 +122,12 @@ int main(void)
 	testcase_setup_log_writen(test_log_writen);
 
 	controldir_fd = open("control", O_RDONLY | O_DIRECTORY | O_CLOEXEC);
+	if (controldir_fd < 0) {
+		fprintf(stderr, "error opening the control dir: %i\n", errno);
+		if (fd >= 0)
+			close(fd);
+		return EFAULT;
+	}
 
 	if (loadintfd(fd, &expectedport, 25) != 0) {
 		fprintf(stderr, "error loading the expected port");
@@ -132,13 +139,13 @@ int main(void)
 	if (ipe_len == (size_t) -1) {
 		if (errno != ENOENT) {
 			fprintf(stderr, "error %i when opening 'expected_ip'\n", errno);
-			exit(EFAULT);
+			return EFAULT;
 		}
 	} else if (ipe_len > 0) {
 		if (inet_pton(AF_INET6, ipexpect, &expectedip) != 1) {
 			fprintf(stderr, "cannot parse expected IPv6 address %s\n", ipexpect);
 			free(ipexpect);
-			exit(EFAULT);
+			return EFAULT;
 		}
 	}
 
@@ -146,7 +153,7 @@ int main(void)
 	if ((certlen == (size_t) -1) && (errno != ENOENT)) {
 		fprintf(stderr, "error %i when opening 'expected_cert'\n", errno);
 		free(ipexpect);
-		exit(EFAULT);
+		return EFAULT;
 	}
 
 	mx = smtproute("foo.example.net", strlen("foo.example.net"), &targetport);
