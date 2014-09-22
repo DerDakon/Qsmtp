@@ -336,7 +336,7 @@ main(int argc, char **argv)
 	if (child < 0) {
 		puts("fork() failed");
 		r = errno;
-	} else if (child != 0) {
+	} else if (child == 0) {
 		logmsg = client_log;
 		rhost = partner_fqdn;
 		r = client();
