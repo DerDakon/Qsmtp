@@ -60,6 +60,13 @@ hascolon(const char *s)
 
 static unsigned int tagmask;
 
+/**
+ * @brief callback for loadlistfd() to check validity of smtprouts.d file contents
+ * @param s the line to check
+ *
+ * This not only checks the current line, but also sets tagmask to detect duplicate
+ * lines.
+ */
 static int
 validroute(const char *s)
 {
@@ -67,15 +74,18 @@ validroute(const char *s)
 	size_t len;
 	unsigned int i;
 
+	/* must be key=value */
 	if (last == NULL)
 		return 1;
 
+	/* catch empty keys */
 	if (last == s)
 		return 1;
 
 	len = last - s;
 
 	for (i = 0; tags[i] != NULL; i++) {
+		/* catch if tag is longer than the key found here */
 		if (strlen(tags[i]) != len)
 			continue;
 
