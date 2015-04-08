@@ -952,7 +952,7 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 
 	FOREACH(_pem IN ITEMS rsa512 dh512 dh1024)
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/${_pem}.pem
-				"${_tgt_dir}/control/${_pem}.pem" COPY_ONLY)
+				"${_tgt_dir}/control/${_pem}.pem" COPYONLY)
 	ENDFOREACH()
 
 	UNSET(_ssl_test_arg)
@@ -973,26 +973,26 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 		FILE(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
 		IF (_ssl_test STREQUAL "simple_clc_clientca")
 			CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.crt
-					"${_tgt_dir}/control/clientca.pem" COPY_ONLY)
+					"${_tgt_dir}/control/clientca.pem" COPYONLY)
 			SET(_ssl_test_arg "-s1")
 		ENDIF ()
 	ELSEIF (_ssl_test STREQUAL "simple_clientca")
 		SET(_ssl_server_key "valid1024.key")
 		FILE(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.crt
-				"${_tgt_dir}/control/clientca.pem" COPY_ONLY)
+				"${_tgt_dir}/control/clientca.pem" COPYONLY)
 	ELSEIF (_ssl_test STREQUAL "relay_no_name")
 		SET(_ssl_client_key "noname.key")
 		SET(_ssl_server_key "valid1024.key")
 		FILE(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/noname.crt
-				"${_tgt_dir}/control/clientca.pem" COPY_ONLY)
+				"${_tgt_dir}/control/clientca.pem" COPYONLY)
 	ELSEIF (_ssl_test STREQUAL "relay_other")
 		SET(_ssl_client_key "valid1024_san.key")
 		SET(_ssl_server_key "valid1024.key")
 		FILE(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/noname.crt
-				"${_tgt_dir}/control/clientca.pem" COPY_ONLY)
+				"${_tgt_dir}/control/clientca.pem" COPYONLY)
 	ELSEIF (_ssl_test STREQUAL "relay_multi_first" OR _ssl_test STREQUAL "relay_multi_last")
 		SET(_ssl_client_key "valid1024.key")
 		SET(_ssl_server_key "valid1024.key")
@@ -1015,61 +1015,61 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "valid1024.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPY_ONLY)
+				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 	ELSEIF (_ssl_test STREQUAL "matching_wildcard")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "wildcard1024.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/wildcard1024.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPY_ONLY)
+				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 	ELSEIF (_ssl_test STREQUAL "nonmatching_servercert")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "valid1024.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPY_ONLY)
+				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPYONLY)
 		SET(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for testcert.example.org" "-iEDONE")
 	ELSEIF (_ssl_test STREQUAL "nonmatching_wildcard")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "wildcard1024.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/wildcard1024.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPY_ONLY)
+				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPYONLY)
 		SET(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for *.example.org" "-iEDONE")
 	ELSEIF (_ssl_test STREQUAL "SubjAN_match")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "valid1024_san.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPY_ONLY)
+				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 	ELSEIF (_ssl_test STREQUAL "SubjAN2_match")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "valid1024_san2.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san2.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPY_ONLY)
+				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 	ELSEIF (_ssl_test STREQUAL "SubjAN_cn")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "valid1024_san_cn.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san_cn.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPY_ONLY)
+				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 		SET(_ssl_test_arg "-lunable to verify testcert.example.org: received certificate for other.example.org" "-iEDONE")
 	ELSEIF (_ssl_test STREQUAL "servercert_no_name")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "noname.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/noname.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPY_ONLY)
+				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 		SET(_ssl_test_arg "-lunable to verify testcert.example.org: certificate contains no valid commonName" "-iEDONE")
 	ELSEIF (_ssl_test STREQUAL "expired")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "expired.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/expired.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPY_ONLY)
+				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 		SET(_ssl_test_arg "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: certificate has expired" "-iEDONE")
 	ENDIF ()
 
 	IF (_ssl_client_key)
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/${_ssl_client_key}
-				"${_tgt_dir}/control/clientcert.pem" COPY_ONLY)
+				"${_tgt_dir}/control/clientcert.pem" COPYONLY)
 	ENDIF ()
 	IF (_ssl_server_key)
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/${_ssl_server_key}
-				"${_tgt_dir}/control/servercert.pem" COPY_ONLY)
+				"${_tgt_dir}/control/servercert.pem" COPYONLY)
 	ENDIF (_ssl_server_key)
 
 	ADD_TEST(NAME "SSL_pp_${_ssl_test}"
