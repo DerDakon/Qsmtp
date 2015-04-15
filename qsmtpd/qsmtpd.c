@@ -80,7 +80,7 @@ string heloname;			/**< the fqdn to show in helo */
 string msgidhost;			/**< the fqdn to use if a message-id is added */
 string liphost;				/**< replacement domain if TO address is <foo@[ip]> */
 int socketd = 1;			/**< the descriptor where messages to network are written to */
-unsigned int comstate = 0x001;		/**< status of the command state machine, initialized to noop */
+unsigned long comstate = 0x001;		/**< status of the command state machine, initialized to noop */
 int authhide;				/**< hide source of authenticated mail */
 int submission_mode;			/**< if we should act as message submission agent */
 
@@ -608,7 +608,7 @@ smtploop(void)
 		for (i = 0; i < sizeof(commands) / sizeof(commands[0]); i++) {
 			if (!strncasecmp(linein.s, commands[i].name, commands[i].len)) {
 				if (comstate & commands[i].mask) {
-					unsigned int ostate = commands[i].state; /* the state originally recorded for this command */
+					const long ostate = commands[i].state; /* the state originally recorded for this command */
 
 					/* "space required" may not come without "takes arguments" */
 					assert((commands[i].flags & 5) != 4);

@@ -108,7 +108,7 @@ string heloname = {
 	.s = (char *)((uintptr_t)-1),
 	.len = -1
 };
-unsigned int comstate = 0x10000000;
+unsigned long comstate = 0x10000000;
 struct smtpcomm *current_command = (struct smtpcomm *)((uintptr_t)-1);
 
 void
