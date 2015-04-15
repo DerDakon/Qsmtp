@@ -36,6 +36,7 @@ char certfilename[24 + INET6_ADDRSTRLEN + 6] = "control/servercert.pem";		/**< p
  * @param len length of helo
  * @return 0 on successful call, -1 on error
  * @retval 0 check was completed (xmitstat.helostatus was updated)
+ * @retval 1 a severe syntax error was detected
  * @retval -1 an error occured (usually ENOMEM)
  *
  * the status of the helo string ist stored in xmitstat.helostatus
@@ -49,10 +50,21 @@ char certfilename[24 + INET6_ADDRSTRLEN + 6] = "control/servercert.pem";		/**< p
  *  6, 7: currently undefined
  */
 static int __attribute__ ((nonnull (1)))
-helovalid(const char *helo, const size_t len)
+helovalid(const char *helo, size_t len)
 {
 	char *s;
 	int rc;
+
+	/* ignore any trailing spaces */
+	while ((len > 0) && (helo[len - 1] == ' '))
+		len--;
+
+	/* name must be given */
+	if (len == 0)
+		return 1;
+	/* name must not contain spaces */
+	if (memchr(helo, ' ', len) != NULL)
+		return 1;
 
 	xmitstat.helostatus = 0;
 	free(xmitstat.helostr.s);
@@ -190,8 +202,16 @@ smtp_helo(void)
 	xmitstat.esmtp = 0;
 	xmitstat.spf = 0;
 	xmitstat.datatype = 0;
-	if (helovalid(linein.s + 5, linein.len - 5) < 0)
+
+	switch (helovalid(linein.s + 5, linein.len - 5)) {
+	case -1:
 		return errno;
+	case 1:
+		return EINVAL;
+	default:
+		break;
+	}
+
 	return net_writen(s) ? errno : 0;
 }
 
@@ -211,8 +231,14 @@ smtp_ehlo(void)
 	msg[next++] = "250-CHUNKING\r\n";
 #endif
 
-	if (helovalid(linein.s + 5, linein.len - 5) < 0)
+	switch (helovalid(linein.s + 5, linein.len - 5)) {
+	case -1:
 		return errno;
+	case 1:
+		return EINVAL;
+	default:
+		break;
+	}
 
 	authtypes = smtp_authstring();
 

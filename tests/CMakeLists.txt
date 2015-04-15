@@ -735,6 +735,16 @@ ELSE ()
 
 ENDIF ()
 
+SET(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/broken_helo.cmake")
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_submission.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_broken_helo.cmake" @ONLY)
+ADD_TEST(NAME "Qsmtpd_broken_helo"
+		COMMAND "${CMAKE_COMMAND}"
+				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_broken_helo.cmake")
+# Do not add \r here, looks like CMake automatically strips it, so just
+# assume we are doing it right.
+SET_TESTS_PROPERTIES(Qsmtpd_broken_helo PROPERTIES
+		PASS_REGULAR_EXPRESSION "^${QSMTPD_GREETING_LINE}(500 5\\.5\\.2 command syntax error\n250 2.0.0 ok\n)+${QSMTPD_QUIT_LINE}$")
+
 ADD_EXECUTABLE(testcase_ipme
 		ipme_test.c)
 TARGET_LINK_LIBRARIES(testcase_ipme
