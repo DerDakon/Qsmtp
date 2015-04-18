@@ -42,8 +42,8 @@ unsigned int smtpext;	/**< the SMTP extensions supported by the remote server */
 char *rhost;		/**< the DNS name (if present) and IP address of the remote server to be used in log messages */
 size_t rhostlen;	/**< valid length of rhost */
 char *partner_fqdn;	/**< the DNS name of the remote server (forward-lookup), or NULL if the connection was done by IP */
-static struct in6_addr outip;
-static struct in6_addr outip6;
+static struct in6_addr outgoingip;
+static struct in6_addr outgoingip6;
 
 /**
  * @brief send QUIT to the remote server and close the connection
@@ -200,40 +200,40 @@ setup(void)
 #endif
 
 	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip", &ipbuf, 1)) >= 0) {
-		int r = inet_pton(AF_INET6, ipbuf, &outip);
+		int r = inet_pton(AF_INET6, ipbuf, &outgoingip);
 
 		if (r <= 0) {
 			struct in_addr a4;
 			r = inet_pton(AF_INET, ipbuf, &a4);
-			outip.s6_addr32[0] = 0;
-			outip.s6_addr32[1] = 0;
-			outip.s6_addr32[2] = htonl(0xffff);
-			outip.s6_addr32[3] = a4.s_addr;
+			outgoingip.s6_addr32[0] = 0;
+			outgoingip.s6_addr32[1] = 0;
+			outgoingip.s6_addr32[2] = htonl(0xffff);
+			outgoingip.s6_addr32[3] = a4.s_addr;
 		}
 
 		free(ipbuf);
 		if (r <= 0)
 			err_conf("parse error in control/outgoingip");
 
-		if (!IN6_IS_ADDR_V4MAPPED(&outip))
+		if (!IN6_IS_ADDR_V4MAPPED(&outgoingip))
 			err_conf("found IPv6 address in control/outgoingip");
 	} else {
-		outip = in6addr_any;
+		outgoingip = in6addr_any;
 	}
 
 #ifndef IPV4ONLY
 	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip6", &ipbuf, 1)) >= 0) {
-		int r = inet_pton(AF_INET6, ipbuf, &outip6);
+		int r = inet_pton(AF_INET6, ipbuf, &outgoingip6);
 
 		free(ipbuf);
 		if (r <= 0)
 			err_conf("parse error in control/outgoingip6");
 
-		if (IN6_IS_ADDR_V4MAPPED(&outip6))
+		if (IN6_IS_ADDR_V4MAPPED(&outgoingip6))
 			err_conf("control/outgoingip6 has IPv4 address");
 	} else
 #endif
-		outip6 = in6addr_any;
+		outgoingip6 = in6addr_any;
 
 #ifdef DEBUG_IO
 	do_debug_io = (faccessat(controldir_fd, "Qremote_debug", R_OK, 0) == 0);
@@ -293,7 +293,7 @@ main(int argc, char *argv[])
 		net_conn_shutdown(shutdown_abort);
 	}
 
-	i = connect_mx(mx, &outip, &outip6);
+	i = connect_mx(mx, &outgoingip, &outgoingip6);
 	freeips(mx);
 
 	if (i < 0) {

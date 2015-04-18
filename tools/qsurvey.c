@@ -44,8 +44,8 @@ unsigned long remotesize;
 static int logfd;
 static int logdirfd = -1;
 static struct ips *mx;
-static struct in6_addr outip;
-static struct in6_addr outip6;
+static struct in6_addr outgoingip;
+static struct in6_addr outgoingip6;
 
 void
 err_mem(const int doquit)
@@ -139,40 +139,40 @@ setup(void)
 	timeout = tmp;
 
 	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip", &ipbuf, 1)) >= 0) {
-		int r = inet_pton(AF_INET6, ipbuf, &outip);
+		int r = inet_pton(AF_INET6, ipbuf, &outgoingip);
 
 		if (r <= 0) {
 			struct in_addr a4;
 			r = inet_pton(AF_INET, ipbuf, &a4);
-			outip.s6_addr32[0] = 0;
-			outip.s6_addr32[1] = 0;
-			outip.s6_addr32[2] = htonl(0xffff);
-			outip.s6_addr32[3] = a4.s_addr;
+			outgoingip.s6_addr32[0] = 0;
+			outgoingip.s6_addr32[1] = 0;
+			outgoingip.s6_addr32[2] = htonl(0xffff);
+			outgoingip.s6_addr32[3] = a4.s_addr;
 		}
 
 		free(ipbuf);
 		if (r <= 0)
 			err_conf("parse error in control/outgoingip");
 
-		if (!IN6_IS_ADDR_V4MAPPED(&outip))
+		if (!IN6_IS_ADDR_V4MAPPED(&outgoingip))
 			err_conf("compiled for IPv4 only but control/outgoingip has IPv6 address");
 	} else {
-		outip = in6addr_any;
+		outgoingip = in6addr_any;
 	}
 
 #ifndef IPV4ONLY
 	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip6", &ipbuf, 1)) >= 0) {
-		int r = inet_pton(AF_INET6, ipbuf, &outip6);
+		int r = inet_pton(AF_INET6, ipbuf, &outgoingip6);
 
 		free(ipbuf);
 		if (r <= 0)
 			err_conf("parse error in control/outgoingip6");
 
-		if (IN6_IS_ADDR_V4MAPPED(&outip6))
+		if (IN6_IS_ADDR_V4MAPPED(&outgoingip6))
 			err_conf("control/outgoingip6 has IPv4 address");
 	} else
 #endif
-		outip6 = in6addr_any;
+		outgoingip6 = in6addr_any;
 
 	heloname.len = j;
 
@@ -484,7 +484,7 @@ work:
 
 	makelog("conn");
 
-	socketd = tryconn(cur, &outip, &outip6);
+	socketd = tryconn(cur, &outgoingip, &outgoingip6);
 	if (socketd < 0) {
 		fprintf(stderr, "can't connect to any server\n");
 		close(logdirfd);
