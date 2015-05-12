@@ -503,32 +503,6 @@ ADD_EXECUTABLE(test_netio_client
 ADD_TEST(NAME "NetIO"
 		COMMAND testcase_netio $<TARGET_FILE:test_netio_client>)
 
-SET(ROUTES_TESTS nomatch complete_match with_port port_0 port_100k port_char port_char_no_relay
-		no_colon port_only unresolved
-		cert_dir cert_missing_dir
-		complete_match_dir with_port_dir port_0_dir port_100k_dir port_char_dir port_only_dir
-		port_char_no_relay_dir unresolved_dir duplicate_host_dir invalid_entry_dir
-		no_equal_dir start_equal_dir)
-
-ADD_EXECUTABLE(testcase_smtproutes
-		smtproutes_test.c
-		${CMAKE_SOURCE_DIR}/qremote/smtproutes.c)
-TARGET_LINK_LIBRARIES(testcase_smtproutes
-		qsmtp_lib
-		testcase_io_lib
-		${MEMCHECK_LIBRARIES})
-
-FOREACH (ROUTETEST IN LISTS ROUTES_TESTS)
-	ADD_TEST(NAME "SMTProutes-${ROUTETEST}"
-			COMMAND testcase_smtproutes
-			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}")
-	IF (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}/errmsg")
-		FILE(READ "${CMAKE_CURRENT_SOURCE_DIR}/smtproutes/${ROUTETEST}/errmsg" ROUTETEST_MSG)
-		SET_TESTS_PROPERTIES(SMTProutes-${ROUTETEST} PROPERTIES
-			PASS_REGULAR_EXPRESSION "^(.*\n)?LOG: ${ROUTETEST_MSG}(\n.*)?$")
-	ENDIF ()
-ENDFOREACH (ROUTETEST)
-
 ADD_EXECUTABLE(testcase_getmxlist
 		getmxlist_test.c
 		${CMAKE_SOURCE_DIR}/qremote/conn.c)
@@ -1086,3 +1060,5 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 			COMMAND testcase_ssl_pp ${_ssl_test_arg}
 			WORKING_DIRECTORY "${_tgt_dir}")
 ENDFOREACH()
+
+ADD_SUBDIRECTORY(smtproutes)
