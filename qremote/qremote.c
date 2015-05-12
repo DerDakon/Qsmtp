@@ -8,7 +8,6 @@
 #include <qremote/qremote.h>
 
 #include <control.h>
-#include <diropen.h>
 #include <fmt.h>
 #include <ipme.h>
 #include <log.h>
@@ -23,7 +22,6 @@
 #include <sstring.h>
 #include <tls.h>
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -37,13 +35,10 @@
 #include <unistd.h>
 
 int socketd = -1;
-string heloname;
 unsigned int smtpext;	/**< the SMTP extensions supported by the remote server */
 char *rhost;		/**< the DNS name (if present) and IP address of the remote server to be used in log messages */
 size_t rhostlen;	/**< valid length of rhost */
 char *partner_fqdn;	/**< the DNS name of the remote server (forward-lookup), or NULL if the connection was done by IP */
-static struct in6_addr outgoingip;
-static struct in6_addr outgoingip6;
 
 /**
  * @brief send QUIT to the remote server and close the connection
@@ -142,9 +137,9 @@ err_confn(const char **errmsg, void *freebuf)
 static void
 setup(void)
 {
-	int j;
+#ifdef CHUNKING
 	unsigned long chunk;
-	char *ipbuf;
+#endif
 	sigset_t mask;
 
 #ifdef USESYSLOG
@@ -162,31 +157,7 @@ setup(void)
 		net_conn_shutdown(shutdown_abort);
 	}
 
-	if (chdir(AUTOQMAIL))
-		err_conf("cannot chdir to qmail directory");
-
-	controldir_fd = get_dirfd(-1, AUTOQMAIL "/control");
-	if (controldir_fd < 0)
-		err_conf("cannot get a file descriptor for " AUTOQMAIL "/control");
-
-	if ( (j = loadoneliner(controldir_fd, "helohost", &heloname.s, 1) ) < 0 ) {
-		if ( ( j = loadoneliner(controldir_fd, "me", &heloname.s, 0) ) < 0 ) {
-			err_conf("can open neither control/helohost nor control/me");
-		}
-		if (domainvalid(heloname.s)) {
-			err_conf("control/me contains invalid name");
-		}
-	} else {
-		if (domainvalid(heloname.s)) {
-			err_conf("control/helohost contains invalid name");
-		}
-	}
-	heloname.len = j;
-
-	if (loadintfd(openat(controldir_fd, "timeoutremote", O_RDONLY | O_CLOEXEC), &chunk, 320) < 0) {
-		err_conf("parse error in control/timeoutremote");
-	}
-	timeout = chunk;
+	remote_common_setup();
 
 #ifdef CHUNKING
 	if (loadintfd(openat(controldir_fd, "chunksizeremote", O_RDONLY | O_CLOEXEC), &chunk, 32768) < 0) {
@@ -198,36 +169,6 @@ setup(void)
 		chunksize = chunk & 0xffffffff;
 	}
 #endif
-
-	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip", &ipbuf, 1)) >= 0) {
-		int r = inet_pton(AF_INET6, ipbuf, &outgoingip);
-
-		if (r <= 0)
-			r = inet_pton_v4mapped(ipbuf, &outgoingip);
-
-		free(ipbuf);
-		if (r <= 0)
-			err_conf("parse error in control/outgoingip");
-
-		if (!IN6_IS_ADDR_V4MAPPED(&outgoingip))
-			err_conf("found IPv6 address in control/outgoingip");
-	} else {
-		outgoingip = in6addr_any;
-	}
-
-#ifndef IPV4ONLY
-	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip6", &ipbuf, 1)) >= 0) {
-		int r = inet_pton(AF_INET6, ipbuf, &outgoingip6);
-
-		free(ipbuf);
-		if (r <= 0)
-			err_conf("parse error in control/outgoingip6");
-
-		if (IN6_IS_ADDR_V4MAPPED(&outgoingip6))
-			err_conf("control/outgoingip6 has IPv4 address");
-	} else
-#endif
-		outgoingip6 = in6addr_any;
 
 #ifdef DEBUG_IO
 	do_debug_io = (faccessat(controldir_fd, "Qremote_debug", R_OK, 0) == 0);

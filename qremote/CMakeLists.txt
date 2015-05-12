@@ -5,6 +5,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/statuscodes.h.tmpl ${CMAKE_CURRENT_BI
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(QREMOTE_SRCS
+	common_setup.c
 	greeting.c
 	qremote.c
 	client.c

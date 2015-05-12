@@ -6,9 +6,14 @@
 
 #include "sstring.h"
 
+#include <netinet/in.h>
+
 extern void err_mem(const int) __attribute__ ((noreturn));
 extern void err_conf(const char *) __attribute__ ((noreturn)) __attribute__ ((nonnull (1)));
 extern void err_confn(const char **, void *) __attribute__ ((noreturn)) __attribute__ ((nonnull (1)));
+
+extern void remote_common_setup(void);
+
 /**
  * @brief get one line from the network
  * @param terminate if the program should be terminated on errors
@@ -58,6 +63,8 @@ extern string heloname;
 extern size_t chunksize;
 #endif
 extern char *clientcertbuf;
+extern struct in6_addr outgoingip;
+extern struct in6_addr outgoingip6;
 
 struct ips *smtproute(const char *, const size_t, unsigned int *);
 void quitmsg(void);

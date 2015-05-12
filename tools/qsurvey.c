@@ -12,7 +12,6 @@
 #include <match.h>
 #include <netio.h>
 #include <qdns.h>
-#include <qmaildir.h>
 #include <qremote/client.h>
 #include <qremote/conn.h>
 #include <qremote/greeting.h>
@@ -35,7 +34,6 @@
 #include <unistd.h>
 
 int socketd;
-string heloname;
 unsigned int smtpext;
 char *rhost;
 size_t rhostlen;
@@ -44,8 +42,6 @@ unsigned long remotesize;
 static int logfd;
 static int logdirfd = -1;
 static struct ips *mx;
-static struct in6_addr outgoingip;
-static struct in6_addr outgoingip6;
 
 void
 err_mem(const int doquit)
@@ -103,73 +99,6 @@ smtproute(const char *remhost __attribute__((unused)), const size_t reml __attri
 {
 	errno = 0;
 	return NULL;
-}
-
-static void
-setup(void)
-{
-	int j;
-	unsigned long tmp;
-	char *ipbuf;
-
-#undef USESYSLOG
-
-	if (chdir(AUTOQMAIL))
-		err_conf("cannot chdir to qmail directory");
-
-	controldir_fd = get_dirfd(-1, AUTOQMAIL "/control");
-	if (controldir_fd < 0)
-		err_conf("cannot get a file descriptor for " AUTOQMAIL "/control");
-
-	if ( (j = loadoneliner(controldir_fd, "helohost", &heloname.s, 1) ) < 0 ) {
-		if ( ( j = loadoneliner(controldir_fd, "me", &heloname.s, 0) ) < 0 ) {
-			err_conf("can open neither control/helohost nor control/me");
-		}
-		if (domainvalid(heloname.s)) {
-			err_conf("control/me contains invalid name");
-		}
-	} else {
-		if (domainvalid(heloname.s)) {
-			err_conf("control/helohost contains invalid name");
-		}
-	}
-	if ( (j = loadintfd(openat(controldir_fd, "timeoutremote", O_RDONLY | O_CLOEXEC), &tmp, 320)) < 0) {
-		err_conf("parse error in control/timeoutremote");
-	}
-	timeout = tmp;
-
-	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip", &ipbuf, 1)) >= 0) {
-		int r = inet_pton(AF_INET6, ipbuf, &outgoingip);
-
-		if (r <= 0)
-			r = inet_pton_v4mapped(ipbuf, &outgoingip);
-
-		free(ipbuf);
-		if (r <= 0)
-			err_conf("parse error in control/outgoingip");
-
-		if (!IN6_IS_ADDR_V4MAPPED(&outgoingip))
-			err_conf("compiled for IPv4 only but control/outgoingip has IPv6 address");
-	} else {
-		outgoingip = in6addr_any;
-	}
-
-#ifndef IPV4ONLY
-	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip6", &ipbuf, 1)) >= 0) {
-		int r = inet_pton(AF_INET6, ipbuf, &outgoingip6);
-
-		free(ipbuf);
-		if (r <= 0)
-			err_conf("parse error in control/outgoingip6");
-
-		if (IN6_IS_ADDR_V4MAPPED(&outgoingip6))
-			err_conf("control/outgoingip6 has IPv4 address");
-	} else
-#endif
-		outgoingip6 = in6addr_any;
-
-	heloname.len = j;
-
 }
 
 void
@@ -374,7 +303,7 @@ main(int argc, char *argv[])
 		return EINVAL;
 	}
 
-	setup();
+	remote_common_setup();
 
 	getmxlist(argv[1], &mx);
 	sortmx(&mx);
