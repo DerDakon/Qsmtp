@@ -247,11 +247,11 @@ ask_dnsa(const char *name, struct in6_addr **result)
 			free(r);
 			return DNS_ERROR_LOCAL;
 		}
-		memset(*result, 0, ((l + 3) / 4) * sizeof(**result));
 
 		while (r + l > s) {
-			(*result)[idx].s6_addr32[2] = htonl(0xffff);
-			memcpy(&((*result)[idx].s6_addr32[3]), s, 4);
+			struct in_addr ip4;
+			memcpy(&(ip4.s_addr), s, sizeof(ip4.s_addr));
+			(*result)[idx] = in_addr_to_v4mapped(&ip4);
 
 			s += 4;
 			idx++;

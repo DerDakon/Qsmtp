@@ -4,6 +4,7 @@
 
 #include <qdns.h>
 
+#include <arpa/inet.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -220,4 +221,25 @@ in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 	res->next = NULL;
 
 	return res;
+}
+
+/**
+ * @brief read an IPv4 address and convert it to a v4mapped IPv6 address
+ * @param str the string to read in
+ * @param addr where to store the resulting address
+ * @return the same values as inet_pton()
+ * @retval 1 address was successfully read in
+ */
+int
+inet_pton_v4mapped(const char *str, struct in6_addr *addr)
+{
+	struct in_addr tmp;
+	const int r = inet_pton(AF_INET, str, &tmp);
+
+	if (r <= 0)
+		return r;
+
+	*addr = in_addr_to_v4mapped(&tmp);
+
+	return r;
 }

@@ -69,4 +69,26 @@ enum dns_errors {
 	DNS_ERROR_PERM = -3	/**< a permanent DNS error */
 };
 
+/**
+ * @brief convert an IPv4 address to a v4mapped IPv6 address
+ * @param ip4 the address to convert
+ * @return the v4mapped address
+ *
+ * @warning This does not handle any special addresses specifically.
+ */
+static inline struct in6_addr
+in_addr_to_v4mapped(const struct in_addr *ip4)
+{
+	struct in6_addr ret;
+
+	ret.s6_addr32[0] = htonl(0);
+	ret.s6_addr32[1] = htonl(0);
+	ret.s6_addr32[2] = htonl(0xffff);
+	ret.s6_addr32[3] = ip4->s_addr;
+
+	return ret;
+}
+
+extern int inet_pton_v4mapped(const char *str, struct in6_addr *addr) __attribute__ ((nonnull (1,2)));
+
 #endif

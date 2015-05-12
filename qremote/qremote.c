@@ -202,14 +202,8 @@ setup(void)
 	if (((ssize_t)loadoneliner(controldir_fd, "outgoingip", &ipbuf, 1)) >= 0) {
 		int r = inet_pton(AF_INET6, ipbuf, &outgoingip);
 
-		if (r <= 0) {
-			struct in_addr a4;
-			r = inet_pton(AF_INET, ipbuf, &a4);
-			outgoingip.s6_addr32[0] = 0;
-			outgoingip.s6_addr32[1] = 0;
-			outgoingip.s6_addr32[2] = htonl(0xffff);
-			outgoingip.s6_addr32[3] = a4.s_addr;
-		}
+		if (r <= 0)
+			r = inet_pton_v4mapped(ipbuf, &outgoingip);
 
 		free(ipbuf);
 		if (r <= 0)
