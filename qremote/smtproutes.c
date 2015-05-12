@@ -220,8 +220,9 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 		while (1) {
 			char **array;
 			int fd = openat(dirfd, fn, O_RDONLY | O_CLOEXEC);
-			const char *hv;
-			const char *pv;
+			const char *hv = NULL;
+			const char *pv = NULL;
+			unsigned int i;
 
 			if (fd < 0) {
 				if (errno != ENOENT) {
@@ -261,32 +262,38 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 				err_confn(errmsg, NULL);
 			}
 
-			if (tagmask & 1)
-				/* find host */
-				hv = tagvalue(array, 0);
-			else
-				hv = NULL;
-
-			if (tagmask & 2)
-				/* find port */
-				pv = tagvalue(array, 1);
-			else
-				pv = NULL;
-
 			fd = 0;
-			if (tagmask & 4) {
-				const char *v = tagvalue(array, 2);
-				if (access(v, R_OK) != 0) {
-					const char *logmsg[] = { "invalid certificate '", v,
-								"' given for \"", remhost, "\"", NULL };
 
-					err_confn(logmsg, array);
-				} else {
-					clientcertbuf = strdup(v);
-					if (clientcertbuf == NULL)
-						fd = -ENOMEM;
-					else
-						clientcertname = clientcertbuf;
+			for (i = 0; tags[i] != NULL; i++) {
+				const char *v;
+				if (!(tagmask & (1 << i)))
+					continue;
+
+				v = tagvalue(array, i);
+
+				switch (i) {
+				case 0:
+					/* find host */
+					hv = v;
+					break;
+				case 1:
+					/* find port */
+					pv = v;
+					break;
+				case 2:
+					if (access(v, R_OK) != 0) {
+						const char *logmsg[] = { "invalid certificate '", v,
+									"' given for \"", remhost, "\"", NULL };
+
+						err_confn(logmsg, array);
+					} else {
+						clientcertbuf = strdup(v);
+						if (clientcertbuf == NULL)
+							fd = -ENOMEM;
+						else
+							clientcertname = clientcertbuf;
+					}
+					break;
 				}
 			}
 
