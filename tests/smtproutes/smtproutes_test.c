@@ -13,6 +13,8 @@
 #include <unistd.h>
 
 const char *clientcertname = "default";
+struct in6_addr outgoingip = IN6ADDR_ANY_INIT;
+struct in6_addr outgoingip6 = IN6ADDR_ANY_INIT;
 
 void
 test_log_writen(int priority __attribute__((unused)), const char **msg)
@@ -63,10 +65,12 @@ test_ask_dnsaaaa(const char *domain, struct in6_addr **ips)
 
 static unsigned int targetport = 0;
 static unsigned long expectedport;
-static struct in6_addr expectedip;
+static struct in6_addr expectedrip;
+static struct in6_addr expectedoip = IN6ADDR_ANY_INIT;
+static struct in6_addr expectedoip6 = IN6ADDR_ANY_INIT;
 static struct ips *mx;
-static char *ipexpect;
-static size_t ipe_len;
+static char *ipexpect, *outipexpect, *outip6expect;
+static size_t ipe_len, oipe_len, oip6e_len;
 static char *certbuf;
 static size_t certlen;
 static char gotip[INET6_ADDRSTRLEN];
@@ -89,6 +93,20 @@ verify_route(void)
 		return 4;
 	}
 
+	if (!IN6_ARE_ADDR_EQUAL(&outgoingip, &expectedoip)) {
+		char gip[INET6_ADDRSTRLEN];
+		inet_ntop(AF_INET6, &outgoingip, gip, sizeof(gip));
+		fprintf(stderr, "expected outgoing ip %s, but got %s\n", outipexpect, gip);
+		return 3;
+	}
+
+	if (!IN6_ARE_ADDR_EQUAL(&outgoingip6, &expectedoip6)) {
+		char gip[INET6_ADDRSTRLEN];
+		inet_ntop(AF_INET6, &outgoingip6, gip, sizeof(gip));
+		fprintf(stderr, "expected outgoing ip6 %s, but got %s\n", outip6expect, gip);
+		return 3;
+	}
+
 	if (mx == NULL) {
 		if (ipe_len == (size_t) -1)
 			return 0;
@@ -104,9 +122,30 @@ verify_route(void)
 
 	inet_ntop(AF_INET6, mx->addr, gotip, sizeof(gotip));
 
-	if (!IN6_ARE_ADDR_EQUAL(mx->addr, &expectedip)) {
+	if (!IN6_ARE_ADDR_EQUAL(mx->addr, &expectedrip)) {
 		fprintf(stderr, "expected ip %s, but got %s\n", ipexpect, gotip);
 		return 3;
+	}
+
+	return 0;
+}
+
+static int
+loadip(const char *fname, char **ipstr, size_t *ilen, struct in6_addr *ipp)
+{
+	*ilen = loadoneliner(AT_FDCWD, fname, ipstr, 1);
+
+	if (*ilen == (size_t) -1) {
+		if (errno != ENOENT) {
+			fprintf(stderr, "error %i when opening '%s'\n", errno, fname);
+			return EFAULT;
+		}
+	} else if (*ilen > 0) {
+		if (inet_pton(AF_INET6, *ipstr, ipp) != 1) {
+			fprintf(stderr, "cannot parse expected IPv6 address %s\n", *ipstr);
+			free(*ipstr);
+			return EFAULT;
+		}
 	}
 
 	return 0;
@@ -134,19 +173,16 @@ main(void)
 		return EFAULT;
 	}
 
-	ipe_len = loadoneliner(AT_FDCWD, "expected_ip", &ipexpect, 1);
-
-	if (ipe_len == (size_t) -1) {
-		if (errno != ENOENT) {
-			fprintf(stderr, "error %i when opening 'expected_ip'\n", errno);
-			return EFAULT;
-		}
-	} else if (ipe_len > 0) {
-		if (inet_pton(AF_INET6, ipexpect, &expectedip) != 1) {
-			fprintf(stderr, "cannot parse expected IPv6 address %s\n", ipexpect);
-			free(ipexpect);
-			return EFAULT;
-		}
+	r = loadip("expected_ip", &ipexpect, &ipe_len, &expectedrip);
+	if (r == 0)
+		loadip("expected_outip", &outipexpect, &oipe_len, &expectedoip);
+	if (r == 0)
+		loadip("expected_outip6", &outip6expect, &oip6e_len, &expectedoip6);
+	if (r != 0) {
+		free(ipexpect);
+		free(outipexpect);
+		free(outip6expect);
+		return r;
 	}
 
 	certlen = loadoneliner(AT_FDCWD, "expected_cert", &certbuf, 1);
@@ -164,8 +200,19 @@ main(void)
 	free(ipexpect);
 	free(certbuf);
 	close(controldir_fd);
-	if ((r == 0) && (gotip[0] != '\0'))
+	if ((r == 0) && (gotip[0] != '\0')) {
 		printf("redirected to IP %s, port %u\n", gotip, targetport);
+		if (memcmp(&outgoingip, &in6addr_any, sizeof(in6addr_any)) != 0) {
+			char s[INET6_ADDRSTRLEN];
+			inet_ntop(AF_INET6, &outgoingip, s, sizeof(s));
+			printf("outgoing IPv4: %s\n", s);
+		}
+		if (memcmp(&outgoingip6, &in6addr_any, sizeof(in6addr_any)) != 0) {
+			char s[INET6_ADDRSTRLEN];
+			inet_ntop(AF_INET6, &outgoingip6, s, sizeof(s));
+			printf("outgoing IPv6: %s\n", s);
+		}
+	}
 
 	return r;
 }

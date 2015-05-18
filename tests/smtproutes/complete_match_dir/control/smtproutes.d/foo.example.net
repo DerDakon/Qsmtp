@@ -1,1 +1,3 @@
 relay=mail.example.net
+outgoingip=10.0.2.3
+outgoingip6=fe80::2:3:44

@@ -28,6 +28,8 @@ static const char *tags[] = {
 	"relay",
 	"port",
 	"clientcert",
+	"outgoingip",
+	"outgoingip6",
 	NULL
 };
 
@@ -294,6 +296,30 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 							clientcertname = clientcertbuf;
 					}
 					break;
+				case 3:
+					if (inet_pton_v4mapped(v, &outgoingip) <= 0) {
+						const char *logmsg[] = { "invalid outgoingip '", v, "' given for \"",
+								remhost, "\"", NULL };
+						err_confn(logmsg, array);
+					}
+					break;
+				case 4:
+					if (inet_pton(AF_INET6, v, &outgoingip6) <= 0) {
+						const char *logmsg[] = { "invalid outgoingip6 '", v, "' given for \"",
+								remhost, "\"", NULL };
+						err_confn(logmsg, array);
+					}
+
+					if (IN6_IS_ADDR_V4MAPPED(&outgoingip6)) {
+						const char *logmsg[] = { "IPv4 mapped address '", v,
+								"' in outgoingip6 for \"", remhost, "\"", NULL };
+
+						err_confn(logmsg, array);
+					}
+
+					break;
+				default:
+					assert(0);
 				}
 			}
 
