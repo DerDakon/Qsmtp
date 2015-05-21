@@ -5,6 +5,7 @@
 #include <qsmtpd/starttls.h>
 
 #include <control.h>
+#include <fmt.h>
 #include <log.h>
 #include <netio.h>
 #include <qdns.h>
@@ -40,17 +41,19 @@ tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
 }
 
 static DH *
-tmp_dh_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
+tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)
 {
 	FILE *in = NULL;
+	char fname[ULSTRLEN + strlen("dh.pem") + 1];
 
-	if (!export)
-		keylen = 1024;
-	if (keylen == 512) {
-		in = fdopen(openat(controldir_fd, "dh512.pem", O_RDONLY | O_CLOEXEC), "r");
-	} else if (keylen == 1024) {
-		in = fdopen(openat(controldir_fd, "dh1024.pem", O_RDONLY | O_CLOEXEC), "r");
-	}
+	if (keylen < 2048)
+		keylen = 2048;
+
+	strcpy(fname, "dh");
+	ultostr(keylen, fname + strlen("dh"));
+	strcat(fname, ".pem");
+
+	in = fdopen(openat(controldir_fd, fname, O_RDONLY | O_CLOEXEC), "r");
 	if (in) {
 		DH *dh = PEM_read_DHparams(in, NULL, NULL, NULL);
 

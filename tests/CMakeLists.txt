@@ -934,7 +934,7 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 	SET(_tgt_dir "${CMAKE_CURRENT_BINARY_DIR}/ssl_pp/${_ssl_test}")
 	FILE(MAKE_DIRECTORY "${_tgt_dir}/control")
 
-	FOREACH(_pem IN ITEMS rsa512 dh512 dh1024)
+	FOREACH(_pem IN ITEMS rsa512 dh2048)
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/${_pem}.pem
 				"${_tgt_dir}/control/${_pem}.pem" COPYONLY)
 	ENDFOREACH()
