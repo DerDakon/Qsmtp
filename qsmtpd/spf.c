@@ -194,13 +194,21 @@ spf_makroparam(const char *token, int *num, int *r, int *delim)
 	return res;
 }
 
+/**
+ * @brief URL-encode a given string
+ * @param token the token to encode
+ * @param result storage of the result
+ * @return if the conversion was successful
+ * @retval 0 the string was recoded
+ * @retval 1 the string does not need to be recoded
+ * @retval -1 memory allocation error
+ */
 static int
 urlencode(const char *token, char **result)
 {
 	char *res = NULL;
 	const char *last = token;	/* the first unencoded character in the current chunk */
 	unsigned int len = 0;
-	const char *otoken = token;
 
 	while (*token) {
 		char *tmp;
@@ -242,13 +250,11 @@ urlencode(const char *token, char **result)
 		}
 		token++;
 	}
-	if (!len) {
-		/* nothing has changed */
-		*result = strdup(otoken);
-		if (*result == NULL)
-			return -1;
-		return 0;
-	}
+
+	/* nothing has changed */
+	if (!len)
+		return 1;
+
 	if (token - last) {
 		/* there is data behind the last encoded char */
 		unsigned int newlen = len + (token - last);
@@ -377,13 +383,19 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	}
 
 	if (r & 2) {
-		if (urlencode(start, &urldata)) {
+		switch (urlencode(start, &urldata)) {
+		case 0:
+			nl = strlen(urldata);
+			start = urldata;
+			break;
+		case 1:
+			nl = strlen(start);
+			break;
+		default:
 			free(*res);
 			free(news);
 			return -1;
 		}
-		nl = strlen(urldata);
-		start = urldata;
 	}
 
 	*l += nl;
