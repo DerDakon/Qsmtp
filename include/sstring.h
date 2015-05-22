@@ -26,8 +26,6 @@ typedef struct cstring {
 
 #define STREMPTY(x) { (x).s = NULL; (x).len = 0; }
 
-static inline int newstr(string *, const size_t) __attribute__ ((nonnull (1)));
-
 /**
  * @brief allocate a new string buffer of the given length
  * @param s the string container
@@ -38,7 +36,7 @@ static inline int newstr(string *, const size_t) __attribute__ ((nonnull (1)));
  *
  * If len is 0 s->s is set to NULL and 0 is returned.
  */
-static inline int
+static inline int __attribute__ ((nonnull (1)))
 newstr(string *s, const size_t len)
 {
 	if (len == 0) {
