@@ -295,13 +295,12 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	char *start;
 	char *r2;
 	unsigned int oldl = *l;
-	char *news = malloc(sl + 1);
+	char *news = strndup(s, sl);
 	char *urldata = NULL;
 
 	if (!news)
 		return -1;
-	memcpy(news, s, sl);
-	news[sl] = '\0';
+
 	/* first: go and replace all delimiters with '.' */
 	/* delim == 1 means only '.' is delimiter so we only have to count them */
 	if (delim == 1) {
