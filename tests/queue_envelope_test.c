@@ -165,12 +165,11 @@ create_rcpt(const char *addr)
 
 	r->ok = (addr[0] != '!');	/* user will be rejected until we change this explicitely */
 	if (r->ok) {
-		r->to.s = strdup(addr);
+		dupstr(&(r->to), addr);
 		goodrcpt++;
 	} else {
-		r->to.s = strdup(addr + 1);
+		dupstr(&(r->to), addr + 1);
 	}
-	r->to.len = strlen(r->to.s);
 	TAILQ_INSERT_TAIL(&head, r, entries);
 }
 

@@ -189,10 +189,9 @@ setup(void)
 
 	j = loadoneliner(controldir_fd, "msgidhost", &msgidhost.s, 1);
 	if (j < 0) {
-		msgidhost.s = strdup(heloname.s);
-		if (msgidhost.s == NULL)
-			return ENOMEM;
-		msgidhost.len = heloname.len;
+		j = dupstr(&msgidhost, heloname.s);
+		if (j != 0)
+			return errno;
 	} else {
 		msgidhost.len = j;
 		if (domainvalid(msgidhost.s)) {

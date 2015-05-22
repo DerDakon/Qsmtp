@@ -79,10 +79,9 @@ helovalid(const char *helo, size_t len)
 		}
 	}
 
-	if ( (rc = newstr(&xmitstat.helostr, len + 1)) )
+	rc = dupstr(&xmitstat.helostr, helo);
+	if (rc < 0)
 		return rc;
-	/* +5-4=+1: also copy the '\0' to the new string */
-	memcpy(xmitstat.helostr.s, helo, xmitstat.helostr.len--);
 
 	if (!strcasecmp(helo, heloname.s)) {
 		xmitstat.helostatus = 0;
