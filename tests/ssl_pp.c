@@ -155,7 +155,7 @@ setup(void)
 	}
 
 	close(0);
-	timeout = 10;
+	timeout = 20;
 
 	return 0;
 }
