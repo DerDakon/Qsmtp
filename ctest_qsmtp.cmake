@@ -134,7 +134,7 @@ ctest_build()
 
 # The AUTH LOGIN wrong test will take 5 seconds where they are in a sleep,
 # schedule more tests in parallel so this doesn't take too long.
-ctest_test(PARALLEL_LEVEL 4)
+ctest_test(PARALLEL_LEVEL 2)
 
 IF (CTEST_COVERAGE_COMMAND)
 	ctest_coverage()
