@@ -28,7 +28,9 @@ match_partner(const struct string *peer)
 {
 	assert(partner_fqdn != NULL);
 
-	if (!strncasecmp(partner_fqdn, peer->s, peer->len) && !partner_fqdn[peer->len])
+	/* the test on partner_fqdn[peer->len] is only done if the head matches, so it
+	 * can only be 1 byte after the match (== '\0') and can't overflow */
+	if (!strncasecmp(partner_fqdn, peer->s, peer->len) && (partner_fqdn[peer->len] == '\0'))
 		return 1;
 	/* we also match if the name is *.domainname */
 	if ((peer->s[0] == '*') && (peer->s[1] == '.')) {
@@ -36,6 +38,7 @@ match_partner(const struct string *peer)
 		const size_t plen = strlen(partner_fqdn);
 
 		/* match against the end of the string */
+		/* match is done including the '.', so it's sure it really is a subdomain */
 		if ((clen < plen) && (strcasecmp(partner_fqdn + plen - clen, peer->s + 1) == 0))
 			return 1;
 	}
@@ -47,11 +50,12 @@ log_failed_peer(const struct string *peer)
 {
 	char buf[peer->len + 1];
 	const char *msg[] = { "unable to verify ", rhost,
-		": received certificate for ", buf, NULL };
+		": received certificate for '", buf, "'", NULL };
 	size_t j;
 
+	/* replace all special characters */
 	for (j = 0; j < peer->len; ++j) {
-		if ( (peer->s[j] < 33) || (peer->s[j] > 126) )
+		if ( (peer->s[j] < 32) || (peer->s[j] > 126) )
 			buf[j] = '?';
 		else
 			buf[j] = peer->s[j];
@@ -90,6 +94,7 @@ tls_init(void)
 			err_mem(1);
 		memcpy(tmp, "control/tlshosts/", 17);
 		memcpy(tmp + 17, partner_fqdn, fqlen);
+		/* copy including the trailing '\0' */
 		memcpy(tmp + 17 + fqlen, ".pem", 5);
 		if (stat(tmp, &st))
 			free(tmp);
