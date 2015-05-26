@@ -8,6 +8,8 @@
 
 #include <netinet/in.h>
 
+struct ips;
+
 extern void err_mem(const int) __attribute__ ((noreturn));
 extern void err_conf(const char *) __attribute__ ((noreturn)) __attribute__ ((nonnull (1)));
 extern void err_confn(const char **, void *) __attribute__ ((noreturn)) __attribute__ ((nonnull (1)));
