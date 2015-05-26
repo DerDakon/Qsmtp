@@ -207,18 +207,19 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 {
 	char **smtproutes;
 	struct ips *mx = NULL;
-	char fn[320]; /* length of domain + control/smtproutes.d */
-	const char *curpart = remhost;
 	/* check if the dir exists at all to avoid probing for every
 	 * subdomain if the dir does not exist. */
 	const int dirfd = get_dirfd(controldir_fd, "smtproutes.d");
-	const size_t diroffs = 0;
-
-	strcpy(fn + diroffs, remhost);
 
 	*targetport = 25;
 
 	if (dirfd >= 0) {
+		char fn[320]; /* length of domain + control/smtproutes.d */
+		const char *curpart = remhost;
+		const size_t diroffs = 0;
+
+		strcpy(fn + diroffs, remhost);
+
 		while (1) {
 			char **array;
 			int fd = openat(dirfd, fn, O_RDONLY | O_CLOEXEC);
