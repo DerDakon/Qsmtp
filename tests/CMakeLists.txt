@@ -1010,13 +1010,13 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 		SET(_ssl_server_key "valid1024.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPYONLY)
-		SET(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for testcert.example.org" "-iEDONE")
+		SET(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for 'testcert.example.org'" "-iEDONE")
 	ELSEIF (_ssl_test STREQUAL "nonmatching_wildcard")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "wildcard1024.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/wildcard1024.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPYONLY)
-		SET(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for *.example.org" "-iEDONE")
+		SET(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for '*.example.org'" "-iEDONE")
 	ELSEIF (_ssl_test STREQUAL "SubjAN_match")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "valid1024_san.key")
@@ -1032,7 +1032,7 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 		SET(_ssl_server_key "valid1024_san_cn.key")
 		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san_cn.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
-		SET(_ssl_test_arg "-lunable to verify testcert.example.org: received certificate for other.example.org" "-iEDONE")
+		SET(_ssl_test_arg "-lunable to verify testcert.example.org: received certificate for 'other.example.org'" "-iEDONE")
 	ELSEIF (_ssl_test STREQUAL "servercert_no_name")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		SET(_ssl_server_key "noname.key")
