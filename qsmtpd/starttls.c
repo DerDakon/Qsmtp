@@ -219,6 +219,7 @@ tls_init()
 	X509_LOOKUP *lookup;
 	const char ciphfn[] = "tlsserverciphers";
 	int j;
+	long ssl_options = SSL_OP_SINGLE_DH_USE;
 
 	SSL_library_init();
 	STREMPTY(saciphers);
@@ -259,8 +260,10 @@ tls_init()
 				saciphers.s[i] = ':';
 		ciphers = saciphers.s;
 
-		SSL_CTX_set_options(ctx, SSL_OP_CIPHER_SERVER_PREFERENCE);
+		ssl_options |= SSL_OP_CIPHER_SERVER_PREFERENCE;
 	}
+
+	SSL_CTX_set_options(ctx, ssl_options);
 
 	/* a new SSL object, with the rest added to it directly to avoid copying */
 	myssl = SSL_new(ctx);
