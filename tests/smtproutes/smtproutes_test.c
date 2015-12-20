@@ -144,6 +144,7 @@ loadip(const char *fname, char **ipstr, size_t *ilen, struct in6_addr *ipp)
 		if (inet_pton(AF_INET6, *ipstr, ipp) != 1) {
 			fprintf(stderr, "cannot parse expected IPv6 address %s\n", *ipstr);
 			free(*ipstr);
+			*ipstr = NULL;
 			return EFAULT;
 		}
 	}
