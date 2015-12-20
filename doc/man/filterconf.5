@@ -42,11 +42,22 @@ If the user is authenticated by SMTP AUTH or by TLS client certificate the mail
 is accepted and no other filters will be checked.
 
 .IP "\fIcheck_strict_rfc2822\fR" 4
-The mail body is checked for compliance to RfC 2822 (e.g. only one From:). The mail is
-rejected if the mail is invalid. If only one of the recipients does not enable this check
-the mail will not be rejected. This is due to the fact that the mail must be completely
-transferred before it can be rejected but then only one reply code for all recipients
-can be returned.
+The mail body is checked for compliance to RfC 2822. The mail is rejected if the mail is invalid. 
+If only one of the recipients does not enable this check the mail will not be rejected. This is due 
+to the fact that the mail must be completely transferred before it can be rejected but then only one 
+reply code for all recipients can be returned.
+
+The checks performed on the header of the mail are:
+.RS 4
+.IP \[bu] 2
+there must be exaclty one From: line
+.IP \[bu]
+there must be exaclty one Date: line
+.IP \[bu]
+there must be exaclty one Message-Id: line
+.IP \[bu]
+there must be no 8 bit characters in the header
+.RE
 
 .IP "\fIfromdomain\fR" 4
 .BR (global)
