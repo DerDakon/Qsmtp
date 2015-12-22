@@ -26,8 +26,8 @@
 ## # if you don't want to run a Nightly, but e.g. an Experimental build
 ## # SET(dashboard_model "Experimental")
 ##
-## # if your "svn" executable can not be found by FindSubversion.cmake
-## # SET(SVNCommand "path/to/my/svn")
+## # if your "git" executable can not be found by FindGit.cmake
+## # SET(GIT_EXECUTABLE "path/to/my/git")
 ##
 ## # if you only want to run the test, but not submit the results
 ## SET(NO_SUBMIT TRUE)
@@ -53,13 +53,12 @@ FOREACH (req
         ENDIF ()
 ENDFOREACH (req)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.6)
 
-IF (NOT SVNCommand)
-	FIND_PACKAGE(Subversion REQUIRED)
-	SET(SVNCommand ${Subversion_SVN_EXECUTABLE})
-ENDIF(NOT SVNCommand)
-SET(UpdateCommand ${SVNCommand})
+IF (NOT GIT_EXECUTABLE)
+	FIND_PACKAGE(Git REQUIRED)
+ENDIF()
+SET(UpdateCommand ${GIT_EXECUTABLE})
 
 SET(CTEST_SOURCE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 SET(CTEST_BINARY_DIRECTORY ${QSMTP_BUILD_DIR})
