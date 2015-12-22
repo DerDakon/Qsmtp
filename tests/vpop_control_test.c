@@ -227,6 +227,9 @@ test_getbuffer(void)
 		fprintf(stderr, "existing file should have returned 'example.net' as content, but returned '%s'\n",
 				*array);
 		ret++;
+	} else if (array[1] != NULL) {
+		fprintf(stderr, "existing file should have returned only 1 entry, but had more: %s\n", array[1]);
+		ret++;
 	}
 	free(array);
 	array = NULL;
