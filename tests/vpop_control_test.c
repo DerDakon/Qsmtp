@@ -13,13 +13,14 @@
 #include <unistd.h>
 
 /* name of the dummy files created */
+#define TEST_BASEDIR "vp_control_test/"
 #define EXISTING_FILENAME "filename"
 #define EXISTING_FILENAME_CONTENT "content"
 #define EXISTING_FILE_CONTENT "example.net"
 #define EXISTING_FILTERCONF "filterconf"
 #define EXISTING_FILTERCONF_CONTENT "helovalid="
 
-static char fnbuffer[256] = "vp_control_test/domain/user/" EXISTING_FILENAME_CONTENT;
+static char fnbuffer[256] = TEST_BASEDIR "domain/user/" EXISTING_FILENAME_CONTENT;
 static struct userconf ds;
 
 /* to satisfy the linker */
@@ -252,6 +253,55 @@ test_getbuffer(void)
 }
 
 static int
+test_getbuffer_inherit(const char *fname, const char *inherit_content)
+{
+	int ret = 0;
+	int r;
+	char **array = NULL;
+	char fobuffer[256] = { 0 };
+
+	userconf_init(&ds);
+
+	ds.domaindirfd = get_dirfd(AT_FDCWD, fname);
+	strncpy(fobuffer, fname, sizeof(fobuffer));
+	strcat(fobuffer, "/usr");
+	ds.userdirfd = get_dirfd(AT_FDCWD, fobuffer);
+
+	r = userconf_get_buffer(&ds, EXISTING_FILENAME_CONTENT, &array, NULL, userconf_inherit);
+	if (r != CONFIG_USER) {
+		fprintf(stderr, "opening existing file returned %i instead of CONFIG_USER\n",
+				r);
+		ret++;
+	} else if (array == NULL) {
+		fprintf(stderr, "opening existing file returned empty array\n");
+		return ++ret;
+	}
+	if (r != CONFIG_NONE) {
+		if (strcmp(array[0], EXISTING_FILE_CONTENT) != 0) {
+			fprintf(stderr, "existing file should have returned 'example.net' as content, but returned '%s'\n",
+					*array);
+			ret++;
+		}
+		if (strcmp(array[1], inherit_content) != 0) {
+			fprintf(stderr, "existing file should have returned 'example.com' as second content, but returned '%s'\n",
+					array[1]);
+			ret++;
+		}
+		if (array[2] != NULL) {
+			fprintf(stderr, "existing file should have returned only 2 entries, but had more: %s\n", array[2]);
+			ret++;
+		}
+
+		free(array);
+	}
+
+	close(ds.userdirfd);
+	close(ds.domaindirfd);
+
+	return ret;
+}
+
+static int
 test_getsetting(void)
 {
 	int ret = 0;
@@ -445,6 +495,8 @@ main(void)
 
 	r += test_found();
 	r += test_getbuffer();
+	r += test_getbuffer_inherit(TEST_BASEDIR "inherit", "example.com");
+	r += test_getbuffer_inherit(TEST_BASEDIR "inherit2", "ex.com");
 	r += test_finddomain();
 	r += test_getsetting();
 

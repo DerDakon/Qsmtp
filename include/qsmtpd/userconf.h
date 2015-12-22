@@ -17,7 +17,8 @@ struct userconf {
 
 enum userconf_flags {
 	userconf_none = 0,		/**< no special search options to use */
-	userconf_global = 1		/**< global configuration lookup should be performed */
+	userconf_global = 1,		/**< global configuration lookup should be performed */
+	userconf_inherit = 2		/**< allow "!inherit" command to merge with domain/global settings */
 };
 
 /**

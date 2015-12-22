@@ -481,6 +481,7 @@ userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, 
 	enum config_domain type;
 	int fd;
 	int r;
+	const char *inherit = "!inherit";
 
 	fd = getfile(ds, key, &type, flags);
 
@@ -497,6 +498,74 @@ userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, 
 
 	if (*values == NULL)
 		return CONFIG_NONE;
+
+	if (flags & userconf_inherit &&
+			((type == CONFIG_USER) || ((type == CONFIG_DOMAIN) && (flags & userconf_global)))) {
+		unsigned int i = 0;
+		while (((*values)[i] != NULL) && (strcmp((*values)[i], inherit) != 0))
+			i++;
+		if ((*values)[i] != NULL) {
+			/* found "!inherit", so go up one level */
+			struct userconf uc = *ds;
+			char **inhvals = NULL;
+
+			/* force next lookup level */
+			uc.userdirfd = -1;
+			if (type == CONFIG_DOMAIN)
+				uc.domaindirfd = -1;
+
+			r = userconf_get_buffer(&uc, key, &inhvals, cf, flags);
+			if ((r == CONFIG_DOMAIN) || (r == CONFIG_GLOBAL)) {
+				/* shortcut for the case no new allocation is needed */
+				if ((inhvals[1] == NULL) && (strlen(*inhvals) <= strlen(inherit))) {
+					strncpy((*values)[i], *inhvals, strlen(inherit));
+					free(inhvals);
+				} else {
+					/* count how many entries exist in both lists */
+					unsigned int ocnt = 0, ncnt = 0, s, t;
+					size_t dsize = 0;
+					char **rbuf;
+					char *dbuf;
+
+					while ((*values)[ocnt] != NULL)
+						dsize += strlen((*values)[ocnt++]) + 1;
+					while (inhvals[ncnt] != NULL)
+						dsize += strlen(inhvals[ncnt++]) + 1;
+
+					rbuf = data_array(ocnt + ncnt, dsize, NULL, 0);
+					if (rbuf == NULL) {
+						free(*values);
+						free(inhvals);
+						*values = NULL;
+						return -ENOMEM;
+					}
+
+					dbuf = (char *)(rbuf + ocnt + ncnt + 1);
+					for (s = t = 0; s < ocnt; s++) {
+						if (s == i) {
+							/* this is the "!inherit" line */
+							continue;
+						}
+						rbuf[t++] = dbuf;
+						strcpy(dbuf, (*values)[s]);
+						dbuf += 1 + strlen((*values)[s]);
+					}
+					for (s = 0; s < ncnt; s++) {
+						rbuf[t++] = dbuf;
+						strcpy(dbuf, inhvals[s]);
+						dbuf += 1 + strlen(inhvals[s]);
+					}
+					free(*values);
+					free(inhvals);
+					*values = rbuf;
+				}
+			} else if (r < 0) {
+				free(*values);
+				*values = NULL;
+				return r;
+			}
+		}
+	}
 
 	return type;
 }
