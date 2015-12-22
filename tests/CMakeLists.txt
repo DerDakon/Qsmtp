@@ -479,7 +479,8 @@ TARGET_LINK_LIBRARIES(testcase_vpop_control
 		${MEMCHECK_LIBRARIES}
 )
 ADD_TEST(NAME "VPop_control"
-		COMMAND testcase_vpop_control)
+		COMMAND testcase_vpop_control
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
 ADD_EXECUTABLE(testcase_getsetting
 		getsetting_test.c

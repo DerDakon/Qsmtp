@@ -19,7 +19,7 @@
 #define EXISTING_FILTERCONF "filterconf"
 #define EXISTING_FILTERCONF_CONTENT "helovalid="
 
-static char fnbuffer[256];
+static char fnbuffer[256] = "vp_control_test/domain/user/" EXISTING_FILENAME_CONTENT;
 static struct userconf ds;
 
 /* to satisfy the linker */
@@ -52,94 +52,6 @@ err_control2(const char *msg, const char *fn)
 	fprintf(stderr, "unexpected call to %s(%s, %s)\n",
 		__func__, msg, fn);
 	exit(1);
-}
-
-static void
-create_dirs(void)
-{
-	const char *dirnames[] = { "vp_control_test", "domain", "user" };
-	unsigned int i;
-	int r;
-	int dfd;
-
-	for (i = 0; i < 3; i++) {
-		strcat(fnbuffer, dirnames[i]);
-		strcat(fnbuffer, "/");
-		r = mkdir(fnbuffer, 0755);
-		if ((r != 0) && (errno != EEXIST)) {
-			fprintf(stderr, "creating directory at level %u failed with error %i\n",
-					i, errno);
-			exit(1);
-		}
-	}
-
-	dfd = get_dirfd(AT_FDCWD, fnbuffer);
-	if (dfd < 0) {
-		fprintf(stderr, "cannot open target directory, error %i\n", errno);
-		exit(1);
-	}
-
-	r = openat(dfd, EXISTING_FILENAME, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0644);
-	if (r < 0) {
-		fprintf(stderr, "cannot create target file, error %i\n",
-				errno);
-		exit(1);
-	}
-	close(r);
-
-	r = openat(dfd, EXISTING_FILENAME_CONTENT, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0644);
-	if (r < 0) {
-		fprintf(stderr, "cannot create target file, error %i\n",
-				errno);
-		close(dfd);
-		exit(1);
-	} else {
-		if (write(r, EXISTING_FILE_CONTENT "\n", strlen(EXISTING_FILE_CONTENT) + 1) != strlen(EXISTING_FILE_CONTENT) + 1) {
-			fprintf(stderr, "cannot write into target file, error %i\n",
-					errno);
-			close(r);
-			close(dfd);
-			exit(1);
-		}
-	}
-	strcat(fnbuffer, EXISTING_FILENAME_CONTENT);
-	close(r);
-
-	r = openat(dfd, EXISTING_FILTERCONF, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0644);
-	if (r < 0) {
-		fprintf(stderr, "cannot create filterconf file, error %i\n",
-				errno);
-		close(dfd);
-		exit(1);
-	} else {
-		if (write(r, EXISTING_FILTERCONF_CONTENT "7\n", strlen(EXISTING_FILTERCONF_CONTENT) + 2) != strlen(EXISTING_FILTERCONF_CONTENT) + 2) {
-			fprintf(stderr, "cannot write into filterconf file, error %i\n",
-					errno);
-			close(r);
-			close(dfd);
-			exit(1);
-		}
-	}
-	close(r);
-
-	r = openat(dfd, "../" EXISTING_FILTERCONF, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 0644);
-	if (r < 0) {
-		fprintf(stderr, "cannot create filterconf file, error %i\n",
-				errno);
-		close(dfd);
-		exit(1);
-	} else {
-		if (write(r, EXISTING_FILTERCONF_CONTENT "3\n", strlen(EXISTING_FILTERCONF_CONTENT) + 2) != strlen(EXISTING_FILTERCONF_CONTENT) + 2) {
-			fprintf(stderr, "cannot write into filterconf file, error %i\n",
-					errno);
-			close(r);
-			close(dfd);
-			exit(1);
-		}
-	}
-
-	close(dfd);
-	close(r);
 }
 
 static int
@@ -503,8 +415,6 @@ main(void)
 {
 	int r = 0;
 	char *slash;
-
-	create_dirs();
 
 	controldir_fd = -1;
 	expect_err_control = "control/vpopbounce";
