@@ -185,7 +185,7 @@ map_from_list(const char *values)
 
 int
 userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const char *key,
-		char ***values, checkfunc cf, const int useglobal)
+		char ***values, checkfunc cf, const unsigned int flags)
 {
 	const char *res = NULL;
 	checkfunc expected_cf;
@@ -204,9 +204,9 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 		return CONFIG_NONE;
 	}
 
-	if (useglobal != 1) {
-		fprintf(stderr, "%s() was called with useglobal %i\n",
-				__func__, useglobal);
+	if (flags != userconf_global) {
+		fprintf(stderr, "%s() was called with flags %i instead of %i\n",
+				__func__, flags, userconf_global);
 		exit(1);
 	}
 
@@ -229,7 +229,7 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 
 int
 userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const char *key __attribute__ ((unused)),
-		const char *domain __attribute__ ((unused)), const int useglobal __attribute__ ((unused)))
+		const char *domain __attribute__ ((unused)), const unsigned int flags __attribute__ ((unused)))
 {
 	return 0;
 }

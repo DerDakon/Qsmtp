@@ -15,18 +15,8 @@
 #include <syslog.h>
 #include <unistd.h>
 
-/**
- * check in user and domain directory if a file with given filename exists
- *
- * @param ds strings of user and domain directory
- * @param fn filename to search
- * @param type if user, domain or global directory matched, undefined if result != 1
- * @param useglobal if a global configuration lookup should be performed
- * @return file descriptor of opened file
- * @retval -1 on error (errno is set)
- */
 int
-getfile(const struct userconf *ds, const char *fn, enum config_domain *type, int useglobal)
+getfile(const struct userconf *ds, const char *fn, enum config_domain *type, const unsigned int flags)
 {
 	int fd;
 
@@ -44,9 +34,9 @@ getfile(const struct userconf *ds, const char *fn, enum config_domain *type, int
 
 		fd = openat(ds->domaindirfd, fn, O_RDONLY | O_CLOEXEC);
 
-		if (!useglobal || (fd != -1) || (errno != ENOENT))
+		if (!(flags & userconf_global) || (fd != -1) || (errno != ENOENT))
 			return fd;
-	} else if (!useglobal) {
+	} else if (!(flags & userconf_global)) {
 		errno = ENOENT;
 		return -1;
 	}
@@ -100,7 +90,7 @@ checkconfig(const char * const *config, const char *flag, const size_t l)
 }
 
 static long
-getsetting_internal(const struct userconf *ds, const char *flag, enum config_domain *type, const int useglobal)
+getsetting_internal(const struct userconf *ds, const char *flag, enum config_domain *type, const unsigned int flags)
 {
 	size_t l = strlen(flag);
 	long r;
@@ -125,7 +115,7 @@ getsetting_internal(const struct userconf *ds, const char *flag, enum config_dom
 			return r;
 		return 0;
 	}
-	if (!useglobal)
+	if (!(flags & userconf_global))
 		return 0;
 
 	*type = CONFIG_GLOBAL;

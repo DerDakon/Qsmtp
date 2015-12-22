@@ -108,15 +108,15 @@ setup_recip_order(unsigned int valid, int r0, int r1, int r2, int r3, int r4)
 }
 
 int
-userconf_get_buffer(const struct userconf *uc, const char *key, char ***values, checkfunc cf, const int useglobal)
+userconf_get_buffer(const struct userconf *uc, const char *key, char ***values, checkfunc cf, const unsigned int flags)
 {
 	int type;
 	const char *res = NULL;
 	unsigned int i;
 	const char *c;
 
-	if (useglobal != 1) {
-		fprintf(stderr, "%s() was called with useglobal %i\n", __func__, useglobal);
+	if (flags != userconf_global) {
+		fprintf(stderr, "%s() was called with flags %i instead of %i\n", __func__, flags, userconf_global);
 		exit(1);
 	}
 

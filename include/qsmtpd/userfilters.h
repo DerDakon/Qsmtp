@@ -24,7 +24,20 @@ enum config_domain {
 
 extern const char **globalconf;
 
-extern int getfile(const struct userconf *, const char *, enum config_domain *, int);
+/**
+ * check in user and domain directory if a file with given filename exists
+ *
+ * @param ds strings of user and domain directory
+ * @param fn filename to search
+ * @param type if user, domain or global directory matched, undefined if result != 1
+ * @param flags search flags
+ * @return file descriptor of opened file
+ * @retval -1 on error (errno is set)
+ *
+ * @see userconf_flags for values passed in flags
+ */
+extern int getfile(const struct userconf *ds, const char *fn, enum config_domain *type, const unsigned int flags);
+
 extern long getsetting(const struct userconf *, const char *, enum config_domain  *);
 extern long getsettingglobal(const struct userconf *, const char *, enum config_domain *);
 

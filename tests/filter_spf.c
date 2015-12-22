@@ -96,9 +96,9 @@ domainvalid(const char * const domain __attribute__ ((unused)))
 
 int
 userconf_get_buffer(const struct userconf *ds __attribute__ ((unused)), const char *key,
-		char ***values __attribute__ ((unused)), checkfunc cf __attribute__ ((unused)), const int useglobal)
+		char ***values __attribute__ ((unused)), checkfunc cf __attribute__ ((unused)), const unsigned int flags)
 {
-	assert(useglobal == 1);
+	assert(flags & userconf_global);
 
 	if (strcmp(key, "rspf") == 0) {
 	}
@@ -112,9 +112,9 @@ static const char hostname_spfstrict[] = "spfstrict.example.com";
 
 int
 userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const char *key,
-		const char *domain, const int useglobal)
+		const char *domain, const unsigned int flags)
 {
-	assert(useglobal == 1);
+	assert(flags & userconf_global);
 
 	if (strcmp(key, "spfignore") == 0) {
 		if (strcmp(domain, hostname_spfignore) == 0)

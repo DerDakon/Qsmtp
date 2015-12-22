@@ -15,6 +15,11 @@ struct userconf {
 	int userdirfd;			/**< descriptor of the user directory where the user stores it's own settings */
 };
 
+enum userconf_flags {
+	userconf_none = 0,		/**< no special search options to use */
+	userconf_global = 1		/**< global configuration lookup should be performed */
+};
+
 /**
  * @brief initialize the struct userconf
  * @param ds the struct to initialize
@@ -48,24 +53,24 @@ int userconf_load_configs(struct userconf *ds) __attribute__ ((nonnull (1)));
  * @param key the key name to load the information for
  * @param values the result array
  * @param cf a function to filter the entries (may be NULL)
- * @param useglobal if a global configuration lookup should be performed
+ * @param flags search flags
  * @return the type of the configuration entry returned
  * @retval <0 negative error code
  */
-int userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, checkfunc cf, const int useglobal) __attribute__ ((nonnull (1,2,3)));
+int userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, checkfunc cf, const unsigned int flags) __attribute__ ((nonnull (1,2,3)));
 
 /**
  * @brief find a domain in the user configuration key
  * @param ds the userconf buffer
  * @param key the key name for lookup
  * @param domain the domain name to search for
- * @param useglobal if a global configuration lookup should be performed
+ * @param flags search flags
  * @return the type of the configuration entry returned
  * @retval CONFIG_NONE the domain was not found in the configuration
  * @retval >0 the domain was found in the configuration
  * @retval <0 negative error code
  */
-int userconf_find_domain(const struct userconf *ds, const char *key, const char *domain, const int useglobal) __attribute__ ((nonnull (1,2,3)));
+int userconf_find_domain(const struct userconf *ds, const char *key, const char *domain, const unsigned int flags) __attribute__ ((nonnull (1,2,3)));
 
 /**
  * @brief initialize the backend to query for local users
