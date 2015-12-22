@@ -36,7 +36,7 @@ cb_badcc(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	if (TAILQ_NEXT(TAILQ_FIRST(&head), entries) == NULL)
 		return FILTER_PASSED;
 
-	*t = userconf_get_buffer(ds, "badcc", &a, checkaddr, 1);
+	*t = userconf_get_buffer(ds, "badcc", &a, checkaddr, userconf_global);
 	if (((int)*t) < 0) {
 		errno = -*t;
 		return FILTER_ERROR;

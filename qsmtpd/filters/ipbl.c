@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include <qsmtpd/userfilters.h>
+#include <qsmtpd/userconf.h>
 
 #include <qsmtpd/antispam.h>
 #include "log.h"
@@ -26,7 +27,7 @@ cb_ipbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		fnw = "ipwlv6";
 	}
 
-	if ( (fd = getfile(ds, fnb, t, 1)) < 0)
+	if ( (fd = getfile(ds, fnb, t, userconf_global)) < 0)
 		return (errno == ENOENT) ? FILTER_PASSED : FILTER_ERROR;
 
 	i = lookupipbl(fd);
@@ -36,7 +37,7 @@ cb_ipbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	if (i > 0) {
 		enum config_domain u;
 
-		if ( (fd = getfile(ds, fnw, &u, 1)) < 0) {
+		if ( (fd = getfile(ds, fnw, &u, userconf_global)) < 0) {
 			if (errno != ENOENT)
 				return FILTER_ERROR;
 			i = 0;

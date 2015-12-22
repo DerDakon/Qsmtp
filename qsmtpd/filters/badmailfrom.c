@@ -76,7 +76,7 @@ cb_badmailfrom(const struct userconf *ds, const char **logmsg, enum config_domai
 		return FILTER_PASSED;
 
 	/* don't check syntax of entries here: there might be things like ".cn" and so on that would fail the test */
-	*t = userconf_get_buffer(ds, "badmailfrom", &a, NULL, 1);
+	*t = userconf_get_buffer(ds, "badmailfrom", &a, NULL, userconf_global);
 	if (((int)*t) < 0) {
 		errno = -*t;
 		return FILTER_ERROR;
@@ -90,7 +90,7 @@ cb_badmailfrom(const struct userconf *ds, const char **logmsg, enum config_domai
 		return rc;
 
 	*logmsg = "bad mail from";
-	u = userconf_get_buffer(ds, "goodmailfrom", &a, checkaddr, 1);
+	u = userconf_get_buffer(ds, "goodmailfrom", &a, checkaddr, userconf_global);
 	if (u < 0) {
 		errno = -u;
 		return FILTER_ERROR;

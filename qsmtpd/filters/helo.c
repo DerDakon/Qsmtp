@@ -30,7 +30,7 @@ cb_helo(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		}
 	}
 
-	*t = userconf_find_domain(ds, "badhelo", HELOSTR, 1);
+	*t = userconf_find_domain(ds, "badhelo", HELOSTR, userconf_global);
 	if (((int)*t) < 0) {
 		errno = -*t;
 		return FILTER_ERROR;

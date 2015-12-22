@@ -29,7 +29,7 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		fnw = "whitednsblv6";
 	}
 
-	*t = userconf_get_buffer(ds, fnb, &a, domainvalid, 1);
+	*t = userconf_get_buffer(ds, fnb, &a, domainvalid, userconf_global);
 	if (((int)*t) < 0) {
 		errno = -*t;
 		return FILTER_ERROR;
@@ -42,7 +42,7 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		int j, u;
 		char **c;		/* same like **a, just for whitelist */
 
-		u = userconf_get_buffer(ds, fnw, &c, domainvalid, 0);
+		u = userconf_get_buffer(ds, fnw, &c, domainvalid, userconf_none);
 		if (u < 0) {
 			free(a);
 			free(txt);

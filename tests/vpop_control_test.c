@@ -148,7 +148,7 @@ check_open_fail(const char *range, const char *reason, const int error)
 	int fd;
 	enum config_domain type = -1;
 
-	fd = getfile(&ds, "something", &type, 0);
+	fd = getfile(&ds, "something", &type, userconf_none);
 	if (fd != -1) {
 		fprintf(stderr, "opening for %s for test '%s' succeeded, type %i\n",
 				range, reason, type);
@@ -223,7 +223,7 @@ test_found(void)
 	/* first: check with only user directory set */
 	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
 
-	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
+	fd = getfile(&ds, EXISTING_FILENAME, &type, userconf_none);
 	r += test_found_internal("user", fd, type, CONFIG_USER);
 
 	/* set both, but user information should still be used */
@@ -231,16 +231,16 @@ test_found(void)
 	ds.domainpath.len = strlen(fnbuffer);
 	ds.domaindirfd = ds.userdirfd;
 
-	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
+	fd = getfile(&ds, EXISTING_FILENAME, &type, userconf_none);
 	r += test_found_internal("user", fd, type, CONFIG_USER);
 
 	/* now only with domain information */
 	ds.userdirfd = -1;
 
-	fd = getfile(&ds, EXISTING_FILENAME, &type, 0);
+	fd = getfile(&ds, EXISTING_FILENAME, &type, userconf_none);
 	r += test_found_internal("domain", fd, type, CONFIG_DOMAIN);
 
-	fd = getfile(&ds, "something", &type, 1);
+	fd = getfile(&ds, "something", &type, userconf_global);
 	if (fd != -1) {
 		fprintf(stderr, "opening global file 'something' succeeded, type %i\n",
 				type);
@@ -294,7 +294,7 @@ test_getbuffer(void)
 	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
 
 	/* the file exists, but has no content */
-	r = userconf_get_buffer(&ds, EXISTING_FILENAME, &array, NULL, 0);
+	r = userconf_get_buffer(&ds, EXISTING_FILENAME, &array, NULL, userconf_none);
 	if (r != CONFIG_NONE) {
 		fprintf(stderr, "opening empty file returned %i instead of CONFIG_NONE\n",
 				r);
@@ -303,7 +303,7 @@ test_getbuffer(void)
 		array = NULL;
 	}
 
-	r = userconf_get_buffer(&ds, EXISTING_FILENAME_CONTENT, &array, NULL, 0);
+	r = userconf_get_buffer(&ds, EXISTING_FILENAME_CONTENT, &array, NULL, userconf_none);
 	if (r != CONFIG_USER) {
 		fprintf(stderr, "opening existing file returned %i instead of CONFIG_USER\n",
 				r);
@@ -319,7 +319,7 @@ test_getbuffer(void)
 	free(array);
 	array = NULL;
 
-	r = userconf_get_buffer(&ds, "does_not_exist", &array, NULL, 1);
+	r = userconf_get_buffer(&ds, "does_not_exist", &array, NULL, userconf_global);
 	if (r != CONFIG_NONE) {
 		fprintf(stderr, "opening non-existent file returned %i instead of CONFIG_NONE\n",
 				r);

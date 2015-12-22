@@ -71,7 +71,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 
 		assert(exps == NULL);
 
-		*t = userconf_get_buffer(ds, "rspf", &a, domainvalid, 1);
+		*t = userconf_get_buffer(ds, "rspf", &a, domainvalid, userconf_global);
 		if (((int)*t) < 0) {
 			errno = -*t;
 			return FILTER_ERROR;

@@ -26,7 +26,7 @@ cb_forceesmtp(const struct userconf *ds, const char **logmsg, enum config_domain
 		fnb = "forceesmtpv6";
 	}
 
-	*t = userconf_get_buffer(ds, fnb, &a, domainvalid, 1);
+	*t = userconf_get_buffer(ds, fnb, &a, domainvalid, userconf_global);
 	if (((int)*t) < 0) {
 		errno = -*t;
 		return FILTER_ERROR;
