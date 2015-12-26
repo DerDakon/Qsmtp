@@ -624,8 +624,8 @@ send_qp(const char *buf, const off_t len)
 			send_plain(buf + off, len - off);
 	} else {
 		off_t nextoff = find_boundary(buf + off, len - off, &boundary);
-		int nr;
 		int islast = 0;	/* set to one if MIME end boundary was found */
+		const int nr_match = (smtpext & esmtp_8bitmime) ? 0x6 : 0x7; /* when recode is needed */
 
 		if (!nextoff) {
 			/* huh? message declared as multipart, but without any boundary? */
@@ -647,7 +647,7 @@ send_qp(const char *buf, const off_t len)
 		}
 
 		/* check and send or discard MIME preamble */
-		if ( (nr = need_recode(buf + off, nextoff)) ) {
+		if (need_recode(buf + off, nextoff)) {
 			log_write(LOG_ERR, "discarding invalid MIME preamble");
 			netwrite("\r\ninvalid MIME preamble was dicarded.\r\n\r\n--");
 			netnwrite(boundary.s, boundary.len);
@@ -673,13 +673,13 @@ send_qp(const char *buf, const off_t len)
 
 		while ((off < len) && !islast && (nextoff = find_boundary(buf + off, len - off, &boundary))) {
 			off_t partlen = nextoff - boundary.len - 2;
+			int nr = need_recode(buf + off, partlen);
 
-			nr = need_recode(buf + off, partlen);
-			if ((!(smtpext & esmtp_8bitmime) && (nr & 1)) || (nr & 6)) {
+			if (nr & nr_match)
 				send_qp(buf + off, partlen);
-			} else {
+			else
 				send_plain(buf + off, partlen);
-			}
+
 			netwrite("--");
 			netnwrite(boundary.s, boundary.len);
 			off += nextoff;
