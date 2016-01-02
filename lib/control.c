@@ -364,9 +364,10 @@ data_array(unsigned int entries, size_t datalen, void *oldbuf, size_t oldlen)
 int
 loadlistfd(int fd, char ***bufa, checkfunc cf)
 {
-	size_t i, k, j;
+	size_t i, j, k;
 	char *buf;
 	const size_t datalen = lloadfilefd(fd, &buf, 3);
+	int haserr = 0;
 
 	if (datalen == (size_t) -1)
 		return -1;
@@ -387,6 +388,7 @@ loadlistfd(int fd, char ***bufa, checkfunc cf)
 			log_writen(LOG_WARNING, s);
 			/* mark this entry as invalid */
 			buf[k++] = '\0';
+			haserr = 1;
 		}
 		k += strlen(buf + k) + 1;
 	}
@@ -396,8 +398,14 @@ loadlistfd(int fd, char ***bufa, checkfunc cf)
 		*bufa = NULL;
 		return 0;
 	}
+	/* no need to try to compact if no entry was rejected, otherwise the buffer is already
+	 * compacted from lloadfilefd() */
+	if (haserr)
+		i = compact_buffer(&buf, buf, datalen);
+	else
+		i = datalen;
 
-	*bufa = data_array(j, datalen, buf, datalen);
+	*bufa = data_array(j, i, buf, i);
 	if (!*bufa) {
 		free(buf);
 		return -1;

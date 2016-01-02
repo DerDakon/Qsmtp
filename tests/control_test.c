@@ -665,6 +665,11 @@ test_listload()
 				fputs("loadlistfd() did not return a NULL-terminated array\n", stderr);
 				err++;
 			}
+			if (bufa + end + 1 != bufa[0]) {
+				printf("%i %p %p\n", i, bufa + end + 1, bufa[0]);
+				fputs("loadlistfd() did not put the first entry directly after the pointer section\n", stderr);
+				err++;
+			}
 		} else {
 			fputs("loadlistfd() did not return data\n", stderr);
 			if (bufa == NULL)
