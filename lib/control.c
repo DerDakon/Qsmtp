@@ -24,6 +24,59 @@
 int controldir_fd = -1;	/**< descriptor of the control directory */
 
 /**
+ * @brief compact a given buffer
+ *
+ * @param buf output parameter
+ * @param inbuf the buffer to compact
+ * @param oldlen the current length of inbuf
+ * @return the length of the new buffer
+ * @retval 0 no valid entries were found in inbuf, inbuf was freed
+ */
+static size_t
+compact_buffer(char **buf, char *inbuf, size_t oldlen)
+{
+	size_t j = 0, k = 0;
+
+	/* skip over any leading 0-bytes, i.e. deleted entries */
+	while ((j < oldlen) && !inbuf[j])
+		j++;
+
+	while (j < oldlen) {
+		const size_t jlen = strnlen(inbuf + j, oldlen - j);
+
+		/* only copy if not already at the right place */
+		if (j != k)
+			memmove(inbuf + k, inbuf + j, jlen);
+
+		j += jlen + 1; /* skip over the trailing 0-byte */
+		k += jlen;
+
+		inbuf[k++] = '\0';
+
+		while ((j < oldlen) && !inbuf[j])
+			j++;
+	}
+	/* file consists only of comments and whitespace */
+	if (!k) {
+		free(inbuf);
+		return 0;
+	}
+
+	/* free the now useless memory at the end (if any) */
+	j = k;
+	if (k != oldlen + 1) {
+		*buf = realloc(inbuf, k);
+		if (*buf == NULL)
+			/* Can't shrink? Well, then the long buffer */
+			*buf = inbuf;
+	} else {
+		*buf = inbuf;
+	}
+
+	return j;
+}
+
+/**
  * load a text file into a buffer using locked IO
  *
  * @param fd file descriptor of the file to load
@@ -136,44 +189,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	}
 
 	if (striptab & 1) {
-		size_t k;
-		/* compact the buffer */
-		j = k = 0;
-		/* skip over any leading 0-bytes, i.e. deleted entries */
-		while ((j < oldlen) && !inbuf[j])
-			j++;
-
-		while (j < oldlen) {
-			const size_t jlen = strnlen(inbuf + j, oldlen - j);
-
-			/* only copy if not already at the right place */
-			if (j != k)
-				memmove(inbuf + k, inbuf + j, jlen);
-
-			j += jlen + 1; /* skip over the trailing 0-byte */
-			k += jlen;
-
-			inbuf[k++] = '\0';
-
-			while ((j < oldlen) && !inbuf[j])
-				j++;
-		}
-		/* file consists only of comments and whitespace */
-		if (!k) {
-			free(inbuf);
-			return 0;
-		}
-
-		/* free the now useless memory at the end (if any) */
-		j = k;
-		if (k != oldlen + 1) {
-			*buf = realloc(inbuf, k);
-			if (*buf == NULL)
-				/* Can't shrink? Well, then the long buffer */
-				*buf = inbuf;
-		} else {
-			*buf = inbuf;
-		}
+		j = compact_buffer(buf, inbuf, oldlen);
 	} else {
 		for (j = 0; j < oldlen; j++) {
 			if (inbuf[j]) {
