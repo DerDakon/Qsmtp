@@ -9,6 +9,7 @@
 #include <mmap.h>
 #include <qdns.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -295,6 +296,44 @@ loadonelinerfd(int fd, char **buf)
 }
 
 /**
+ * @brief create a combined data and pointer array
+ *
+ * @param entries how many entries should be in the pointer array (not counting the terminating NULL entry)
+ * @param datalen length needed for the data, 1 byte per entry is added for the terminating '\0' characters
+ * @param oldbuf if a previous buffer should be realloc()ed, may be NULL
+ * @param oldlen length of oldbuf, must be 0 if oldbuf is NULL
+ * @returns new buffer or NULL on error
+ *
+ * If oldbuf is given the contents of the old buffer are moved to the beginning of the data
+ * section of the new memory area.
+ *
+ * If oldbuf is given, but reallocation fails (i.e. NULL is returned), then oldbuf is not freed.
+ */
+char **
+data_array(unsigned int entries, size_t datalen, void *oldbuf, size_t oldlen)
+{
+	size_t psize = (entries + 1) * sizeof(char **);	/* size of pointer section */
+	size_t dsize = entries + datalen;
+	char **ret = realloc(oldbuf, psize + dsize);
+
+	assert(dsize >= oldlen);
+	assert(!((oldbuf == NULL) && (oldlen != 0)));
+
+	if (ret == NULL)
+		return ret;
+
+	if (oldlen != 0) {
+		/* move the data beyond the pointer array */
+		void *buf = (void *)(((uintptr_t)ret) + psize);
+		memmove(buf, ret, oldlen);
+	}
+
+	ret[entries] = NULL;
+
+	return ret;
+}
+
+/**
  * read a list from config file and validate entries
  *
  * @param fd file descriptor to read from (is closed on exit!)
@@ -341,16 +380,14 @@ loadlistfd(int fd, char ***bufa, checkfunc cf)
 		*bufa = NULL;
 		return 0;
 	}
-	/* the length of the pointer array */
-	i = (j + 1) * sizeof(char*);
-	*bufa = realloc(buf, i + datalen);
+
+	*bufa = data_array(j, datalen, buf, datalen);
 	if (!*bufa) {
 		free(buf);
 		return -1;
 	}
-	/* move the data beyond the pointer array */
-	buf = (char *)(((uintptr_t)*bufa) + i);
-	memmove(buf, *bufa, datalen);
+	buf = (char*)(*bufa + (j + 1));
+
 	i = k = 0;
 	/* store references to the beginning of each valid entry */
 	while (i < j) {
@@ -360,7 +397,6 @@ loadlistfd(int fd, char ***bufa, checkfunc cf)
 		(*bufa)[i++] = buf + k;
 		k += strlen(buf + k) + 1;
 	}
-	(*bufa)[j] = NULL;
 	return 0;
 }
 

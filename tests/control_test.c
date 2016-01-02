@@ -78,6 +78,57 @@ createTestFile(const char * const name, const char * const value)
 }
 
 static int
+test_data_array()
+{
+	char *b = NULL;
+	char **ob;
+	int ret = 0;
+
+	puts("== Running tests for data_array()");
+
+	ob = data_array(1, 1, NULL, 0);
+
+	if (ob == NULL) {
+		fputs("out of memory\n", stderr);
+		exit (1);
+	}
+
+	if (ob[1] != NULL) {
+		fputs("terminating array entry not set to NULL\n", stderr);
+		ret++;
+	}
+	free(ob);
+
+	b = strdup("x");
+
+	if (b == NULL) {
+		fputs("out of memory\n", stderr);
+		exit (1);
+	}
+
+	ob = data_array(1, 1, b, strlen(b) + 1);
+	if (ob == NULL) {
+		fputs("out of memory\n", stderr);
+		free(b);
+		exit (1);
+	}
+
+	if (ob[1] != NULL) {
+		fputs("terminating array entry not set to NULL\n", stderr);
+		ret++;
+	}
+	ob[0] = (char*)(ob + 2);
+	if ((ob[0][0] != 'x') || (ob[0][1] != '\0')) {
+		fputs("old array content was not copied\n", stderr);
+		ret++;
+	}
+
+	free(ob);
+
+	return ret;
+}
+
+static int
 test_oneliner()
 {
 	unsigned int i;
@@ -745,6 +796,7 @@ main(void)
 
 	unlink(ctrl_testfile);
 
+	error += test_data_array();
 	error += test_oneliner();
 	error += test_lload();
 	error += test_intload();
