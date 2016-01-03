@@ -413,11 +413,8 @@ loadlistfd(int fd, char ***bufa, checkfunc cf)
 	buf = (char*)(*bufa + (j + 1));
 
 	i = k = 0;
-	/* store references to the beginning of each valid entry */
+	/* store references to the beginning of each entry */
 	while (i < j) {
-		while (!buf[k]) {
-			k += strlen(buf + k + 1) + 2;
-		}
 		(*bufa)[i++] = buf + k;
 		k += strlen(buf + k) + 1;
 	}
