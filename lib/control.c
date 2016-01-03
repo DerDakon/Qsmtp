@@ -410,13 +410,13 @@ loadlistfd(int fd, char ***bufa, checkfunc cf)
 		free(buf);
 		return -1;
 	}
-	buf = (char*)(*bufa + (j + 1));
+	buf = (char*)(*bufa + j + 1);
 
-	i = k = 0;
+	i = 0;
 	/* store references to the beginning of each entry */
 	while (i < j) {
-		(*bufa)[i++] = buf + k;
-		k += strlen(buf + k) + 1;
+		(*bufa)[i++] = buf;
+		buf += strlen(buf) + 1;
 	}
 	return 0;
 }
