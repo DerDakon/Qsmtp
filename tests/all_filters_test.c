@@ -189,6 +189,7 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 {
 	const char *res = NULL;
 	checkfunc expected_cf;
+	unsigned int expected_flags = userconf_global;
 
 	if (strcmp(key, "goodmailfrom") == 0) {
 		res = testdata[testindex].goodmailfrom;
@@ -196,6 +197,7 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 	} else if (strcmp(key, "badmailfrom") == 0) {
 		res = testdata[testindex].badmailfrom;
 		expected_cf = NULL;
+		expected_flags = userconf_global | userconf_inherit;
 	} else if (strcmp(key, "namebl") == 0) {
 		res = testdata[testindex].namebl;
 		expected_cf = domainvalid;
@@ -204,9 +206,9 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 		return CONFIG_NONE;
 	}
 
-	if (flags != userconf_global) {
+	if (flags != expected_flags) {
 		fprintf(stderr, "%s() was called with flags %i instead of %i\n",
-				__func__, flags, userconf_global);
+				__func__, flags, expected_flags);
 		exit(1);
 	}
 
