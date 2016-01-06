@@ -22,12 +22,12 @@
 #include <string.h>
 
 static RSA *
-tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export, int keylen)
+tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)
 {
-	if (!export)
-		keylen = 512;
-	if (keylen == 512) {
-		FILE *in = fdopen(openat(controldir_fd, "rsa512.pem", O_RDONLY | O_CLOEXEC), "r");
+	if (keylen < 2048)
+		keylen = 2048;
+	if (keylen == 2048) {
+		FILE *in = fdopen(openat(controldir_fd, "rsa2048.pem", O_RDONLY | O_CLOEXEC), "r");
 		if (in) {
 			RSA *rsa = PEM_read_RSAPrivateKey(in, NULL, NULL, NULL);
 
@@ -242,7 +242,6 @@ tls_init()
 				(X509_load_crl_file(lookup, CLIENTCRL, X509_FILETYPE_PEM) == 1))
 		X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK |
 						X509_V_FLAG_CRL_CHECK_ALL);
-
 
 	saciphers.len = lloadfilefd(openat(controldir_fd, ciphfn, O_RDONLY | O_CLOEXEC), &(saciphers.s), 1);
 	if (saciphers.len == (size_t)-1) {
