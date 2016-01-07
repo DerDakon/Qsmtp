@@ -230,6 +230,9 @@ tls_init()
 		return tls_err("unable to initialize ctx") ? errno : EDONE;
 	}
 
+	/* disable obsolete and insecure protocol versions */
+	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+
 	if (!SSL_CTX_use_certificate_chain_file(ctx, certfilename)) {
 		SSL_CTX_free(ctx);
 		return tls_err("missing certificate") ? errno : EDONE;

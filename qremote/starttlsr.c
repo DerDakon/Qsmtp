@@ -113,6 +113,9 @@ tls_init(void)
 		return -1;
 	}
 
+	/* disable obsolete and insecure protocol versions */
+	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+
 	if (servercert && !SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
 		const char *msg[] = { "Z4.5.0 TLS unable to load ", servercert, ": ",
 				ssl_error(),  "; connecting to ", rhost };
