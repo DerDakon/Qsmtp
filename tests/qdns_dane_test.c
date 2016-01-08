@@ -181,7 +181,7 @@ static const char success_packet[] = "\0\0\0\0\0\0\0\3\0\0\0\0" /* header */
 		"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f"; /* TLSA data (SHA2-512) */
 
 int
-dns_domain_fromdot(char **q, const char *host, unsigned int len)
+dns_domain_fromdot(char **q, const char *host, size_t len)
 {
 	unsigned int idx;
 
