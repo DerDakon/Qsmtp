@@ -208,7 +208,7 @@ dns_domain_fromdot(char **q, const char *host, unsigned int len)
 		return 0;
 	}
 
-	if ((host[1] < '0') || (host[1] > '9') || (host[2] < '0') || (host[2] > '9')) {
+	if ((host[1] < '1') || (host[1] > '9') || (host[2] < '0') || (host[2] > '9')) {
 		err++;
 		return 0;
 	}
