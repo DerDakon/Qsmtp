@@ -532,7 +532,7 @@ userconf_get_buffer(const struct userconf *ds, const char *key, char ***values, 
 					while (inhvals[ncnt] != NULL)
 						dsize += strlen(inhvals[ncnt++]) + 1;
 
-					rbuf = data_array(ocnt + ncnt, dsize, NULL, 0);
+					rbuf = data_array(ocnt + ncnt - 1, dsize, NULL, 0);
 					if (rbuf == NULL) {
 						free(*values);
 						free(inhvals);
