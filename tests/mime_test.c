@@ -411,10 +411,10 @@ test_no_multipart(void)
 {
 	int ret = 0;
 	const char *patterns[] = {
-		"multipar",
-		" foo=multipart",
-		" (something) foo/multipart",
-		"multipar/mix; boundary=bar",
+		"Content-Type: multipar",
+		"Content-Type:  foo=multipart",
+		"Content-Type:  (something) foo/multipart",
+		"Content-Type: multipar/mix; boundary=bar",
 		NULL
 	};
 	unsigned int i;

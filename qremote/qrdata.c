@@ -357,20 +357,20 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 		case 'C':
 			{
 				off_t rest = len - off;
+				static const char content_type[] = "ontent-Type:";
+				static const char content_tr_enc[] = "ontent-Transfer-Encoding:";
+				const char *cr = buf + off;
 
-				if ((rest >= 12) && !strncasecmp(buf + off + 1, "ontent-Type:", 11)) {
-					const char *cr = buf + off;
-
+				if ((rest >= strlen(content_type)) &&
+						!strncasecmp(cr + 1, content_type, strlen(content_type))) {
 					ctype.len = getfieldlen(cr, len - off);
 					if (ctype.len) {
 						ctype.s = cr;
 						off += ctype.len - 2;
 					}
 					break;
-				} else if ((rest >= 25) &&
-						!strncasecmp(buf + off + 1, "ontent-Transfer-Encoding:", 25)) {
-					const char *cr = buf + off;
-
+				} else if ((rest >= strlen(content_tr_enc)) &&
+						!strncasecmp(cr + 1, content_tr_enc, strlen(content_tr_enc))) {
 					cenc.len = getfieldlen(cr, len - off);
 					if (cenc.len) {
 						cenc.s = cr;
@@ -398,7 +398,8 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 		net_conn_shutdown(shutdown_abort);
 	}
 
-	if ((*multipart = is_multipart(&ctype, boundary)) > 0) {
+	*multipart = is_multipart(&ctype, boundary);
+	if (*multipart > 0) {
 		/* content is implicitely 7bit if no declaration is present */
 		if (cenc.len) {
 			wrap_header(buf, cenc.s - buf);

@@ -160,17 +160,23 @@ mime_param(const char *line, const size_t len)
  * @retval 1 line contains multipart/(*) declaration
  * @retval 0 other type
  * @retval -1 syntax error
+ *
+ * The passed line must start with the "Content-Type:" string, i.e. the whole header
+ * line must be passed, or it must be empty, i.e len==0.
  */
 int
 is_multipart(const cstring *line, cstring *boundary)
 {
 	const char *ch;
 	size_t i = strlen("multipart/"), j;
+	const size_t ct_len = strlen("Content-Type:"); /** initial text to skip over */
 
 	if (!line->len)
 		return 0;
 
-	ch = skipwhitespace(line->s + 13, line->len - 13);
+	assert(line->len >= ct_len);
+
+	ch = skipwhitespace(line->s + ct_len, line->len - ct_len);
 	if ((ch == NULL) || (ch == line->s + line->len))
 		return -1;
 
