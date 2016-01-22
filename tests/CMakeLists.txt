@@ -928,6 +928,7 @@ TARGET_LINK_LIBRARIES(testcase_ssl_pp
 FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 		simple_clc_tlsclients simple_clc_clientca simple_clientca
 		relay_no_name relay_other relay_multi_first relay_multi_last
+		relay_withca
 		matching_servercert matching_wildcard
 		nonmatching_servercert nonmatching_wildcard
 		SubjAN_match SubjAN2_match SubjAN_cn
@@ -952,6 +953,13 @@ FOREACH(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 		SET(_ssl_server_key "valid1024.key")
 		FILE(MAKE_DIRECTORY "${_tgt_dir}/control/tlsclients")
 		SET(_ssl_test_arg "-sEISDIR")
+	ELSEIF (_ssl_test STREQUAL "relay_withca")
+		SET(_ssl_client_key "withca.key")
+		SET(_ssl_server_key "valid1024.key")
+		FILE(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
+		CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/test-ca.crt
+				"${_tgt_dir}/control/clientca.pem" COPYONLY)
+		SET(_ssl_test_arg "-s1")
 	ELSEIF (_ssl_test STREQUAL "simple_clc_tlsclients" OR _ssl_test STREQUAL "simple_clc_clientca")
 		SET(_ssl_client_key "valid1024.key")
 		SET(_ssl_server_key "valid1024.key")
