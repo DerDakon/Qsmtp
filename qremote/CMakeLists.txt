@@ -1,10 +1,10 @@
-OPTION(QREMOTE_PEDANTIC_STATUS_CODES "Be pedantic about the status codes Qremote accepts from remote servers" OFF)
+option(QREMOTE_PEDANTIC_STATUS_CODES "Be pedantic about the status codes Qremote accepts from remote servers" OFF)
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/statuscodes.h.tmpl ${CMAKE_CURRENT_BINARY_DIR}/statuscodes.h @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/statuscodes.h.tmpl ${CMAKE_CURRENT_BINARY_DIR}/statuscodes.h @ONLY)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-SET(QREMOTE_SRCS
+set(QREMOTE_SRCS
 	common_setup.c
 	greeting.c
 	qremote.c
@@ -19,7 +19,7 @@ SET(QREMOTE_SRCS
 	status.c
 )
 
-SET(QREMOTE_HDRS
+set(QREMOTE_HDRS
 	../include/qremote/client.h
 	../include/qremote/conn.h
 	../include/qremote/mime.h
@@ -29,17 +29,17 @@ SET(QREMOTE_HDRS
 	../include/qremote/starttlsr.h
 )
 
-IF(CHUNKING)
-	LIST(APPEND QREMOTE_SRCS
+if(CHUNKING)
+	list(APPEND QREMOTE_SRCS
 			qrbdat.c
 	)
-ENDIF()
+endif()
 
-ADD_EXECUTABLE(Qremote
+add_executable(Qremote
 	${QREMOTE_SRCS}
 	${QREMOTE_HDRS}
 )
-TARGET_LINK_LIBRARIES(Qremote
+target_link_libraries(Qremote
 	qsmtp_lib
 	qsmtp_io_lib
 	qsmtp_dane_lib
@@ -47,7 +47,7 @@ TARGET_LINK_LIBRARIES(Qremote
 	${OPENSSL_LIBRARIES}
 )
 
-INSTALL(TARGETS Qremote DESTINATION bin COMPONENT core)
+install(TARGETS Qremote DESTINATION bin COMPONENT core)
 
 #install:
 #	install -s -g qmail -o qmailr Qremote $(AUTOQMAIL)/bin

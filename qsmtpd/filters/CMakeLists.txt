@@ -1,4 +1,4 @@
-SET(filterSrc
+set(filterSrc
 	rcpt_filters.c
 	badmailfrom.c
 	check2822.c
@@ -18,4 +18,4 @@ SET(filterSrc
 	nomail.c
 )
 
-ADD_LIBRARY(rcptfilters  ${filterSrc})
+add_library(rcptfilters  ${filterSrc})

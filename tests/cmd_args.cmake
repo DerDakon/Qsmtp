@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 2.8)
 set(SPACES "    ")
 foreach(i 1 2 3 4 5 6 7)
 	set(SPACES "${SPACES}${SPACES}")
-endforeach(i)
+endforeach()
 
 execute_process(COMMAND sleep 3)
 # invalid HELO, but this will be filtered later

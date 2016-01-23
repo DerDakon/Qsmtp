@@ -21,23 +21,23 @@
 ## ######### begin file
 ## # the binary directory does not need to exist (but it's parent)
 ## # it will be deleted before use
-## SET(QSMTP_BUILD_DIR "my/path/to/the/build/dir")
+## set(QSMTP_BUILD_DIR "my/path/to/the/build/dir")
 ##
 ## # if you don't want to run a Nightly, but e.g. an Experimental build
-## # SET(dashboard_model "Experimental")
+## # set(dashboard_model "Experimental")
 ##
 ## # if your "git" executable can not be found by FindGit.cmake
-## # SET(GIT_EXECUTABLE "path/to/my/git")
+## # set(GIT_EXECUTABLE "path/to/my/git")
 ##
 ## # if you only want to run the test, but not submit the results
-## SET(NO_SUBMIT TRUE)
+## set(NO_SUBMIT TRUE)
 ##
 ## # if you are not on a openSUSE system the script currently doesn't
 ## # set a proper build name
-## SET(CTEST_BUILD_NAME "Fedora Core 14 x86_64")
+## set(CTEST_BUILD_NAME "Fedora Core 14 x86_64")
 ##
 ## # This _*MUST*_ be the last command in this file!
-## INCLUDE(/path/to/Qsmtp/ctest_qsmtp.cmake)
+## include(/path/to/Qsmtp/ctest_qsmtp.cmake)
 ## ######### end file
 ##
 ## Then run this script with
@@ -45,72 +45,72 @@
 ##
 
 # Check for required variables.
-FOREACH (req
+foreach (req
                 QSMTP_BUILD_DIR
         )
-        IF (NOT DEFINED ${req})
-                MESSAGE(FATAL_ERROR "The containing script must set ${req}")
-        ENDIF ()
-ENDFOREACH (req)
+        if (NOT DEFINED ${req})
+                message(FATAL_ERROR "The containing script must set ${req}")
+        endif ()
+endforeach ()
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.6)
+cmake_minimum_required(VERSION 2.8.6)
 
-IF (NOT GIT_EXECUTABLE)
-	FIND_PACKAGE(Git REQUIRED)
-ENDIF()
-SET(UpdateCommand ${GIT_EXECUTABLE})
+if (NOT GIT_EXECUTABLE)
+	find_package(Git REQUIRED)
+endif()
+set(UpdateCommand ${GIT_EXECUTABLE})
 
-SET(CTEST_SOURCE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-SET(CTEST_BINARY_DIRECTORY ${QSMTP_BUILD_DIR})
+set(CTEST_SOURCE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+set(CTEST_BINARY_DIRECTORY ${QSMTP_BUILD_DIR})
 
 # Select the model (Nightly, Experimental, Continuous).
-IF (NOT DEFINED dashboard_model)
-        SET(dashboard_model Nightly)
-ENDIF()
-IF (NOT "${dashboard_model}" MATCHES "^(Nightly|Experimental|Continuous)$")
-        MESSAGE(FATAL_ERROR "dashboard_model must be Nightly, Experimental, or Continuous")
-ENDIF()
+if (NOT DEFINED dashboard_model)
+        set(dashboard_model Nightly)
+endif()
+if (NOT "${dashboard_model}" MATCHES "^(Nightly|Experimental|Continuous)$")
+        message(FATAL_ERROR "dashboard_model must be Nightly, Experimental, or Continuous")
+endif()
 
-IF (NOT CTEST_CMAKE_GENERATOR)
-	SET(CTEST_CMAKE_GENERATOR "Unix Makefiles")
-ENDIF (NOT CTEST_CMAKE_GENERATOR)
+if (NOT CTEST_CMAKE_GENERATOR)
+	set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+endif ()
 
 # set the site name
-IF (NOT CTEST_SITE)
-	EXECUTE_PROCESS(COMMAND hostname --fqdn
+if (NOT CTEST_SITE)
+	execute_process(COMMAND hostname --fqdn
 			OUTPUT_VARIABLE CTEST_SITE
 			OUTPUT_STRIP_TRAILING_WHITESPACE)
-ENDIF (NOT CTEST_SITE)
+endif ()
 
 # set the build name
-IF (NOT CTEST_BUILD_NAME)
-	IF (EXISTS /etc/SuSE-release)
-		FILE(STRINGS /etc/SuSE-release _SUSEVERSION)
-		LIST(GET _SUSEVERSION 0 _BUILDNAMETMP)
-		STRING(REGEX REPLACE "[\\(\\)]" "" CTEST_BUILD_NAME ${_BUILDNAMETMP})
-		UNSET(_SUSEVERSION)
-	ELSEIF (EXISTS /etc/os-release)
-		FILE(STRINGS /etc/os-release _OSVERSION)
-		FOREACH(_OSVERSION_STRING ${_OSVERSION})
-			IF (_OSVERSION_STRING MATCHES "^NAME=")
-				STRING(REGEX REPLACE "^NAME=" "" _OSVER_NAME "${_OSVERSION_STRING}")
-			ELSEIF (_OSVERSION_STRING MATCHES "^VERSION_ID=")
-				STRING(REGEX REPLACE "^VERSION_ID=\"(.*)\"" "\\1" _OSVER_VERSION "${_OSVERSION_STRING}")
-			ENDIF ()
-		ENDFOREACH(_OSVERSION_STRING)
-		UNSET(_OSVERSION)
-		IF (_OSVER_NAME AND _OSVER_VERSION)
-			SET(CTEST_BUILD_NAME "${_OSVER_NAME} ${_OSVER_VERSION}")
-		ENDIF (_OSVER_NAME AND _OSVER_VERSION)
-	ENDIF ()
-ENDIF (NOT CTEST_BUILD_NAME)
+if (NOT CTEST_BUILD_NAME)
+	if (EXISTS /etc/SuSE-release)
+		file(STRINGS /etc/SuSE-release _SUSEVERSION)
+		list(GET _SUSEVERSION 0 _BUILDNAMETMP)
+		string(REGEX REPLACE "[\\(\\)]" "" CTEST_BUILD_NAME ${_BUILDNAMETMP})
+		unset(_SUSEVERSION)
+	elseif (EXISTS /etc/os-release)
+		file(STRINGS /etc/os-release _OSVERSION)
+		foreach(_OSVERSION_STRING ${_OSVERSION})
+			if (_OSVERSION_STRING MATCHES "^NAME=")
+				string(REGEX REPLACE "^NAME=" "" _OSVER_NAME "${_OSVERSION_STRING}")
+			elseif (_OSVERSION_STRING MATCHES "^VERSION_ID=")
+				string(REGEX REPLACE "^VERSION_ID=\"(.*)\"" "\\1" _OSVER_VERSION "${_OSVERSION_STRING}")
+			endif ()
+		endforeach()
+		unset(_OSVERSION)
+		if (_OSVER_NAME AND _OSVER_VERSION)
+			set(CTEST_BUILD_NAME "${_OSVER_NAME} ${_OSVER_VERSION}")
+		endif ()
+	endif ()
+endif ()
 
-IF (NOT CTEST_BUILD_NAME)
-	MESSAGE(FATAL_ERROR "CTEST_BUILD_NAME not set.\nPlease set this to a sensible value, preferably in the form \"distribution version architecture\", something like \"openSUSE 11.3 i586\"")
-ENDIF (NOT CTEST_BUILD_NAME)
+if (NOT CTEST_BUILD_NAME)
+	message(FATAL_ERROR "CTEST_BUILD_NAME not set.\nPlease set this to a sensible value, preferably in the form \"distribution version architecture\", something like \"openSUSE 11.3 i586\"")
+endif ()
 
-FIND_PROGRAM(CTEST_MEMORYCHECK_COMMAND valgrind)
-FIND_PROGRAM(CTEST_COVERAGE_COMMAND gcov)
+find_program(CTEST_MEMORYCHECK_COMMAND valgrind)
+find_program(CTEST_COVERAGE_COMMAND gcov)
 
 ctest_read_custom_files(${CMAKE_CURRENT_LIST_DIR})
 
@@ -135,15 +135,15 @@ ctest_build()
 # schedule more tests in parallel so this doesn't take too long.
 ctest_test(PARALLEL_LEVEL 2)
 
-IF (CTEST_COVERAGE_COMMAND)
+if (CTEST_COVERAGE_COMMAND)
 	ctest_coverage()
-ENDIF (CTEST_COVERAGE_COMMAND)
+endif ()
 
-IF (CTEST_MEMORYCHECK_COMMAND)
-	SET(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_CURRENT_LIST_DIR}/valgrind.supp")
+if (CTEST_MEMORYCHECK_COMMAND)
+	set(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CMAKE_CURRENT_LIST_DIR}/valgrind.supp")
 	ctest_memcheck()
-ENDIF (CTEST_MEMORYCHECK_COMMAND)
+endif ()
 
-IF (NOT NO_SUBMIT)
+if (NOT NO_SUBMIT)
 	ctest_submit()
-ENDIF (NOT NO_SUBMIT)
+endif ()

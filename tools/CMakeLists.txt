@@ -1,12 +1,12 @@
-# ADD_EXECUTABLE(fcshell fcshell.c)
+# add_executable(fcshell fcshell.c)
 # 
-# IF (NOT CMAKE_VERSION VERSION_LESS 3.1)
-# 	SET_PROPERTY(TARGET fcshell PROPERTY C_STANDARD 99)
-# ELSE ()
-# 	SET_SOURCE_FILES_PROPERTIES(fcshell.c PROPERTIES COMPILE_FLAGS -std=c99)
-# ENDIF ()
+# if (NOT CMAKE_VERSION VERSION_LESS 3.1)
+# 	set_property(TARGET fcshell PROPERTY C_STANDARD 99)
+# else ()
+# 	set_source_files_properties(fcshell.c PROPERTIES COMPILE_FLAGS -std=c99)
+# endif ()
 
-ADD_EXECUTABLE(Qsurvey
+add_executable(Qsurvey
 	qsurvey.c
 	${CMAKE_SOURCE_DIR}/qremote/client.c
 	${CMAKE_SOURCE_DIR}/qremote/common_setup.c
@@ -15,55 +15,55 @@ ADD_EXECUTABLE(Qsurvey
 	${CMAKE_SOURCE_DIR}/qremote/starttlsr.c
 	${CMAKE_SOURCE_DIR}/qremote/status.c
 )
-TARGET_LINK_LIBRARIES(Qsurvey
+target_link_libraries(Qsurvey
 	qsmtp_lib
 	qsmtp_io_lib
 	${MEMCHECK_LIBRARIES}
 )
 
-INSTALL(TARGETS
+install(TARGETS
 		Qsurvey
 	DESTINATION bin
 	COMPONENT tools
 )
 
-ADD_EXECUTABLE(testspf testspf.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
-TARGET_LINK_LIBRARIES(testspf
+add_executable(testspf testspf.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
+target_link_libraries(testspf
 	qsmtp_lib
 	qsmtp_io_lib
 )
 
-ADD_EXECUTABLE(spfquery spfquery.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
-TARGET_LINK_LIBRARIES(spfquery
+add_executable(spfquery spfquery.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
+target_link_libraries(spfquery
 	qsmtp_lib
 	qsmtp_io_lib
 )
 
-ADD_EXECUTABLE(qpencode
+add_executable(qpencode
 	qp.c
 	${CMAKE_SOURCE_DIR}/qremote/mime.c
 	${CMAKE_SOURCE_DIR}/qremote/qrdata.c
 )
-TARGET_LINK_LIBRARIES(qpencode
+target_link_libraries(qpencode
 	qsmtp_lib
 	qsmtp_io_lib
 )
 
-ADD_EXECUTABLE(clearpass clearpass.c)
-TARGET_LINK_LIBRARIES(clearpass
+add_executable(clearpass clearpass.c)
+target_link_libraries(clearpass
 	qsmtp_lib
 	qsmtp_io_lib
 )
 
-ADD_EXECUTABLE(addipbl addipbl.c)
+add_executable(addipbl addipbl.c)
 
-ADD_EXECUTABLE(sendremote sendremote.c)
+add_executable(sendremote sendremote.c)
 
-INCLUDE_DIRECTORIES(
+include_directories(
 		${OWFAT_INCLUDE_DIRS}
 )
 
-INSTALL(TARGETS
+install(TARGETS
 		testspf
 		qpencode
 		clearpass
@@ -74,8 +74,8 @@ INSTALL(TARGETS
 	COMPONENT tools
 )
 
-ADD_EXECUTABLE(dnsdane dnsdane.c)
-TARGET_LINK_LIBRARIES(dnsdane
+add_executable(dnsdane dnsdane.c)
+target_link_libraries(dnsdane
 	qsmtp_dane_lib
 	qsmtp_lib
 )

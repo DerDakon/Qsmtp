@@ -1,7 +1,7 @@
-ADD_SUBDIRECTORY(filters)
-ADD_SUBDIRECTORY(backends)
+add_subdirectory(filters)
+add_subdirectory(backends)
 
-SET(QSMTPD_SRCS
+set(QSMTPD_SRCS
 	addrparse.c
 	addrsyntax.c
 	antispam.c
@@ -17,7 +17,7 @@ SET(QSMTPD_SRCS
 	xtext.c
 )
 
-SET(QSMTPD_HDRS
+set(QSMTPD_HDRS
 	../include/qsmtpd/addrparse.h
 	../include/qsmtpd/antispam.h
 	../include/qsmtpd/commands.h
@@ -30,12 +30,12 @@ SET(QSMTPD_HDRS
 	../include/qsmtpd/userfilters.h
 )
 
-ADD_EXECUTABLE(Qsmtpd
+add_executable(Qsmtpd
 	${QSMTPD_SRCS}
 	${QSMTPD_HDRS}
 )
 
-TARGET_LINK_LIBRARIES(Qsmtpd
+target_link_libraries(Qsmtpd
 	qsmtp_lib
 	qsmtp_io_lib
 	rcptfilters
@@ -44,7 +44,7 @@ TARGET_LINK_LIBRARIES(Qsmtpd
 	${MEMCHECK_LIBRARIES}
 )
 
-INSTALL(TARGETS Qsmtpd DESTINATION bin COMPONENT core)
+install(TARGETS Qsmtpd DESTINATION bin COMPONENT core)
 
 #install:
 #	install -s -g qmail -o qmaild Qsmtpd $(AUTOQMAIL)/bin

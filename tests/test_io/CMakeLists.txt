@@ -1,13 +1,13 @@
-FIND_PACKAGE(Backtrace)
+find_package(Backtrace)
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/qs_backtrace.h.in ${CMAKE_CURRENT_BINARY_DIR}/qs_backtrace.h @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/qs_backtrace.h.in ${CMAKE_CURRENT_BINARY_DIR}/qs_backtrace.h @ONLY)
 
-INCLUDE_DIRECTORIES(
+include_directories(
 		${Backtrace_INCLUDE_DIRS}
 		${CMAKE_CURRENT_BINARY_DIR}
 )
 
-ADD_LIBRARY(testcase_io_lib STATIC
+add_library(testcase_io_lib STATIC
 	testcase_io.h
 	testcase_io_p.h
 	test_io.c
@@ -17,4 +17,4 @@ ADD_LIBRARY(testcase_io_lib STATIC
 	test_io_tls.c
 )
 
-TARGET_LINK_LIBRARIES(testcase_io_lib ${Backtrace_LIBRARIES})
+target_link_libraries(testcase_io_lib ${Backtrace_LIBRARIES})

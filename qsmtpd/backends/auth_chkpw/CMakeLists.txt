@@ -1,9 +1,9 @@
-PROJECT(Qs_auth_chkpw C)
+project(Qs_auth_chkpw C)
 
-ADD_LIBRARY(Qsmtpd_auth_checkpassword STATIC
+add_library(Qsmtpd_auth_checkpassword STATIC
 	qsauth_backend_cp.c
 )
 
-TARGET_LINK_LIBRARIES(Qsmtpd_auth_checkpassword
+target_link_libraries(Qsmtpd_auth_checkpassword
 	${MEMCHECK_LIBRARIES}
 )

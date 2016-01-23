@@ -1,154 +1,154 @@
-PROJECT(Qsmtp C)
+project(Qsmtp C)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.6 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.6 FATAL_ERROR)
 
-OPTION(CHECK_MEMORY "Add memory access checks" OFF)
+option(CHECK_MEMORY "Add memory access checks" OFF)
 
-SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
-INCLUDE(AddCCompilerFlag)
-INCLUDE(CheckCCompilerFlag)
-INCLUDE(CheckSymbolExists)
-INCLUDE(CheckFunctionExists)
+include(AddCCompilerFlag)
+include(CheckCCompilerFlag)
+include(CheckSymbolExists)
+include(CheckFunctionExists)
 
-FIND_PACKAGE(owfat REQUIRED)
+find_package(owfat REQUIRED)
 
-IF (COMMAND cmake_policy)
-	CMAKE_POLICY(SET CMP0003 NEW)
-ENDIF (COMMAND cmake_policy)
+if (COMMAND cmake_policy)
+	cmake_policy(SET CMP0003 NEW)
+endif ()
 
-IF (AUTOQMAIL)
-	IF (NOT IS_ABSOLUTE "${AUTOQMAIL}")
-		MESSAGE(SEND_ERROR "The value '${AUTOQMAIL}' given for the AUTOQMAIL variable does not name an absolute path")
-	ENDIF ()
-ELSE ()
-	SET(AUTOQMAIL /var/qmail)
-ENDIF ()
-SET(AUTOQMAIL "${AUTOQMAIL}" CACHE PATH "Directory of qmail installation (usually /var/qmail)")
+if (AUTOQMAIL)
+	if (NOT IS_ABSOLUTE "${AUTOQMAIL}")
+		message(SEND_ERROR "The value '${AUTOQMAIL}' given for the AUTOQMAIL variable does not name an absolute path")
+	endif ()
+else ()
+	set(AUTOQMAIL /var/qmail)
+endif ()
+set(AUTOQMAIL "${AUTOQMAIL}" CACHE PATH "Directory of qmail installation (usually /var/qmail)")
 
-SET(QSMTP_VERSION_MAJOR 0)
-SET(QSMTP_VERSION_MINOR 30)
-SET(QSMTP_VERSION_EXTRAVERSION dev)
-SET(QSMTP_VERSION "${QSMTP_VERSION_MAJOR}.${QSMTP_VERSION_MINOR}${QSMTP_VERSION_EXTRAVERSION}")
+set(QSMTP_VERSION_MAJOR 0)
+set(QSMTP_VERSION_MINOR 30)
+set(QSMTP_VERSION_EXTRAVERSION dev)
+set(QSMTP_VERSION "${QSMTP_VERSION_MAJOR}.${QSMTP_VERSION_MINOR}${QSMTP_VERSION_EXTRAVERSION}")
 
-FIND_PACKAGE(OpenSSL REQUIRED)
+find_package(OpenSSL REQUIRED)
 
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/include/version.h.tmpl ${CMAKE_BINARY_DIR}/version.h @ONLY)
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/include/qmaildir.h.tmpl ${CMAKE_BINARY_DIR}/qmaildir.h @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/version.h.tmpl ${CMAKE_BINARY_DIR}/version.h @ONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/qmaildir.h.tmpl ${CMAKE_BINARY_DIR}/qmaildir.h @ONLY)
 
 ADD_SUPPORTED_C_COMPILER_FLAG(CFLAGS_NO_SIGN_COMPARE -Wno-sign-compare)
 ADD_SUPPORTED_C_COMPILER_FLAG(CFLAGS_NO_POINTER_SIGN -Wno-pointer-sign)
 ADD_SUPPORTED_C_COMPILER_FLAG(CFLAGS_SHADOW -Wshadow)
 
-IF (CHECK_MEMORY)
+if (CHECK_MEMORY)
 	ADD_SUPPORTED_C_COMPILER_FLAG(CFLAGS_STACK_PROTECTOR -fstack-protector-all)
 	
 	CHECK_C_COMPILER_FLAG(-fmudflap CFLAGS_MUDFLAP)
 
-	IF (CFLAGS_MUDFLAP)
-		FIND_PACKAGE(mudflap)
-		IF (MUDFLAP_FOUND)
+	if (CFLAGS_MUDFLAP)
+		find_package(mudflap)
+		if (MUDFLAP_FOUND)
 			ADD_C_COMPILER_FLAG(-fmudflap)
-		ENDIF (MUDFLAP_FOUND)
-	ENDIF (CFLAGS_MUDFLAP)
+		endif ()
+	endif ()
 
-	FIND_PACKAGE(ElectricFence)
-	IF (EFENCE_FOUND)
-		SET(MEMCHECK_LIBRARIES ${EFENCE_LIBRARIES})
-	ENDIF (EFENCE_FOUND)
-ENDIF (CHECK_MEMORY)
+	find_package(ElectricFence)
+	if (EFENCE_FOUND)
+		set(MEMCHECK_LIBRARIES ${EFENCE_LIBRARIES})
+	endif ()
+endif ()
 
-SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -fprofile-arcs -ftest-coverage")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -fprofile-arcs -ftest-coverage")
 
 ADD_C_COMPILER_FLAG(-Wall -W -Wshadow)
-ADD_DEFINITIONS(-D_FILE_OFFSET_BITS=64)
+add_definitions(-D_FILE_OFFSET_BITS=64)
 
 CHECK_SYMBOL_EXISTS(O_CLOEXEC "fcntl.h" HAS_O_CLOEXEC)
-IF (NOT HAS_O_CLOEXEC)
-	ADD_DEFINITIONS(-DO_CLOEXEC=0)
-ENDIF ()
+if (NOT HAS_O_CLOEXEC)
+	add_definitions(-DO_CLOEXEC=0)
+endif ()
 
 CHECK_SYMBOL_EXISTS(O_DIRECTORY "fcntl.h" HAS_O_DIRECTORY)
-IF (NOT HAS_O_DIRECTORY)
-	ADD_DEFINITIONS(-DO_DIRECTORY=0)
-ENDIF ()
+if (NOT HAS_O_DIRECTORY)
+	add_definitions(-DO_DIRECTORY=0)
+endif ()
 
-SET(CMAKE_REQUIRED_INCLUDES fcntl.h)
+set(CMAKE_REQUIRED_INCLUDES fcntl.h)
 CHECK_FUNCTION_EXISTS(openat HAS_OPENAT)
-UNSET(CMAKE_REQUIRED_INCLUDES)
-IF (NOT HAS_OPENAT)
-	MESSAGE(SEND_ERROR "Support for openat() is missing")
-ENDIF ()
+unset(CMAKE_REQUIRED_INCLUDES)
+if (NOT HAS_OPENAT)
+	message(SEND_ERROR "Support for openat() is missing")
+endif ()
 
-OPTION(NOSTDERR "Do not print error messages to stderr" ON)
+option(NOSTDERR "Do not print error messages to stderr" ON)
 
-OPTION(USESYSLOG "Use syslog() for logging" ON)
-IF(USESYSLOG)
-	ADD_DEFINITIONS(-DUSESYSLOG)
-ENDIF(USESYSLOG)
+option(USESYSLOG "Use syslog() for logging" ON)
+if(USESYSLOG)
+	add_definitions(-DUSESYSLOG)
+endif()
 
-OPTION(IPV4ONLY "Disable support for IPv6 connections" OFF)
-IF(IPV4ONLY)
-	ADD_DEFINITIONS(-DIPV4ONLY)
-ENDIF(IPV4ONLY)
+option(IPV4ONLY "Disable support for IPv6 connections" OFF)
+if(IPV4ONLY)
+	add_definitions(-DIPV4ONLY)
+endif()
 
-OPTION(CHUNKING "Enable CHUNKING extension (RfC 3030)" OFF)
-IF(CHUNKING)
-	ADD_DEFINITIONS(-DCHUNKING)
-ENDIF(CHUNKING)
+option(CHUNKING "Enable CHUNKING extension (RfC 3030)" OFF)
+if(CHUNKING)
+	add_definitions(-DCHUNKING)
+endif()
 
-OPTION(DEBUG_IO "Log the SMTP session" OFF)
-IF(DEBUG_IO)
-	ADD_DEFINITIONS(-DDEBUG_IO)
-ENDIF(DEBUG_IO)
+option(DEBUG_IO "Log the SMTP session" OFF)
+if(DEBUG_IO)
+	add_definitions(-DDEBUG_IO)
+endif()
 
-OPTION(AUTHCRAM "Support CRAMMD5 authentication method" OFF)
-IF(AUTHCRAM)
-	ADD_DEFINITIONS(-DAUTHCRAM)
-ENDIF(AUTHCRAM)
+option(AUTHCRAM "Support CRAMMD5 authentication method" OFF)
+if(AUTHCRAM)
+	add_definitions(-DAUTHCRAM)
+endif()
 
-INCLUDE_DIRECTORIES(
+include_directories(
 	${CMAKE_CURRENT_SOURCE_DIR}/include
 	${OPENSSL_INCLUDE_DIR}
 	${CMAKE_BINARY_DIR}
 )
 
-ADD_SUBDIRECTORY(lib)
-ADD_SUBDIRECTORY(qsmtpd)
-ADD_SUBDIRECTORY(qremote)
-ADD_SUBDIRECTORY(tools)
+add_subdirectory(lib)
+add_subdirectory(qsmtpd)
+add_subdirectory(qremote)
+add_subdirectory(tools)
 
-OPTION(BUILD_TESTS "Build testcases" ON)
+option(BUILD_TESTS "Build testcases" ON)
 
-IF (BUILD_TESTS)
-	INCLUDE(CTest)
+if (BUILD_TESTS)
+	include(CTest)
 
-	CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake @ONLY)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake @ONLY)
 
-	ENABLE_TESTING()
+	enable_testing()
 
-	ADD_SUBDIRECTORY(tests)
-ENDIF ()
+	add_subdirectory(tests)
+endif ()
 
-OPTION(BUILD_DOC "Build documentation" ON)
-IF (BUILD_DOC)
+option(BUILD_DOC "Build documentation" ON)
+if (BUILD_DOC)
 	# API documentation
-	FIND_PACKAGE(Doxygen REQUIRED)
+	find_package(Doxygen REQUIRED)
 
-	CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 
-	ADD_CUSTOM_TARGET(docu ALL
+	add_custom_target(docu ALL
 			COMMAND ${DOXYGEN_EXECUTABLE}
 			WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
-	IF (NOT DOC_DESTINATION_DIRECTORY)
-		SET(DOC_DESTINATION_DIRECTORY "doc/")
-	ENDIF (NOT DOC_DESTINATION_DIRECTORY)
+	if (NOT DOC_DESTINATION_DIRECTORY)
+		set(DOC_DESTINATION_DIRECTORY "doc/")
+	endif ()
 
-	INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION ${DOC_DESTINATION_DIRECTORY})
+	install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION ${DOC_DESTINATION_DIRECTORY})
 
 	# general documentation
-	INSTALL(FILES
+	install(FILES
 			${CMAKE_CURRENT_SOURCE_DIR}/doc/CREDITS
 			${CMAKE_CURRENT_SOURCE_DIR}/doc/INSTALL
 			${CMAKE_CURRENT_SOURCE_DIR}/doc/THOUGHTS
@@ -156,15 +156,15 @@ IF (BUILD_DOC)
 			DESTINATION ${DOC_DESTINATION_DIRECTORY})
 
 	# man pages
-	CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/doc/man/Qremote.8 ${CMAKE_CURRENT_BINARY_DIR}/Qremote.8 @ONLY)
-	CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/doc/man/Qsmtpd.8 ${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd.8 @ONLY)
-	CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/doc/man/filterconf.5 ${CMAKE_CURRENT_BINARY_DIR}/filterconf.5 @ONLY)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/man/Qremote.8 ${CMAKE_CURRENT_BINARY_DIR}/Qremote.8 @ONLY)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/man/Qsmtpd.8 ${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd.8 @ONLY)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/man/filterconf.5 ${CMAKE_CURRENT_BINARY_DIR}/filterconf.5 @ONLY)
 
-	INSTALL(FILES
+	install(FILES
 		${CMAKE_CURRENT_BINARY_DIR}/Qremote.8
 		${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd.8
 		DESTINATION man/man8)
-	INSTALL(FILES
+	install(FILES
 		${CMAKE_CURRENT_BINARY_DIR}/filterconf.5
 		DESTINATION man/man5)
-ENDIF (BUILD_DOC)
+endif ()
