@@ -163,10 +163,7 @@ auth_plain(struct string *user)
 {
 	int r;
 	unsigned int id = 0;
-	string slop, pass;
-
-	STREMPTY(slop);
-	STREMPTY(pass);
+	string slop = STREMPTY_INIT, pass = STREMPTY_INIT;
 
 	if (linein.len > 11) {
 		r = b64decode(linein.s + 11, linein.len - 11, &slop);

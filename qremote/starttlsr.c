@@ -218,9 +218,7 @@ tls_init(void)
 		STACK_OF(GENERAL_NAME) *gens;
 		long r = SSL_get_verify_result(ssl);
 		int found_match = 0;
-		string peer;
-
-		STREMPTY(peer);
+		string peer = STREMPTY_INIT;
 
 		if (r != X509_V_OK) {
 			const char *msg[] = { "unable to verify ", rhost, " with ", servercert,

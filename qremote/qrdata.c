@@ -318,10 +318,7 @@ static off_t
 qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, const unsigned int body_recode)
 {
 	off_t off, header = 0;
-	cstring cenc, ctype;
-
-	STREMPTY(cenc);
-	STREMPTY(ctype);
+	cstring cenc = STREMPTY_INIT, ctype = STREMPTY_INIT;
 /* scan header */
 
 	/* check if this is an empty header */

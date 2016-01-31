@@ -25,7 +25,9 @@ typedef struct cstring {
 	size_t len;	/**< length of string */
 } cstring;
 
-#define STREMPTY(x) { (x).s = NULL; (x).len = 0; }
+#define STREMPTY(x) do { (x).s = NULL; (x).len = 0; } while (0)
+
+#define STREMPTY_INIT { .s = NULL, .len = 0 }
 
 /**
  * @brief allocate a new string buffer of the given length
