@@ -12,7 +12,8 @@
 #include <string.h>
 #include <unistd.h>
 
-const char *clientcertname = "default";
+const char str_default[] = "default";
+const char *clientcertname = str_default;
 struct in6_addr outgoingip = IN6ADDR_ANY_INIT;
 struct in6_addr outgoingip6 = IN6ADDR_ANY_INIT;
 
@@ -190,6 +191,8 @@ main(void)
 	if ((certlen == (size_t) -1) && (errno != ENOENT)) {
 		fprintf(stderr, "error %i when opening 'expected_cert'\n", errno);
 		free(ipexpect);
+		free(outipexpect);
+		free(outip6expect);
 		return EFAULT;
 	}
 
@@ -214,6 +217,12 @@ main(void)
 			printf("outgoing IPv6: %s\n", s);
 		}
 	}
+
+	/* free it if it was overwritten in smtproute() */
+	if (clientcertname != str_default)
+		free((char *)clientcertname);
+	free(outipexpect);
+	free(outip6expect);
 
 	return r;
 }
