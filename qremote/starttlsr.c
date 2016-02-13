@@ -23,47 +23,6 @@
 
 const char *clientcertname = "control/clientcert.pem";
 
-static int
-match_partner(const struct string *peer)
-{
-	assert(partner_fqdn != NULL);
-
-	/* the test on partner_fqdn[peer->len] is only done if the head matches, so it
-	 * can only be 1 byte after the match (== '\0') and can't overflow */
-	if (!strncasecmp(partner_fqdn, peer->s, peer->len) && (partner_fqdn[peer->len] == '\0'))
-		return 1;
-	/* we also match if the name is *.domainname */
-	if ((peer->s[0] == '*') && (peer->s[1] == '.')) {
-		const size_t clen = peer->len - 1;
-		const size_t plen = strlen(partner_fqdn);
-
-		/* match against the end of the string */
-		/* match is done including the '.', so it's sure it really is a subdomain */
-		if ((clen < plen) && (strcasecmp(partner_fqdn + plen - clen, peer->s + 1) == 0))
-			return 1;
-	}
-	return 0;
-}
-
-static void
-log_failed_peer(const struct string *peer)
-{
-	char buf[peer->len + 1];
-	const char *msg[] = { "unable to verify ", rhost,
-		": received certificate for '", buf, "'", NULL };
-	size_t j;
-
-	/* replace all special characters */
-	for (j = 0; j < peer->len; ++j) {
-		if ( (peer->s[j] < 32) || (peer->s[j] > 126) )
-			buf[j] = '?';
-		else
-			buf[j] = peer->s[j];
-	}
-	buf[peer->len] = '\0';
-	log_writen(LOG_ERR, msg);
-}
-
 /**
  * @brief send STARTTLS and handle the connection setup
  * @return if connection was successfully established
@@ -142,6 +101,21 @@ tls_init(void)
 		ssl_library_destroy();
 		return -1;
 	}
+
+	if (servercert) {
+#if OPENSSL_VERSION_NUMBER < 0x10002000L
+		/* the hostname checking code was added in 1.0.2 */
+		free(servercert);
+		ssl_free(myssl);
+		err_conf("control/tlshosts/ verification requires at least OpenSSL 1.0.2\n");
+#else
+		X509_VERIFY_PARAM *vparam = SSL_get0_param(myssl);
+
+		/* Enable automatic hostname checks */
+		X509_VERIFY_PARAM_set_hostflags(vparam, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+		X509_VERIFY_PARAM_set1_host(vparam, partner_fqdn, 0);
+#endif
+	}
 	SSL_set_verify(myssl, SSL_VERIFY_NONE, NULL);
 
 	netwrite("STARTTLS\r\n");
@@ -214,11 +188,7 @@ tls_init(void)
 	}
 
 	if (servercert) {
-		X509 *peercert;
-		STACK_OF(GENERAL_NAME) *gens;
 		long r = SSL_get_verify_result(ssl);
-		int found_match = 0;
-		string peer = STREMPTY_INIT;
 
 		if (r != X509_V_OK) {
 			const char *msg[] = { "unable to verify ", rhost, " with ", servercert,
@@ -229,74 +199,6 @@ tls_init(void)
 			return EDONE;
 		}
 		free(servercert);
-
-		peercert = SSL_get_peer_certificate(ssl);
-		if (!peercert) {
-			const char *msg[] = { "unable to verify ", rhost,
-					": no certificate provided", NULL };
-
-			log_writen(LOG_ERR, msg);
-			return EDONE;
-		}
-
-		/* RFC 2595 section 2.4: find a matching name
-		 * first find a match among alternative names */
-		gens = X509_get_ext_d2i(peercert, NID_subject_alt_name, 0, 0);
-		if (gens) {
-			int found_an = 0;	/* if a dNSName SubjectAltName was found */
-			for (i = 0, r = sk_GENERAL_NAME_num(gens); i < r; ++i) {
-				const GENERAL_NAME *gn = sk_GENERAL_NAME_value(gens, i);
-
-				if (gn->type == GEN_DNS) {
-					found_an = 1;
-					peer.len = gn->d.ia5->length;
-					peer.s = (char *)gn->d.ia5->data;
-					found_match = match_partner(&peer);
-					if (found_match)
-						break;
-				}
-			}
-
-			/* if a dNSName SubjectAltName was found it must be used, i.e.
-			 * commonName is ignored then */
-			if (found_an && !found_match) {
-				log_failed_peer(&peer);
-				sk_GENERAL_NAME_pop_free(gens, GENERAL_NAME_free);
-				X509_free(peercert);
-				return EDONE;
-			}
-			sk_GENERAL_NAME_pop_free(gens, GENERAL_NAME_free);
-		}
-
-		/* no alternative name matched, look up commonName,
-		 * but only if no dNSName SubjectAltName was present */
-		if (!found_match) {
-			X509_NAME *subj = X509_get_subject_name(peercert);
-			i = X509_NAME_get_index_by_NID(subj, NID_commonName, -1);
-			if (i >= 0) {
-				const ASN1_STRING *s = X509_NAME_get_entry(subj, i)->value;
-
-				if (s) {
-					peer.len = s->length > 0 ? s->length : 0;
-					peer.s = (char *)s->data;
-				}
-			}
-			if (!peer.len) {
-				const char *msg[] = { "unable to verify ", rhost,
-						": certificate contains no valid commonName", NULL };
-
-				X509_free(peercert);
-				log_writen(LOG_ERR, msg);
-				return EDONE;
-			}
-			if (!match_partner(&peer)) {
-				log_failed_peer(&peer);
-				X509_free(peercert);
-				return EDONE;
-			}
-		}
-
-		X509_free(peercert);
 	}
 
 	return 0;

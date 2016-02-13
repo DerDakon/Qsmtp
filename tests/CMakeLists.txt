@@ -848,6 +848,10 @@ add_test(NAME "STARTTLSr_matching_tlshost"
 		COMMAND testcase_starttlsr testcert.example.org
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/starttlsr/matching_tlshost")
 
+if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+	set_tests_properties(STARTTLSr_matching_tlshost PROPERTIES
+			PASS_REGULAR_EXPRESSION "^CONFIG error: control/tlshosts/ verification requires at least OpenSSL 1\\.0\\.2\n$")
+else ()
 set_tests_properties(STARTTLSr_matching_tlshost PROPERTIES
 		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: STARTTLS failed at testcert.example.org: 421 <content of linein>\nRETURN VALUE: 1003\n$")
 
@@ -872,6 +876,7 @@ add_test(NAME "STARTTLSr_invalid_multiline"
 
 set_tests_properties(STARTTLSr_invalid_multiline PROPERTIES
 		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: STARTTLS failed at testcert.example.org: 221-<content of linein>\nRETURN VALUE: 1003\n$")
+endif ()
 
 add_executable(testcase_queue_envelope
 		queue_envelope_test.c
@@ -1005,50 +1010,77 @@ foreach(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 		set(_ssl_server_key "valid1024.key")
 		file(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
 	elseif (_ssl_test STREQUAL "matching_servercert")
+		if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+			continue()
+		endif ()
 		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		set(_ssl_server_key "valid1024.key")
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 	elseif (_ssl_test STREQUAL "matching_wildcard")
+		if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+			continue()
+		endif ()
 		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		set(_ssl_server_key "wildcard1024.key")
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/wildcard1024.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 	elseif (_ssl_test STREQUAL "nonmatching_servercert")
+		if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+			continue()
+		endif ()
 		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		set(_ssl_server_key "valid1024.key")
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPYONLY)
-		set(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for 'testcert.example.org'" "-iEDONE")
+		set(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net with control/tlshosts/testcert.example.net.pem: Hostname mismatch" "-iEDONE")
 	elseif (_ssl_test STREQUAL "nonmatching_wildcard")
+		if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+			continue()
+		endif ()
 		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		set(_ssl_server_key "wildcard1024.key")
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/wildcard1024.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPYONLY)
-		set(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net: received certificate for '*.example.org'" "-iEDONE")
+		set(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net with control/tlshosts/testcert.example.net.pem: Hostname mismatch" "-iEDONE")
 	elseif (_ssl_test STREQUAL "SubjAN_match")
+		if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+			continue()
+		endif ()
 		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		set(_ssl_server_key "valid1024_san.key")
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 	elseif (_ssl_test STREQUAL "SubjAN2_match")
+		if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+			continue()
+		endif ()
 		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		set(_ssl_server_key "valid1024_san2.key")
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san2.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
 	elseif (_ssl_test STREQUAL "SubjAN_cn")
+		if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+			continue()
+		endif ()
 		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		set(_ssl_server_key "valid1024_san_cn.key")
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/valid1024_san_cn.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
-		set(_ssl_test_arg "-lunable to verify testcert.example.org: received certificate for 'other.example.org'" "-iEDONE")
+		set(_ssl_test_arg "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: Hostname mismatch" "-iEDONE")
 	elseif (_ssl_test STREQUAL "servercert_no_name")
+		if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+			continue()
+		endif ()
 		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		set(_ssl_server_key "noname.key")
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/noname.crt
 				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
-		set(_ssl_test_arg "-lunable to verify testcert.example.org: certificate contains no valid commonName" "-iEDONE")
+		set(_ssl_test_arg "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: Hostname mismatch" "-iEDONE")
 	elseif (_ssl_test STREQUAL "expired")
+		if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+			continue()
+		endif ()
 		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
 		set(_ssl_server_key "expired.key")
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/expired.crt
