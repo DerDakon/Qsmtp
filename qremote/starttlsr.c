@@ -113,7 +113,15 @@ tls_init(void)
 
 		/* Enable automatic hostname checks */
 		X509_VERIFY_PARAM_set_hostflags(vparam, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
-		X509_VERIFY_PARAM_set1_host(vparam, partner_fqdn, 0);
+		if (X509_VERIFY_PARAM_set1_host(vparam, partner_fqdn, fqlen) != 1) {
+			const char *msg[] = { "Z4.5.0 TLS error setting partner FQDN for verification: ", ssl_error(), "; connecting to ",
+					rhost };
+
+			free(servercert);
+			write_status_m(msg, 4);
+			ssl_library_destroy();
+			return -1;
+		}
 #endif
 	}
 	SSL_set_verify(myssl, SSL_VERIFY_NONE, NULL);
