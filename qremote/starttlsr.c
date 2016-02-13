@@ -7,6 +7,7 @@
 #include <control.h>
 #include <log.h>
 #include <netio.h>
+#include <qdns.h>
 #include <qremote/qremote.h>
 #include <ssl_timeoutio.h>
 #include <sstring.h>
@@ -39,26 +40,26 @@ tls_init(void)
 	int i = 0;
 	SSL *myssl;
 	SSL_CTX *ctx;
-	char **saciphers, *servercert = NULL;
+	char **saciphers;
 	const char *ciphers;
 	size_t fqlen = 0;
+	const char fnprefix[] = "control/tlshosts/";
+	const char fnsuffix[] = ".pem";
+	char servercert[strlen(fnprefix) + DOMAINNAME_MAX + strlen(fnsuffix) + 1];
 
-	if (partner_fqdn) {
-		char *tmp;
+	if (partner_fqdn == NULL) {
+		*servercert = '\0';
+	} else {
 		struct stat st;
 
 		fqlen = strlen(partner_fqdn);
-		tmp = malloc(fqlen + 22);
-		if (!tmp)
-			err_mem(1);
-		memcpy(tmp, "control/tlshosts/", 17);
-		memcpy(tmp + 17, partner_fqdn, fqlen);
+		assert(fqlen <= DOMAINNAME_MAX);
+		memcpy(servercert, fnprefix, strlen(fnprefix));
+		memcpy(servercert + strlen(fnprefix), partner_fqdn, fqlen);
 		/* copy including the trailing '\0' */
-		memcpy(tmp + 17 + fqlen, ".pem", 5);
-		if (stat(tmp, &st))
-			free(tmp);
-		else
-			servercert = tmp;
+		memcpy(servercert + strlen(fnprefix) + fqlen, fnsuffix, strlen(fnsuffix) + 1);
+		if (stat(servercert, &st))
+			*servercert = '\0';
 	}
 
 	SSL_library_init();
@@ -68,20 +69,18 @@ tls_init(void)
 				rhost };
 
 		write_status_m(msg, 4);
-		free(servercert);
 		return -1;
 	}
 
 	/* disable obsolete and insecure protocol versions */
 	SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
-	if (servercert && !SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
+	if (*servercert && !SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
 		const char *msg[] = { "Z4.5.0 TLS unable to load ", servercert, ": ",
 				ssl_error(),  "; connecting to ", rhost };
 
 		write_status_m(msg, 6);
 		SSL_CTX_free(ctx);
-		free(servercert);
 		ssl_library_destroy();
 		return -1;
 	}
@@ -96,16 +95,14 @@ tls_init(void)
 		const char *msg[] = { "Z4.5.0 TLS error initializing ssl: ", ssl_error(), "; connecting to ",
 				rhost };
 
-		free(servercert);
 		write_status_m(msg, 4);
 		ssl_library_destroy();
 		return -1;
 	}
 
-	if (servercert) {
+	if (*servercert) {
 #if OPENSSL_VERSION_NUMBER < 0x10002000L
 		/* the hostname checking code was added in 1.0.2 */
-		free(servercert);
 		ssl_free(myssl);
 		err_conf("control/tlshosts/ verification requires at least OpenSSL 1.0.2\n");
 #else
@@ -117,7 +114,6 @@ tls_init(void)
 			const char *msg[] = { "Z4.5.0 TLS error setting partner FQDN for verification: ", ssl_error(), "; connecting to ",
 					rhost };
 
-			free(servercert);
 			write_status_m(msg, 4);
 			ssl_library_destroy();
 			return -1;
@@ -130,7 +126,6 @@ tls_init(void)
 
 	/* while the server is preparing a response, do something else */
 	if (loadlistfd(openat(controldir_fd, "tlsclientciphers", O_RDONLY | O_CLOEXEC), &saciphers, NULL) == -1) {
-		free(servercert);
 		ssl_free(myssl);
 		err_conf("can't open tlsclientciphers\n");
 	}
@@ -146,7 +141,6 @@ tls_init(void)
 	i = SSL_set_cipher_list(myssl, ciphers);
 	free(saciphers);
 	if (i != 1) {
-		free(servercert);
 		ssl_free(myssl);
 		err_conf("can't set ciphers\n");
 	}
@@ -156,7 +150,6 @@ tls_init(void)
 		const char *msg[] = { "Z4.5.0 TLS error setting fd: ", ssl_error(), "; connecting to ",
 				rhost };
 
-		free(servercert);
 		write_status_m(msg, 4);
 		ssl_free(myssl);
 		return -1;
@@ -179,7 +172,6 @@ tls_init(void)
 				rhost, ": ", linein.s, NULL };
 
 		ssl_free(myssl);
-		free(servercert);
 		log_writen(LOG_ERR, msg);
 
 		return i < 0 ? -i : EDONE;
@@ -190,12 +182,11 @@ tls_init(void)
 	if (i < 0) {
 		const char *msg[] = { "TLS connection failed at ", rhost, ": ", ssl_strerror(), NULL };
 
-		free(servercert);
 		log_writen(LOG_ERR, msg);
 		return -i;
 	}
 
-	if (servercert) {
+	if (*servercert) {
 		long r = SSL_get_verify_result(ssl);
 
 		if (r != X509_V_OK) {
@@ -203,10 +194,8 @@ tls_init(void)
 					": ", X509_verify_cert_error_string(r), NULL };
 
 			log_writen(LOG_ERR, msg);
-			free(servercert);
 			return EDONE;
 		}
-		free(servercert);
 	}
 
 	return 0;
