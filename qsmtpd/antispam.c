@@ -11,6 +11,7 @@
 #include <match.h>
 #include <mmap.h>
 #include <netio.h>
+#include <qdns.h>
 #include <qsmtpd/qsmtpd.h>
 #include <tls.h>
 
@@ -91,7 +92,7 @@ reverseip4(char *buf)
 int
 check_rbl(char *const *rbls, char **txt)
 {
-	char lookup[256];
+	char lookup[DOMAINNAME_MAX + 1];
 	unsigned int l;
 	int i = 0;
 	int again = 0;	/* if this is set at least one rbl lookup failed with temp error */

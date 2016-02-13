@@ -80,7 +80,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		}
 
 		if (a != NULL) {
-			char spfname[256];
+			char spfname[DOMAINNAME_MAX + 1];
 			int v = 0;
 			size_t fromlen;	/* strlen(fromdomain) */
 			int olderror = SPF_NONE;

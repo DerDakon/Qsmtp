@@ -4,6 +4,7 @@
 
 #include <qsmtpd/xtext.h>
 
+#include <qdns.h>
 #include <qsmtpd/addrparse.h>
 
 #include <string.h>
@@ -37,7 +38,7 @@ ssize_t
 xtextlen(const char *str)
 {
 	ssize_t result = 0;
-	char addrspec[64 + 1 + 255 + 1];	/* localpart @ domain \0 */
+	char addrspec[64 + 1 + DOMAINNAME_MAX + 1];	/* localpart @ domain \0 */
 	size_t idx = 0;
 
 	while (*str && (*str != ' ')) {

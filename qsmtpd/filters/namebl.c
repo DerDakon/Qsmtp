@@ -47,7 +47,7 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 
 		while ((d != NULL) && (rc == FILTER_PASSED)) {
 			size_t dlen = strlen(d);
-			char blname[256];		/* maximum length of a valid DNS domain name + \0 */
+			char blname[DOMAINNAME_MAX + 1];	/* maximum length of a valid DNS domain name + \0 */
 
 			if (dlen + alen < sizeof(blname)) {
 				int k;

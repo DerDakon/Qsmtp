@@ -1464,7 +1464,7 @@ spfip6(const char *domain)
 static int
 txtlookup(char **txt, const char *domain)
 {
-	char lookup[256];
+	char lookup[DOMAINNAME_MAX + 1];
 	unsigned int offs = 0;
 	size_t len = strlen(domain);
 

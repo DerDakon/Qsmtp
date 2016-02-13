@@ -60,6 +60,8 @@ extern struct ips *in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsign
 #define INET_ADDRSTRLEN 16
 #endif
 
+#define DOMAINNAME_MAX 255 /**< maximum length of a valid domain name */
+
 /** @enum dns_errors
  * @brief error codes returned by the DNS lookup functions
  */

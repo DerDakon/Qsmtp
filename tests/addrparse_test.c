@@ -100,7 +100,7 @@ struct xmitstat xmitstat;
 static unsigned int testindex;
 static int errcounter;
 string liphost;
-char domaindirbuffer[256];
+char domaindirbuffer[DOMAINNAME_MAX + 1];
 
 void
 tarpit(void)

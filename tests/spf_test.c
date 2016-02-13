@@ -158,7 +158,7 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 			end = value + strlen(value);
 
 		do {
-			char namebuf[256];
+			char namebuf[DOMAINNAME_MAX + 1];
 			const size_t l = end - value;
 			struct ips *t;
 			struct in6_addr *ipa;
