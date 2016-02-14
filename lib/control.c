@@ -59,6 +59,7 @@ compact_buffer(char **buf, char *inbuf, size_t oldlen)
 	/* file consists only of comments and whitespace */
 	if (!k) {
 		free(inbuf);
+		*buf = NULL;
 		return 0;
 	}
 
@@ -405,6 +406,8 @@ loadlistfd(int fd, char ***bufa, checkfunc cf)
 	else
 		i = datalen;
 
+	/* 0 could be returned by compact_buffer(), but then the "!j" check before should have triggered */
+	assert(i > 0);
 	*bufa = data_array(j, i, buf, i);
 	if (!*bufa) {
 		free(buf);
