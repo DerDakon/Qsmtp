@@ -263,7 +263,7 @@ test_getbuffer_inherit(const char *fname, const char *inherit_content)
 	userconf_init(&ds);
 
 	ds.domaindirfd = get_dirfd(AT_FDCWD, fname);
-	strncpy(fobuffer, fname, sizeof(fobuffer));
+	strncpy(fobuffer, fname, sizeof(fobuffer) - 1);
 	strcat(fobuffer, "/usr");
 	ds.userdirfd = get_dirfd(AT_FDCWD, fobuffer);
 
