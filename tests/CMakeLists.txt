@@ -531,6 +531,33 @@ set_target_properties(testcase_getmxlistv4only PROPERTIES
 add_test(NAME "getmxlist_IPv4_only"
 		COMMAND testcase_getmxlistv4only)
 
+add_executable(testcase_tryconn
+		tryconn_test.c
+		${CMAKE_SOURCE_DIR}/qremote/conn.c)
+
+target_link_libraries(testcase_tryconn
+		testcase_io_lib
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES})
+
+add_test(NAME "tryconn"
+		COMMAND testcase_tryconn)
+
+add_executable(testcase_tryconnv4only
+		tryconn_test.c
+		${CMAKE_SOURCE_DIR}/qremote/conn.c)
+
+set_target_properties(testcase_tryconnv4only PROPERTIES
+		COMPILE_DEFINITIONS IPV4ONLY)
+
+target_link_libraries(testcase_tryconnv4only
+		testcase_io_lib
+		qsmtp_lib
+		${MEMCHECK_LIBRARIES})
+
+add_test(NAME "tryconn_IPv4_only"
+		COMMAND testcase_tryconnv4only)
+
 add_executable(testcase_connmx
 		connmx_test.c
 		${CMAKE_SOURCE_DIR}/qremote/conn_mx.c)

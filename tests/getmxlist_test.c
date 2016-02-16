@@ -49,43 +49,6 @@ getrhost(const struct ips *m __attribute__ ((unused)), const unsigned short idx 
 	abort();
 }
 
-static int
-test_tryconn(void)
-{
-	int ret = 0;
-	struct ips mx[3];
-	int i;
-
-	memset(mx, 0, sizeof(mx));
-	mx[0].next = mx + 1;
-	mx[0].priority = MX_PRIORITY_USED;
-	mx[0].count = 1;
-	mx[1].next = mx + 2;
-	mx[1].priority = MX_PRIORITY_USED;
-	mx[1].count = 1;
-	mx[2].priority = MX_PRIORITY_CURRENT;
-	mx[2].count = 1;
-
-	i = tryconn(mx, NULL, NULL);
-	if (i != -ENOENT) {
-		fprintf(stderr, "tryconn() on exhausted MX list did return %i instead of %i (-ENOENT)\n",
-				i, -ENOENT);
-		if (i >= 0)
-			close(i);
-		ret++;
-	}
-
-	for (i = 0; i < (int)(sizeof(mx) / sizeof(mx[0])); i++) {
-		if (mx[i].priority != MX_PRIORITY_USED) {
-			fprintf(stderr, "mx[%i].priority == %u, expected was MX_PRIORITY_USED (%u)\n", i,
-					mx[i].priority, MX_PRIORITY_USED);
-			ret++;
-		}
-	}
-
-	return ret;
-}
-
 int
 main(void)
 {
@@ -165,8 +128,6 @@ main(void)
 
 		freeips(mx);
 	}
-
-	ret += test_tryconn();
 
 	return ret;
 }
