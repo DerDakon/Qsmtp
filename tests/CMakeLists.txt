@@ -968,7 +968,7 @@ foreach(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 	set(_tgt_dir "${CMAKE_CURRENT_BINARY_DIR}/ssl_pp/${_ssl_test}")
 	file(MAKE_DIRECTORY "${_tgt_dir}/control")
 
-	foreach(_pem IN ITEMS rsa512 dh2048)
+	foreach(_pem IN ITEMS rsa2048 dh2048)
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ssl_pp/${_pem}.pem
 				"${_tgt_dir}/control/${_pem}.pem" COPYONLY)
 	endforeach()
