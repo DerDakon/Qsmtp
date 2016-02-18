@@ -57,9 +57,7 @@ static const char *jokers[] = {
 int
 loadlistfd(int fd __attribute__ ((unused)), char ***buf, checkfunc cf)
 {
-	unsigned int i;
-
-	for (i = 0; jokers[i] != NULL; i++)
+	for (unsigned int i = 0; jokers[i] != NULL; i++)
 		if (cf(jokers[i]) != 0) {
 			fprintf(stderr, "checker rejected input line %s\n",
 					jokers[i]);
@@ -79,9 +77,7 @@ loadlistfd(int fd __attribute__ ((unused)), char ***buf, checkfunc cf)
 static void
 addjokerips(const unsigned int first, const unsigned int last, struct in6_addr *i)
 {
-	unsigned int j;
-
-	for (j = first; j <= last; j++) {
+	for (unsigned int j = first; j <= last; j++) {
 		const char *ipstr = strchr(jokers[j], '_');
 		int r;
 
@@ -99,9 +95,7 @@ main(void)
 	const char *logmsg = NULL;
 	enum config_domain t;
 	struct userconf ds;
-	int r;
 	int err = 0;
-	unsigned int i;
 	struct in6_addr frommxip[sizeof(jokers) / sizeof(jokers[0])];
 	struct ips frommx = {
 		.addr = frommxip,
@@ -114,7 +108,7 @@ main(void)
 	ds.domaindirfd = -1;
 
 	/* test without xmitstat.frommx, should just do nothing */
-	r = cb_wildcardns(&ds, &logmsg, &t);
+	int r = cb_wildcardns(&ds, &logmsg, &t);
 	if (r != FILTER_PASSED) {
 		fprintf(stderr, "cb_wildcardns() without frommx returned %i instead of %i (FILTER_PASSED)\n",
 				r, FILTER_PASSED);
@@ -144,7 +138,7 @@ main(void)
 		err++;
 	}
 
-	for (i = 0; jokers[i] != NULL; i++) {
+	for (unsigned int i = 0; jokers[i] != NULL; i++) {
 		const char *ipstr = strchr(jokers[i], '_');
 		const size_t tldlen = ipstr - jokers[i];
 		char frombuf[32] = "foo@example.";
@@ -194,7 +188,7 @@ main(void)
 
 	/* check "all of a kind": a bogus entry with all MX IPs for that TLS set,
 	 * which is basically what you would get in reality */
-	for (i = 0; jokers[i] != NULL; i++) {
+	for (unsigned int i = 0; jokers[i] != NULL; i++) {
 		const char *ipstr = strchr(jokers[i], '_');
 		const size_t tldlen = ipstr - jokers[i];
 		char frombuf[32] = "foo@example.";

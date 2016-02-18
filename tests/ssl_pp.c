@@ -125,8 +125,6 @@ static int sockets[2];
 static int
 setup(void)
 {
-	sigset_t mask;
-
 	controldir_fd = get_dirfd(AT_FDCWD, "control");
 
 	if (controldir_fd < 0) {
@@ -142,6 +140,7 @@ setup(void)
 
 	/* Block SIGPIPE, otherwise the process will get killed when the remote
 	 * end cancels the connection improperly. */
+	sigset_t mask;
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGPIPE);
 
@@ -166,7 +165,6 @@ static const char answer[] = "250 pong";
 static int
 client(void)
 {
-	int r, k;
 	const char *ping[] = { query, NULL };
 
 	is_client = 1;
@@ -181,7 +179,7 @@ client(void)
 
 	socketd = sockets[1];
 
-	r = tls_init();
+	int r = tls_init();
 	if (r != client_init_result)
 		return 1;
 
@@ -190,7 +188,7 @@ client(void)
 
 	net_writen(ping);
 	printf("CLIENT: sent ping\n");
-	k = netget(0);
+	int k = netget(0);
 	if (k != 250) {
 		fprintf(stderr, "client: netget() returned wrong result %i\n", k);
 		r++;
@@ -207,7 +205,6 @@ static int expect_verify_success;
 static int
 server(void)
 {
-	int r;
 	char buf[16];
 	const char stls[] = "STARTTLS\r\n";
 
@@ -229,7 +226,7 @@ server(void)
 	}
 
 	xmitstat.esmtp = 1;
-	r = smtp_starttls();
+	int r = smtp_starttls();
 
 	if (r != 0)
 		return r;
@@ -252,11 +249,10 @@ server(void)
 		r++;
 	} else {
 		const char *pong[] = { answer, NULL };
-		int v;
 
 		printf("SERVER: got ping\n");
 
-		v = tls_verify();
+		const int v = tls_verify();
 		printf("SERVER: verify returned %i\n", v);
 		if (v != expect_verify_success)
 			r++;
@@ -274,7 +270,6 @@ server(void)
 int
 main(int argc, char **argv)
 {
-	pid_t child;
 	int r;
 
 	while ((r = getopt(argc, argv, "s:f:l:L:i:")) != -1) {
@@ -332,7 +327,7 @@ main(int argc, char **argv)
 	if (setup())
 		return 1;
 
-	child = fork();
+	const pid_t child = fork();
 	if (child < 0) {
 		puts("fork() failed");
 		r = errno;

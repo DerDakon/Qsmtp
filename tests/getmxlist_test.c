@@ -77,10 +77,9 @@ main(void)
 			.prio = 0
 		}
 	};
-	unsigned int i;
 	int ret = 0;
 
-	for (i = 0; patterns[i].input != NULL; i++) {
+	for (unsigned int i = 0; patterns[i].input != NULL; i++) {
 		struct ips *mx = NULL;
 		struct in6_addr addr;
 		char buf[32];

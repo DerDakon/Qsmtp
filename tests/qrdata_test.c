@@ -476,14 +476,12 @@ dots_detector(const char *msg, const size_t len)
 static void
 recode_detector_simple(const char *msg, const size_t len)
 {
-	const char *spacebreak;
-
 	if (need_recode(msg, len) != 0) {
 		fputs("The message should not need recoding after recoding\n", stderr);
 		exit(EINVAL);
 	}
 
-	spacebreak = strstr(msg, " =\r\n");
+	const char *spacebreak = strstr(msg, " =\r\n");
 	if (spacebreak != NULL) {
 		fputs("Unencoded space before soft linebreak found\n", stderr);
 		exit(EINVAL);
@@ -638,19 +636,17 @@ hdrwrap_detector(const char *msg, const size_t len)
 static void
 checkcrlf(const char *msg, const size_t len)
 {
-	const char *tmp;
-	size_t pos;
 	size_t linestart = 0;
 
 	/* first check: message must end with CRLF.CRLF and that
 	 * may never occur within the message. */
-	tmp = strstr(msg, "\r\n.\r\n");
+	const char * const tmp = strstr(msg, "\r\n.\r\n");
 	if (tmp != msg + len - 5) {
 		fputs("CRLF.CRLF sequence found at bad position\n", stderr);
 		exit(EINVAL);
 	}
 
-	for (pos = 0; pos < len; pos++) {
+	for (size_t pos = 0; pos < len; pos++) {
 		switch (msg[pos]) {
 		case '\r':
 			/* we know the message will not end with a stray CR */
@@ -835,9 +831,7 @@ write_status(const char *str)
 void
 write_status_m(const char **strs, const unsigned int count)
 {
-	unsigned int i;
-
-	for (i = 0; i < count - 1; i++)
+	for (unsigned int i = 0; i < count - 1; i++)
 		fputs(strs[i], stdout);
 	puts(strs[count - 1]);
 }
@@ -868,8 +862,6 @@ int main(int argc, char **argv)
 	heloname.len = strlen(heloname.s);
 
 	if ((strcmp(argv[1], "data_reply_400") == 0) || (strcmp(argv[1], "data_reply_500") == 0)) {
-		int i;
-
 		if (strcmp(argv[1], "data_reply_400") == 0)
 			datareply = 400;
 		else
@@ -880,7 +872,7 @@ int main(int argc, char **argv)
 		}
 
 		sprintf(linein.s, "%u ", datareply);
-		for (i = 2; i < argc; i++) {
+		for (int i = 2; i < argc; i++) {
 			strcat(linein.s, argv[i]);
 			strcat(linein.s, " ");
 		}

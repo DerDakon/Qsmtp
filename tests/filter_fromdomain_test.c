@@ -33,7 +33,6 @@ static struct userconf ds;
 static int
 check_expect(const int r_expect, const char *name, const char *elog)
 {
-	int r;
 	enum config_domain t = -1;
 	const char *logmsg = NULL;
 
@@ -41,7 +40,7 @@ check_expect(const int r_expect, const char *name, const char *elog)
 	assert((r_expect == 0) == (elog == NULL));
 
 	fprintf(stderr, "Test: %s\n", name);
-	r = cb_fromdomain(&ds, &logmsg, &t);
+	int r = cb_fromdomain(&ds, &logmsg, &t);
 
 	if (logmsg == NULL) {
 		if (elog != NULL) {
@@ -68,11 +67,9 @@ check_expect(const int r_expect, const char *name, const char *elog)
 static void
 setup_ip(const char *ip)
 {
-	int r;
-
 	assert(strlen(ip) < sizeof(xmitstat.remoteip));
 	strcpy(xmitstat.remoteip, ip);
-	r = inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
+	int r = inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
 	assert(r == 1);
 
 	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip);
@@ -127,13 +124,12 @@ main(void)
 		}
 	};
 	struct in6_addr frommx_mixed_addr[frommx_mixed[0].count + frommx_mixed[1].count + frommx_mixed[2].count];
-	unsigned int i;
 
 	frommx_mixed_invalid[0].next = frommx_mixed_invalid + 1;
 	frommx_mixed_invalid[1].next = frommx_mixed_invalid + 2;
 
 	/* set up a list of many invalid IPs and the last one is ok */
-	for (i = 0; i < sizeof(frommx_mixed_addr) / sizeof(frommx_mixed_addr[0]); i++) {
+	for (unsigned int i = 0; i < sizeof(frommx_mixed_addr) / sizeof(frommx_mixed_addr[0]); i++) {
 		const char *ipstr[] = {
 			"::ffff:127.0.0.1",
 			"::ffff:127.1.1.2",
@@ -151,7 +147,7 @@ main(void)
 	}
 
 	/* set up a list of multiple invalid IPs */
-	for (i = 0; i < sizeof(frommx_mixed_invalid) / sizeof(frommx_mixed_invalid[0]); i++)
+	for (unsigned int i = 0; i < sizeof(frommx_mixed_invalid) / sizeof(frommx_mixed_invalid[0]); i++)
 		frommx_mixed_invalid[i].addr = frommx_mixed_addr + i;
 
 	frommx_mixed[0].next = frommx_mixed + 1;

@@ -193,9 +193,8 @@ main(void)
 	const int mixed_out2[] = { 1, 1, 3, 3, -1 };
 #endif /* IPV4ONLY */
 	int ret = 0;
-	int c;
 
-	for (c = 0; c < 2; c++) {
+	for (int c = 0; c < 2; c++) {
 		ret += run_test(only_localhost, NULL, c);
 		ret += run_test(only_localhost_dupes, NULL, c);
 		ret += run_test(only_ipv4_in1, only_ipv4_out, c);

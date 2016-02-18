@@ -33,9 +33,8 @@ static const char *invalid_strings[] = {
 int main(void)
 {
 	int errcnt = 0;
-	unsigned int i;
 
-	for (i = 0; valid_strings[i] != NULL; i++)
+	for (unsigned int i = 0; valid_strings[i] != NULL; i++)
 		if (xtextlen(valid_strings[i]) < 0) {
 			fputs("Error: valid string \"", stdout);
 			fputs(valid_strings[i], stdout);
@@ -43,7 +42,7 @@ int main(void)
 			errcnt++;
 		}
 
-	for (i = 0; invalid_strings[i] != NULL; i++)
+	for (unsigned int i = 0; invalid_strings[i] != NULL; i++)
 		if (xtextlen(invalid_strings[i]) >= 0) {
 			fputs("Error: invalid string \"", stdout);
 			fputs(invalid_strings[i], stdout);

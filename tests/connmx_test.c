@@ -222,7 +222,6 @@ int
 tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 		const struct in6_addr *outip6 __attribute__ ((unused)))
 {
-	int p[2];
 	static char namebuf[64];
 
 	mx->name = namebuf;
@@ -231,6 +230,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 	if ((mx->priority == 0) || (mx->priority == MX_PRIORITY_SINGLE_TLSA - 1))
 		return -ENOENT;
 
+	int p[2];
 	if (pipe(p) != 0)
 		exit(errno);
 
@@ -265,7 +265,6 @@ main(void)
 {
 	struct ips mx[3];
 	int ret = 0;
-	int i;
 
 	// run the first 9 subtests (two more because of the CONNRESETs in between */
 	memset(mx, 0, sizeof(mx));
@@ -276,7 +275,7 @@ main(void)
 	testcase_setup_log_writen(testcase_log_writen_combine);
 	testcase_setup_log_write(testcase_log_write_compare);
 
-	i = connect_mx(mx, NULL, NULL);
+	int i = connect_mx(mx, NULL, NULL);
 	if (i != -ENOENT) {
 		fprintf(stderr, "connect_mx() returned %i instead of %i (-ENOENT)\n", i, -ENOENT);
 		ret++;

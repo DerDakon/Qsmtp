@@ -150,7 +150,6 @@ test_no_cdb(void)
 {
 	int olddir = open(".", O_RDONLY | O_CLOEXEC);
 	int ret = 0;
-	int fd;
 
 	if (olddir < 0) {
 		fprintf(stderr, "can't open(.), error %i\n", errno);
@@ -163,19 +162,18 @@ test_no_cdb(void)
 		return 1;
 	}
 
-	fd = open("users/cdb", O_RDONLY | O_CLOEXEC);
+	const int fd = open("users/cdb", O_RDONLY | O_CLOEXEC);
 	if (fd >= 0) {
 		fprintf(stderr, "users/users/cdb exists, test is not reliable\n");
 		close(fd);
 		ret++;
 	} else {
 		struct userconf ds;
-		int r;
 		const string localpart = { .s = (char *) "local", .len = strlen("local") };
 
 		userconf_init(&ds);
 
-		r = user_exists(&localpart, "example.com", &ds);
+		const int r = user_exists(&localpart, "example.com", &ds);
 
 		userconf_free(&ds);
 
@@ -203,7 +201,6 @@ test_cdbdir(void)
 {
 	int olddir = open(".", O_RDONLY | O_CLOEXEC);
 	int ret = 0;
-	int fd;
 	char buffer[4096];
 
 	if (olddir < 0) {
@@ -223,7 +220,7 @@ test_cdbdir(void)
 		return 1;
 	}
 
-	fd = open("users/cdb/", O_RDONLY | O_CLOEXEC);
+	const int fd = open("users/cdb/", O_RDONLY | O_CLOEXEC);
 	if (fd < 0) {
 		fprintf(stderr, "users/cdbdir/users/cdb is no directory, test is not reliable, error was %i\n", errno);
 		ret++;
@@ -264,12 +261,11 @@ check_ue(const char *email, const unsigned int dirs, const int result, const int
 		.s = (char*)email,
 		.len = strchr(email, '@') - email
 	};
-	int r;
 	int ret = 0;
 
 	userconf_init(&ds);
 
-	r = user_exists(&localpart, strchr(email, '@') + 1, &ds);
+	const int r = user_exists(&localpart, strchr(email, '@') + 1, &ds);
 
 	if (r != result) {
 		fprintf(stderr, "index %u email %s: got result %i, expected %i\n",
@@ -305,8 +301,6 @@ check_ue(const char *email, const unsigned int dirs, const int result, const int
 static int
 test_no_vpopbounce(void)
 {
-	int ret;
-
 	/* set control directory so that "vpopbounce" file does not exist in it */
 	controldir_fd = get_dirfd(AT_FDCWD, ".");
 
@@ -316,7 +310,7 @@ test_no_vpopbounce(void)
 		return 1;
 	}
 
-	ret = check_ue(users[0].email, 1, 2, -1);
+	int ret = check_ue(users[0].email, 1, 2, -1);
 
 	userbackend_free();
 	close(controldir_fd);
@@ -327,8 +321,6 @@ test_no_vpopbounce(void)
 int
 main(void)
 {
-	unsigned int i;
-
 	controldir_fd = get_dirfd(AT_FDCWD, "control");
 
 	if (userbackend_init() != 0) {
@@ -337,7 +329,7 @@ main(void)
 		return 1;
 	}
 
-	for (i = 0; users[i].email != NULL; i++)
+	for (unsigned int i = 0; users[i].email != NULL; i++)
 		err += check_ue(users[i].email, users[i].dirs, users[i].result, i);
 
 	err += test_no_cdb();

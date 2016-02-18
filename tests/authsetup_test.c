@@ -85,12 +85,9 @@ test_nocontrol(void)
 #else /* AUTHCRAM */
 	static const char *auth_expect = loginplain;
 #endif /* AUTHCRAM */
-	int r;
 
 	controldir_fd = AT_FDCWD;
-	r = check_authstr(auth_expect);
-
-	return r;
+	return check_authstr(auth_expect);
 }
 
 static int
@@ -151,7 +148,6 @@ static int
 test_nonexistent(void)
 {
 	const char found_garbage[] = "error: unknown auth type \"garbage\" found in control/authtypes";
-	char *auth_str;
 	int ret = 0;
 
 	if (chdir("nonexistent") != 0) {
@@ -165,7 +161,7 @@ test_nonexistent(void)
 	log_write_msg = found_garbage;
 	log_write_priority = LOG_ERR;
 
-	auth_str = smtp_authstring();
+	char *auth_str = smtp_authstring();
 
 	close(controldir_fd);
 
@@ -193,7 +189,6 @@ test_nonexistent(void)
 static int
 test_loaderror(void)
 {
-	char *auth_str;
 	int ret = 0;
 
 	controldir_fd = -1;
@@ -201,7 +196,7 @@ test_loaderror(void)
 	/* no message expected, but this will bail out if one comes */
 	testcase_setup_log_writen(testcase_log_writen_combine);
 
-	auth_str = smtp_authstring();
+	char *auth_str = smtp_authstring();
 
 	if (errno != EBADF) {
 		fprintf(stderr, "%s: smtp_authstring() returned error %i but is should have returned %i (EBADF)\n",
@@ -223,10 +218,9 @@ static int
 test_no_auth_yet(void)
 {
 	int ret = 0;
-	char *authstr;
 
 	auth_setup(1, argv_noauth);
-	authstr = smtp_authstring();
+	char *authstr = smtp_authstring();
 	if (authstr != NULL) {
 		fprintf(stderr, "smtp_authstring() with auth_host == NULL returned string %s instead of NULL\n",
 				authstr);

@@ -58,10 +58,9 @@ err_control2(const char *msg, const char *fn)
 static int
 check_open_fail(const char *range, const char *reason, const int error)
 {
-	int fd;
 	enum config_domain type = -1;
 
-	fd = getfile(&ds, "something", &type, userconf_none);
+	int fd = getfile(&ds, "something", &type, userconf_none);
 	if (fd != -1) {
 		fprintf(stderr, "opening for %s for test '%s' succeeded, type %i\n",
 				range, reason, type);
@@ -128,7 +127,6 @@ static int
 test_found(void)
 {
 	int r = 0;
-	int fd;
 	enum config_domain type = -1;
 
 	userconf_init(&ds);
@@ -136,7 +134,7 @@ test_found(void)
 	/* first: check with only user directory set */
 	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
 
-	fd = getfile(&ds, EXISTING_FILENAME, &type, userconf_none);
+	int fd = getfile(&ds, EXISTING_FILENAME, &type, userconf_none);
 	r += test_found_internal("user", fd, type, CONFIG_USER);
 
 	/* set both, but user information should still be used */
@@ -199,7 +197,6 @@ static int
 test_getbuffer(void)
 {
 	int ret = 0;
-	int r;
 	char **array = NULL;
 
 	userconf_init(&ds);
@@ -207,7 +204,7 @@ test_getbuffer(void)
 	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
 
 	/* the file exists, but has no content */
-	r = userconf_get_buffer(&ds, EXISTING_FILENAME, &array, NULL, userconf_none);
+	int r = userconf_get_buffer(&ds, EXISTING_FILENAME, &array, NULL, userconf_none);
 	if (r != CONFIG_NONE) {
 		fprintf(stderr, "opening empty file returned %i instead of CONFIG_NONE\n",
 				r);
@@ -256,7 +253,6 @@ static int
 test_getbuffer_inherit(const char *fname, const char *inherit_content)
 {
 	int ret = 0;
-	int r;
 	char **array = NULL;
 	char fobuffer[256] = { 0 };
 
@@ -267,7 +263,7 @@ test_getbuffer_inherit(const char *fname, const char *inherit_content)
 	strcat(fobuffer, "/usr");
 	ds.userdirfd = get_dirfd(AT_FDCWD, fobuffer);
 
-	r = userconf_get_buffer(&ds, EXISTING_FILENAME_CONTENT, &array, NULL, userconf_inherit);
+	int r = userconf_get_buffer(&ds, EXISTING_FILENAME_CONTENT, &array, NULL, userconf_inherit);
 	if (r != CONFIG_USER) {
 		fprintf(stderr, "opening existing file returned %i instead of CONFIG_USER\n",
 				r);
@@ -305,9 +301,7 @@ static int
 test_getsetting(void)
 {
 	int ret = 0;
-	long r;
 	enum config_domain t = CONFIG_NONE;
-	int fd;
 
 	userconf_init(&ds);
 
@@ -326,7 +320,7 @@ test_getsetting(void)
 	}
 
 	/* should be the user setting */
-	r = getsetting(&ds, "helovalid", &t);
+	long r = getsetting(&ds, "helovalid", &t);
 	if ((r != 7) || (t != CONFIG_USER)) {
 		fprintf(stderr, "loading entry from user config returned %li type %i instead of 3/%i\n",
 				r, t, CONFIG_USER);
@@ -370,7 +364,7 @@ test_getsetting(void)
 	}
 
 	/* now only with domain information */
-	fd = ds.userdirfd;
+	int fd = ds.userdirfd;
 	ds.userdirfd = -1;
 	free(ds.userconf);
 	ds.userconf = NULL;
@@ -410,14 +404,13 @@ static int
 test_finddomain(void)
 {
 	int ret = 0;
-	int r;
 
 	userconf_init(&ds);
 
 	ds.userdirfd = get_dirfd(AT_FDCWD, fnbuffer);
 
 	/* the does not file exist */
-	r = userconf_find_domain(&ds, "does_not_exist", "example.org", 0);
+	int r = userconf_find_domain(&ds, "does_not_exist", "example.org", 0);
 	if (r != CONFIG_NONE) {
 		fprintf(stderr, "opening non-existing file returned %i instead of CONFIG_NONE\n",
 				r);
@@ -467,7 +460,6 @@ int
 main(void)
 {
 	int r = 0;
-	char *slash;
 
 	controldir_fd = -1;
 	expect_err_control = "control/vpopbounce";
@@ -490,7 +482,7 @@ main(void)
 
 	/* cut of the filename */
 	fnbuffer[strlen(fnbuffer) - 1] = '\0';
-	slash = strrchr(fnbuffer, '/');
+	char *slash = strrchr(fnbuffer, '/');
 	*(slash + 1) = '\0';
 
 	r += test_found();

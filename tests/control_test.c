@@ -63,9 +63,7 @@ static unsigned int logcnt;
 static void
 createTestFile(const char * const name, const char * const value)
 {
-	int fd;
-
-	fd = creat(name, 0644);
+	int fd = creat(name, 0644);
 	if (fd == -1) {
 		fputs("ERROR: can not create temporary file for testcase\n", stderr);
 		exit(1);
@@ -80,13 +78,11 @@ createTestFile(const char * const name, const char * const value)
 static int
 test_data_array()
 {
-	char *b = NULL;
-	char **ob;
 	int ret = 0;
 
 	puts("== Running tests for data_array()");
 
-	ob = data_array(1, 1, NULL, 0);
+	char **ob = data_array(1, 1, NULL, 0);
 
 	if (ob == NULL) {
 		fputs("out of memory\n", stderr);
@@ -99,7 +95,7 @@ test_data_array()
 	}
 	free(ob);
 
-	b = strdup("x");
+	char *b = strdup("x");
 
 	if (b == NULL) {
 		fputs("out of memory\n", stderr);
@@ -131,13 +127,10 @@ test_data_array()
 static int
 test_oneliner()
 {
-	unsigned int i;
 	int err = 0;
 	char ch;	/* dummy */
 	char *buf = &ch;
-	int fd;
 	const char nocontent[] = "# comment\n\n";
-	size_t len;
 
 	puts("== Running tests for loadonelinerfd()");
 
@@ -170,9 +163,9 @@ test_oneliner()
 
 	createTestFile("oneliner_test", nocontent);
 
-	fd = open("oneliner_test", O_RDONLY | O_CLOEXEC);
+	int fd = open("oneliner_test", O_RDONLY | O_CLOEXEC);
 	buf = &ch;
-	len = loadonelinerfd(fd, &buf);
+	size_t len = loadonelinerfd(fd, &buf);
 	if (len != (size_t)-1) {
 		fputs("loadonelinerfd() for file without useful content should return -1\n", stderr);
 		err++;
@@ -200,7 +193,7 @@ test_oneliner()
 	}
 	unlink("oneliner_test");
 
-	for (i = 0; onelines[i] != NULL; i++) {
+	for (unsigned int i = 0; onelines[i] != NULL; i++) {
 		createTestFile("oneliner_test", onelines[i]);
 
 		buf = &ch;
@@ -242,9 +235,6 @@ test_lload()
 	int err = 0;
 	char *buf = NULL;
 	char ch; /* dummy */
-	int fd;
-	int i;
-	size_t sz;
 	const char comment[] = "# comment\n";
 	const char *compactable[] = {
 		"# comment\n\n\t \nfoo\n\n#another comment\n\n \nbar",
@@ -270,7 +260,7 @@ test_lload()
 
 	createTestFile("emptyfile", "");
 
-	fd = open("emptyfile", O_RDONLY | O_CLOEXEC);
+	int fd = open("emptyfile", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fprintf(stderr, "%s[%i]: can not open temporary file for reading: %i\n", __func__, __LINE__, errno);
 		return err + 1;
@@ -280,7 +270,7 @@ test_lload()
 		fputs("Opening an empty file did not return size 0\n", stderr);
 		err++;
 	}
-	i = close(fd);
+	int i = close(fd);
 	if ((i != -1) || (errno != EBADF)) {
 		fputs("lloadfilefd() did not close the passed file descriptor\n", stderr);
 		err++;
@@ -372,7 +362,7 @@ test_lload()
 	}
 
 	buf = &ch;
-	sz = lloadfilefd(fd, &buf, 0);
+	size_t sz = lloadfilefd(fd, &buf, 0);
 	if (buf == &ch) {
 		fputs("lloadfilefd() with striptabs 0 did not return set buffer\n", stderr);
 		err++;
@@ -448,8 +438,6 @@ static int
 test_intload()
 {
 	int err = 0;
-	int fd;
-	int i = 0;
 	unsigned long tmp;
 
 	static const struct {
@@ -486,10 +474,10 @@ test_intload()
 		}
 	};
 
-	while (patterns[i].str != NULL) {
+	for (int i = 0; patterns[i].str != NULL; ) {
 		createTestFile("control_int", patterns[i].str);
 
-		fd = open("control_int", O_RDONLY | O_CLOEXEC);
+		int fd = open("control_int", O_RDONLY | O_CLOEXEC);
 		if (fd == -1) {
 			fputs("cannot open control test file\n", stderr);
 			return err + 1;
@@ -538,7 +526,7 @@ test_intload()
 
 	createTestFile("control_int", "xy\n");
 
-	fd = open("control_int", O_RDONLY | O_CLOEXEC);
+	int fd = open("control_int", O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		fputs("cannot open control test file\n", stderr);
 		return err + 1;
@@ -575,19 +563,15 @@ static int
 test_listload()
 {
 	char *ch;	/* dummy */
-	char **bufa;
-	int res;
+	char **bufa = &ch;
 	int err = 0;
 	const char fname[] = "control_list";
 	checkfunc callbacks[4];
-	int i;
 
 	puts("== Running tests for loadlistfd()");
 
-	bufa = &ch;
-
 	errno = ENOENT;
-	res = loadlistfd(-1, &bufa, NULL);
+	int res = loadlistfd(-1, &bufa, NULL);
 	if (res != 0) {
 		fputs("loadlistfd() with a not existing file should succeed\n", stderr);
 		err++;
@@ -613,7 +597,7 @@ test_listload()
 	callbacks[2] = checkfunc_accept_b;
 	callbacks[3] = NULL;
 
-	for (i = 0; i <= 3; i++) {
+	for (int i = 0; i <= 3; i++) {
 		int fd = open(fname, O_RDONLY | O_CLOEXEC);
 		if (fd == -1) {
 			fputs("cannot open control test file for reading\n", stderr);
@@ -696,9 +680,7 @@ int
 main(void)
 {
 	const char ctrl_testfile[] = "control_testfile";
-	int i;
 	int error = 0;
-	int fd;
 
 	testcase_setup_log_write(test_log_write);
 	testcase_setup_log_writen(test_log_writen);
@@ -711,7 +693,7 @@ main(void)
 		error++;
 	}
 
-	for (i = 0; present[i] != NULL; i++) {
+	for (int i = 0; present[i] != NULL; i++) {
 		int search = finddomain(contents, strlen(contents), present[i]);
 
 		if (search != 1) {
@@ -721,7 +703,7 @@ main(void)
 		}
 	}
 
-	for (i = 0; absent[i] != NULL; i++) {
+	for (int i = 0; absent[i] != NULL; i++) {
 		int search = finddomain(contents, strlen(contents), absent[i]);
 
 		if (search != 0) {
@@ -746,14 +728,14 @@ main(void)
 
 	createTestFile(ctrl_testfile, contents);
 
-	fd = open(ctrl_testfile, O_RDONLY | O_CLOEXEC);
+	int fd = open(ctrl_testfile, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		puts("cannot open control test file for reading");
 		unlink(ctrl_testfile);
 		return -1;
 	}
 
-	for (i = 0; present[i] != NULL; i++) {
+	for (int i = 0; present[i] != NULL; i++) {
 		int search;
 
 		search = finddomainfd(fd, present[i], 0);
@@ -765,7 +747,7 @@ main(void)
 		}
 	}
 
-	for (i = 0; absent[i] != NULL; i++) {
+	for (int i = 0; absent[i] != NULL; i++) {
 		int search;
 
 		fd = open(ctrl_testfile, O_RDONLY | O_CLOEXEC);

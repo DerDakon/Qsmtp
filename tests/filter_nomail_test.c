@@ -48,7 +48,6 @@ main(void)
 	const char *logmsg;
 	enum config_domain t;
 	struct userconf ds;
-	int i;
 	int r;
 	int fd;
 
@@ -64,7 +63,7 @@ main(void)
 		return -1;
 	}
 
-	for (i = 0; rejectmsg[i] != NULL; i++) {
+	for (int i = 0; rejectmsg[i] != NULL; i++) {
 		fd = creat("nomail", 0600);
 		if (fd == -1) {
 			fprintf(stderr, "cannot create file 'nomail': %i\n", errno);

@@ -140,8 +140,6 @@ userconf_free(struct userconf *ds)
 int
 addrsyntax(char *in, const int flags, string *addr, char **more)
 {
-	char *bracket;
-
 	assert(more != NULL);
 
 	if (flags != testdata[testindex].flags) {
@@ -157,7 +155,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 		return 0;
 	}
 
-	bracket = strchr(in, '>');
+	const char * const bracket = strchr(in, '>');
 
 	if (newstr(addr, bracket - in + 1)) {
 		fprintf(stderr, "index %u: out of memory allocating %zu byte for addr\n",
@@ -213,10 +211,9 @@ test_net_writen(const char *const *msg)
 	char expaddr[128];
 	const char *netmsg[] = { "550 5.1.1 no such user <", expaddr, ">", NULL };
 	unsigned int i;
-	char *bracket;
 
 	strcpy(expaddr, testdata[testindex].inpattern);
-	bracket = strchr(expaddr, '>');
+	char *bracket = strchr(expaddr, '>');
 	if (bracket != NULL)
 		*bracket = '\0';
 
@@ -269,14 +266,12 @@ main(void)
 	testcase_setup_net_writen(test_net_writen);
 
 	for (testindex = 0; testdata[testindex].inpattern[0] != '\0'; testindex++) {
-		struct string addr1, addr2;
+		struct string addr1 = STREMPTY_INIT, addr2 = STREMPTY_INIT;
 		char *more;
 		struct userconf ds;
 		const char netstring[] = "501 5.1.3 domain of mail address is syntactically incorrect\r\n";
 
 		userconf_init(&ds);
-		STREMPTY(addr1);
-		STREMPTY(addr2);
 
 		if (testdata[testindex].expect_netwrite > 0)
 			netnwrite_msg = netstring;

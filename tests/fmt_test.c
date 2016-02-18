@@ -34,16 +34,14 @@ int
 main(void)
 {
 	int err = 0;
-	int i;
 
 	err += compare(0);
 	err += compare(1);
 
-	for (i = 0; i < 9; i++) {
+	for (int i = 0; i < 9; i++) {
 		int j = 10;
-		int k;
 
-		for (k = i; k > 0; k--)
+		for (int k = i; k > 0; k--)
 			j *= 10;
 
 		err += compare(j - 1);

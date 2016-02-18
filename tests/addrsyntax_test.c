@@ -202,9 +202,8 @@ static int
 addrsyntax_test(void)
 {
 	int err = 0;
-	int i = 0;
 
-	while (syntaxpatterns[i].in != NULL) {
+	for (int i = 0; syntaxpatterns[i].in != NULL; i++) {
 		char inbuf[512];
 		string outaddr;
 		char *more = NULL;
@@ -219,7 +218,6 @@ addrsyntax_test(void)
 		if (addrsyntax(inbuf, syntaxpatterns[i].flags, &outaddr, &more) != syntaxpatterns[i].retval) {
 			fprintf(stderr, "ERROR: did not return %i\n", syntaxpatterns[i].retval);
 			err++;
-			i++;
 			continue;
 		}
 
@@ -236,8 +234,6 @@ addrsyntax_test(void)
 		}
 
 		free(outaddr.s);
-
-		i++;
 	}
 
 	return err;
@@ -246,10 +242,9 @@ addrsyntax_test(void)
 int
 main(void)
 {
-	unsigned int i;
+	unsigned int i = 0;
 	int err = 0;
 
-	i = 0;
 	while (valid[i] != NULL) {
 		fputs("testing valid address: ", stdout);
 		puts(valid[i]);

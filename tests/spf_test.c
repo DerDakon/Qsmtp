@@ -51,12 +51,10 @@ const struct dnsentry *dnsdata;
 static const char *
 dnsentry_search(const enum dnstype stype, const char *skey)
 {
-	unsigned int i = 0;
-
 	if (dnsdata == NULL)
 		return NULL;
 
-	while (dnsdata[i].type != DNSTYPE_NONE) {
+	for (unsigned int i = 0; dnsdata[i].type != DNSTYPE_NONE; ) {
 		if (dnsdata[i].type != stype) {
 			i++;
 			continue;
@@ -76,12 +74,11 @@ dnsentry_search(const enum dnstype stype, const char *skey)
 static struct in6_addr *
 parsein6(const char *list, int *cnt)
 {
-	const char *next = list;
 	struct in6_addr *ret = NULL;
 
 	*cnt = 0;
 
-	while (next != NULL) {
+	for (const char *next = list; next != NULL; ) {
 		char curbuf[INET6_ADDRSTRLEN];
 		const char *parsep;
 		char *end = strchr(next, ';');
@@ -160,16 +157,14 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 		do {
 			char namebuf[DOMAINNAME_MAX + 1];
 			const size_t l = end - value;
-			struct ips *t;
 			struct in6_addr *ipa;
-			int cnt;
 
 			assert(l < sizeof(namebuf));
 			assert(l > 0);
 			strncpy(namebuf, value, l);
 			namebuf[l] = '\0';
 
-			cnt = ask_dnsaaaa(namebuf, &ipa);
+			int cnt = ask_dnsaaaa(namebuf, &ipa);
 			if (cnt < 0) {
 				freeips(*ips);
 				*ips = NULL;
@@ -177,7 +172,7 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 			}
 
 			if (cnt > 0) {
-				t = in6_to_ips(ipa, cnt, 42);
+				struct ips *t = in6_to_ips(ipa, cnt, 42);
 				if (t == NULL) {
 					freeips(*ips);
 					*ips = NULL;
@@ -206,19 +201,18 @@ int
 test_ask_dnsaaaa(const char *domain, struct in6_addr **ips)
 {
 	const char *value = dnsentry_search(DNSTYPE_AAAA, domain);
-	struct in6_addr *cur, *n;
+	struct in6_addr *cur;
 	int r;
-	int m;
 
 	if (value == NULL)
 		return ask_dnsa(domain, ips);
 
 	*ips = parsein6(value, &r);
 
-	m = ask_dnsa(domain, &cur);
+	int m = ask_dnsa(domain, &cur);
 
 	if (m > 0) {
-		n = realloc(*ips, (r + m) * sizeof(*n));
+		struct in6_addr *n = realloc(*ips, (r + m) * sizeof(*n));
 		if (n == NULL) {
 			free(*ips);
 			free(cur);
@@ -238,7 +232,6 @@ test_ask_dnsa(const char *domain, struct in6_addr **ips)
 {
 	const char *value = dnsentry_search(DNSTYPE_A, domain);
 	int r;
-	struct in6_addr *q;
 
 	if (value == NULL) {
 		if (dnsentry_search(DNSTYPE_TIMEOUT, domain) != NULL)
@@ -247,7 +240,7 @@ test_ask_dnsa(const char *domain, struct in6_addr **ips)
 		return 0;
 	}
 
-	q = parsein6(value, &r);
+	struct in6_addr *q = parsein6(value, &r);
 	if (ips != NULL)
 		*ips = q;
 	else
@@ -260,7 +253,6 @@ int
 test_ask_dnsname(const struct in6_addr *addr, char **name)
 {
 	char iptmp[INET6_ADDRSTRLEN];
-	size_t l;
 	int cnt = 0;
 
 	inet_ntop(AF_INET6, addr, iptmp, sizeof(iptmp));
@@ -274,7 +266,7 @@ test_ask_dnsname(const struct in6_addr *addr, char **name)
 		return 0;
 	}
 
-	l = strlen(value);
+	size_t l = strlen(value);
 	*name = malloc(l + 2);
 	if (*name == NULL)
 		return -1;
@@ -408,12 +400,10 @@ static int
 check_received(int spfstatus, int log)
 {
 	int fd[2];
-	char buf[1024];
-	int r;
+	char buf[1024] = { 0 };
 	size_t off = 0;
 	const char hdrline[] = "Received-SPF: ";
 	const char *spfstates[] = { "pass", "fail", "softfail", "none", "neutral", "temperror", "permerror", NULL };
-	const char *tmp;
 
 	if ((spfstatus < SPF_NONE) || ((spfstatus > SPF_DNS_HARD_ERROR) && (spfstatus != SPF_IGNORE))) {
 		fprintf(stderr, "invalid SPF status code: %i\n", spfstatus);
@@ -425,8 +415,7 @@ check_received(int spfstatus, int log)
 		return 1;
 	}
 
-	memset(buf, 0, sizeof(buf));
-	r = spfreceived(fd[1], spfstatus);
+	int r = spfreceived(fd[1], spfstatus);
 	close(fd[1]);
 
 	if (r != 0) {
@@ -489,7 +478,7 @@ check_received(int spfstatus, int log)
 		return 1;
 	}
 
-	tmp = buf + strlen(hdrline) + strlen(spfstates[r]);
+	const char *tmp = buf + strlen(hdrline) + strlen(spfstates[r]);
 	if (!WSPACE(*tmp)) {
 		fputs("no whitespace after SPF status\n", stderr);
 		return 1;
@@ -497,12 +486,11 @@ check_received(int spfstatus, int log)
 	tmp++;
 	if (spfstatus == SPF_PERMERROR) {
 		const char percentwarn[] = "unsafe characters may have been replaced by '%'";
-		const char *percentmatch;
 		int mismatch = 0;
 
 		/* If '%' is in the message, then the warning message has to be, too.
 		 * If no '%' is in the message, then no warning message should be there. */
-		percentmatch = strstr(tmp, percentwarn);
+		const char *percentmatch = strstr(tmp, percentwarn);
 		if (percentmatch != NULL) {
 			/* there should be no % signns before the warning, but some after */
 			if (memchr(tmp, '%', percentmatch - tmp) != NULL) {
@@ -724,7 +712,6 @@ test_parse_ip4()
 	int r;
 
 	dnsdata = ip4entries;
-	i = 0;
 
 	inet_pton(AF_INET6, "::ffff:10.42.42.42", &xmitstat.sremoteip);
 	xmitstat.ipv4conn = 1;
@@ -828,7 +815,6 @@ test_parse_ip6()
 	int r;
 
 	dnsdata = ip6entries;
-	i = 0;
 
 	while (ip6invalid[i] != NULL) {
 		ip6entries[0].value = ip6invalid[i];
@@ -997,7 +983,6 @@ test_parse_mx()
 	int r;
 
 	dnsdata = mxentries;
-	i = 0;
 
 	inet_pton(AF_INET6, "::ffff:10.42.42.42", &xmitstat.sremoteip);
 	xmitstat.ipv4conn = 1;
@@ -1085,19 +1070,17 @@ struct suite_testcase {
 static int
 run_suite_test(const struct suite_testcase *testcases)
 {
-	unsigned int i = 0;
 	int err = 0;
 
 	if (init_helo(defaulthelo) != 0)
 		return ++err;
 
-	while (testcases[i].helo != NULL) {
-		int r;
+	for (unsigned int i = 0; testcases[i].helo != NULL; ) {
 		const char *domain = (testcases[i].mailfrom != NULL) ? strchr(testcases[i].mailfrom, '@') + 1 : testcases[i].helo;
 
 		setup_transfer(testcases[i].helo, testcases[i].mailfrom, testcases[i].remoteip);
 
-		r = check_host(domain);
+		const int r = check_host(domain);
 
 		if (r != testcases[i].result) {
 			fprintf(stderr, "Test %s returned %i but %i was expected\n", testcases[i].name, r, testcases[i].result);
@@ -3663,8 +3646,6 @@ test_parse()
 		SPF_NONE
 	};
 	int err = 0;
-	unsigned int i = 0;
-	int r;
 	struct in6_addr sender_ip4;
 	struct in6_addr sender_ip6;
 	const char myhelo[] = "spftesthost.example.org";
@@ -3691,7 +3672,7 @@ test_parse()
 	}
 	memcpy(xmitstat.mailfrom.s, mailfrom, strlen(mailfrom));
 
-	r = check_host("nonexistent.example.org");
+	int r = check_host("nonexistent.example.org");
 	if (r != SPF_NONE) {
 		fprintf(stderr, "check_host() without SPF entry SPF_NONE, but %i\n", r);
 		err++;
@@ -3704,15 +3685,13 @@ test_parse()
 	}
 	err += (check_received(SPF_PERMERROR, 0) ? 1 : 0);
 
-	while (parseentries[i].key != NULL) {
-		int c;
-
+	for (unsigned int i = 0; parseentries[i].key != NULL; ) {
 		r = check_host(parseentries[i].key);
 		if (r != spfresults[i]) {
 			fprintf(stderr, "check_host() for test %s should return %i, but did %i\n", parseentries[i].key, spfresults[i], r);
 			err++;
 		}
-		c = check_received(r, 0);
+		const int c = check_received(r, 0);
 		if (c != 0) {
 			fprintf(stderr, "spfreceived() for test %s (status %i) returned %i\n", parseentries[i].key, r, c);
 			err++;
@@ -3877,7 +3856,6 @@ static int
 test_received()
 {
 	int err = 0;
-	unsigned int i = 0;
 	struct in6_addr sender_ip4;
 	struct in6_addr sender_ip6;
 	const char myhelo[] = "spftesthost.example.org";
@@ -3904,7 +3882,7 @@ test_received()
 	}
 	memcpy(xmitstat.mailfrom.s, mailfrom, strlen(mailfrom));
 
-	for (i = SPF_NONE; i <= SPF_DNS_HARD_ERROR; i++) {
+	for (unsigned int i = SPF_NONE; i <= SPF_DNS_HARD_ERROR; i++) {
 		if (i == 6)	/* this was SPF_FAIL_NONEX */
 			continue;
 		memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));

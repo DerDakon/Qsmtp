@@ -117,7 +117,6 @@ const char *successmsg[] = {"1", "2", "3", "4", "5", "6", "7", NULL};
 int
 test_netnwrite_bdatlen(const char *s, const size_t l)
 {
-	unsigned long lp;
 	size_t extralen;
 	char *endptr;
 
@@ -127,7 +126,7 @@ test_netnwrite_bdatlen(const char *s, const size_t l)
 		exit(EINVAL);
 	}
 
-	lp = strtoul(s + 5, &endptr, 10);
+	unsigned long lp = strtoul(s + 5, &endptr, 10);
 
 	if (strncmp(endptr, "\r\n", 2) == 0) {
 		extralen = 2 + (endptr - s);

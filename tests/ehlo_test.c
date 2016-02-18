@@ -41,9 +41,8 @@ testcase_ignore(void)
 		NULL
 	};
 	int ret = 0;
-	unsigned int i;
 
-	for (i = 0; lines[i] != NULL; i++)
+	for (unsigned int i = 0; lines[i] != NULL; i++)
 		if (esmtp_check_extension(lines[i]) != 0) {
 			fprintf(stderr, "line '%s' not ignored\n",
 					lines[i]);
@@ -86,9 +85,8 @@ testcase_no_args(void)
 		}
 	};
 	int ret = 0;
-	unsigned int i;
 
-	for (i = 0; lines[i].line != NULL; i++)
+	for (unsigned int i = 0; lines[i].line != NULL; i++)
 		if (esmtp_check_extension(lines[i].line) != lines[i].extension) {
 			fprintf(stderr, "line '%s' not detected as the correct extension\n",
 				lines[i].line);
@@ -124,9 +122,8 @@ testcase_size(void)
 		}
 	};
 	int ret = 0;
-	unsigned int i;
 
-	for (i = 0; lines[i].line != NULL; i++) {
+	for (unsigned int i = 0; lines[i].line != NULL; i++) {
 		remotesize = 42;
 
 		if (esmtp_check_extension(lines[i].line) != esmtp_size) {
@@ -165,9 +162,8 @@ testcase_invalid(void)
 		NULL
 	};
 	int ret = 0;
-	unsigned int i;
 
-	for (i = 0; lines[i] != NULL; i++)
+	for (unsigned int i = 0; lines[i] != NULL; i++)
 		if (esmtp_check_extension(lines[i]) != -1) {
 			fprintf(stderr, "line '%s' not detected as invalid\n",
 				lines[i]);
@@ -201,9 +197,8 @@ testcase_auth(void)
 		}
 	};
 	int ret = 0;
-	unsigned int i;
 
-	for (i = 0; lines[i].line != NULL; i++) {
+	for (unsigned int i = 0; lines[i].line != NULL; i++) {
 		remotesize = 42;
 
 		if (esmtp_check_extension(lines[i].line) != esmtp_auth) {
@@ -238,8 +233,6 @@ static struct {
 int
 netget(const unsigned int terminate)
 {
-	int i, r;
-
 	if (netget_results[0].line == NULL) {
 		fprintf(stderr, "unexpected call to %s(%u)\n", __func__, terminate);
 		abort();
@@ -247,9 +240,9 @@ netget(const unsigned int terminate)
 
 	strncpy(linein.s, netget_results[0].line, TESTIO_MAX_LINELEN);
 	linein.len = strlen(linein.s);
-	r  = netget_results[0].ret;
+	int r  = netget_results[0].ret;
 
-	for (i = 0; i < MAX_NETGET - 1; i++)
+	for (int i = 0; i < MAX_NETGET - 1; i++)
 		netget_results[i] = netget_results[i + 1];
 	netget_results[MAX_NETGET - 1].line = NULL;
 
@@ -393,8 +386,6 @@ test_greeting_ehlo_mixed(void)
 static int
 test_greeting_ehlo_multi(void)
 {
-	int r;
-
 	nw_flags = 2;
 
 	netget_results[0].line = "250-nice to meet you";
@@ -406,7 +397,7 @@ test_greeting_ehlo_multi(void)
 
 	remotesize = 0;
 
-	r = check_calls(esmtp_size | esmtp_starttls);
+	int r = check_calls(esmtp_size | esmtp_starttls);
 
 	if (remotesize != 42) {
 		fprintf(stderr, "%s: remotesize is %lu, but it should be 42\n",
@@ -425,8 +416,6 @@ test_greeting_ehlo_multi(void)
 static int
 test_greeting_ehlo_skip_first_line(void)
 {
-	int r;
-
 	nw_flags = 2;
 
 	netget_results[0].line = "250-STARTTLS";
@@ -436,7 +425,7 @@ test_greeting_ehlo_skip_first_line(void)
 
 	remotesize = 0;
 
-	r = check_calls(esmtp_size);
+	int r = check_calls(esmtp_size);
 
 	if (remotesize != 42) {
 		fprintf(stderr, "%s: remotesize is %lu, but it should be 42\n",
@@ -452,7 +441,6 @@ test_greeting_ehlo_skip_first_line(void)
 static int
 test_greeting_ehlo_invalid(void)
 {
-	int r;
 	const char badmsg[] = "syntax error in EHLO response \"250-SIZE JUNK\" from ";
 	char logbuf[strlen(badmsg) + strlen(rhost) + 1];
 
@@ -475,7 +463,7 @@ test_greeting_ehlo_invalid(void)
 	testcase_setup_log_writen(testcase_log_writen_combine);
 	testcase_setup_log_write(testcase_log_write_compare);
 
-	r = check_calls(-EINVAL);
+	int r = check_calls(-EINVAL);
 
 	if (remotesize != 0) {
 		fprintf(stderr, "%s: remotesize is %lu, but it should be 0\n",

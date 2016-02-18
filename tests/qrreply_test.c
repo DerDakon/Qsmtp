@@ -40,11 +40,10 @@ static int
 verify_test(const int fatal, const int expected_result)
 {
 	int err = 0;
-	int result;
 
 	net_read_fatal = fatal;
 
-	result = netget(fatal);
+	int result = netget(fatal);
 
 	if (result != expected_result) {
 		fprintf(stderr, "netget() returned %i instead of %i\n",
@@ -72,7 +71,6 @@ int
 main(void)
 {
 	int err = 0;
-	int i;
 
 	testcase_setup_net_read(testcase_net_read_simple);
 	testcase_setup_log_writen(testcase_log_writen_combine);
@@ -138,7 +136,7 @@ main(void)
 	err += verify_test(0, -EINVAL);
 
 	/* now all correct results */
-	for (i = 200; i < 600; i++) {
+	for (int i = 200; i < 600; i++) {
 		char buf[8];
 
 		snprintf(buf, sizeof(buf), "%i ", i);
@@ -151,7 +149,7 @@ main(void)
 	}
 
 	/* just to be sure: all other NNN[ -] results again */
-	for (i = 0; i < 200; i++) {
+	for (int i = 0; i < 200; i++) {
 		char buf[8];
 
 		snprintf(buf, sizeof(buf), "%3i ", i);
@@ -163,7 +161,7 @@ main(void)
 		err += verify_test(0, -EINVAL);
 	}
 
-	for (i = 600; i < 1000; i++) {
+	for (int i = 600; i < 1000; i++) {
 		char buf[8];
 
 		snprintf(buf, sizeof(buf), "%i ", i);

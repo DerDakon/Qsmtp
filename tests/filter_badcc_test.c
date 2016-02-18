@@ -84,10 +84,9 @@ setup_recip_order(unsigned int valid, int r0, int r1, int r2, int r3, int r4)
 	/* it's easier to pass them as single values from outside
 	 * since this is only a testcase I go this way */
 	int rflags[RCPT_PATTERNS] = { r0, r1, r2, r3, r4 };
-	int i;
 
 	assert(r0 >= 0);
-	for (i = 0; i < RCPT_PATTERNS; i++) {
+	for (int i = 0; i < RCPT_PATTERNS; i++) {
 		assert(rflags[i] < RCPT_PATTERNS);
 	}
 	assert(valid < (1 << RCPT_PATTERNS));
@@ -95,7 +94,7 @@ setup_recip_order(unsigned int valid, int r0, int r1, int r2, int r3, int r4)
 	goodrcpt = 0;
 	TAILQ_INIT(&head);
 
-	for (i = 0; (i < RCPT_PATTERNS) && (rflags[i] >= 0); i++) {
+	for (int i = 0; (i < RCPT_PATTERNS) && (rflags[i] >= 0); i++) {
 		thisrecip = &recips[rflags[i]];
 		thisrecip->ok = (valid & (1 << rflags[i]));
 		memset(&thisrecip->entries, 0, sizeof(thisrecip->entries));
@@ -113,7 +112,6 @@ userconf_get_buffer(const struct userconf *uc, const char *key, char ***values, 
 	int type;
 	const char *res = NULL;
 	unsigned int i;
-	const char *c;
 
 	if (flags != userconf_global) {
 		fprintf(stderr, "%s() was called with flags %i instead of %i\n", __func__, flags, userconf_global);
@@ -141,7 +139,7 @@ userconf_get_buffer(const struct userconf *uc, const char *key, char ***values, 
 		return CONFIG_NONE;
 	}
 
-	c = res;
+	const char *c = res;
 	for (i = 0; *c != '\0'; i++)
 		c += strlen(c) + 1;
 
@@ -164,19 +162,18 @@ main(void)
 {
 	const char *logmsg;
 	enum config_domain t;
-	int r;
 	int err = 0;
 
 	testcase_ignore_log_writen();
 
 	memset(&ds, 0, sizeof(ds));
 	globalconf = NULL;
-	for (r = 0; r < RCPT_PATTERNS; r++)
-		recips[r].to.len = strlen(recips[r].to.s);
+	for (int i = 0; i < RCPT_PATTERNS; i++)
+		recips[i].to.len = strlen(recips[i].to.s);
 
 	setup_recip_order(1, 0, -1, -1, -1, -1);
 
-	r = cb_badcc(&ds, &logmsg, &t);
+	int r = cb_badcc(&ds, &logmsg, &t);
 	if (r != 0) {
 		fprintf(stderr, "with only a single recipient no errors should happen,"
 				" but result is %i\n", r);

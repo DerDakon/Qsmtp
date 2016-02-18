@@ -28,7 +28,6 @@ int main(int argc, const char **argv)
 	char user[1024];
 	char pass[1024];
 	char resp[1024];
-	unsigned int i = 1;
 
 	if (argc != 2)
 		return EINVAL;
@@ -46,12 +45,10 @@ int main(int argc, const char **argv)
 	if (strlen(resp) != 0)
 		return 1;
 
-	while (users[i].username != NULL) {
+	for (unsigned int i = 1; users[i].username != NULL; i++) {
 		if ((strcmp(users[i].username, user) == 0) &&
 				(strcmp(users[i].password, pass) == 0))
 			return 0;
-
-		i++;
 	}
 
 	return 1;

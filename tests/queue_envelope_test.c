@@ -296,11 +296,8 @@ test_log_messages(void)
 			.rcpt1 = NULL
 		}
 	};
-	unsigned int i;
-	SSL myssl;
-
 	/* this doesn't really look right, but it works for now */
-	memset(&myssl, 0, sizeof(myssl));
+	SSL myssl = { 0 };
 
 	strncpy(xmitstat.remoteip, "::ffff:172.28.19.44", sizeof(xmitstat.remoteip) - 1);
 	xmitstat.remoteip[sizeof(xmitstat.remoteip) - 1] = '\0';
@@ -308,10 +305,9 @@ test_log_messages(void)
 	liphost.s = "ip.example.com";
 	liphost.len = strlen(liphost.s);
 
-	for (i = 0; testpattern[i].rcpt1 != NULL; i++) {
+	for (unsigned int i = 0; testpattern[i].rcpt1 != NULL; i++) {
 		char rpipe[testpattern[i].envsize + 2];
 		int fd[2];
-		ssize_t r;
 
 		TAILQ_INIT(&head);
 		if (pipe(fd) != 0) {
@@ -341,7 +337,7 @@ test_log_messages(void)
 			ret++;
 		}
 
-		r = read(fd[0], rpipe, testpattern[i].envsize + 2);
+		ssize_t r = read(fd[0], rpipe, testpattern[i].envsize + 2);
 		if (r != testpattern[i].envsize) {
 			fprintf(stderr, "%s[%u]: envelope of size %zi returned, but expected was %zu\n",
 					__func__, i, r, testpattern[i].envsize);

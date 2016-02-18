@@ -59,13 +59,12 @@ decode_config_domain(const int i)
 long
 getsetting(const struct userconf *ds, const char *c, enum config_domain  *t)
 {
-	int i;
 	assert(strcmp(c, "fail_hard_on_temp") == 0);
 
 	*t = decode_config_domain(ds->userdirfd);
 	assert(*t != CONFIG_GLOBAL);
 
-	i = (ds->userdirfd & 0xff);
+	int i = (ds->userdirfd & 0xff);
 	((struct userconf *)ds)->userdirfd = 0;
 
 	return i;
@@ -74,7 +73,6 @@ getsetting(const struct userconf *ds, const char *c, enum config_domain  *t)
 long
 getsettingglobal(const struct userconf *ds, const char *c, enum config_domain *t)
 {
-	int i;
 	assert(strcmp(c, "spfpolicy") == 0);
 
 	if (ds == NULL)
@@ -82,7 +80,7 @@ getsettingglobal(const struct userconf *ds, const char *c, enum config_domain *t
 
 	*t = decode_config_domain(ds->domaindirfd);
 
-	i = (ds->domaindirfd & 0xff);
+	int i = (ds->domaindirfd & 0xff);
 	((struct userconf *)ds)->domaindirfd = 0;
 
 	return i;
@@ -145,10 +143,8 @@ main(void)
 	int err = 0;
 	struct userconf ds;
 	const char *logmsg = NULL;
-	int r;
 	enum config_domain t = CONFIG_NONE;
 	struct recip rcpt;
-	unsigned int i;
 	struct {
 		/* input values */
 		const char *name;
@@ -295,7 +291,7 @@ main(void)
 	rcpt.to.s = "someone@example.org";
 	rcpt.to.len = strlen(rcpt.to.s);
 
-	for (i = 0; testpatterns[i].name != NULL; i++) {
+	for (unsigned int i = 0; testpatterns[i].name != NULL; i++) {
 		xmitstat.spf = testpatterns[i].spf;
 		xmitstat.spfexp = (char *)testpatterns[i].spfexp;
 		netnwrite_msg = testpatterns[i].expected_netmsg;
@@ -334,6 +330,7 @@ main(void)
 
 		printf("testing: %s\n", testpatterns[i].name);
 
+		int r;
 		if (testpatterns[i].no_params)
 			r = cb_spf(NULL, NULL, NULL);
 		else

@@ -33,15 +33,12 @@ err_mem(const int k __attribute__((unused)))
 int
 netget(const unsigned int terminate)
 {
-	char num[4];
-	const char *lf;
-
 	if (netget_input == NULL) {
 		fprintf(stderr, "unexpected call to %s(%u)\n", __func__, terminate);
 		exit(EFAULT);
 	}
 
-	lf = strchr(netget_input, '\n');
+	const char *lf = strchr(netget_input, '\n');
 	if (lf != NULL)
 		linein.len = lf - netget_input;
 	else
@@ -50,6 +47,7 @@ netget(const unsigned int terminate)
 	assert(linein.len > 3);
 	assert(linein.len < TESTIO_MAX_LINELEN);
 
+	char num[4];
 	memcpy(num, netget_input, 3);
 	num[3] = 0;
 
@@ -172,7 +170,6 @@ check_cr(const char *msg, const int statuse, const int statusc)
 		.fd = statusfdout,
 		.events = POLLIN
 	};
-	int i;
 
 	if (statusc != statuse) {
 		fprintf(stderr, "checkreply() returned %i, but %i was expected\n",
@@ -180,7 +177,7 @@ check_cr(const char *msg, const int statuse, const int statusc)
 		ret++;
 	}
 
-	i = poll(&fds, 1, 0);
+	int i = poll(&fds, 1, 0);
 
 	if (i == 0) {
 		/* nothing sent to statusfd */

@@ -16,14 +16,14 @@ write_status(const char *str)
 static int
 test_sst(void)
 {
-	struct string st;
-	int ret = 0, i;
 	char ch;
+	struct string st = {
+		.len = 1,
+		.s = &ch
+	};
+	int ret = 0;
 
-	st.len = 1;
-	st.s = &ch;
-
-	i = newstr(&st, 0);
+	int i = newstr(&st, 0);
 	if (i != 0) {
 		fprintf(stderr, "initializing a new sstring with length 0 returned %i\n", i);
 		ret++;
@@ -198,9 +198,8 @@ test_multipart_bad(void)
 		NULL
 	};
 	int ret = 0;
-	unsigned int i;
 
-	for (i = 0; bad_lines[i] != NULL; i++) {
+	for (unsigned int i = 0; bad_lines[i] != NULL; i++) {
 		cstring boundary;
 		cstring line;
 		int r;
@@ -217,7 +216,7 @@ test_multipart_bad(void)
 		}
 	}
 
-	for (i = 0; good_lines[i] != NULL; i++) {
+	for (unsigned int i = 0; good_lines[i] != NULL; i++) {
 		cstring boundary;
 		cstring line;
 		int r;
@@ -262,18 +261,16 @@ test_multipart_boundary()
 		NULL
 	};
 	int ret = 0;
-	unsigned int i;
 
-	for (i = 0; boundaries[i] != NULL; i++) {
+	for (unsigned int i = 0; boundaries[i] != NULL; i++) {
 		const char *sbegin[] = {
 			"Content-Type: multipart/mixed; boundary=",
 			"Content-Type: multipart/mixed; "
 				"foo=bar; boundaryfoo=bar; boundary=",
 			NULL
 		};
-		unsigned int j;
 
-		for (j = 0; sbegin[j] != NULL; j++) {
+		for (unsigned int j = 0; sbegin[j] != NULL; j++) {
 			const char *begin = sbegin[j];
 			char linebuf[128];
 			cstring boundary;
@@ -356,12 +353,11 @@ test_multipart_boundary()
 		}
 	}
 
-	for (i = 0; qboundaries[i] != NULL; i++) {
+	for (unsigned int i = 0; qboundaries[i] != NULL; i++) {
 		const char *begin = "Content-Type: multipart/mixed; boundary=";
 		char linebuf[128];
 		cstring boundary;
 		cstring line;
-		int r;
 
 		strcpy(linebuf, begin);
 		strcat(linebuf, "\"");
@@ -373,7 +369,7 @@ test_multipart_boundary()
 		line.len = strlen(linebuf);
 		STREMPTY(boundary);
 
-		r = is_multipart(&line, &boundary);
+		int r = is_multipart(&line, &boundary);
 
 		if (r != 1)
 			fprintf(stderr, "unquoted boundary (quoted) %u not detected as multipart, return %i\n",
@@ -417,9 +413,8 @@ test_no_multipart(void)
 		"Content-Type: multipar/mix; boundary=bar",
 		NULL
 	};
-	unsigned int i;
 
-	for (i = 0; patterns[i] != NULL; i++) {
+	for (unsigned int i = 0; patterns[i] != NULL; i++) {
 		cstring p = {
 			.s = patterns[i],
 			.len = strlen(patterns[i])

@@ -27,9 +27,7 @@ write_status(const char *str)
 void
 write_status_m(const char **strs, const unsigned int count)
 {
-	unsigned int i;
-
-	for (i = 0; i < count - 1; i++)
+	for (unsigned int i = 0; i < count - 1; i++)
 		fputs(strs[i], stdout);
 
 	write_status(strs[count - 1]);
@@ -59,20 +57,24 @@ static int
 test_exhausted(void)
 {
 	int ret = 0;
-	struct ips mx[3];
-	int i;
+	struct ips mx[3] = {
+		{
+			.next = mx + 1,
+			.priority = MX_PRIORITY_USED,
+			.count = 1,
+		},
+		{
+			.next = mx + 2,
+			.priority = MX_PRIORITY_USED,
+			.count = 1
+		},
+		{
+			.priority = MX_PRIORITY_CURRENT,
+			.count = 1
+		}
+	};
 
-	memset(mx, 0, sizeof(mx));
-	mx[0].next = mx + 1;
-	mx[0].priority = MX_PRIORITY_USED;
-	mx[0].count = 1;
-	mx[1].next = mx + 2;
-	mx[1].priority = MX_PRIORITY_USED;
-	mx[1].count = 1;
-	mx[2].priority = MX_PRIORITY_CURRENT;
-	mx[2].count = 1;
-
-	i = tryconn(mx, NULL, NULL);
+	int i = tryconn(mx, NULL, NULL);
 	if (i != -ENOENT) {
 		fprintf(stderr, "tryconn() on exhausted MX list did return %i instead of %i (-ENOENT)\n",
 			i, -ENOENT);
@@ -118,8 +120,7 @@ test_fork(int mxindex)
 	const char pongmsg[] = "pong";
 	char rbuf[strlen(pingmsg) + 2];
 	ssize_t rlen;
-	int r = 0;
-	pid_t child;
+	int r;
 
 	r = bind(s, (struct sockaddr *)&sa, sizeof(sa));
 	r = getsockname(s, (struct sockaddr *)&sa, &salen);
@@ -130,7 +131,7 @@ test_fork(int mxindex)
 #endif
 
 	memset(rbuf, 0, sizeof(rbuf));
-	child = fork();
+	pid_t child = fork();
 	if (child < 0) {
 		printf("fork() error: %s (%i)\n", strerror(errno), errno);
 		return 1;
@@ -179,9 +180,8 @@ test_fork(int mxindex)
 		printf("tryconn() on index %i succeeded\n", mxindex);
 		exit(r);
 	} else {
-		int t;
 		r = listen(s, 0);
-		t = accept(s, (struct sockaddr *)&sa, &salen);
+		int t = accept(s, (struct sockaddr *)&sa, &salen);
 		rlen = read(t, rbuf, sizeof(rbuf) - 1);
 		rbuf[sizeof(rbuf) - 1] = '\0';
 		if ((rlen != strlen(pingmsg)) || (memcmp(rbuf, pingmsg, rlen) != 0)) {

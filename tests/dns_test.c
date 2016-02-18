@@ -140,14 +140,12 @@ verify_ipv6_sorted_complete(const struct ips *ip)
 static int
 test_sort_priority(void)
 {
-	struct ips *ipa;
 	struct ips *ipb = NULL;
 	int ret = 0;
-	unsigned int i;
 	const unsigned int count = 3;
 
-	for (i = count; i > 0; --i) {
-		ipa = malloc(sizeof(*ipa));
+	for (unsigned int i = count; i > 0; --i) {
+		struct ips *ipa = malloc(sizeof(*ipa));
 		if (ipa == NULL) {
 			freeips(ipb);
 			exit(ENOMEM);
@@ -170,10 +168,10 @@ test_sort_priority(void)
 		ipa->addr->s6_addr32[3] = 0;
 	}
 
-	for (i = 2 << (count + 1); i > 0; --i) {
+	for (unsigned int i = 2 << (count + 1); i > 0; --i) {
 		unsigned int k = 0;
+		struct ips *ipa = ipb;
 
-		ipa = ipb;
 		while (ipa != NULL) {
 			/* shuffling around the number so we get any permutation
 			 * of ordering in input */
@@ -205,10 +203,9 @@ test_sort_ipv6(void)
 	struct ips *ipa;
 	struct ips *ipb = NULL;
 	int ret = 0;
-	unsigned int i;
 	const unsigned int count = 3;
 
-	for (i = count; i > 0; --i) {
+	for (unsigned int i = count; i > 0; --i) {
 		ipa = malloc(sizeof(*ipa));
 		if (ipa == NULL) {
 			freeips(ipb);
@@ -263,10 +260,9 @@ test_sort_ipv6_inner(void)
 	struct ips *ipa;
 	struct ips *ipb = NULL;
 	int ret = 0;
-	unsigned int i;
 	const unsigned int count = 3;
 
-	for (i = count; i > 0; --i) {
+	for (unsigned int i = count; i > 0; --i) {
 		unsigned short s;
 
 		ipa = malloc(sizeof(*ipa));

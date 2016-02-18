@@ -63,7 +63,6 @@ test_flag(const char *flag, const long expect, const enum config_domain expectty
 int main()
 {
 	int err = 0;
-	long r;
 	enum config_domain t;
 
 	memset(&ds, 0, sizeof(ds));
@@ -92,7 +91,7 @@ int main()
 	err += test_flag("globalforcenull", 0, CONFIG_GLOBAL);
 
 	t = -1;
-	r = getsetting(&ds, "nonexistent", &t);
+	long r = getsetting(&ds, "nonexistent", &t);
 	if ((r != 0) || (t != CONFIG_DOMAIN)) {
 		fprintf(stderr, "searching for 'nonexistent' with getsetting() should return "
 				"0 (type 1), but returned %li (type %i)\n", r, t);

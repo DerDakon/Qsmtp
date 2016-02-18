@@ -183,7 +183,6 @@ static const char success_packet[] = "\0\0\0\0\0\0\0\3\0\0\0\0" /* header */
 int
 dns_domain_fromdot(char **q, const char *host, size_t len)
 {
-	unsigned int idx;
 
 	if (len != strlen(host))
 		err++;
@@ -213,7 +212,7 @@ dns_domain_fromdot(char **q, const char *host, size_t len)
 		return 0;
 	}
 
-	idx = (host[1] - '1') * 10 + (host[2] - '0');
+	unsigned int idx = (host[1] - '1') * 10 + (host[2] - '0');
 
 	if (idx < ARRAY_SIZE(patterns)) {
 		dns_resolve_tx.packet = (char *)patterns[idx].packet;
@@ -276,11 +275,10 @@ static int
 test_success(void)
 {
 	struct daneinfo *val = NULL;
-	int r, s;
 	int ret = 0;
 
-	r = dnstlsa("foo.example.com", 587, &val);
-	s = dnstlsa("foo.example.com", 587, NULL);
+	int r = dnstlsa("foo.example.com", 587, &val);
+	int s = dnstlsa("foo.example.com", 587, NULL);
 
 	if (r != s) {
 		fprintf(stderr, "dnstlsa(foo.example.com, 587, NULL) returned %i, with pointer it returned %i\n",
@@ -348,9 +346,8 @@ int
 main(void)
 {
 	struct daneinfo *val = (struct daneinfo *)(uintptr_t)-1;
-	unsigned short i;
 
-	for (i = 98; i <= 99; i++) {
+	for (unsigned short i = 98; i <= 99; i++) {
 		if (dnstlsa("foo.example.org", i, NULL) != DNS_ERROR_LOCAL)
 			err++;
 
@@ -362,7 +359,7 @@ main(void)
 	}
 
 	errno = 0;
-	for (i = 0; i < ARRAY_SIZE(patterns); i++) {
+	for (unsigned short i = 0; i < ARRAY_SIZE(patterns); i++) {
 		const int s = dnstlsa("foo.example.org", i + 10, NULL);
 		const int r = dnstlsa("foo.example.org", i + 10, &val);
 

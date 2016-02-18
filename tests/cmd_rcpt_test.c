@@ -193,9 +193,6 @@ freeips(struct ips *x)
 int
 addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds, const char *rh, const off_t rs)
 {
-	char *br;
-	int i;
-
 	assert(rh == rcpthosts);
 	assert(rs == rcpthsize);
 	assert(flags == 1);
@@ -204,10 +201,10 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 
 	*more = NULL;
 
-	br = strchr(in, '>');
+	char *br = strchr(in, '>');
 	assert(br != NULL);
 
-	i = newstr(addr, br - in + 1);
+	int i = newstr(addr, br - in + 1);
 	assert(i == 0);
 	strncpy(addr->s, in, addr->len - 1);
 	addr->s[addr->len - 1] = '\0';
@@ -588,7 +585,6 @@ main(void)
 			.input = NULL
 		}
 	};
-	unsigned int i;
 
 	TAILQ_INIT(&head);
 
@@ -598,8 +594,7 @@ main(void)
 	testcase_setup_log_writen(testcase_log_writen_combine);
 	testcase_setup_log_write(test_log_write);
 
-	for (i = 0; testdata[i].input != NULL; i++) {
-		int r;
+	for (unsigned int i = 0; testdata[i].input != NULL; i++) {
 		unsigned int oldgood = goodrcpt;
 		unsigned int oldcnt = rcptcount;
 		char ulbuf[ULSTRLEN];
@@ -623,7 +618,7 @@ main(void)
 		if (testdata[i].maxrcpt)
 			oldcnt = rcptcount = MAXRCPT;
 
-		r = smtp_rcpt();
+		int r = smtp_rcpt();
 
 		if (r != testdata[i].rcpt_result) {
 			fprintf(stderr, "%u: smtp_rcpt() returned %i instead of %i\n",

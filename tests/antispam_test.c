@@ -60,9 +60,8 @@ test_rbl()
 		NULL
 	};
 	const char *entries[4];
-	unsigned int ipidx = 0;
 
-	for (ipidx = 0; ips[ipidx] != NULL; ipidx++) {
+	for (unsigned int ipidx = 0; ips[ipidx] != NULL; ipidx++) {
 		char *txt = NULL;
 		int r;
 
@@ -150,7 +149,6 @@ test_rbl()
 
 void test_log_writen(int priority __attribute__ ((unused)), const char **msg)
 {
-	unsigned int i = 0;
 	static int firstseen;
 
 	if (!firstseen) {
@@ -158,8 +156,8 @@ void test_log_writen(int priority __attribute__ ((unused)), const char **msg)
 		printf("the messages about too long DNSBLs are expected and part of the test\n");
 	}
 
-	while (msg[i] != NULL)
-		printf("%s", msg[i++]);
+	for (unsigned int i = 0; msg[i] != NULL; i++)
+		printf("%s", msg[i]);
 	printf("\n");
 	logcount++;
 }
@@ -167,15 +165,13 @@ void test_log_writen(int priority __attribute__ ((unused)), const char **msg)
 int
 test_ask_dnsa(const char *a, struct in6_addr **b)
 {
-	unsigned int i;
-
 	if (dnsentries == NULL)
 		return 0;
 
 	if (b != NULL)
 		*b = NULL;
 
-	for (i = 0; dnsentries[i] != NULL; i++) {
+	for (unsigned int i = 0; dnsentries[i] != NULL; i++) {
 		if (strcmp(dnsentries[i], a) == 0) {
 			/* found a match, now use the rbl name to get the result */
 			if (strstr(a, "timeout") != NULL)

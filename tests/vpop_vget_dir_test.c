@@ -115,7 +115,6 @@ main(int argc, char **argv)
 	int err;
 	struct userconf ds;
 	char cdbtestdir[18];
-	int fd;
 	char too_long_domain[512];
 
 	memset(too_long_domain, 'a', sizeof(too_long_domain) - 1);
@@ -146,7 +145,7 @@ main(int argc, char **argv)
 		return err;
 	}
 	err = 0;
-	fd = vget_dir("example.net", &ds);
+	int fd = vget_dir("example.net", &ds);
 	if (fd != 0) {
 		fprintf(stderr, "searching for example.net in not existing users/cdb did not return 0, but %i\n", fd);
 		err++;

@@ -27,15 +27,13 @@ static int
 test_cdb(void)
 {
 	int errcnt = 0; /**< error count */
-	int fd;
 	int err;
 	unsigned int tvidx = 0;	/**< index in cdb_testvector */
 	struct stat st;
-	const char *cdb_buf;
 	char *cdb_mmap;
 
 	/* try to open the cdb file */
-	fd = open("users/cdb", O_RDONLY | O_CLOEXEC);
+	int fd = open("users/cdb", O_RDONLY | O_CLOEXEC);
 	if (fd < 0) {
 		err = -errno;
 		return err;
@@ -55,7 +53,7 @@ test_cdb(void)
 
 	/* call cdb_seekmm() with invalid file descriptor */
 	errno = 0;
-	cdb_buf = cdb_seekmm(-1, "foo", strlen("foo"), &cdb_mmap, &st);
+	const char *cdb_buf = cdb_seekmm(-1, "foo", strlen("foo"), &cdb_mmap, &st);
 	if ((cdb_buf != NULL) || (errno == 0)) {
 		err = errno;
 		printf("ERROR: cdb_seekmm(-1, ...) returned %p and errno %i\n",

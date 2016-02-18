@@ -104,11 +104,10 @@ int
 spfreceived(int fd, const int spf)
 {
 	char buf[64];
-	ssize_t r;
 
 	snprintf(buf, sizeof(buf), "Received-SPF: testcase, spf %i\n", spf);
 
-	r = write(fd, buf, strlen(buf));
+	const ssize_t r = write(fd, buf, strlen(buf));
 
 	if ((r == (ssize_t)strlen(buf)) && (r > 0))
 		return 0;
@@ -135,9 +134,8 @@ static int
 check_twodigit(void)
 {
 	int ret = 0;
-	int i;
 
-	for (i = 0; i < 100; i++) {
+	for (int i = 0; i < 100; i++) {
 		char mine[3];
 		char other[3];
 
@@ -161,17 +159,14 @@ static const char * timestr2012 = "Wed, 11 Apr 2012 18:32:17 +0200";
 static int
 check_date822(void)
 {
-	char buf[32];
+	char buf[32] = { 0 };
 	const char *expt[] = { "Thu, 01 Jan 1970 00:00:00 +0000", timestr2012 };
 	const time_t testtimes[] = { 0, time2012 };
 	const char *tzones[] = { "TZ=UTC", "TZ=CET" };
 	int ret = 0;
-	int i;
 	char tzbuf[12];
 
-	memset(buf, 0, sizeof(buf));
-
-	for (i = 0; i < 2; i++) {
+	for (int i = 0; i < 2; i++) {
 		testtime = testtimes[i];
 		memcpy(tzbuf, tzones[i], strlen(tzones[i]) + 1);
 		putenv(tzbuf);
@@ -190,9 +185,7 @@ check_date822(void)
 static int
 check_queueheader(void)
 {
-	struct recip to;
 	int err = 0;
-	int idx;
 	int fd0[2];
 
 	if (pipe(fd0) != 0)
@@ -203,13 +196,17 @@ check_queueheader(void)
 
 	/* setup */
 	testtime = time2012;
-	to.ok = 1;
-	to.to.s = "test@example.com";
-	to.to.len = strlen(to.to.s);
 
 	heloname.s = "testcase.example.net";
 	heloname.len = strlen(heloname.s);
 
+	struct recip to = {
+		.ok = 1,
+		.to = {
+			.s = "test@example.com",
+			.len = strlen(to.to.s)
+		}
+	};
 	thisrecip = &to;
 
 	TAILQ_INIT(&head);
@@ -217,10 +214,8 @@ check_queueheader(void)
 
 	queuefd_data = fd0[1];
 
-	for (idx = 0; idx < 14; idx++) {
+	for (int idx = 0; idx < 14; idx++) {
 		char outbuf[2048];
-		ssize_t off = 0;
-		ssize_t mismatch = -1;
 		const char *expect;
 		const char *testname;
 		int chunked = 0;
@@ -374,8 +369,10 @@ check_queueheader(void)
 			break;
 		}
 
+		ssize_t off = 0;
+		ssize_t mismatch = -1;
 		while (off < (ssize_t)sizeof(outbuf) - 1) {
-			ssize_t r = read(fd0[0], outbuf + off, 1);
+			const ssize_t r = read(fd0[0], outbuf + off, 1);
 			if (r < 0) {
 				if (errno != EAGAIN) {
 					fprintf(stderr, "read failed with error %i\n", errno);
@@ -527,9 +524,8 @@ check_check_rfc822_headers(void)
 		},
 	};
 	int ret = 0;
-	unsigned int i;
 
-	for (i = 0; testdata[i].pattern != NULL; i++) {
+	for (unsigned int i = 0; testdata[i].pattern != NULL; i++) {
 		const char *hdrname = NULL;
 		unsigned int hdrflags = testdata[i].flagsb;
 
@@ -568,14 +564,13 @@ static int
 check_data_badbounce(void)
 {
 	int ret = 0;
-	int r;
 
 	printf("%s\n", __func__);
 	netnwrite_msg = "554 5.1.1 no valid recipients\r\n";
 	badbounce = 1;
 	goodrcpt = 1;
 
-	r = smtp_data();
+	int r = smtp_data();
 
 	if (r != EDONE)
 		ret++;
@@ -589,14 +584,13 @@ static int
 check_data_no_rcpt(void)
 {
 	int ret = 0;
-	int r;
 
 	printf("%s\n", __func__);
 	netnwrite_msg = "554 5.1.1 no valid recipients\r\n";
 	badbounce = 0;
 	goodrcpt = 0;
 
-	r = smtp_data();
+	int r = smtp_data();
 
 	if (r != EDONE)
 		ret++;
@@ -610,14 +604,13 @@ static int
 check_data_qinit_fail(void)
 {
 	int ret = 0;
-	int r;
 
 	printf("%s\n", __func__);
 	badbounce = 0;
 	goodrcpt = 1;
 	queue_init_result = EDONE;
 
-	r = smtp_data();
+	int r = smtp_data();
 
 	if (r != EDONE)
 		ret++;
@@ -629,7 +622,6 @@ static int
 check_data_354_fail(void)
 {
 	int ret = 0;
-	int r;
 
 	printf("%s\n", __func__);
 
@@ -640,7 +632,7 @@ check_data_354_fail(void)
 	queue_init_result = 0;
 	queue_reset_expected = 1;
 
-	r = smtp_data();
+	int r = smtp_data();
 
 	if (r != 4321)
 		ret++;

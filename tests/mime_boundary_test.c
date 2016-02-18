@@ -25,7 +25,6 @@ int
 main(int argc, char **argv)
 {
 	char buf[256];
-	int r;
 	cstring line, boundary;
 
 	if (argc != 2) {
@@ -38,7 +37,7 @@ main(int argc, char **argv)
 	line.s = buf;
 	line.len = strlen(line.s);
 
-	r = is_multipart(&line, &boundary);
+	int r = is_multipart(&line, &boundary);
 
 	fprintf(stderr, "is_multipart() returned %i\n", r);
 

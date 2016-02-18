@@ -17,21 +17,17 @@ static const char testfname[] = "mmap_testfile";
 int
 main(void)
 {
-	int fd, fd2;
-	off_t len;
-	void *buf;
 	const size_t cmplen = strlen(pattern1) + 1 + strlen(pattern2);
-	ssize_t t, u;
 
 	unlink(testfname);
-	fd = creat(testfname, 0644);
+	int fd = creat(testfname, 0644);
 	if (fd == -1) {
 		fprintf(stderr, "can not open %s for writing\n", testfname);
 		return 1;
 	}
 
 	/* include trailing 0 */
-	t = write(fd, pattern1, strlen(pattern1) + 1);
+	ssize_t t = write(fd, pattern1, strlen(pattern1) + 1);
 	if (t != (ssize_t)(strlen(pattern1) + 1)) {
 		fprintf(stderr, "error writing to test file, result %zi", t);
 		close(fd);
@@ -40,7 +36,7 @@ main(void)
 	}
 
 	/* no trailing 0 */
-	u = write(fd, pattern2, strlen(pattern2));
+	ssize_t u = write(fd, pattern2, strlen(pattern2));
 	close(fd);
 
 	if (u != (ssize_t)strlen(pattern2)) {
@@ -52,7 +48,8 @@ main(void)
 	assert(t + u == (ssize_t)cmplen);
 
 	/* mmap() on already closed fd, should fail */
-	buf = mmap_fd(fd, &len);
+	off_t len;
+	void *buf = mmap_fd(fd, &len);
 
 	if (buf != NULL)
 		return 4;
@@ -69,6 +66,7 @@ main(void)
 		return 16;
 	}
 
+	int fd2;
 	buf = mmap_name(AT_FDCWD, testfname, &len, &fd2);
 	if ((buf != NULL) || (errno != ENOLCK)) {
 		fputs("mmap_name() on exlusively locked file did not fail with ENOLCK\n", stderr);

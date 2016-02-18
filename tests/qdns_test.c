@@ -95,13 +95,12 @@ findip(const char *name, struct in6_addr *addr, int start)
 
 int dnsip4(char **out, size_t *len, const char *host)
 {
-	int r;
 	struct in6_addr addr;
 
 	*out = NULL;
 	*len = 0;
 
-	r = findip(host, &addr, 0);
+	int r = findip(host, &addr, 0);
 	if (r < 0)
 		return r;
 
@@ -144,13 +143,12 @@ int dnsip4(char **out, size_t *len, const char *host)
 
 int dnsip6(char **out, size_t *len, const char *host)
 {
-	int r;
 	struct in6_addr addr;
 
 	*out = NULL;
 	*len = 0;
 
-	r = findip(host, &addr, 0);
+	int r = findip(host, &addr, 0);
 	if (r < 0)
 		return r;
 
@@ -291,11 +289,9 @@ static struct {
 
 int dnsmx(char **out, size_t *len, const char *host)
 {
-	unsigned int mxidx;
-
 	*len = 0;
 
-	for (mxidx = 0; mxentries[mxidx].name != NULL; mxidx++) {
+	for (unsigned int mxidx = 0; mxentries[mxidx].name != NULL; mxidx++) {
 		if (strcmp(host, mxentries[mxidx].name) == 0) {
 			char *o;
 			unsigned int k;
@@ -380,16 +376,14 @@ test_fwdrev(void)
 	unsigned int idx = 0;
 
 	while (dns_entries[idx].name != NULL) {
-		struct in6_addr *cur;
 		struct in6_addr *res = NULL;
-		int cnt;
 
 		if ((idx > 0) && (strcmp(dns_entries[idx - 1].name, dns_entries[idx].name) == 0)) {
 			idx++;
 			continue;
 		}
 
-		cnt = ask_dnsa(dns_entries[idx].name, &res);
+		int cnt = ask_dnsa(dns_entries[idx].name, &res);
 		if (cnt <= 0) {
 			cnt = ask_dnsaaaa(dns_entries[idx].name, &res);
 			if (cnt <= 0) {
@@ -400,7 +394,7 @@ test_fwdrev(void)
 			}
 		}
 
-		cur = res;
+		struct in6_addr *cur = res;
 		while (cnt > 0) {
 			char *nname = NULL;
 
@@ -431,7 +425,6 @@ test_implicit_mx(void)
 {
 	int err = 0;
 	unsigned int idx = 0;
-	struct ips *res;
 
 	while (dns_entries[idx].name != NULL) {
 		struct ips *cur;
@@ -441,7 +434,7 @@ test_implicit_mx(void)
 			continue;
 		}
 
-		res = (void *)((uintptr_t)-1);
+		struct ips *res = (void *)((uintptr_t)-1);
 
 		if (ask_dnsmx(dns_entries[idx].name, &res) != 0) {
 			fprintf(stderr, "%s did not return implicit MX entries\n", dns_entries[idx].name);
@@ -499,11 +492,9 @@ static int
 test_mx(void)
 {
 	int err = 0;
-	unsigned int mxidx;
 
-	for (mxidx = 0; mxentries[mxidx].name != NULL; mxidx++) {
+	for (unsigned int mxidx = 0; mxentries[mxidx].name != NULL; mxidx++) {
 		struct ips *res = (void *)((uintptr_t)-1);
-		struct ips *cur;
 		unsigned int idx = 0;
 
 		if (ask_dnsmx(mxentries[mxidx].name, &res) != 0) {
@@ -511,7 +502,7 @@ test_mx(void)
 			return ++err;
 		}
 
-		cur = res;
+		struct ips *cur = res;
 		while (cur != NULL) {
 			char *nname = NULL;
 			const char *ename = NULL;
@@ -585,10 +576,9 @@ static int
 test_errors(void)
 {
 	int err = 0;
-	int r;
 	struct ips *i = NULL;
 
-	r = ask_dnsmx(timeouthost, &i);
+	int r = ask_dnsmx(timeouthost, &i);
 	if ((r != DNS_ERROR_TEMP) || (errno != ETIMEDOUT)) {
 		fprintf(stderr, "lookup of %s returned %i, errno %i\n", timeouthost, r, errno);
 		freeips(i);
@@ -637,7 +627,6 @@ test_foreach(void)
 	};
 	struct ips *cur;
 	unsigned short s;
-	uint32_t u;
 	int err = 0;
 
 	memset(a, 0, sizeof(a));
@@ -651,7 +640,7 @@ test_foreach(void)
 		ip[s].next = ip + s + 1;
 	}
 
-	u = 0;
+	uint32_t u = 0;
 	/* now iterate over all IPs, check that their lower value gives the
 	 * expected sequence 1..8. Set the next value to the priority, so that
 	 * can be checked later. */

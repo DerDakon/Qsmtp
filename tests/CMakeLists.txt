@@ -20,6 +20,15 @@ else ()
 	set(QSMTPD_GREETING_LINE "220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n")
 endif ()
 
+if (NOT CMAKE_VERSION VERSION_LESS 3.1)
+	set(CMAKE_C_STANDARD 99)
+	set(CMAKE_C_STANDARD_REQUIRED On)
+else ()
+	add_definitions(-std=c99)
+endif ()
+
+add_definitions(-D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE)
+
 add_subdirectory(test_io)
 
 add_executable(testcase_spf

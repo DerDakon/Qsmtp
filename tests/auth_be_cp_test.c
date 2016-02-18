@@ -97,9 +97,7 @@ static void
 test_chkpw_wrong(void)
 {
 	struct string user = { .s = (char *)users[1].username, .len = strlen(users[1].username) };
-	struct string resp;
-
-	STREMPTY(resp);
+	struct string resp = STREMPTY_INIT;
 
 	fork_success = 1;
 

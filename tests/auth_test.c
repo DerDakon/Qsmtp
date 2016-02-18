@@ -117,14 +117,13 @@ static size_t
 copy_chunk(const string *stin, size_t num, char *buf)
 {
 	string stout;
-	size_t cplen;
 
 	if (b64encode(stin, &stout, -1) != 0) {
 		fprintf(stderr, "base64 encoding failed\n");
 		exit(3);
 	}
 
-	cplen = stout.len + 2 - lineoffs;
+	size_t cplen = stout.len + 2 - lineoffs;
 
 	if (num >= cplen) {
 		memcpy(buf, stout.s + lineoffs, cplen - 2);
@@ -309,7 +308,6 @@ main(int argc, char **argv)
 
 	while (users[authtry].testname != NULL) {
 		int errcnt = 0;
-		int i;
 
 		if (strcmp(users[authtry].testname, argv[2]) != 0) {
 			authtry++;
@@ -336,7 +334,7 @@ main(int argc, char **argv)
 
 		linein.len = strlen(linein.s);
 
-		i = smtp_auth();
+		int i = smtp_auth();
 		/* every even try will test a failed authentication */
 		if (correct) {
 			if (i != 0)

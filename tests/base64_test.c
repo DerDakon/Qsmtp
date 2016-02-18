@@ -33,12 +33,10 @@ memcrlf(const char *start, const size_t maxlen)
 static int
 check_line_limit(const string *bdata, const unsigned int maxlinelen)
 {
-	const char *lstart, *lend;
-
 	/* verify that the lines are wrapped at the given limit */
-	lend = bdata->s;
+	const char *lend = bdata->s;
 	do {
-		lstart = lend;
+		const char *lstart = lend;
 		lend = memcrlf(lstart, bdata->len - (lstart - bdata->s));
 
 		if (lend == NULL) {
@@ -67,10 +65,6 @@ static int
 inout_test(void)
 {
 	string indata;	/**< input pattern */
-	string outdata;	/**< output pattern after encoding and decoding */
-	string bdata;	/**< intermediate base64 pattern */
-	size_t l;
-	unsigned int pattern;
 
 	puts("== Testing if encode and decode are reverse operations");
 
@@ -79,20 +73,20 @@ inout_test(void)
 		return 1;
 	}
 
-	for (pattern = 0; pattern <= 1; pattern++) {
+	for (unsigned int pattern = 0; pattern <= 1; pattern++) {
 		unsigned int maxlinelen = (1 + pattern) * 40;
 
 		switch (pattern) {
 		case 0:
-			for (l = 0; l < indata.len; l++) {
+			for (size_t l = 0; l < indata.len; l++) {
 				indata.s[l] = (unsigned char)(l & 0xff);
 			}
 			break;
 		case 1:
-			for (l = 0; l < indata.len / 2; l++) {
+			for (size_t l = 0; l < indata.len / 2; l++) {
 				indata.s[l] = (unsigned char)(l & 0xff);
 			}
-			for (l = indata.len / 2; l < indata.len; l++) {
+			for (size_t l = indata.len / 2; l < indata.len; l++) {
 				indata.s[l] = 0xff - (unsigned char)(l & 0xff);
 			}
 			break;
@@ -100,16 +94,21 @@ inout_test(void)
 			return 2;
 		}
 
+		string bdata;	/**< intermediate base64 pattern */
 		if (b64encode(&indata, &bdata, maxlinelen) != 0) {
 			puts("Error: encoding failed");
 			return 1;
 		}
 
-		if (check_line_limit(&bdata, maxlinelen))
+		if (check_line_limit(&bdata, maxlinelen)) {
+			free(bdata.s);
 			return 1;
+		}
 
+		string outdata;	/**< output pattern after encoding and decoding */
 		if (b64decode(bdata.s, bdata.len, &outdata) != 0) {
 			puts("Error: decoding failed");
+			free(bdata.s);
 			return 1;
 		}
 
@@ -120,12 +119,15 @@ inout_test(void)
 
 		if (outdata.len != indata.len) {
 			puts("Error: outdata and indata have different length");
+			free(outdata.s);
 			return 1;
 		}
 
-		for (l = 0; l < outdata.len; l++) {
+		for (size_t l = 0; l < outdata.len; l++) {
 			if (indata.s[l] != outdata.s[l]) {
 				puts("Error: input and output do not match");
+				free(outdata.s);
+				free(indata.s);
 				return 1;
 			}
 		}
@@ -143,11 +145,7 @@ static int
 padding_test(void)
 {
 	string indata;	/**< input pattern */
-	string outdata;	/**< output pattern after encoding and decoding */
-	string bdata;	/**< intermediate base64 pattern */
-	char *base;
 	const size_t maxlen = 512;
-	size_t l;
 	int ret = 0;
 
 	puts("== Testing if encode and decode are reverse operations for different pattern lengths");
@@ -157,15 +155,16 @@ padding_test(void)
 		return 1;
 	}
 
-	base = indata.s;
+	char *base = indata.s;
 
-	for (l = 1; l < maxlen; l++) {
+	for (size_t l = 1; l < maxlen; l++) {
 		unsigned int maxlinelen;
-		size_t k;
+		string outdata;	/**< output pattern after encoding and decoding */
+		string bdata;	/**< intermediate base64 pattern */
 
 		indata.s = base + l;
 		indata.len = maxlen - l;
-		for (k = 0; k < indata.len; k++)
+		for (size_t k = 0; k < indata.len; k++)
 			indata.s[k] = (unsigned char)((k + 1) & 0xff);
 
 		for (maxlinelen = 70; maxlinelen <= 80; maxlinelen++) {
@@ -207,9 +206,9 @@ padding_test(void)
 				continue;
 			}
 
-			for (k = 0; k < outdata.len; k++) {
+			for (size_t k = 0; k < outdata.len; k++) {
 				if (indata.s[k] != outdata.s[k]) {
-					puts("Error: input and output do not match");
+					printf("Error: input and output do not match at position %zu\n", k);
 					return ++ret;
 				}
 			}
@@ -246,9 +245,9 @@ padding_test(void)
 					continue;
 				}
 
-				for (k = 0; k < outdata.len; k++) {
+				for (size_t k = 0; k < outdata.len; k++) {
 					if (indata.s[k] != outdata.s[k]) {
-						puts("Error: input and output do not match");
+						printf("Error: input and output do not match at position %zu\n", k);
 						return ++ret;
 					}
 				}
@@ -268,7 +267,7 @@ padding_test(void)
 static int
 iface_test(void)
 {
-	string indata;
+	
 	string outdata;
 	int err = 0;
 
@@ -292,7 +291,7 @@ iface_test(void)
 		err++;
 	}
 
-	STREMPTY(indata);
+	string indata = STREMPTY_INIT;
 
 	if (b64encode(&indata, &outdata, 42) != 0) {
 		puts("Error: encoding empty string failed");
@@ -312,16 +311,15 @@ errdetect_test(void)
 	char testpattern[68];
 	char testdata[sizeof(testpattern)];
 	unsigned int pos = 0;
-	unsigned char i;
 	static const char badchars[] = "\"'\r\n,.-;:_#!$%&()";
 	string odata;
 	int r;
 
-	for (i = 'A'; i <= 'Z'; i++)
+	for (unsigned char i = 'A'; i <= 'Z'; i++)
 		testpattern[pos++] = i;
-	for (i = 'a'; i <= 'z'; i++)
+	for (unsigned char i = 'a'; i <= 'z'; i++)
 		testpattern[pos++] = i;
-	for (i = '0'; i <= '9'; i++)
+	for (unsigned char i = '0'; i <= '9'; i++)
 		testpattern[pos++] = i;
 	testpattern[pos++] = '+';
 	testpattern[pos++] = '/';
@@ -331,7 +329,7 @@ errdetect_test(void)
 
 	puts("== Running error detection test");
 
-	for (i = 0; i < strlen(testpattern); i++) {
+	for (unsigned char i = 0; i < strlen(testpattern); i++) {
 		STREMPTY(odata);
 		memcpy(testdata, testpattern, sizeof(testpattern));
 		testdata[i] += 128;
@@ -344,7 +342,7 @@ errdetect_test(void)
 		}
 	}
 
-	for (i = 0; i < strlen(badchars); i++) {
+	for (unsigned char i = 0; i < strlen(badchars); i++) {
 		STREMPTY(odata);
 		memcpy(testdata, testpattern, sizeof(testpattern));
 		testdata[42] = badchars[i];

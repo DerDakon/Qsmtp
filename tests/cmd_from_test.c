@@ -421,7 +421,6 @@ main(void)
 			.input = NULL
 		}
 	};
-	unsigned int i;
 
 	testcase_setup_net_writen(testcase_net_writen_combine);
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
@@ -429,7 +428,7 @@ main(void)
 	/* FIXME: replace this by a checker */
 	testcase_setup_log_writen(testcase_log_writen_console);
 
-	for (i = 0; testdata[i].input != NULL; i++) {
+	for (unsigned int i = 0; testdata[i].input != NULL; i++) {
 		int r;
 		char ulbuf[ULSTRLEN];
 

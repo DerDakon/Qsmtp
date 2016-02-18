@@ -30,18 +30,16 @@ static int
 ip6_test_match(const char *ipstr, const char *matchstr, const int expect)
 {
 	struct in6_addr s1, s2;
-	unsigned char i;
-	int err;
 	uint32_t mask = 1;
 
-	err = inet_pton(AF_INET6, ipstr, &s1);
+	int err = inet_pton(AF_INET6, ipstr, &s1);
 	assert(err == 1);
 	err = inet_pton(AF_INET6, matchstr, &s2);
 	assert(err == 1);
 
 	err = 0;
 
-	for (i = 127; i >= 1; --i) {
+	for (unsigned char i = 127; i >= 1; --i) {
 		if ((i % 32) != 0) {
 			s2.s6_addr32[i / 32] &= htonl(~mask);
 			mask <<= 1;
@@ -74,11 +72,10 @@ static int
 ip6_test(void)
 {
 	struct in6_addr s1;
-	int err = 0;
 	const char s1str[] = "fe80::1234:6789:50ab:cdef";
 	const char s2str[] = "2001::1234:6789:50ab:cdef";
 
-	err = inet_pton(AF_INET6, s1str, &s1);
+	int err = inet_pton(AF_INET6, s1str, &s1);
 	assert(err == 1);
 	err = 0;
 
@@ -97,16 +94,14 @@ static int
 ip4_match_test(const char *ipstr, const char *matchstr, const int expect)
 {
 	struct in_addr s2;
-	unsigned char i;
-	int err;
 	uint32_t mask = 1;
 
-	err = inet_pton(AF_INET, matchstr, &s2);
+	int err = inet_pton(AF_INET, matchstr, &s2);
 	assert(err == 1);
 
 	err = 0;
 
-	for (i = 32; i >= 1; --i) {
+	for (unsigned char i = 32; i >= 1; --i) {
 		if (ip4_matchnet(&xmitstat.sremoteip, &s2, i) != expect) {
 			char maskstr[INET6_ADDRSTRLEN];
 

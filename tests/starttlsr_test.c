@@ -81,9 +81,7 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 void
 write_status_m(const char **strs, const unsigned int count)
 {
-	unsigned int i;
-
-	for (i = 0; i < count - 1; i++)
+	for (unsigned int i = 0; i < count - 1; i++)
 		fputs(strs[i], stdout);
 
 	write_status(strs[count - 1]);
@@ -135,11 +133,9 @@ test_ssl_error(void)
 int
 main(int argc, char **argv)
 {
-	int r;
-	sigset_t mask;
-
 	/* Block SIGPIPE, otherwise the process will get killed when trying to
 	 * read from a socket where the remote end was closed. */
+	sigset_t mask;
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGPIPE);
 
@@ -193,7 +189,7 @@ main(int argc, char **argv)
 			close(sfd[1]);
 	}
 
-	r = tls_init();
+	const int r = tls_init();
 
 	test_net_conn_shutdown(shutdown_clean);
 

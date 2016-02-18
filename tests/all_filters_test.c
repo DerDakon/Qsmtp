@@ -267,17 +267,17 @@ default_session_config(void)
 int
 main(void)
 {
-	int i;
-	struct userconf uc;
 	struct recip dummyrecip;
 	struct recip firstrecip;
 	char confpath[PATH_MAX];
 
-	STREMPTY(uc.domainpath);
-	uc.userdirfd = -1;
-	uc.domaindirfd = -1;
-	uc.userconf = NULL;
-	uc.domainconf = NULL;
+	struct userconf uc = {
+		.domainpath = STREMPTY_INIT,
+		.userdirfd = -1,
+		.domaindirfd = -1,
+		.userconf = NULL,
+		.domainconf = NULL
+	};
 	globalconf = NULL;
 	memset(&xmitstat, 0, sizeof(xmitstat));
 
@@ -293,7 +293,7 @@ main(void)
 
 	xmitstat.spf = SPF_IGNORE;
 
-	for (i = 0; rcpt_cbs[i] != NULL; i++) {
+	for (int i = 0; rcpt_cbs[i] != NULL; i++) {
 		const char *errmsg;
 		enum config_domain bt = CONFIG_NONE;
 		int r = rcpt_cbs[i](&uc, &errmsg, &bt);
@@ -316,7 +316,7 @@ main(void)
 	TAILQ_INSERT_TAIL(&head, &firstrecip, entries);
 	TAILQ_INSERT_TAIL(&head, &dummyrecip, entries);
 
-	for (i = 0; rcpt_cbs[i] != NULL; i++) {
+	for (int i = 0; rcpt_cbs[i] != NULL; i++) {
 		const char *errmsg;
 		enum config_domain bt = CONFIG_NONE;
 		int r = rcpt_cbs[i](&uc, &errmsg, &bt);
@@ -339,8 +339,6 @@ main(void)
 	while (testindex < sizeof(testdata) / sizeof(testdata[0])) {
 		char userpath[PATH_MAX];
 		int j;
-		char **b = NULL;	/* test configuration storage */
-		const char *failmsg = NULL;	/* expected failure message */
 		int r = 0;			/* filter result */
 		const char *fmsg = NULL;	/* returned failure message */
 		int expected_r = 0;		/* expected filter result */
@@ -358,7 +356,7 @@ main(void)
 		xmitstat.mailfrom.s = (char *)testdata[testindex].mailfrom;
 		xmitstat.mailfrom.len = (xmitstat.mailfrom.s == NULL) ? 0 : strlen(xmitstat.mailfrom.s);
 		xmitstat.esmtp = testdata[testindex].esmtp;
-		failmsg = testdata[testindex].failmsg;
+		const char *failmsg = testdata[testindex].failmsg;	/* expected failure message */
 		netnwrite_msg = testdata[testindex].netmsg;
 		log_write_msg = testdata[testindex].logmsg;
 
@@ -377,7 +375,6 @@ main(void)
 		if (inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip) <= 0) {
 			fprintf(stderr, "configuration %u: bad ip address given: %s\n",
 					testindex, xmitstat.remoteip);
-			free(b);
 			return 1;
 		}
 		xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
@@ -442,7 +439,6 @@ main(void)
 			close(uc.userdirfd);
 		if (uc.domaindirfd >= 0)
 			close(uc.domaindirfd);
-		free(b);
 	}
 
 	return err;

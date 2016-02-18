@@ -160,13 +160,11 @@ static int
 test_pending()
 {
 	int ret = 0;
-	int i;
 	const char dummydata[] = "foo\r\nbar\r\n";
-	SSL dummyssl;
 	testname = "pending";
 
 	/* nothing happened yet, so no data should be pending */
-	for (i = 0; i < 10; i++)
+	for (int i = 0; i < 10; i++)
 		if (data_pending()) {
 			fprintf(stderr, "spurious data pending\n");
 			ret++;
@@ -204,6 +202,7 @@ test_pending()
 	}
 
 	/* pretend we would be in SSL mode */
+	SSL dummyssl;
 	ssl = &dummyssl;
 	allow_ssl_pending = 0;
 	if (data_pending()) {
@@ -525,7 +524,6 @@ test_binary(void)
 {
 	int ret = 0;
 	char outbuf[64];
-	size_t num;
 	const char longbindata[] = "01binary\r\n";
 	const char *bindata = longbindata + 2;
 
@@ -537,7 +535,7 @@ test_binary(void)
 	/* directly readind binary data */
 	send_all_test_data(bindata);
 
-	num = net_readbin(strlen(bindata), outbuf);
+	size_t num = net_readbin(strlen(bindata), outbuf);
 	if (num == (size_t)-1) {
 		fprintf(stderr, "%s: reading binary data failed, error %i\n", testname, errno);
 		ret++;
@@ -607,7 +605,6 @@ test_readline(void)
 	int ret = 0;
 	const char okpattern[] = "ok\r\n";
 	const char straypattern[] = "stray cr\rstray lf\nproper\r\n";
-	int i;
 
 	testname = "readline simple";
 
@@ -672,14 +669,14 @@ test_readline(void)
 		return ++ret;
 
 	/* longer data chunks */
-	for (i = 0; i < 5; i++)
+	for (int i = 0; i < 5; i++)
 		send_all_test_data(digits);
 
 	if (readline_check("0123", 0))
 		ret++;
 	if (readline_check("456789", 0))
 		ret++;
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 		if (readline_check(digits, 0))
 			ret++;
 
@@ -755,7 +752,6 @@ test_net_writen(void)
 	const char *longthings[] = { "250 012345678901234567890123456789", NULL, "abcdefghijklmnopqrstuvwxyz", NULL };
 	const char *many[60] = { "250 ", digits };
 	char exp[520];
-	int i;
 
 	testname = "net_writen";
 
@@ -776,7 +772,7 @@ test_net_writen(void)
 	}
 
 	/* many small messages */
-	for (i = 2; i < 59; i++)
+	for (int i = 2; i < 59; i++)
 		many[i] = many[1];
 	many[59] = NULL;
 
@@ -787,14 +783,14 @@ test_net_writen(void)
 
 	strcpy(exp, many[0]);
 	exp[3] = '-';
-	for (i = 1; i < 51; i++)
+	for (int i = 1; i < 51; i++)
 		strcat(exp, digits);
 
 	if (read_check(exp))
 		ret++;
 
 	strcpy(exp, many[0]);
-	for (i = 51; i < 59; i++)
+	for (int i = 51; i < 59; i++)
 		strcat(exp, digits);
 
 	if (read_check(exp))
@@ -807,7 +803,7 @@ test_net_writen(void)
 	/* only 3 messages, but the second one is too long to be used
 	 * together with any of the other 2 */
 	exp[0] = '\0';
-	for (i = 0; i < 50; i++)
+	for (int i = 0; i < 50; i++)
 		strcat(exp, digits);
 	longthings[1] = exp;
 	if (net_writen(longthings) != 0) {
@@ -835,8 +831,6 @@ test_net_write_multiline(void)
 	const char *longthings[] = { "250 012345678901234567890123456789", NULL, "abcdefghijklmnopqrstuvwxyz", "\r\n", NULL };
 	const char *many[30] = { "250 ", digits };
 	char exp[520];
-	int i;
-	size_t offs;
 
 	testname = "net_write_multiline";
 
@@ -857,7 +851,7 @@ test_net_write_multiline(void)
 	}
 
 	/* many small messages */
-	for (i = 2; i < 28; i++)
+	for (int i = 2; i < 28; i++)
 		many[i] = digits;
 	many[28] = "\r\n";
 	many[29] = NULL;
@@ -869,7 +863,7 @@ test_net_write_multiline(void)
 
 	assert(strlen(many[0]) + 27 * strlen(digits) < sizeof(exp));
 	strncpy(exp, many[0], sizeof(exp));
-	for (i = 0; i < 27; i++)
+	for (int i = 0; i < 27; i++)
 		memcpy(exp + strlen(many[0]) + strlen(digits) * i, digits, strlen(digits));
 	exp[strlen(many[0]) + strlen(digits) * 30] = '\0';
 
@@ -881,9 +875,9 @@ test_net_write_multiline(void)
 		ret++;
 	}
 
-	for (i = 0; i < 30; i++)
+	for (int i = 0; i < 30; i++)
 		memcpy(exp + strlen(digits) * i, digits, strlen(digits));
-	offs = strlen(digits) * 30;
+	size_t offs = strlen(digits) * 30;
 	exp[offs] = '\0';
 
 	longthings[1] = exp;
@@ -941,10 +935,9 @@ setup_socketpair(void)
 static int
 test_pending_socketpair_closed(void)
 {
-	int i;
 	int ret = 0;
 
-	i = setup_socketpair();
+	int i = setup_socketpair();
 	if (i < 0)
 		return ++ret;
 
@@ -967,10 +960,9 @@ test_pending_socketpair_closed(void)
 static int
 test_netread_socketpair_closed(void)
 {
-	int i;
 	int ret = 0;
 
-	i = setup_socketpair();
+	int i = setup_socketpair();
 	if (i < 0)
 		return ++ret;
 
@@ -993,18 +985,16 @@ test_netread_socketpair_closed(void)
 static int
 test_netread_socketpair_timeout(void)
 {
-	int i, j;
 	int ret = 0;
-	time_t t1, t2;
 
-	j = setup_socketpair();
+	int j = setup_socketpair();
 	if (j < 0)
 		return ++ret;
 
 	timeout = 1;
-	t1 = time(NULL);
-	i = net_read(0);
-	t2 = time(NULL);
+	time_t t1 = time(NULL);
+	int i = net_read(0);
+	time_t  t2 = time(NULL);
 	if ((i != -1) || (errno != ETIMEDOUT)) {
 		fprintf(stderr, "net_read() on timeout returned %i/%i instead of -1/%i (ETIMEDOUT)\n", i, errno, ETIMEDOUT);
 		ret++;
@@ -1029,16 +1019,13 @@ test_chunks(char *exe)
 {
 	int pipefd[2];
 	int ret = 0;
-	pid_t child;
-	int stat;
-	unsigned int i = 0;
 
 	if (socketpair(AF_UNIX, SOCK_STREAM, 0, pipefd) != 0) {
 		fprintf(stderr, "%s: cannot create socket pair\n", __func__);
 		return 1;
 	}
 
-	child = fork();
+	const pid_t child = fork();
 
 	if (child < 0) {
 		close(pipefd[0]);
@@ -1074,7 +1061,7 @@ test_chunks(char *exe)
 	}
 
 	timeout = 2;
-	while (read_chunks[i] != NULL) {
+	for (unsigned int i = 0; read_chunks[i] != NULL; ) {
 		int k = net_read(0);
 
 		if (k != 0) {
@@ -1092,6 +1079,7 @@ test_chunks(char *exe)
 		i++;
 	}
 
+	int stat;
 	if (waitpid(child, &stat, 0) != child) {
 		fprintf(stderr, "%s: waiting for child failed\n", __func__);
 		return ++ret;
@@ -1110,7 +1098,6 @@ int
 main(int argc, char **argv)
 {
 	int ret = 0;
-	int pipefd[2];
 	int i;
 
 	if (argc != 2) {
@@ -1120,6 +1107,7 @@ main(int argc, char **argv)
 
 	/* Replace stdin. We don't really read from it, but we need to provide
 	 * a virtual input pipe for later reads. */
+	int pipefd[2];
 	if (pipe(pipefd) != 0) {
 		fprintf(stderr, "%s: cannot create pipe pair\n", __func__);
 		return 1;
