@@ -156,6 +156,10 @@ test_fork(int mxindex)
 #else
 			in6addr_loopback;
 #endif
+		if (mxindex > 0)
+			mx.priority = MX_PRIORITY_CURRENT;
+
+		/* wait a moment so the server can call listen() on the socket */
 		sleep(1);
 
 		getrhost_permitted = 1;
