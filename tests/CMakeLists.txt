@@ -774,18 +774,6 @@ add_test(NAME "EHLO_parsing"
 		COMMAND testcase_ehlo_parsing)
 
 
-add_executable(testcase_vpop_user_exists
-		userexists_test.c)
-target_link_libraries(testcase_vpop_user_exists
-		Qsmtpd_user_vpopm
-		qsmtp_lib
-		testcase_io_lib
-		${MEMCHECK_LIBRARIES}
-)
-add_test(NAME "VPop_user_exists"
-		COMMAND testcase_vpop_user_exists
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/user_exists/")
-
 add_executable(testcase_vpop_vget_dir
 		vpop_vget_dir_test.c
 		cdb_entries.h)
@@ -1050,3 +1038,4 @@ endforeach()
 
 add_subdirectory(smtproutes)
 add_subdirectory(starttlsr)
+add_subdirectory(user_exists)
