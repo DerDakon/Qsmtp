@@ -563,7 +563,7 @@ smtp_rcpt(void)
  * @retval >0 error code
  */
 static int
-smtp_from_extensions(const char *more, unsigned int *validlength)
+smtp_from_extensions(const char *more, unsigned int * const validlength)
 {
 	unsigned int seen = 0;	/* which extensions were already seen */
 	const char *names[] = { "SIZE=", "BODY=", "AUTH=", NULL };
@@ -627,7 +627,7 @@ smtp_from_extensions(const char *more, unsigned int *validlength)
 			if (xlen <= 0)
 				return EINVAL;
 
-			validlength += 500;
+			*validlength += 500;
 			more += xlen + 6;
 			break;
 			}
