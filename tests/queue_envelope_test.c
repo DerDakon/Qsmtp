@@ -297,7 +297,15 @@ test_log_messages(void)
 		}
 	};
 	/* this doesn't really look right, but it works for now */
-	SSL myssl = { 0 };
+	SSL myssl
+#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) <= 406
+	/* early gcc versions fail here with:
+	 * missing initializer (near initialization for 'myssl.type') */
+	;
+	memset(&myssl, 0, sizeof(myssl));
+#else
+		= { 0 };
+#endif
 
 	strncpy(xmitstat.remoteip, "::ffff:172.28.19.44", sizeof(xmitstat.remoteip) - 1);
 	xmitstat.remoteip[sizeof(xmitstat.remoteip) - 1] = '\0';
