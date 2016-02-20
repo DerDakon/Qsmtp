@@ -122,8 +122,22 @@ test_fork(int mxindex)
 	ssize_t rlen;
 	int r;
 
+	if (s < 0) {
+		printf("%s[%i]: server socket() error %i\n", __func__, mxindex, errno);
+		return 1;
+	}
 	r = bind(s, (struct sockaddr *)&sa, sizeof(sa));
+	if (r < 0) {
+		printf("%s[%i]: server bind() error %i\n", __func__, mxindex, errno);
+		close(s);
+		return 1;
+	}
 	r = getsockname(s, (struct sockaddr *)&sa, &salen);
+	if (r < 0) {
+		printf("%s[%i]: server getsockname() error %i\n", __func__, mxindex, errno);
+		close(s);
+		return 1;
+	}
 #ifdef IPV4ONLY
 	targetport = ntohs(sa.sin_port);
 #else
@@ -165,33 +179,44 @@ test_fork(int mxindex)
 
 		getrhost_permitted = 1;
 		s = tryconn(&mx, &loopback4, &in6addr_loopback);
-		rlen = write(s, pingmsg, strlen(pingmsg));
-		if (rlen != strlen(pingmsg)) {
-			printf("%s[%i]: client write error %zi (%i)\n", __func__, mxindex, rlen, errno);
+		if (s < 0) {
+			printf("%s[%i]: tryconn() failed: %i\n", __func__, mxindex, s);
 			r = 1;
+		} else {
+			rlen = write(s, pingmsg, strlen(pingmsg));
+			if (rlen != strlen(pingmsg)) {
+				printf("%s[%i]: client write error %zi (%i)\n", __func__, mxindex, rlen, errno);
+				r = 1;
+			}
+			rlen = read(s, rbuf, sizeof(rbuf) - 1);
+			rbuf[sizeof(rbuf) - 1] = '\0';
+			if ((rlen != strlen(pongmsg)) || (memcmp(rbuf, pongmsg, rlen) != 0)) {
+				printf("%s[%i]: client read error, got %s (len %zu)\n", __func__, mxindex, rbuf, rlen);
+				r = 1;
+			}
+			close(s);
 		}
-		rlen = read(s, rbuf, sizeof(rbuf) - 1);
-		rbuf[sizeof(rbuf) - 1] = '\0';
-		if ((rlen != strlen(pongmsg)) || (memcmp(rbuf, pongmsg, rlen) != 0)) {
-			printf("%s[%i]: client read error, got %s (len %zu)\n", __func__, mxindex, rbuf, rlen);
-			r = 1;
-		}
-		close(s);
-		printf("tryconn() on index %i succeeded\n", mxindex);
+		if (r == 0)
+			printf("tryconn() on index %i succeeded\n", mxindex);
 		exit(r);
 	} else {
 		r = listen(s, 0);
 		int t = accept(s, (struct sockaddr *)&sa, &salen);
-		rlen = read(t, rbuf, sizeof(rbuf) - 1);
-		rbuf[sizeof(rbuf) - 1] = '\0';
-		if ((rlen != strlen(pingmsg)) || (memcmp(rbuf, pingmsg, rlen) != 0)) {
-			printf("%s[%i]: server read error, got %s (len %zu)\n", __func__, mxindex, rbuf, rlen);
+		if (t < 0) {
+			printf("%s[%i]: server access() error %i\n", __func__, mxindex, errno);
 			r = 1;
 		} else {
-			rlen = write(t, pongmsg, strlen(pongmsg));
-			if (rlen != strlen(pingmsg)) {
-				printf("%s[%i]: server write error %zi (%i)\n", __func__, mxindex, rlen, errno);
+			rlen = read(t, rbuf, sizeof(rbuf) - 1);
+			rbuf[sizeof(rbuf) - 1] = '\0';
+			if ((rlen != strlen(pingmsg)) || (memcmp(rbuf, pingmsg, rlen) != 0)) {
+				printf("%s[%i]: server read error, got %s (len %zu)\n", __func__, mxindex, rbuf, rlen);
 				r = 1;
+			} else {
+				rlen = write(t, pongmsg, strlen(pongmsg));
+				if (rlen != strlen(pingmsg)) {
+					printf("%s[%i]: server write error %zi (%i)\n", __func__, mxindex, rlen, errno);
+					r = 1;
+				}
 			}
 		}
 		close(t);
