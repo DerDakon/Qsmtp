@@ -148,6 +148,7 @@ test_fork(int mxindex)
 	pid_t child = fork();
 	if (child < 0) {
 		printf("fork() error: %s (%i)\n", strerror(errno), errno);
+		close(s);
 		return 1;
 	}
 	if (child == 0) {
