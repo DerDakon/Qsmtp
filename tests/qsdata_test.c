@@ -203,10 +203,11 @@ check_queueheader(void)
 	struct recip to = {
 		.ok = 1,
 		.to = {
-			.s = "test@example.com",
-			.len = strlen(to.to.s)
+			.s = "test@example.com"
 		}
 	};
+	// do this outside the struct, older gcc version can't handle this
+	to.to.len = strlen(to.to.s);
 	thisrecip = &to;
 
 	TAILQ_INIT(&head);
