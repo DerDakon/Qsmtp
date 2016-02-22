@@ -23,6 +23,16 @@ else ()
 	add_definitions(-std=c99)
 endif ()
 
+# libowfat changed that function signature between 0.29 and 0.30
+include(CheckPrototypeDefinition)
+
+set(CMAKE_REQUIRED_INCLUDES "${OWFAT_INCLUDE_DIR}")
+check_prototype_definition(dns_domain_fromdot
+  "int dns_domain_fromdot(char **q, const char *host, unsigned int len)"
+  "-1"
+  "dns.h"
+  LIBOWFAT_UINT_DNSDOMFD)
+
 add_definitions(-D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE)
 
 add_subdirectory(test_io)
@@ -336,6 +346,11 @@ target_link_libraries(testcase_qdns_dane
 		qsmtp_lib
 		${MEMCHECK_LIBRARIES}
 )
+if (NOT CMAKE_VERSION VERSION_LESS 2.8.12)
+	target_compile_definitions(testcase_qdns_dane PRIVATE -DLIBOWFAT_UINT_DNSDOMFD=${LIBOWFAT_UINT_DNSDOMFD})
+else ()
+	add_definitions(-DLIBOWFAT_UINT_DNSDOMFD=${LIBOWFAT_UINT_DNSDOMFD})
+endif ()
 
 add_test(NAME "QDNS_DANE"
 		COMMAND testcase_qdns_dane)

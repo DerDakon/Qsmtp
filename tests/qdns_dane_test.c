@@ -180,8 +180,13 @@ static const char success_packet[] = "\0\0\0\0\0\0\0\3\0\0\0\0" /* header */
 		"\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f"
 		"\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f"; /* TLSA data (SHA2-512) */
 
+// the API changed between libowfat 0.29 and 0.30
 int
+#if LIBOWFAT_UINT_DNSDOMFD == 0
 dns_domain_fromdot(char **q, const char *host, size_t len)
+#else
+dns_domain_fromdot(char **q, const char *host, unsigned int len)
+#endif
 {
 
 	if (len != strlen(host))
