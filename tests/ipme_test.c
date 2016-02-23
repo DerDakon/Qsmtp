@@ -23,7 +23,7 @@ static const char *testips[] = {
  *
  * @param inidx indexes to set up initially
  * @param outidx IP addresses that should remain
- * @param c if one struct ips should be allocated with all IPs in there or multiple ones
+ * @param condensed if one struct ips should be allocated with all IPs in there or multiple ones
  *
  * Both lists are indexes into testips and are terminated by -1.
  */
