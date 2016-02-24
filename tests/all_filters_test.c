@@ -258,7 +258,9 @@ default_session_config(void)
 	xmitstat.helostr.len = strlen(xmitstat.helostr.s);
 	xmitstat.thisbytes = 5000;
 	strncpy(xmitstat.remoteip, "::ffff:192.168.8.9", sizeof(xmitstat.remoteip) - 1);
-	inet_pton(AF_INET6, "::ffff:10.1.2.3s", frommx.addr);
+	// a.root-servers.net, I'm sure it will stay
+	int r = inet_pton(AF_INET6, "::ffff:198.41.0.4", frommx.addr);
+	assert(r == 1);
 	xmitstat.frommx = &frommx;
 
 	TAILQ_INIT(&head);
