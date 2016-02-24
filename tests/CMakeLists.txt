@@ -602,8 +602,10 @@ add_test(NAME "Qremote_to_invalid"
 		COMMAND Qremote invalid.invalid from@invalid.invalid to@invalid.invalid)
 add_test(NAME "Qremote_to_localhost"
 		COMMAND Qremote "[127.0.0.1]" "from@invalid.invalid" "to@[127.0.0.1]")
-add_test(NAME "Qremote_to_localhost6"
-		COMMAND Qremote "[::1]" "from@invalid.invalid" "to@[::1]")
+if (NOT IPV4ONLY)
+	add_test(NAME "Qremote_to_localhost6"
+			COMMAND Qremote "[::1]" "from@invalid.invalid" "to@[::1]")
+endif ()
 add_test(NAME "Qremote_to_bad_expression"
 		COMMAND Qremote "[127.0" "from@invalid.invalid" "to@localhost")
 add_test(NAME "Qremote_to_bad_expression2"
@@ -618,17 +620,22 @@ if (AUTOQMAIL_FROM_TESTSUITE)
 			PASS_REGULAR_EXPRESSION "^Z4\\.4\\.3 cannot find a mail exchanger for invalid\\.invalid\n")
 	set_tests_properties(Qremote_to_localhost PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z4\\.4\\.3 all mail exchangers for \\[127\\.0\\.0\\.1\\] point back to me\n")
-	set_tests_properties(Qremote_to_localhost6 PROPERTIES
-			PASS_REGULAR_EXPRESSION "^Z4\\.4\\.3 all mail exchangers for \\[::1\\] point back to me\n")
+	if (NOT IPV4ONLY)
+		set_tests_properties(Qremote_to_localhost6 PROPERTIES
+				PASS_REGULAR_EXPRESSION "^Z4\\.4\\.3 all mail exchangers for \\[::1\\] point back to me\n")
+	endif ()
 	set_tests_properties(Qremote_to_bad_expression Qremote_to_bad_expression2 PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z4\\.3\\.0 parse error in first argument\n")
 	set_tests_properties(Qremote_to_ip PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z4.3.0 internal error: can't mmap\\(\\) input\n")
 else ()
+	if (NOT IPV4ONLY)
+		set(V6TESTS Qremote_to_localhost6)
+	endif ()
 	set_tests_properties(Qremote_noinput_noargs Qremote_to_invalid
-			Qremote_to_localhost Qremote_to_localhost6
+			Qremote_to_localhost Qremote_to_ip
 			Qremote_to_bad_expression Qremote_to_bad_expression2
-			Qremote_to_ip
+			${V6TESTS}
 			PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z[45]\\.[0-9]\\.[0-9] ")
 endif ()
