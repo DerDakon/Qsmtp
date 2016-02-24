@@ -56,7 +56,11 @@ test_rbl()
 		"::ffff:10.0.0.1",
 		"::ffff:10.0.0.2",
 		"::ffff:172.18.42.42",
+#ifdef IPV4ONLY
+		"::ffff:172.30.17.18",
+#else
 		"4242:cafe::1",
+#endif
 		NULL
 	};
 	const char *entries[4];
@@ -122,8 +126,13 @@ test_rbl()
 
 		/* One DNSBL returns timeout, but a later one matches. Should still return match. */
 		entries[0] = "4.2.4.2.foo.bar.example.com";
+#ifdef IPV4ONLY
+		entries[1] = "18.17.30.172.foo.timeout.example.com";
+		entries[2] = "18.17.30.172.bar.foo.example.com";
+#else
 		entries[1] = "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.e.f.a.c.2.4.2.4.foo.timeout.example.com";
 		entries[2] = "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.e.f.a.c.2.4.2.4.bar.foo.example.com";
+#endif
 		entries[3] = NULL;
 		r = check_rbl(rbls, &txt);
 		free(txt);
@@ -139,7 +148,13 @@ test_rbl()
 	}
 
 	/* 4 tests per loop, one IPv6 address: 4 messages */
-	if (logcount != 4) {
+	const unsigned int expected_logs =
+#ifdef IPV4ONLY
+			0;
+#else
+			4;
+#endif
+	if (logcount != expected_logs) {
 		fprintf(stderr, "log functions were called %i times but only 4 were expected\n", logcount);
 		err++;
 	}
