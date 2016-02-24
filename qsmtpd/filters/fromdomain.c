@@ -12,6 +12,12 @@
 #include <assert.h>
 #include <arpa/inet.h>
 
+enum filter_fromdomain_flags {
+	FROMDOMAIN_DOMAIN_IN_DNS = 0x1,	/**< reject if domain does not exist in DNS */
+	FROMDOMAIN_LOCALHOST = 0x2,	/**< reject if all MX entries are localhost */
+	FROMDOMAIN_PRIVATE = 0x4	/**< reject if all MX entries are in private networks */
+};
+
 static struct {
 	struct in_addr net;
 	const unsigned char len;
@@ -110,7 +116,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 	if ( (u = getsettingglobal(ds, "fromdomain", t)) <= 0)
 		return FILTER_PASSED;
 
-	if (u & 1) {
+	if (u & FROMDOMAIN_DOMAIN_IN_DNS) {
 /* check if domain exists in DNS */
 		if (!xmitstat.frommx) {
 			const char *errmsg;
@@ -136,7 +142,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 			return netwrite(errmsg) ? FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 		}
 	}
-	if ((u & 6) && (xmitstat.frommx != NULL)) {
+	if ((u & (FROMDOMAIN_LOCALHOST | FROMDOMAIN_PRIVATE)) && (xmitstat.frommx != NULL)) {
 		/* check if all MX entries resolve to private networks or are loopbacks */
 		int flaghit = 1;
 		struct ips *thisip;
@@ -150,14 +156,14 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 				int flagtmp = 0;
 				unsigned int i;
 
-				if (u & 4)
+				if (u & FROMDOMAIN_PRIVATE)
 					for (i = 0; i < sizeof(reserved_netsv4) / sizeof(reserved_netsv4[0]); i++)
 						if (ip4_matchnet(thisip->addr + s, &reserved_netsv4[i].net, reserved_netsv4[i].len)) {
 							flagtmp = 1;
 							break;
 						}
 
-				if ((u & 2) && !flagtmp) {
+				if ((u & FROMDOMAIN_LOCALHOST) && !flagtmp) {
 					unsigned int net = (thisip->addr[s].s6_addr32[3] & htonl(0xff000000));
 
 					/* block if net is in 0/8 or 127/8 */
@@ -170,7 +176,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 				int flagtmp = 0;
 				unsigned int i;
 
-				if (u & 4) {
+				if (u & FROMDOMAIN_PRIVATE) {
 					for (i = 0; i < sizeof(reserved_netsv6) / sizeof(reserved_netsv6[0]); i++) {
 						if (ip6_matchnet(thisip->addr + s, &reserved_netsv6[i].net, reserved_netsv6[i].len)) {
 							flagtmp = 1;
@@ -182,7 +188,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 						flagtmp = IN6_IS_ADDR_LINKLOCAL(thisip->addr + s) || IN6_IS_ADDR_SITELOCAL(thisip->addr + s);
 				}
 
-				if ((u & 2) && !flagtmp) {
+				if ((u & FROMDOMAIN_LOCALHOST) && !flagtmp) {
 					if (IN6_IS_ADDR_LOOPBACK(thisip->addr + s))
 						flagtmp = 1;
 				}
