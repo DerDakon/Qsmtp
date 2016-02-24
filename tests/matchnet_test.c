@@ -235,6 +235,10 @@ ip4_test(void)
 		err++;
 	}
 
+	// This can't work if IPV4ONLY is defined: connection_is_ipv4() will always return true, so the
+	// IPv4 case would be checked again. In this case the outcome isn't particularly interesting anyway as
+	// there is no need to have a working lookupipbl() for IPv6 addresses.
+#ifndef IPV4ONLY
 	/* test IPv6 connection, file now has invalid size for IPv6 */
 	xmitstat.ipv4conn = 0;
 	fd = open(fnbuf, O_RDONLY | O_CLOEXEC);
@@ -247,6 +251,7 @@ ip4_test(void)
 		fprintf(stderr, "lookupipbl() with file of invalid size for IPv6 should have returned -1 but returned %i\n", i);
 		err++;
 	}
+#endif
 
 	unlink(fnbuf);
 
