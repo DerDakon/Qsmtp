@@ -189,7 +189,7 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 				}
 
 				if ((u & FROMDOMAIN_LOCALHOST) && !flagtmp) {
-					if (IN6_IS_ADDR_LOOPBACK(thisip->addr + s))
+					if (IN6_IS_ADDR_LOOPBACK(thisip->addr + s) || IN6_IS_ADDR_UNSPECIFIED(thisip->addr + s))
 						flagtmp = 1;
 				}
 
