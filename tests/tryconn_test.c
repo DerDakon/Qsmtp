@@ -201,7 +201,7 @@ test_fork(int mxindex)
 			printf("tryconn() on index %i succeeded\n", mxindex);
 		exit(r);
 	} else {
-		r = listen(s, 0);
+		r = listen(s, 1);
 		int t = accept(s, (struct sockaddr *)&sa, &salen);
 		if (t < 0) {
 			printf("%s[%i]: server access() error %i\n", __func__, mxindex, errno);
