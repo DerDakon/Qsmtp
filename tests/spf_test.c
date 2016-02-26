@@ -974,8 +974,10 @@ test_parse_mx()
 		NULL
 	};
 	const char *mxvalid6[] = {
+#ifndef IPV4ONLY
 		"v=spf1 mx:mxtest6.example.net//64 -all",
 		"v=spf1 mx:mxtest6b.example.net -all",
+#endif /* IPV4ONLY */
 		NULL
 	};
 	int err = 0;
@@ -2011,7 +2013,13 @@ test_suite_mx()
 			.helo = "mail.example.com",
 			.remoteip = "1234::1",
 			.mailfrom = "foo@e2.example.com",
+#ifdef IPV4ONLY
+			// if IPv6 is disable the SPF code assumes an IPv4 sender address
+			// so mx/0 will always match, resulting in this passing
+			.result = SPF_PASS
+#else
 			.result = SPF_FAIL
+#endif /* IPV4ONLY */
 		},
 		{
 			.name = "mx-cidr6-0-ip4",
@@ -2027,6 +2035,9 @@ test_suite_mx()
 			.mailfrom = "foo@e2a.example.com",
 			.result = SPF_FAIL
 		},
+#ifndef IPV4ONLY
+		// if IPv6 is disabled IPv6-only MX entries are
+		// not checked because they cannot match
 		{
 			.name = "mx-cidr6-0-ip6",
 			.helo = "mail.example.com",
@@ -2034,6 +2045,7 @@ test_suite_mx()
 			.mailfrom = "foo@e2a.example.com",
 			.result = SPF_PASS
 		},
+#endif /* IPV4ONLY */
 #if 0
 		/* ip6/0 also matches all V4mapped IPv6 addresses */
 		{
