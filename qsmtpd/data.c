@@ -431,7 +431,7 @@ smtp_data(void)
 	}
 	if (msgsize > maxbytes) {
 		logmail[9] = "message too big}";
-		rc = EMSGSIZE;
+		errno = EMSGSIZE;
 		errmsg = NULL;
 		goto loop_data;
 	}
