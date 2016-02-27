@@ -36,6 +36,9 @@
 ## # set a proper build name
 ## set(CTEST_BUILD_NAME "Fedora Core 14 x86_64")
 ##
+## # add extra configure options
+## # set(CONF_OPTIONS "-DIPV4ONLY=On")
+##
 ## # This _*MUST*_ be the last command in this file!
 ## include(/path/to/Qsmtp/ctest_qsmtp.cmake)
 ## ######### end file
@@ -126,8 +129,10 @@ ctest_update()
 # avoid spamming the syslog with our messages: USESYSLOG off
 # avoid spamming the dashboard with doxygen warnings: BUILD_DOC off
 # get coverage: debug build
+list(APPEND CONF_OPTIONS "-DUSESYSLOG=Off;-DNOSTDERR=On;-DREALLY_NO_LOGGING=On;-DBUILD_DOC=Off;-DAUTHCRAM=On;-DCMAKE_BUILD_TYPE=Debug;-DAUTOQMAIL=${CTEST_BINARY_DIRECTORY}/var/qmail")
+
 ctest_configure(
-		OPTIONS "-DUSESYSLOG=Off;-DNOSTDERR=On;-DREALLY_NO_LOGGING=On;-DBUILD_DOC=Off;-DAUTHCRAM=On;-DCMAKE_BUILD_TYPE=Debug;-DAUTOQMAIL=${CTEST_BINARY_DIRECTORY}/var/qmail"
+		OPTIONS "${CONF_OPTIONS}"
 )
 ctest_build()
 
