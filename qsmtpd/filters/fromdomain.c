@@ -152,19 +152,20 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 			init_nets();
 
 		FOREACH_STRUCT_IPS(thisip, s, xmitstat.frommx) {
-			if (IN6_IS_ADDR_V4MAPPED(thisip->addr + s)) {
+			const struct in6_addr * const curaddr = thisip->addr + s;
+			if (IN6_IS_ADDR_V4MAPPED(curaddr)) {
 				int flagtmp = 0;
 				unsigned int i;
 
 				if (u & FROMDOMAIN_PRIVATE)
 					for (i = 0; i < sizeof(reserved_netsv4) / sizeof(reserved_netsv4[0]); i++)
-						if (ip4_matchnet(thisip->addr + s, &reserved_netsv4[i].net, reserved_netsv4[i].len)) {
+						if (ip4_matchnet(curaddr, &reserved_netsv4[i].net, reserved_netsv4[i].len)) {
 							flagtmp = 1;
 							break;
 						}
 
 				if ((u & FROMDOMAIN_LOCALHOST) && !flagtmp) {
-					unsigned int net = (thisip->addr[s].s6_addr32[3] & htonl(0xff000000));
+					unsigned int net = (curaddr->s6_addr32[3] & htonl(0xff000000));
 
 					/* block if net is in 0/8 or 127/8 */
 					if ((net == 0) || (net == htonl(0x7f000000)))
@@ -178,18 +179,18 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 
 				if (u & FROMDOMAIN_PRIVATE) {
 					for (i = 0; i < sizeof(reserved_netsv6) / sizeof(reserved_netsv6[0]); i++) {
-						if (ip6_matchnet(thisip->addr + s, &reserved_netsv6[i].net, reserved_netsv6[i].len)) {
+						if (ip6_matchnet(curaddr, &reserved_netsv6[i].net, reserved_netsv6[i].len)) {
 							flagtmp = 1;
 							break;
 						}
 					}
 
 					if (!flagtmp)
-						flagtmp = IN6_IS_ADDR_LINKLOCAL(thisip->addr + s) || IN6_IS_ADDR_SITELOCAL(thisip->addr + s);
+						flagtmp = IN6_IS_ADDR_LINKLOCAL(curaddr) || IN6_IS_ADDR_SITELOCAL(curaddr);
 				}
 
 				if ((u & FROMDOMAIN_LOCALHOST) && !flagtmp) {
-					if (IN6_IS_ADDR_LOOPBACK(thisip->addr + s) || IN6_IS_ADDR_UNSPECIFIED(thisip->addr + s))
+					if (IN6_IS_ADDR_LOOPBACK(curaddr) || IN6_IS_ADDR_UNSPECIFIED(curaddr))
 						flagtmp = 1;
 				}
 
