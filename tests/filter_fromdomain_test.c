@@ -81,10 +81,80 @@ setup_ip(const char *ip)
 	*xmitstat.frommx->addr = xmitstat.sremoteip;
 }
 
+static struct testaddrs {
+	const char *name;
+	unsigned int bit;
+} ipstrs[] = {
+	{
+		.name = "::ffff:127.0.0.1",
+		.bit = 1
+	},
+	{
+		.name = "::ffff:127.1.1.2",
+		.bit = 1
+	},
+	{
+		.name = "::ffff:172.16.15.14",
+		.bit = 2
+	},
+	{
+		.name = "::ffff:10.9.8.7",
+		.bit = 2
+	},
+	{
+		.name = "::ffff:192.168.167.166",
+		.bit = 2
+	},
+	{
+		.name = "::1",
+		.bit = 1
+	},
+	{
+		.name = "::",
+		.bit = 1
+	},
+	{
+		.name = "fe80::2:3:44",
+		.bit = 2
+	},
+	{
+		.name = "::ffff:8.8.8.8",	// valid entry for checking in main()
+	}
+};
+static char configline[32];
+
+/**
+ * @brief check if all invalid addresses are rejected
+ */
+static int
+check_reject(void)
+{
+	struct in6_addr ip;
+	int ret = 0;
+	struct ips mx = {
+		.addr = &ip,
+		.count = 1
+	};
+
+	/* ignore the valid entry at the end */
+	for (unsigned int i = 0; i < sizeof(ipstrs) / sizeof(ipstrs[0]) - 1; i++) {
+		int r = inet_pton(AF_INET6, ipstrs[i].name, &ip);
+		assert(r == 1);
+		char testname[64];
+
+		snprintf(configline, sizeof(configline), "fromdomain=%u", 1 << ipstrs[i].bit);
+		xmitstat.frommx = &mx;
+		snprintf(testname, sizeof(testname), "invalid IP test %i", i + 1);
+		netnwrite_msg = "501 5.4.0 none of your mail exchangers has a routable address\r\n";
+		ret += check_expect(1, testname, "unroutable MX");
+	}
+
+	return ret;
+}
+
 int
 main(void)
 {
-	char configline[32];
 	char *configarray[] = {
 		configline,
 		NULL
@@ -120,7 +190,7 @@ main(void)
 		},
 		{
 			.priority = 3,
-			.count = 4
+			.count = 5
 		}
 	};
 	struct in6_addr frommx_mixed_addr[frommx_mixed[0].count + frommx_mixed[1].count + frommx_mixed[2].count];
@@ -130,19 +200,7 @@ main(void)
 
 	/* set up a list of many invalid IPs and the last one is ok */
 	for (unsigned int i = 0; i < sizeof(frommx_mixed_addr) / sizeof(frommx_mixed_addr[0]); i++) {
-		const char *ipstr[] = {
-			"::ffff:127.0.0.1",
-			"::ffff:127.1.1.2",
-			"::ffff:172.16.15.14",
-			"::ffff:10.9.8.7",
-			"::ffff:192.168.167.166",
-			"::1",
-			"fe80::2:3:44",
-			"::ffff:8.8.8.8",
-		};
-		int r;
-
-		r = inet_pton(AF_INET6, ipstr[i], frommx_mixed_addr + i);
+		int r = inet_pton(AF_INET6, ipstrs[i].name, frommx_mixed_addr + i);
 		assert(r == 1);
 	}
 
@@ -257,6 +315,9 @@ main(void)
 
 	if (netnwrite_msg != NULL)
 		err++;
+
+	sprintf(configline, "fromdomain=7");
+	err += check_reject();
 
 	return err;
 }
