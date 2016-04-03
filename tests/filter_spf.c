@@ -92,13 +92,25 @@ domainvalid(const char * const domain __attribute__ ((unused)))
 	abort();
 }
 
+static const char *rspf_buffer;
+
 int
 userconf_get_buffer(const struct userconf *ds __attribute__ ((unused)), const char *key,
-		char ***values __attribute__ ((unused)), checkfunc cf __attribute__ ((unused)), const unsigned int flags)
+		char ***values, checkfunc cf __attribute__ ((unused)), const unsigned int flags)
 {
 	assert(flags & userconf_global);
 
 	if (strcmp(key, "rspf") == 0) {
+		if (rspf_buffer != NULL) {
+			*values = data_array(1, strlen(rspf_buffer) + 2, 0, 0);
+			if (*values == NULL)
+				exit(ENOMEM);
+			(*values[0]) = *values + 2;
+			strcpy((*values)[0], rspf_buffer);
+			return CONFIG_USER;
+		} else {
+			return CONFIG_NONE;
+		}
 	}
 
 	abort();
@@ -134,6 +146,9 @@ userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const c
 int
 check_host(const char *domain __attribute__ ((unused)))
 {
+	if (rspf_buffer != NULL)
+		return SPF_PASS;
+
 	abort();
 }
 
@@ -152,6 +167,7 @@ main(void)
 		const char *helo;
 		const char *mailfrom;
 		const char *spfexp;
+		const char *rspf;
 
 		const unsigned int spf:4;		/* the SPF status to test */
 		const unsigned int use_rcpt:1;	/* set thisrecip */
@@ -190,6 +206,21 @@ main(void)
 			.name = "spf == SPF_NONE",
 			.spf = SPF_NONE,
 			.no_params = 1,
+			.expected_result = FILTER_PASSED
+		},
+		{
+			.name = "spf == SPF_NONE with rspf attempt",
+			.spf = SPF_NONE,
+			.spfpolicy = 1,
+			.cd_policy = CONFIG_GLOBAL,
+			.expected_result = FILTER_PASSED
+		},
+		{
+			.name = "spf == SPF_NONE with rspf miss",
+			.rspf = "rspf.example.com",
+			.spf = SPF_NONE,
+			.spfpolicy = 1,
+			.cd_policy = CONFIG_GLOBAL,
 			.expected_result = FILTER_PASSED
 		},
 		{
@@ -318,6 +349,8 @@ main(void)
 			thisrecip = &rcpt;
 		else
 			thisrecip = NULL;
+
+		rspf_buffer = testpatterns[i].rspf;
 
 		if (testpatterns[i].tempsetting == 0)
 			ds.userdirfd = 0;

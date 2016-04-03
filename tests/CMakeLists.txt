@@ -474,6 +474,7 @@ add_executable(testcase_filter_spf
 		${CMAKE_SOURCE_DIR}/qsmtpd/filters/rcpt_filters.c
 )
 target_link_libraries(testcase_filter_spf
+		qsmtp_lib
 		testcase_io_lib)
 
 add_test(NAME "Filter-SPF"
