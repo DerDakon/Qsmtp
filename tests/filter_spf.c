@@ -105,7 +105,7 @@ userconf_get_buffer(const struct userconf *ds __attribute__ ((unused)), const ch
 			*values = data_array(1, strlen(rspf_buffer) + 2, 0, 0);
 			if (*values == NULL)
 				exit(ENOMEM);
-			(*values[0]) = *values + 2;
+			(*values)[0] = (char *)(*values + 2);
 			strcpy((*values)[0], rspf_buffer);
 			return CONFIG_USER;
 		} else {
