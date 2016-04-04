@@ -68,6 +68,10 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 /* there is no official SPF entry: go and check if someone else provided one, e.g. rspf.rhsbl.docsnyder.de. */
 	if (spfs == SPF_NONE) {
 		char **a;
+		char spfname[DOMAINNAME_MAX + 1];
+		int v = 0;
+		size_t fromlen;	/* strlen(fromdomain) */
+		int olderror = SPF_NONE;
 
 		assert(exps == NULL);
 
@@ -79,56 +83,49 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			return FILTER_PASSED;
 		}
 
-		if (a != NULL) {
-			char spfname[DOMAINNAME_MAX + 1];
-			int v = 0;
-			size_t fromlen;	/* strlen(fromdomain) */
-			int olderror = SPF_NONE;
+		if (xmitstat.mailfrom.len) {
+			fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+			fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
+		} else {
+			fromdomain = HELOSTR;
+			fromlen = HELOLEN;
+		}
+		memcpy(spfname, fromdomain, fromlen);
+		spfname[fromlen++] = '.';
 
-			if (xmitstat.mailfrom.len) {
-				fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
-				fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
-			} else {
-				fromdomain = HELOSTR;
-				fromlen = HELOLEN;
-			}
-			memcpy(spfname, fromdomain, fromlen);
-			spfname[fromlen++] = '.';
+		/* First match wins. */
+		while (a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMPERROR) || (spfs == SPF_DNS_HARD_ERROR) || (spfs == SPF_PERMERROR))) {
+			memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
+			if ((spfs != SPF_NONE) && (olderror == SPF_NONE))
+				olderror = spfs;
 
-			/* First match wins. */
-			while (a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMPERROR) || (spfs == SPF_DNS_HARD_ERROR) || (spfs == SPF_PERMERROR))) {
-				memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
-				if ((spfs != SPF_NONE) && (olderror == SPF_NONE))
-					olderror = spfs;
+			/* In case you have an SPF_PERMERROR rSPF and afterwards a different
+				* error code the information how the record was malformed is lost. */
+			free(exps);
+			spfs = check_host(spfname);
+			/* check_host() will record the exp= modifier result in xmitstat,
+				* make sure it does not leak to another user */
+			exps = xmitstat.spfexp;
+			xmitstat.spfexp = NULL;
+			v++;
+		}
+		free(a);
 
-				/* In case you have an SPF_PERMERROR rSPF and afterwards a different
-				 * error code the information how the record was malformed is lost. */
-				free(exps);
-				spfs = check_host(spfname);
-				/* check_host() will record the exp= modifier result in xmitstat,
-				 * make sure it does not leak to another user */
-				exps = xmitstat.spfexp;
-				xmitstat.spfexp = NULL;
-				v++;
-			}
-			free(a);
-
-			switch (spfs) {
-			default:
-				if (spfs >= 0) {
-					if (spfs == SPF_NONE)
-						spfs = olderror;
-					*logmsg = "rSPF";
-					break;
-				}
-				/* fallthrough */
-			case SPF_PASS: /* no match in rSPF filters */
-				free(exps);
-				return FILTER_PASSED;
-			case SPF_DNS_HARD_ERROR: /* last rSPF filter is not reachable */
-				spfs = SPF_NONE;
+		switch (spfs) {
+		default:
+			if (spfs >= 0) {
+				if (spfs == SPF_NONE)
+					spfs = olderror;
+				*logmsg = "rSPF";
 				break;
 			}
+			/* fallthrough */
+		case SPF_PASS: /* no match in rSPF filters */
+			free(exps);
+			return FILTER_PASSED;
+		case SPF_DNS_HARD_ERROR: /* last rSPF filter is not reachable */
+			spfs = SPF_NONE;
+			break;
 		}
 	}
 
