@@ -100,11 +100,11 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 				olderror = spfs;
 
 			/* In case you have an SPF_PERMERROR rSPF and afterwards a different
-				* error code the information how the record was malformed is lost. */
+			 * error code the information how the record was malformed is lost. */
 			free(exps);
 			spfs = check_host(spfname);
 			/* check_host() will record the exp= modifier result in xmitstat,
-				* make sure it does not leak to another user */
+			 * make sure it does not leak to another user */
 			exps = xmitstat.spfexp;
 			xmitstat.spfexp = NULL;
 			v++;
