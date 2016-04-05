@@ -154,7 +154,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		goto strict;
 	if (spfs == SPF_NEUTRAL)
 		goto block;
-/* spfs can only be SPF_NONE here */
+	assert(spfs == SPF_NONE);
 	if (p != 5)
 		goto block;
 strict:
