@@ -133,7 +133,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		r = FILTER_DENIED_TEMPORARY;
 		goto block;
 	}
-	if (p == 1)
+	if ((p == 1) && (spfs == SPF_SOFTFAIL))
 		goto strict;
 	if (SPF_IS_FAILURE(spfs))
 		goto block;
