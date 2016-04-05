@@ -144,10 +144,19 @@ userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const c
 }
 
 int
-check_host(const char *domain __attribute__ ((unused)))
+check_host(const char *domain)
 {
-	if (rspf_buffer != NULL)
-		return SPF_PASS;
+	if (rspf_buffer != NULL) {
+		const char *end = strstr(domain, rspf_buffer);
+		// check that the rspf_buffer is at the end of the passed domain
+		if ((end == NULL) || (end == domain) || (strlen(end) != strlen(rspf_buffer)) || (*(end - 1) != '.'))
+			abort();
+
+		if (strncmp(domain, "match.", strlen("match.")) == 0)
+			return SPF_FAIL;
+		else if (strncmp(domain, "pass.", strlen("pass.")) == 0)
+			return SPF_PASS;
+	}
 
 	abort();
 }
@@ -216,12 +225,25 @@ main(void)
 			.expected_result = FILTER_PASSED
 		},
 		{
-			.name = "spf == SPF_NONE with rspf miss",
+			.name = "spf == SPF_NONE with rspf pass",
 			.rspf = "rspf.example.com",
+			.helo = "pass.example.com",
 			.spf = SPF_NONE,
 			.spfpolicy = 1,
 			.cd_policy = CONFIG_GLOBAL,
 			.expected_result = FILTER_PASSED
+		},
+		{
+			.name = "spf == SPF_NONE with rspf match",
+			.rspf = "rspf.example.com",
+			.mailfrom = "foo@match.example.com",
+			.spf = SPF_NONE,
+			.spfpolicy = 2,
+			.cd_policy = CONFIG_GLOBAL,
+			.expected_result = FILTER_DENIED_WITH_MESSAGE,
+			.expected_netmsg = "550 5.7.1 mail denied by SPF policy\r\n",
+			.expected_logmsg = "rSPF",
+			.expected_t = CONFIG_USER
 		},
 		{
 			.name = "spf == SPF_TEMPERROR",
