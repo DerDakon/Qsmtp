@@ -69,7 +69,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	if (spfs == SPF_NONE) {
 		char **a;
 		char spfname[DOMAINNAME_MAX + 1];
-		int v = 0;
+		int v;
 		size_t fromlen;	/* strlen(fromdomain) */
 		int olderror = SPF_NONE;
 
@@ -94,7 +94,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		spfname[fromlen++] = '.';
 
 		/* First match wins. */
-		while (a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMPERROR) || (spfs == SPF_DNS_HARD_ERROR) || (spfs == SPF_PERMERROR))) {
+		for (v = 0; a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMPERROR) || (spfs == SPF_DNS_HARD_ERROR) || (spfs == SPF_PERMERROR)); v++) {
 			memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
 			if ((spfs != SPF_NONE) && (olderror == SPF_NONE))
 				olderror = spfs;
@@ -107,7 +107,6 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			 * make sure it does not leak to another user */
 			exps = xmitstat.spfexp;
 			xmitstat.spfexp = NULL;
-			v++;
 		}
 		free(a);
 
