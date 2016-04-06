@@ -295,7 +295,7 @@ main(void)
 			.expected_result = FILTER_PASSED
 		},
 		{
-			.name = "spf == SPF_SOFTFAIL",
+			.name = "spf == SPF_SOFTFAIL with strict match",
 			.remotehost = hostname_spfstrict,
 			.mailfrom = "someone@spfstrict.example.com",
 			.spf = SPF_SOFTFAIL,
