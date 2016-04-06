@@ -119,7 +119,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 				break;
 			}
 			/* fallthrough */
-		case SPF_PASS: /* no match in rSPF filters */
+		case SPF_PASS: /* explicit pass in rSPF filters */
 			free(exps);
 			return FILTER_PASSED;
 		case SPF_DNS_HARD_ERROR: /* last rSPF filter is not reachable */
