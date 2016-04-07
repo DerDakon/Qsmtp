@@ -41,6 +41,7 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	int spfs = xmitstat.spf;	/* the spf status to check, either global or local one */
 	enum config_domain tmpt;
 	char *exps = xmitstat.spfexp;	/* SPF explanation string */
+	int do_strict = 0;
 
 	if ((spfs == SPF_PASS) || (spfs == SPF_IGNORE))
 		return FILTER_PASSED;
@@ -134,73 +135,69 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		}
 	}
 
-	if (spfs == SPF_PASS) {
-		r = FILTER_PASSED;
-	} else {
-		int do_strict = 0;
+	assert(spfs != SPF_PASS);
 
-		switch (p) {
-		default:
-		case 6:
-			if (spfs == SPF_NONE)
-				break;
-			/* fallthrough */
-		case 5:
-			if (spfs == SPF_NEUTRAL)
-				break;
-			/* fallthrough */
-		case 4:
-			if (spfs == SPF_NEUTRAL) {
-				do_strict = 1;
-				break;
-			}
-			if (spfs == SPF_SOFTFAIL)
-				break;
-			/* fallthrough */
-		case 3:
-			if (spfs == SPF_SOFTFAIL) {
-				do_strict = 1;
-				break;
-			}
-			if (spfs == SPF_DNS_HARD_ERROR) {
-				*logmsg = "bad SPF";
-				if (netwrite("550 5.5.2 syntax error in SPF record\r\n") != 0)
-					return FILTER_ERROR;
-				else
-					return FILTER_DENIED_WITH_MESSAGE;
-			}
-			/* fallthrough */
-		case 2:
-			if (spfs == SPF_DNS_HARD_ERROR) {
-				do_strict = 1;
-				break;
-			}
-			if (SPF_IS_FAILURE(spfs))
-				break;
-			/* fallthrough */
-		case 1:
-			if (spfs == SPF_TEMPERROR) {
-				r = FILTER_DENIED_TEMPORARY;
-				break;
-			}
+	switch (p) {
+	default:
+	case 6:
+		if (spfs == SPF_NONE)
+			break;
+		/* fallthrough */
+	case 5:
+		if (spfs == SPF_NEUTRAL)
+			break;
+		/* fallthrough */
+	case 4:
+		if (spfs == SPF_NEUTRAL) {
 			do_strict = 1;
+			break;
 		}
-
-		if (do_strict) {
-			if (!fromdomain) {
-				if (xmitstat.mailfrom.len) {
-					fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
-				} else {
-					fromdomain = HELOSTR;
-				}
-			}
-			*t = userconf_find_domain(ds, "spfstrict", fromdomain, 1);
-			if (((int)*t) < 0) {
-				errno = -*t;
+		if (spfs == SPF_SOFTFAIL)
+			break;
+		/* fallthrough */
+	case 3:
+		if (spfs == SPF_SOFTFAIL) {
+			do_strict = 1;
+			break;
+		}
+		if (spfs == SPF_DNS_HARD_ERROR) {
+			*logmsg = "bad SPF";
+			if (netwrite("550 5.5.2 syntax error in SPF record\r\n") != 0)
 				return FILTER_ERROR;
-			} else if (*t == CONFIG_NONE) {
-				return FILTER_PASSED;
+			else
+				return FILTER_DENIED_WITH_MESSAGE;
+		}
+		/* fallthrough */
+	case 2:
+		if (spfs == SPF_DNS_HARD_ERROR) {
+			do_strict = 1;
+			break;
+		}
+		if (SPF_IS_FAILURE(spfs))
+			break;
+		/* fallthrough */
+	case 1:
+		if (spfs == SPF_TEMPERROR) {
+			r = FILTER_DENIED_TEMPORARY;
+			break;
+		}
+		do_strict = 1;
+	}
+
+	if (do_strict) {
+		if (!fromdomain) {
+			if (xmitstat.mailfrom.len) {
+				fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+			} else {
+				fromdomain = HELOSTR;
 			}
+		}
+		*t = userconf_find_domain(ds, "spfstrict", fromdomain, 1);
+		if (((int)*t) < 0) {
+			errno = -*t;
+			return FILTER_ERROR;
+		} else if (*t == CONFIG_NONE) {
+			return FILTER_PASSED;
 		}
 	}
 
