@@ -94,7 +94,10 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 
 			/* First match wins. */
 			for (v = 0; a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMPERROR) || (spfs == SPF_DNS_HARD_ERROR) || (spfs == SPF_PERMERROR)); v++) {
-				memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
+				const size_t bllen = strlen(a[v]);
+				if (bllen + fromlen + 1 >= sizeof(spfname))
+					continue;
+				memcpy(spfname + fromlen, a[v], bllen + 1);
 				if ((spfs != SPF_NONE) && (olderror == SPF_NONE))
 					olderror = spfs;
 

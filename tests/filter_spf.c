@@ -257,6 +257,15 @@ main(void)
 			.expected_t = CONFIG_USER
 		},
 		{
+			.name = "spf == SPF_NONE with rspf overflow",
+			.rspf = "the.combined.length.of.both.domain.names.will.exceed.domainname-max.because.these.names.are.very.loong.blacklist.rspf.example.com",
+			.helo = "match.the.combined.length.of.both.domain.names.will.exceed.domainname-max.because.these.names.are.very.long.heloname.example.com",
+			.spf = SPF_NONE,
+			.spfpolicy = 1,
+			.cd_policy = CONFIG_GLOBAL,
+			.expected_result = FILTER_PASSED
+		},
+		{
 			.name = "spf == SPF_TEMPERROR",
 			.spf = SPF_TEMPERROR,
 			.spfpolicy = 1,
