@@ -68,110 +68,139 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 /* there is no official SPF entry: go and check if someone else provided one, e.g. rspf.rhsbl.docsnyder.de. */
 	if (spfs == SPF_NONE) {
 		char **a;
-		char spfname[DOMAINNAME_MAX + 1];
-		int v;
-		size_t fromlen;	/* strlen(fromdomain) */
-		int olderror = SPF_NONE;
+		int u;
 
 		assert(exps == NULL);
 
-		*t = userconf_get_buffer(ds, "rspf", &a, domainvalid, userconf_global);
-		if (((int)*t) < 0) {
-			errno = -*t;
+		u = userconf_get_buffer(ds, "rspf", &a, domainvalid, userconf_global);
+		if (((int)u) < 0) {
+			errno = -u;
 			return FILTER_ERROR;
-		} else if (*t == CONFIG_NONE) {
-			return FILTER_PASSED;
-		}
+		} else if (u != CONFIG_NONE) {
+			char spfname[DOMAINNAME_MAX + 1];
+			int v;
+			size_t fromlen;	/* strlen(fromdomain) */
+			int olderror = SPF_NONE;
 
-		if (xmitstat.mailfrom.len) {
-			fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
-			fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
-		} else {
-			fromdomain = HELOSTR;
-			fromlen = HELOLEN;
-		}
-		memcpy(spfname, fromdomain, fromlen);
-		spfname[fromlen++] = '.';
+			if (xmitstat.mailfrom.len) {
+				fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+				fromlen = xmitstat.mailfrom.len - (fromdomain - xmitstat.mailfrom.s);
+			} else {
+				fromdomain = HELOSTR;
+				fromlen = HELOLEN;
+			}
+			memcpy(spfname, fromdomain, fromlen);
+			spfname[fromlen++] = '.';
 
-		/* First match wins. */
-		for (v = 0; a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMPERROR) || (spfs == SPF_DNS_HARD_ERROR) || (spfs == SPF_PERMERROR)); v++) {
-			memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
-			if ((spfs != SPF_NONE) && (olderror == SPF_NONE))
-				olderror = spfs;
+			/* First match wins. */
+			for (v = 0; a[v] && ((spfs == SPF_NONE) || (spfs == SPF_TEMPERROR) || (spfs == SPF_DNS_HARD_ERROR) || (spfs == SPF_PERMERROR)); v++) {
+				memcpy(spfname + fromlen, a[v], strlen(a[v]) + 1);
+				if ((spfs != SPF_NONE) && (olderror == SPF_NONE))
+					olderror = spfs;
 
-			/* In case you have an SPF_PERMERROR rSPF and afterwards a different
-			 * error code the information how the record was malformed is lost. */
-			free(exps);
-			spfs = check_host(spfname);
-			/* check_host() will record the exp= modifier result in xmitstat,
-			 * make sure it does not leak to another user */
-			exps = xmitstat.spfexp;
-			xmitstat.spfexp = NULL;
-		}
-		free(a);
+				/* In case you have an SPF_PERMERROR rSPF and afterwards a different
+				* error code the information how the record was malformed is lost. */
+				free(exps);
+				spfs = check_host(spfname);
+				/* check_host() will record the exp= modifier result in xmitstat,
+				* make sure it does not leak to another user */
+				exps = xmitstat.spfexp;
+				xmitstat.spfexp = NULL;
+			}
+			free(a);
 
-		switch (spfs) {
-		default:
-			if (spfs >= 0) {
-				if (spfs == SPF_NONE)
-					spfs = olderror;
-				*logmsg = "rSPF";
+			switch (spfs) {
+			default:
+				if (spfs >= 0) {
+					if (spfs == SPF_NONE)
+						spfs = olderror;
+					*logmsg = "rSPF";
+					break;
+				}
+				/* fallthrough */
+			case SPF_PASS: /* explicit pass in rSPF filters */
+				free(exps);
+				return FILTER_PASSED;
+			case SPF_DNS_HARD_ERROR: /* last rSPF filter is not reachable */
+				spfs = SPF_NONE;
 				break;
 			}
-			/* fallthrough */
-		case SPF_PASS: /* explicit pass in rSPF filters */
-			free(exps);
-			return FILTER_PASSED;
-		case SPF_DNS_HARD_ERROR: /* last rSPF filter is not reachable */
-			spfs = SPF_NONE;
-			break;
+
+			if (spfs != SPF_NONE)
+				*t = u;
 		}
 	}
 
-	if (spfs == SPF_TEMPERROR) {
-		r = FILTER_DENIED_TEMPORARY;
-		goto block;
-	}
-	if ((p == 1) && (spfs == SPF_SOFTFAIL))
-		goto strict;
-	if (SPF_IS_FAILURE(spfs))
-		goto block;
-	if (p == 2)
-		goto strict;
-	if (spfs == SPF_DNS_HARD_ERROR) {
-		*logmsg = "bad SPF";
-		if (netwrite("550 5.5.2 syntax error in SPF record\r\n") != 0)
-			return FILTER_ERROR;
-		else
-			return FILTER_DENIED_WITH_MESSAGE;
-	}
-	if (p == 3)
-		goto strict;
-	if (spfs == SPF_SOFTFAIL)
-		goto block;
-	if (p == 4)
-		goto strict;
-	if (spfs == SPF_NEUTRAL)
-		goto block;
-	assert(spfs == SPF_NONE);
-	if (p != 5)
-		goto block;
-strict:
-	if (!fromdomain) {
-		if (xmitstat.mailfrom.len) {
-			fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
-		} else {
-			fromdomain = HELOSTR;
+	if (spfs == SPF_PASS) {
+		r = FILTER_PASSED;
+	} else {
+		int do_strict = 0;
+
+		switch (p) {
+		default:
+		case 6:
+			if (spfs == SPF_NONE)
+				break;
+			/* fallthrough */
+		case 5:
+			if (spfs == SPF_NEUTRAL)
+				break;
+			/* fallthrough */
+		case 4:
+			if (spfs == SPF_NEUTRAL) {
+				do_strict = 1;
+				break;
+			}
+			if (spfs == SPF_SOFTFAIL)
+				break;
+			/* fallthrough */
+		case 3:
+			if (spfs == SPF_SOFTFAIL) {
+				do_strict = 1;
+				break;
+			}
+			if (spfs == SPF_DNS_HARD_ERROR) {
+				*logmsg = "bad SPF";
+				if (netwrite("550 5.5.2 syntax error in SPF record\r\n") != 0)
+					return FILTER_ERROR;
+				else
+					return FILTER_DENIED_WITH_MESSAGE;
+			}
+			/* fallthrough */
+		case 2:
+			if (spfs == SPF_DNS_HARD_ERROR) {
+				do_strict = 1;
+				break;
+			}
+			if (SPF_IS_FAILURE(spfs))
+				break;
+			/* fallthrough */
+		case 1:
+			if (spfs == SPF_TEMPERROR) {
+				r = FILTER_DENIED_TEMPORARY;
+				break;
+			}
+			do_strict = 1;
+		}
+
+		if (do_strict) {
+			if (!fromdomain) {
+				if (xmitstat.mailfrom.len) {
+					fromdomain = strchr(xmitstat.mailfrom.s, '@') + 1;
+				} else {
+					fromdomain = HELOSTR;
+				}
+			}
+			*t = userconf_find_domain(ds, "spfstrict", fromdomain, 1);
+			if (((int)*t) < 0) {
+				errno = -*t;
+				return FILTER_ERROR;
+			} else if (*t == CONFIG_NONE) {
+				return FILTER_PASSED;
+			}
 		}
 	}
-	*t = userconf_find_domain(ds, "spfstrict", fromdomain, 1);
-	if (((int)*t) < 0) {
-		errno = -*t;
-		return FILTER_ERROR;
-	} else if (*t == CONFIG_NONE) {
-		return FILTER_PASSED;
-	}
-block:
+
 	if (r == FILTER_DENIED_WITH_MESSAGE) {
 		const char *netmsg[] = {"550 5.7.1 mail denied by SPF policy", ", SPF record says: ",
 				exps, NULL};
