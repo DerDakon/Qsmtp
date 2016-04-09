@@ -199,7 +199,9 @@ auth_plain(struct string *user)
 	}
 	if (!user->len || !pass.len) {
 		err_input();
-		goto err;
+		memset(slop.s, 0, slop.len);
+		free(slop.s);
+		return -1;
 	}
 
 	r = auth_backend_execute(user, &pass, NULL);
@@ -220,10 +222,6 @@ auth_plain(struct string *user)
 			user->s = tmp;
 	}
 	return r;
-err:
-	memset(slop.s, 0, slop.len);
-	free(slop.s);
-	return -1;
 }
 
 #ifdef AUTHCRAM
