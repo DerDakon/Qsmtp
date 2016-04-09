@@ -132,9 +132,11 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 
 	if (net_read(1)) {
 		switch (errno) {
-		case ENOMEM:	err_mem(1);
+		case ENOMEM:
+			err_mem(1);
 		case EINVAL:
-		case E2BIG:	goto syntax;
+		case E2BIG:
+			break;
 		default:
 			{
 				const char *tmp[] = { "Z4.3.0 ", strerror(errno) };
@@ -143,29 +145,31 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 				net_conn_shutdown(shutdown_clean);
 			}
 		}
-	}
-	if (linein.len < 3)
-		goto syntax;
-	if ((linein.len > 3) && ((linein.s[3] != ' ') && (linein.s[3] != '-')))
-		goto syntax;
-	r = linein.s[0] - '0';
-	if ((r < 2) || (r > 5))
-		goto syntax;
-	q = linein.s[1] - '0';
-	if ((q < 0) || (q > 9))
-		goto syntax;
-	r = r * 10 + q;
-	q = linein.s[2] - '0';
-	if ((q < 0) || (q > 9))
-		goto syntax;
+	} else {
+		do {
+			if (linein.len <= 3)
+				break;
+			if ((linein.s[3] != ' ') && (linein.s[3] != '-'))
+				break;
+			r = linein.s[0] - '0';
+			if ((r < 2) || (r > 5))
+				break;
+			q = linein.s[1] - '0';
+			if ((q < 0) || (q > 9))
+				break;
+			r = r * 10 + q;
+			q = linein.s[2] - '0';
+			if ((q >= 0) && (q <= 9)) {
+				if (logfd > 0) {
+					write(logfd, linein.s, linein.len);
+					write(logfd, "\n" ,1);
+				}
 
-	if (logfd > 0) {
-		write(logfd, linein.s, linein.len);
-		write(logfd, "\n" ,1);
+				return r * 10 + q;
+			}
+		} while (0);
 	}
 
-	return r * 10 + q;
-syntax:
 	/* if this fails we're already in bad trouble */
 	write_status("Z5.5.2 syntax error in server reply");
 	net_conn_shutdown(shutdown_clean);
