@@ -115,8 +115,11 @@ readfc(void)
 		len = strlen(inp);
 		if (inp[len - 1] != '\n') {
 			do {
-				if (!fgets(inp, sizeof(inp), fcfd))
-					goto out;
+				if (!fgets(inp, sizeof(inp), fcfd)) {
+					fclose(fcfd);
+					commstat = 0;
+					return;
+				}
 
 			} while (inp[strlen(inp) - 1] != '\n');
 		}
@@ -138,9 +141,6 @@ readfc(void)
 			}
 		}
 	}
-out:
-	fclose(fcfd);
-	commstat = 0;
 }
 
 static void
@@ -246,15 +246,15 @@ show(void)
 		return;
 
 	for (int i = 0; params[i].name; i++) {
-		if (printf("%s=%li\n", params[i].name, params[i].value) < 0)
-			goto err;
+		if (printf("%s=%li\n", params[i].name, params[i].value) < 0) {
+			commstat = errno;
+			dolog("error on show");
+			puts("WARNING: an error occured");
+			return;
+		}
 	}
 	commstat = 0;
 	return;
-err:
-	commstat = errno;
-	dolog("error on show");
-	puts("WARNING: an error occured");
 }
 
 static void
