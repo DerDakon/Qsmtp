@@ -43,7 +43,7 @@ netget(const unsigned int terminate)
 			err_mem(1);
 		case EINVAL:
 		case E2BIG:
-			goto syntax;
+			break;
 		case ECONNRESET:
 		case ETIMEDOUT:
 			r = errno;
@@ -61,23 +61,25 @@ netget(const unsigned int terminate)
 				return r;
 			}
 		}
+	} else {
+		do {
+			if (linein.len <= 3)
+				break;
+			if ((linein.s[3] != ' ') && (linein.s[3] != '-'))
+				break;
+			r = linein.s[0] - '0';
+			if ((r < 2) || (r > 5))
+				break;
+			q = linein.s[1] - '0';
+			if ((q < 0) || (q > 9))
+				break;
+			r = r * 10 + q;
+			q = linein.s[2] - '0';
+			if ((q >= 0) && (q <= 9))
+				return r * 10 + q;
+		} while (0);
 	}
-	if (linein.len <= 3)
-		goto syntax;
-	if ((linein.s[3] != ' ') && (linein.s[3] != '-'))
-		goto syntax;
-	r = linein.s[0] - '0';
-	if ((r < 2) || (r > 5))
-		goto syntax;
-	q = linein.s[1] - '0';
-	if ((q < 0) || (q > 9))
-		goto syntax;
-	r = r * 10 + q;
-	q = linein.s[2] - '0';
-	if ((q < 0) || (q > 9))
-		goto syntax;
-	return r * 10 + q;
-syntax:
+
 	if (terminate) {
 		/* if this fails we're already in bad trouble */
 		/* Even if 5.5.2 is a permanent error don't use 'D' return code here,
