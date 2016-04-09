@@ -440,10 +440,51 @@ smtp_data(void)
 	in_data = 0;
 #endif
 
-	if (queue_envelope(msgsize, 0))
-		goto err_write;
+	if (!queue_envelope(msgsize, 0))
+		return queue_result();
 
-	return queue_result();
+err_write:
+	rc = errno;
+	queue_reset();
+	freedata();
+
+/* first check, then read: if the error happens on the last line nothing will be read here */
+	while ((linein.len != 1) || (linein.s[0] != '.')) {
+		if (net_read(1))
+			break;
+	}
+
+#ifdef DEBUG_IO
+	in_data = 0;
+#endif
+	if ((rc == ENOSPC) || (rc == EFBIG)) {
+		rc = EMSGSIZE;
+	} else if ((errno != ENOMEM) && (errno != EMSGSIZE) && (errno != E2BIG) && (errno != EINVAL)) {
+		if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
+			return errno;
+	}
+
+	switch (rc) {
+	case EMSGSIZE:
+	case E2BIG:
+	case ENOMEM:
+		break;
+	case EPIPE:
+		log_write(LOG_ERR, "broken pipe to qmail-queue");
+		rc = EDONE;
+		break;
+	case EINVAL:	/* This errors happen if client sends invalid data (e.g. bad <CRLF> sequences). */
+		return netwrite("500 5.5.2 bad <CRLF> sequence\r\n") ? errno : EBOGUS;
+	default:	/* normally none of the other errors may ever occur. But who knows what I'm missing here? */
+		{
+			const char *logmsg[] = {"error in DATA: ", strerror(rc), NULL};
+
+			log_writen(LOG_ERR, logmsg);
+			rc = EDONE; // will not be caught in main
+		}
+	}
+
+	return rc;
 loop_data:
 	rc = errno;
 	if (logmail[9] == NULL) {
@@ -491,44 +532,6 @@ loop_data:
 	if (errmsg)
 		return netwrite(errmsg) ? errno : EDONE;
 	return rc;
-err_write:
-	rc = errno;
-	queue_reset();
-	freedata();
-
-/* first check, then read: if the error happens on the last line nothing will be read here */
-	while ((linein.len != 1) || (linein.s[0] != '.')) {
-		if (net_read(1))
-			break;
-	}
-
-#ifdef DEBUG_IO
-	in_data = 0;
-#endif
-	if ((rc == ENOSPC) || (rc == EFBIG)) {
-		rc = EMSGSIZE;
-	} else if ((errno != ENOMEM) && (errno != EMSGSIZE) && (errno != E2BIG) && (errno != EINVAL)) {
-		if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
-			return errno;
-	}
-	switch (rc) {
-	case EMSGSIZE:
-	case E2BIG:
-	case ENOMEM:
-		return rc;
-	case EPIPE:
-		log_write(LOG_ERR, "broken pipe to qmail-queue");
-		return EDONE;
-	case EINVAL:	/* This errors happen if client sends invalid data (e.g. bad <CRLF> sequences). */
-		return netwrite("500 5.5.2 bad <CRLF> sequence\r\n") ? errno : EBOGUS;
-	default:	/* normally none of the other errors may ever occur. But who knows what I'm missing here? */
-		{
-			const char *logmsg[] = {"error in DATA: ", strerror(rc), NULL};
-
-			log_writen(LOG_ERR, logmsg);
-			return EDONE; // will not be caught in main
-		}
-	}
 }
 
 #ifdef CHUNKING
