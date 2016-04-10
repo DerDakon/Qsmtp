@@ -307,7 +307,7 @@ main(void)
 			.expected_syslogprio = LOG_INFO
 		},
 		{
-			.name = "spf == SPF_SOFTFAIL",
+			.name = "spf == SPF_SOFTFAIL with spfpolicy 1",
 			.spf = SPF_SOFTFAIL,
 			.helo = "example.net",
 			.spfpolicy = 1,
@@ -348,6 +348,57 @@ main(void)
 			.expected_netmsg = "550 5.7.1 mail denied by SPF policy, SPF record says: SPFEXP message\r\n",
 			.expected_logmsg = "SPF",
 			.expected_t = CONFIG_USER
+		},
+		{
+			.name = "spf == SPF_DNS_HARD_ERROR and spfpolicy = 2",
+			.spf = SPF_DNS_HARD_ERROR,
+			.spfpolicy = 2,
+			.cd_policy = CONFIG_DOMAIN,
+			.expected_result = FILTER_PASSED
+		},
+		{
+			.name = "spf == SPF_DNS_HARD_ERROR and spfpolicy = 3",
+			.spf = SPF_DNS_HARD_ERROR,
+			.spfpolicy = 3,
+			.cd_policy = CONFIG_DOMAIN,
+			.expected_result = FILTER_DENIED_WITH_MESSAGE,
+			.expected_netmsg = "550 5.5.2 syntax error in SPF record\r\n",
+			.expected_logmsg = "bad SPF",
+			.expected_t = CONFIG_DOMAIN
+		},
+		{
+			.name = "spf == SPF_SOFTFAIL and spfpolicy = 3",
+			.spf = SPF_SOFTFAIL,
+			.spfpolicy = 3,
+			.cd_policy = CONFIG_DOMAIN,
+			.expected_result = FILTER_PASSED
+		},
+		{
+			.name = "spf == SPF_SOFTFAIL and spfpolicy = 4",
+			.spf = SPF_SOFTFAIL,
+			.spfpolicy = 4,
+			.cd_policy = CONFIG_DOMAIN,
+			.expected_result = FILTER_DENIED_WITH_MESSAGE,
+			.expected_netmsg = "550 5.7.1 mail denied by SPF policy\r\n",
+			.expected_logmsg = "SPF",
+			.expected_t = CONFIG_DOMAIN
+		},
+		{
+			.name = "spf == SPF_NEUTRAL and spfpolicy = 4",
+			.spf = SPF_NEUTRAL,
+			.spfpolicy = 4,
+			.cd_policy = CONFIG_DOMAIN,
+			.expected_result = FILTER_PASSED
+		},
+		{
+			.name = "spf == SPF_NEUTRAL and spfpolicy = 5",
+			.spf = SPF_NEUTRAL,
+			.spfpolicy = 5,
+			.cd_policy = CONFIG_DOMAIN,
+			.expected_result = FILTER_DENIED_WITH_MESSAGE,
+			.expected_netmsg = "550 5.7.1 mail denied by SPF policy\r\n",
+			.expected_logmsg = "SPF",
+			.expected_t = CONFIG_DOMAIN
 		},
 		{
 			.name = "spf == SPF_NONE and spfpolicy = 5",
