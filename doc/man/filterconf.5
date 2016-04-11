@@ -184,6 +184,20 @@ a permanent failure is announced instead of the temporary one.
 .IP "\fInonexist_on_block\fR" 4
 If any filter returns with a reject code the mail server will lie and tell the client the
 user does not exist instead of returning a policy error.
+
+.SH EXAMPLES
+This is a suggested filterconf configuration file that has few false positives, but still
+considerably reduces the amount of incoming junk mails.
+
+.RS 4
+whitelistauth
+.br
+helovalid=18
+.br
+fromdomain=7
+.br
+smtp_space_bug=1
+
 .SH "SEE ALSO"
 Qsmtpd(8)
 .SH AUTHOR
