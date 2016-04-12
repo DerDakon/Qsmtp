@@ -52,6 +52,7 @@ static struct {
 	const char *goodmailfrom;	/**< the goodmailfrom configuration */
 	const char *badmailfrom;	/**< the badmailfrom configuration */
 	const char *namebl;		/**< the namebl configuration */
+	const char *dnsbl;		/**< the dnsbl configuration */
 	const char *userconf;		/**< the contents of the filterconf file */
 	const char *netmsg;		/**< the expected message written to the network */
 	const char *logmsg;		/**< the expected log message */
@@ -158,6 +159,13 @@ static struct {
 		.conf = CONFIG_USER,
 		.esmtp = 1
 	},
+	/* dnsbl present, but too long */
+	{
+		.mailfrom = "foo@example.com",
+		.dnsbl = "this.dnsbl.is.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.example.net\0\0",
+		.logmsg = "!name of rbl too long: \"this.dnsbl.is.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.example.net\"",
+		.conf = CONFIG_USER
+	},
 };
 
 static char **
@@ -200,6 +208,9 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 		expected_flags = userconf_global | userconf_inherit;
 	} else if (strcmp(key, "namebl") == 0) {
 		res = testdata[testindex].namebl;
+		expected_cf = domainvalid;
+	} else if (strcmp(key, "dnsbl") == 0) {
+		res = testdata[testindex].dnsbl;
 		expected_cf = domainvalid;
 	} else {
 		*values = NULL;
@@ -331,8 +342,6 @@ main(void)
 
 	strncpy(confpath, "0/", sizeof(confpath));
 
-	log_write_priority = LOG_INFO;
-
 	testcase_setup_log_writen(testcase_log_writen_combine);
 	testcase_setup_log_write(testcase_log_write_compare);
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
@@ -361,6 +370,12 @@ main(void)
 		const char *failmsg = testdata[testindex].failmsg;	/* expected failure message */
 		netnwrite_msg = testdata[testindex].netmsg;
 		log_write_msg = testdata[testindex].logmsg;
+		if (log_write_msg && (*log_write_msg == '!')) {
+			log_write_priority = LOG_ERR;
+			log_write_msg = log_write_msg + 1;
+		} else {
+			log_write_priority = LOG_INFO;
+		}
 
 		if (testdata[testindex].netmsg != NULL) {
 			if (*testdata[testindex].netmsg == '5')
