@@ -72,6 +72,7 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 							blocktype[*t], " dnsbl, but whitelisted by ",
 							c[i], " from ", blocktype[u], " whitelist}", NULL };
 				log_writen(LOG_INFO, logmess);
+				free(c);
 			} else if (errno) {
 				if (errno == EAGAIN) {
 					*logmsg = "temporary DNS error on RBL lookup";
