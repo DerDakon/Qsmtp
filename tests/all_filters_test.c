@@ -40,6 +40,16 @@ dnstxt(char **a __attribute__ ((unused)), const char *b __attribute__ ((unused))
 	return -1;
 }
 
+int
+test_ask_dnsa(const char *a, struct in6_addr **b)
+{
+	if (strcmp(a, "9.8.168.192.dnsblmatch.example.net") == 0) {
+		assert(b == NULL);
+		return 1;
+	}
+	return 0;
+}
+
 void
 dieerror(int a __attribute__ ((unused)))
 {
@@ -53,6 +63,7 @@ static struct {
 	const char *badmailfrom;	/**< the badmailfrom configuration */
 	const char *namebl;		/**< the namebl configuration */
 	const char *dnsbl;		/**< the dnsbl configuration */
+	const char *dnswl;		/**< the dnsbl whitelist configuration */
 	const char *userconf;		/**< the contents of the filterconf file */
 	const char *netmsg;		/**< the expected message written to the network */
 	const char *logmsg;		/**< the expected log message */
@@ -166,6 +177,22 @@ static struct {
 		.logmsg = "!name of rbl too long: \"this.dnsbl.is.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.example.net\"",
 		.conf = CONFIG_USER
 	},
+	/* dnsbl match */
+	{
+		.mailfrom = "foo@example.com",
+		.dnsbl = "dnsblmatch.example.net\0\0",
+		.logmsg = "rejected message to <postmaster> from <foo@example.com> from IP [::ffff:192.168.8.9] {listed in dnsblmatch.example.net from domain dnsbl}",
+		.netmsg = "501 5.7.1 message rejected, you are listed in dnsblmatch.example.net\r\n",
+		.conf = CONFIG_DOMAIN
+	},
+	/* dnsbl+whitelist match */
+	{
+		.mailfrom = "foo@example.com",
+		.dnsbl = "dnsblmatch.example.net\0\0",
+		.dnswl = "dnsblmatch.example.net\0\0",
+		.logmsg = "not rejected message to <postmaster> from <foo@example.com> from IP [::ffff:192.168.8.9] {listed in dnsblmatch.example.net from domain dnsbl, but whitelisted by dnsblmatch.example.net from domain whitelist}",
+		.conf = CONFIG_DOMAIN
+	},
 };
 
 static char **
@@ -212,6 +239,10 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 	} else if (strcmp(key, "dnsbl") == 0) {
 		res = testdata[testindex].dnsbl;
 		expected_cf = domainvalid;
+	} else if (strcmp(key, "whitednsbl") == 0) {
+		res = testdata[testindex].dnswl;
+		expected_cf = domainvalid;
+		expected_flags = userconf_none;
 	} else {
 		*values = NULL;
 		return CONFIG_NONE;
@@ -345,7 +376,8 @@ main(void)
 	testcase_setup_log_writen(testcase_log_writen_combine);
 	testcase_setup_log_write(testcase_log_write_compare);
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
-	testcase_ignore_ask_dnsa();
+	testcase_setup_net_writen(testcase_net_writen_combine);
+	testcase_setup_ask_dnsa(test_ask_dnsa);
 
 	while (testindex < sizeof(testdata) / sizeof(testdata[0])) {
 		char userpath[PATH_MAX];
