@@ -197,6 +197,15 @@ static struct {
 		.logmsg = "not rejected message to <postmaster> from <foo@example.com> from IP [::ffff:192.168.8.9] {listed in dnsblmatch.example.net from domain dnsbl, but whitelisted by dnsblmatch.example.net from domain whitelist}",
 		.conf = CONFIG_DOMAIN
 	},
+	{
+		.testname = "dnsbl match + whitelist no match",
+		.mailfrom = "foo@example.com",
+		.dnsbl = "dnsblmatch.example.net\0\0",
+		.dnswl = "foo.example.net\0\0",
+		.logmsg = "rejected message to <postmaster> from <foo@example.com> from IP [::ffff:192.168.8.9] {listed in dnsblmatch.example.net from domain dnsbl}",
+		.netmsg = "501 5.7.1 message rejected, you are listed in dnsblmatch.example.net\r\n",
+		.conf = CONFIG_DOMAIN
+	},
 };
 
 int

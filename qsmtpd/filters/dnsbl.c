@@ -44,11 +44,30 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 
 		u = userconf_get_buffer(ds, fnw, &c, domainvalid, userconf_none);
 		if (u < 0) {
-			free(a);
-			free(txt);
 			errno = -u;
-			return FILTER_ERROR;
+			j = -1;
 		} else if (u == CONFIG_NONE) {
+			j = -1;
+			errno = 0;
+		} else {
+			j = check_rbl(c, NULL);
+		}
+
+		if (j >= 0) {
+			const char *logmess[] = { "not rejected message to <", THISRCPT, "> from <", MAILFROM,
+						"> from IP [", xmitstat.remoteip, "] {listed in ", a[i], " from ",
+						blocktype[*t], " dnsbl, but whitelisted by ",
+						c[i], " from ", blocktype[u], " whitelist}", NULL };
+			log_writen(LOG_INFO, logmess);
+			free(c);
+		} else if (errno) {
+			if (errno == EAGAIN) {
+				*logmsg = "temporary DNS error on RBL lookup";
+				rc = FILTER_DENIED_TEMPORARY;
+			} else {
+				rc = FILTER_ERROR;
+			}
+		} else {
 			const char *netmsg[] = { "501 5.7.1 message rejected, you are listed in ",
 						a[i], NULL, txt, NULL };
 			const char *logmess[] = { "rejected message to <", THISRCPT, "> from <", MAILFROM,
@@ -63,24 +82,6 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 				rc = FILTER_ERROR;
 			else
 				rc = FILTER_DENIED_WITH_MESSAGE;
-		} else {
-			j = check_rbl(c, NULL);
-
-			if (j >= 0) {
-				const char *logmess[] = { "not rejected message to <", THISRCPT, "> from <", MAILFROM,
-							"> from IP [", xmitstat.remoteip, "] {listed in ", a[i], " from ",
-							blocktype[*t], " dnsbl, but whitelisted by ",
-							c[i], " from ", blocktype[u], " whitelist}", NULL };
-				log_writen(LOG_INFO, logmess);
-				free(c);
-			} else if (errno) {
-				if (errno == EAGAIN) {
-					*logmsg = "temporary DNS error on RBL lookup";
-					rc = FILTER_DENIED_TEMPORARY;
-				} else {
-					rc = FILTER_ERROR;
-				}
-			}
 		}
 	} else if (errno) {
 		if (errno == EAGAIN) {
