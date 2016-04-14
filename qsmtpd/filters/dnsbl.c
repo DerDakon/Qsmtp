@@ -40,7 +40,7 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	i = check_rbl(a, &txt);
 	if (i >= 0) {
 		int j, u;
-		char **c;		/* same like **a, just for whitelist */
+		char **c = NULL;		/* same like **a, just for whitelist */
 
 		u = userconf_get_buffer(ds, fnw, &c, domainvalid, userconf_none);
 		if (u < 0) {
@@ -59,7 +59,6 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 						blocktype[*t], " dnsbl, but whitelisted by ",
 						c[i], " from ", blocktype[u], " whitelist}", NULL };
 			log_writen(LOG_INFO, logmess);
-			free(c);
 		} else if (errno) {
 			if (errno == EAGAIN) {
 				*logmsg = "temporary DNS error on RBL lookup";
@@ -83,6 +82,7 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			else
 				rc = FILTER_DENIED_WITH_MESSAGE;
 		}
+		free(c);
 	} else if (errno) {
 		if (errno == EAGAIN) {
 			*logmsg = "temporary DNS error on RBL lookup";
