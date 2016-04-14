@@ -34,13 +34,6 @@ check_host(const char *domain __attribute__ ((unused)))
 }
 
 int
-dnstxt(char **a __attribute__ ((unused)), const char *b __attribute__ ((unused)))
-{
-	errno = ENOENT;
-	return -1;
-}
-
-int
 test_ask_dnsa(const char *a, struct in6_addr **b)
 {
 	if (strcmp(a, "9.8.168.192.dnsblmatch.example.net") == 0) {
@@ -64,6 +57,7 @@ static struct {
 	const char *namebl;		/**< the namebl configuration */
 	const char *dnsbl;		/**< the dnsbl configuration */
 	const char *dnswl;		/**< the dnsbl whitelist configuration */
+	const char *dnstxt_reply;	/**< result of dnstxt lookup */
 	const char *userconf;		/**< the contents of the filterconf file */
 	const char *netmsg;		/**< the expected message written to the network */
 	const char *logmsg;		/**< the expected log message */
@@ -185,6 +179,15 @@ static struct {
 		.netmsg = "501 5.7.1 message rejected, you are listed in dnsblmatch.example.net\r\n",
 		.conf = CONFIG_DOMAIN
 	},
+	/* dnsbl match with message*/
+	{
+		.mailfrom = "foo@example.com",
+		.dnsbl = "dnsblmatch.example.net\0\0",
+		.dnstxt_reply = "TEST !REJECT!",
+		.logmsg = "rejected message to <postmaster> from <foo@example.com> from IP [::ffff:192.168.8.9] {listed in dnsblmatch.example.net from domain dnsbl}",
+		.netmsg = "501 5.7.1 message rejected, you are listed in dnsblmatch.example.net, message: TEST !REJECT!\r\n",
+		.conf = CONFIG_DOMAIN
+	},
 	/* dnsbl+whitelist match */
 	{
 		.mailfrom = "foo@example.com",
@@ -194,6 +197,23 @@ static struct {
 		.conf = CONFIG_DOMAIN
 	},
 };
+
+int
+dnstxt(char **a, const char *b)
+{
+	if (testdata[testindex].dnstxt_reply == NULL) {
+		errno = ENOENT;
+		return -1;
+	}
+
+	assert(strcmp(b, "9.8.168.192.dnsblmatch.example.net") == 0);
+
+	*a = strdup(testdata[testindex].dnstxt_reply);
+	if (*a == NULL)
+		exit(ENOMEM);
+
+	return 0;
+}
 
 static char **
 map_from_list(const char *values)
