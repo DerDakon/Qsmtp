@@ -50,6 +50,7 @@ dieerror(int a __attribute__ ((unused)))
 }
 
 static struct {
+	const char *testname;		/**< visual name of the test */
 	const char *mailfrom;		/**< the from address to set */
 	const char *failmsg;		/**< the expected failure message to log */
 	const char *goodmailfrom;	/**< the goodmailfrom configuration */
@@ -103,44 +104,44 @@ static struct {
 		.namebl = "foo.example.net\0bar.example.net\0\0",
 		.conf = CONFIG_USER
 	},
-	/* X-Mas tree: (nearly) everything on, but should still pass */
 	{
+		.testname = "X-Mas tree: (nearly) everything on, but should still pass",
 		.mailfrom = "foo@example.com",
 		.conf = CONFIG_USER,
 		.userconf = "whitelistauth\0forcestarttls=0\0nobounce\0noapos\0check_strict_rfc2822\0"
 				"fromdomain=7\0reject_ipv6only\0helovalid\0smtp_space_bug=0\0block_SoberG\0"
 				"spfpolicy=1\0fail_hard_on_temp\0usersize=100000\0block_wildcardns\0\0"
 	},
-	/* catched by nobounce filter */
 	{
+		.testname = "catched by nobounce filter",
 		.userconf = "nobounce\0\0",
 		.netmsg = "550 5.7.1 address does not send mail, there can't be any bounces\r\n",
 		.logmsg = "rejected message to <postmaster> from IP [::ffff:192.168.8.9] {no bounces allowed}",
 		.conf = CONFIG_USER,
 	},
-	/* mail too big */
 	{
+		.testname = "mail too big",
 		.userconf = "usersize=1024\0\0",
 		.failmsg = "message too big",
 		.netmsg = "552 5.2.3 Requested mail action aborted: exceeded storage allocation\r\n",
 		.conf = CONFIG_USER,
 		.esmtp = 1
 	},
-	/* reject because of SMTP space bug */
 	{
+		.testname = "reject because of SMTP space bug",
 		.userconf = "smtp_space_bug=1\0\0",
 		.netmsg = "500 5.5.2 command syntax error\r\n",
 		.logmsg = "rejected message to <postmaster> from <> from IP [::ffff:192.168.8.9] {SMTP space bug}",
 		.conf = CONFIG_USER
 	},
-	/* passed because of SMTP space bug in ESMTP mode */
 	{
+		.testname = "passed because of SMTP space bug in ESMTP mode",
 		.userconf = "smtp_space_bug=1\0\0",
 		.conf = CONFIG_USER,
 		.esmtp = 1
 	},
-	/* rejected because of SMTP space bug in ESMTP mode, but authentication is required */
 	{
+		.testname = "rejected because of SMTP space bug in ESMTP mode, but authentication is required",
 		.mailfrom = "ba'al@example.org",
 		.userconf = "smtp_space_bug=2\0\0",
 		.netmsg = "500 5.5.2 command syntax error\r\n",
@@ -148,39 +149,39 @@ static struct {
 		.conf = CONFIG_USER,
 		.esmtp = 1
 	},
-	/* rejected because no STARTTLS mode is used */
 	{
+		.testname = "rejected because no STARTTLS mode is used",
 		.userconf = "forcestarttls\0\0",
 		.failmsg = "TLS required",
 		.netmsg = "501 5.7.1 recipient requires encrypted message transmission\r\n",
 		.conf = CONFIG_USER,
 		.esmtp = 1
 	},
-	/* apostroph rejected */
 	{
+		.testname = "apostroph rejected",
 		.mailfrom = "ba'al@example.org",
 		.failmsg = "apostroph in from",
 		.userconf = "noapos\0\0",
 		.conf = CONFIG_USER,
 		.esmtp = 1
 	},
-	/* dnsbl present, but too long */
 	{
+		.testname = "dnsbl present, but too long",
 		.mailfrom = "foo@example.com",
 		.dnsbl = "this.dnsbl.is.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.example.net\0\0",
 		.logmsg = "!name of rbl too long: \"this.dnsbl.is.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.far.too.long.example.net\"",
 		.conf = CONFIG_USER
 	},
-	/* dnsbl match */
 	{
+		.testname = "dnsbl match",
 		.mailfrom = "foo@example.com",
 		.dnsbl = "dnsblmatch.example.net\0\0",
 		.logmsg = "rejected message to <postmaster> from <foo@example.com> from IP [::ffff:192.168.8.9] {listed in dnsblmatch.example.net from domain dnsbl}",
 		.netmsg = "501 5.7.1 message rejected, you are listed in dnsblmatch.example.net\r\n",
 		.conf = CONFIG_DOMAIN
 	},
-	/* dnsbl match with message*/
 	{
+		.testname = "dnsbl match with message",
 		.mailfrom = "foo@example.com",
 		.dnsbl = "dnsblmatch.example.net\0\0",
 		.dnstxt_reply = "TEST !REJECT!",
@@ -188,8 +189,8 @@ static struct {
 		.netmsg = "501 5.7.1 message rejected, you are listed in dnsblmatch.example.net, message: TEST !REJECT!\r\n",
 		.conf = CONFIG_DOMAIN
 	},
-	/* dnsbl+whitelist match */
 	{
+		.testname = "dnsbl+whitelist match",
 		.mailfrom = "foo@example.com",
 		.dnsbl = "dnsblmatch.example.net\0\0",
 		.dnswl = "dnsblmatch.example.net\0\0",
@@ -466,8 +467,11 @@ main(void)
 			uc.domainpath.len = strlen(uc.domainpath.s);
 		}
 
-		printf("testing configuration %u,%s\n", testindex,
-				blocktype[testdata[testindex].conf]);
+		if (testdata[testindex].testname)
+			printf("%2u: %s\n", testindex, testdata[testindex].testname);
+		else
+			printf("%2u: testing %s configuration\n", testindex,
+					blocktype[testdata[testindex].conf]);
 
 		for (j = 0; (rcpt_cbs[j] != NULL) && (r == 0); j++) {
 			enum config_domain bt = CONFIG_NONE;
