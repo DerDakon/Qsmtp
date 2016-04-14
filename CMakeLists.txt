@@ -118,7 +118,11 @@ add_subdirectory(qsmtpd)
 add_subdirectory(qremote)
 add_subdirectory(tools)
 
-option(BUILD_TESTS "Build testcases" ON)
+# testcases use the continue() command which was introduced in 3.2,
+# but only if OpenSSL is older than 1.0.2
+if (NOT CMAKE_VERSION VERSION_LESS 3.2 OR NOT OPENSSL_VERSION VERSION_LESS 1.0.2)
+	option(BUILD_TESTS "Build testcases" ON)
+endif ()
 
 if (BUILD_TESTS)
 	include(CTest)

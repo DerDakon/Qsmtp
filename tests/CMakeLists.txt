@@ -1,3 +1,7 @@
+if (OPENSSL_VERSION VERSION_LESS 1.0.2)
+	cmake_minimum_required(VERSION 3.2) # for continue()
+endif ()
+
 # check if the qmail directory is maintained by the build, which means
 # we are running inside the testsuite and can mess with that directory
 if (AUTOQMAIL MATCHES "^${CMAKE_BINARY_DIR}/")
