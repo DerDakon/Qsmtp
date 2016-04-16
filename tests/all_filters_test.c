@@ -36,10 +36,16 @@ check_host(const char *domain __attribute__ ((unused)))
 int
 test_ask_dnsa(const char *a, struct in6_addr **b)
 {
+	if (strcmp(a, "9.8.168.192.dnsblerror.example.net") == 0) {
+		errno = EAGAIN;
+		return -1;
+	}
+
 	if (strcmp(a, "9.8.168.192.dnsblmatch.example.net") == 0) {
 		assert(b == NULL);
 		return 1;
 	}
+
 	return 0;
 }
 
@@ -204,6 +210,23 @@ static struct {
 		.dnswl = "foo.example.net\0\0",
 		.logmsg = "rejected message to <postmaster> from <foo@example.com> from IP [::ffff:192.168.8.9] {listed in dnsblmatch.example.net from domain dnsbl}",
 		.netmsg = "501 5.7.1 message rejected, you are listed in dnsblmatch.example.net\r\n",
+		.conf = CONFIG_DOMAIN
+	},
+	{
+		.testname = "dnsbl DNS error",
+		.mailfrom = "foo@example.com",
+		.dnsbl = "dnsblerror.example.net\0\0",
+		.failmsg = "temporary DNS error on RBL lookup",
+		.netmsg = "401 5.7.1 message rejected, you are listed in dnsblmatch.example.net\r\n",
+		.conf = CONFIG_DOMAIN
+	},
+	{
+		.testname = "dnsbl match + dnswl DNS error",
+		.mailfrom = "foo@example.com",
+		.dnsbl = "dnsblmatch.example.net\0\0",
+		.dnswl = "dnsblerror.example.net\0\0",
+		.failmsg = "temporary DNS error on RBL lookup",
+		.netmsg = "401 5.7.1 message rejected, you are listed in dnsblmatch.example.net\r\n",
 		.conf = CONFIG_DOMAIN
 	},
 };
