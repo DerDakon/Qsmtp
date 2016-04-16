@@ -59,14 +59,8 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 						blocktype[*t], " dnsbl, but whitelisted by ",
 						c[i], " from ", blocktype[u], " whitelist}", NULL };
 			log_writen(LOG_INFO, logmess);
-		} else if (errno) {
-			if (errno == EAGAIN) {
-				*logmsg = "temporary DNS error on RBL lookup";
-				rc = FILTER_DENIED_TEMPORARY;
-			} else {
-				rc = FILTER_ERROR;
-			}
-		} else {
+			errno = 0; /* just to be sure */
+		} else if (!errno) {
 			const char *netmsg[] = { "501 5.7.1 message rejected, you are listed in ",
 						a[i], NULL, txt, NULL };
 			const char *logmess[] = { "rejected message to <", THISRCPT, "> from <", MAILFROM,
@@ -83,7 +77,10 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 				rc = FILTER_DENIED_WITH_MESSAGE;
 		}
 		free(c);
-	} else if (errno) {
+	}
+
+	/* combined error handling for normal and whitelist case */
+	if (errno) {
 		if (errno == EAGAIN) {
 			*logmsg = "temporary DNS error on RBL lookup";
 			rc = FILTER_DENIED_TEMPORARY;
