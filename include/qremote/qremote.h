@@ -56,6 +56,18 @@ extern void write_status(const char *str) __attribute__ ((nonnull (1)));
  */
 extern void write_status_m(const char **strs, const unsigned int count) __attribute__ ((nonnull (1)));
 
+/**
+ * @brief send the SMTP envelope
+ * @param recodeflag the 8bit status of the mail as returned by need_recode()
+ * @param sender envelope sender address
+ * @param rcptcount the number of recipients in rcpts
+ * @param rcpts the recipients
+ * @return if all recipients were rejected
+ * @retval 1 all recipients were rejected, mail must not be sent
+ * @retval 0 at least one recipient was accepted, send mail
+ */
+extern int send_envelope(const unsigned int recodeflag, const char *sender, int rcptcount, char **rcpts);
+
 extern char *rhost;
 extern size_t rhostlen;
 extern char *partner_fqdn;

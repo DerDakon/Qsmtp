@@ -6,6 +6,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 set(QREMOTE_SRCS
 	common_setup.c
+	envelope.c
 	greeting.c
 	qremote.c
 	client.c

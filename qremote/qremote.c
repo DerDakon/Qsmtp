@@ -8,13 +8,11 @@
 #include <qremote/qremote.h>
 
 #include <control.h>
-#include <fmt.h>
 #include <ipme.h>
 #include <log.h>
 #include <netio.h>
 #include <qdns.h>
 #include <qmaildir.h>
-#include <qremote/client.h>
 #include <qremote/conn.h>
 #include <qremote/greeting.h>
 #include <qremote/qrdata.h>
@@ -178,14 +176,9 @@ setup(void)
 int
 main(int argc, char *argv[])
 {
-	const char *mailerrmsg[] = { "Connected to ", NULL, " but sender was rejected", NULL };
-	const char *netmsg[10];
-	int rcptstat = 1;	/* this means: all recipients have been rejected */
 	struct ips *mx = NULL;
 	int rcptcount = argc - 3;
 	struct stat st;
-	char sizebuf[ULSTRLEN];
-	unsigned int lastmsg;	/* last message in array */
 	unsigned int recodeflag;
 	int i;
 
@@ -236,8 +229,6 @@ main(int argc, char *argv[])
 		net_conn_shutdown(shutdown_abort);
 	}
 
-	mailerrmsg[1] = rhost;
-
 	if (ssl) {
 		successmsg[3] = "message ";
 		successmsg[4] = SSL_get_cipher(ssl);
@@ -247,82 +238,9 @@ main(int argc, char *argv[])
 /* check if message is plain ASCII or not */
 	recodeflag = need_recode(msgdata, msgsize);
 
-	netmsg[0] = "MAIL FROM:<";
-	netmsg[1] = argv[2];
-	lastmsg = 2;
-/* ESMTP SIZE extension */
-	if (smtpext & esmtp_size) {
-		netmsg[lastmsg++] = "> SIZE=";
-		ultostr(msgsize, sizebuf);
-		netmsg[lastmsg++] = sizebuf;
-	} else {
-		netmsg[lastmsg++] = ">";
-	}
-/* ESMTP 8BITMIME extension */
-	if (smtpext & esmtp_8bitmime) {
-		netmsg[lastmsg++] = (recodeflag & 1) ? " BODY=8BITMIME" : " BODY=7BIT";
-	}
-	if (smtpext & esmtp_pipelining) {
-/* server allows PIPELINING: first send all the messages, then check the replies.
- * This allows to hide network latency. */
-		/* batch the first recipient with the from */
-		netmsg[lastmsg++] = "\r\nRCPT TO:<";
-		netmsg[lastmsg++] = argv[3];
-		netmsg[lastmsg++] = ">\r\n";
-		netmsg[lastmsg] = NULL;
-		net_write_multiline(netmsg);
+	if (send_envelope(recodeflag, argv[2], argc - 3, argv + 3) != 0)
+		net_conn_shutdown(shutdown_clean);
 
-		lastmsg = 1;
-		netmsg[0] = "RCPT TO:<";
-		for (i = 4; i < argc; i++) {
-			netmsg[lastmsg++] = argv[i];
-			if ((i == argc - 1) || ((i % 4) == 3)) {
-				netmsg[lastmsg++] = ">\r\n";
-				netmsg[lastmsg] = NULL;
-				net_write_multiline(netmsg);
-				lastmsg = 1;
-			} else {
-				netmsg[lastmsg++] = ">\r\nRCPT TO:<";
-			}
-		}
-/* MAIL FROM: reply */
-		if (checkreply(" ZD", mailerrmsg, 6) >= 300) {
-			for (i = rcptcount; i > 0; i--)
-				checkreply(NULL, NULL, 0);
-			net_conn_shutdown(shutdown_clean);
-		}
-/* RCPT TO: replies */
-		for (i = rcptcount; i > 0; i--) {
-			if (checkreply(" sh", NULL, 0) < 300) {
-				write_status_raw("r", 2);
-				rcptstat = 0;
-			}
-		}
-		if (rcptstat)
-			net_conn_shutdown(shutdown_clean);
-	} else {
-/* server does not allow pipelining: we must do this one by one */
-		netmsg[lastmsg] = NULL;
-		net_writen(netmsg);
-
-		if (checkreply(" ZD", mailerrmsg, 6) >= 300)
-			net_conn_shutdown(shutdown_clean);
-
-		netmsg[0] = "RCPT TO:<";
-		netmsg[2] = ">";
-		netmsg[3] = NULL;
-
-		for (i = 3; i < argc; i++) {
-			netmsg[1] = argv[i];
-			net_writen(netmsg);
-			if (checkreply(" sh", NULL, 0) < 300) {
-				write_status_raw("r", 2);
-				rcptstat = 0;
-			}
-		}
-		if (rcptstat)
-			net_conn_shutdown(shutdown_clean);
-	}
 	successmsg[0] = rhost;
 #ifdef CHUNKING
 	if (smtpext & esmtp_chunking) {
