@@ -594,6 +594,20 @@ target_link_libraries(testcase_connmx
 add_test(NAME "Qremote_connect_mx"
 		COMMAND testcase_connmx)
 
+add_executable(testcase_envelope
+		envelope_test.c
+		${CMAKE_SOURCE_DIR}/qremote/envelope.c)
+
+target_link_libraries(testcase_envelope
+		qsmtp_lib
+		testcase_io_lib
+		${MEMCHECK_LIBRARIES})
+
+add_test(NAME "Qremote_envelope_size_mime_nopipeline"
+		COMMAND testcase_envelope "1009:Z2s2:1" foo@example.net bar@example.com)
+add_test(NAME "Qremote_envelope_size_mime_pipeline"
+		COMMAND testcase_envelope "100b:Z2s2:1" foo@example.net bar@example.com)
+
 # This is a brute force test just to get some "real" coverage on the file.
 # It will always fail, either because ${AUTOQMAIL} doesn't exist or doesn't
 # have the proper configuration files or simply because we do not pass it
