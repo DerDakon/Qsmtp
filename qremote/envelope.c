@@ -10,7 +10,7 @@
 int
 send_envelope(const unsigned int recodeflag, const char *sender, int rcptcount, char **rcpts)
 {
-	const char *mailerrmsg[] = { "Connected to ", rhost, " but sender was rejected", NULL };
+	const char *mailerrmsg[] = { "Connected to ", rhost, " but sender was rejected\n", NULL };
 	const char *netmsg[10] = { "MAIL FROM:<", sender };
 	int rcptstat = 1;	/* this means: all recipients have been rejected */
 	char sizebuf[ULSTRLEN];
