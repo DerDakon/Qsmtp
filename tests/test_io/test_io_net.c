@@ -119,6 +119,38 @@ tc_ignore_net_write_multiline(const char *const *a __attribute__((unused)))
 }
 
 int
+testcase_native_net_write_multiline(const char *const *s)
+{
+	size_t len = 0;
+	char *buf;
+	int i;
+
+	for (i = 0; s[i]; i++)
+		len += strlen(s[i]);
+
+	assert(i > 0);
+	assert(len > 2);
+
+	buf = malloc(len + 1);
+	if (buf == NULL)
+		abort();
+
+	buf[0] = '\0';
+	for (i = 0; s[i]; i++)
+		strcat(buf, s[i]);
+
+	assert(buf[len - 1] == '\n');
+	assert(buf[len - 2] == '\r');
+
+	i = netnwrite(buf, len);
+
+	free(buf);
+
+	return i;
+}
+
+
+int
 tc_ignore_netwrite(const char *a __attribute__((unused)))
 {
 	return 0;

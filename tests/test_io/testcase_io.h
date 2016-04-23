@@ -82,6 +82,16 @@ extern int testcase_netnwrite_compare(const char *a, const size_t len);
  */
 extern int testcase_netnwrite_check(const char *prefix);
 
+/**
+ * @brief simulate the native behavior of net_write_multiline()
+ *
+ * This function is a copy of the real net_write_multiline() function. It will
+ * combine it's input and pass it on to netnwrite() as the original function
+ * does. In contrast it has no fallback mechanism on memory shortage, instead
+ * it will just terminate the program with an error code.
+ */
+extern int testcase_native_net_write_multiline(const char *const *s);
+
 typedef size_t (func_net_readbin)(size_t, char *);
 DECLARE_TC_SETUP(net_readbin);
 
