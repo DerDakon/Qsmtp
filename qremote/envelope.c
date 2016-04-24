@@ -14,12 +14,9 @@ send_envelope(const unsigned int recodeflag, const char *sender, int rcptcount, 
 	const char *netmsg[10] = { "MAIL FROM:<", sender };
 	int rcptstat = 1;	/* this means: all recipients have been rejected */
 	char sizebuf[ULSTRLEN];
-	unsigned int lastmsg;	/* last message in array */
+	unsigned int lastmsg = 2;	/* last message in array */
 	int i;
 
-	netmsg[0] = "MAIL FROM:<";
-	netmsg[1] = sender;
-	lastmsg = 2;
 /* ESMTP SIZE extension */
 	if (smtpext & esmtp_size) {
 		netmsg[lastmsg++] = "> SIZE=";
