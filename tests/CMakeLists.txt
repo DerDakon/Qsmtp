@@ -603,10 +603,14 @@ target_link_libraries(testcase_envelope
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES})
 
-add_test(NAME "Qremote_envelope_size_mime_nopipeline"
+add_test(NAME "Qremote_envelope_size_mime"
 		COMMAND testcase_envelope "1009:Z2s2:1" foo@example.net bar@example.com)
 add_test(NAME "Qremote_envelope_size_mime_pipeline"
 		COMMAND testcase_envelope "100b:Z2s2:1" foo@example.net bar@example.com)
+add_test(NAME "Qremote_envelope_noext"
+		COMMAND testcase_envelope "1000:Z2s2:1" foo@example.net bar@example.com)
+add_test(NAME "Qremote_envelope_pipeline"
+		COMMAND testcase_envelope "1002:Z2s2:1" foo@example.net bar@example.com)
 
 # This is a brute force test just to get some "real" coverage on the file.
 # It will always fail, either because ${AUTOQMAIL} doesn't exist or doesn't
