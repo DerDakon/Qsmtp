@@ -603,14 +603,26 @@ target_link_libraries(testcase_envelope
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES})
 
-add_test(NAME "Qremote_envelope_size_mime"
-		COMMAND testcase_envelope "1009:Z2s2:1" foo@example.net bar@example.com)
-add_test(NAME "Qremote_envelope_size_mime_pipeline"
-		COMMAND testcase_envelope "100b:Z2s2:1" foo@example.net bar@example.com)
+add_test(NAME "Qremote_envelope_size_mime7"
+		COMMAND testcase_envelope "0009:Z2s2:1" foo@example.net bar@example.com "MAIL FROM:<foo@example.net> SIZE=12345 BODY=7BIT\n|RCPT TO:<bar@example.com>\n")
+add_test(NAME "Qremote_envelope_size_mime7_pipeline"
+		COMMAND testcase_envelope "000b:Z2s2:1" foo@example.net bar@example.com "MAIL FROM:<foo@example.net> SIZE=12345 BODY=7BIT\nRCPT TO:<bar@example.com>\n")
+add_test(NAME "Qremote_envelope_size_mime8"
+		COMMAND testcase_envelope "1009:Z2s2:1" foo@example.net bar@example.com "MAIL FROM:<foo@example.net> SIZE=12345 BODY=8BITMIME\n|RCPT TO:<bar@example.com>\n")
+add_test(NAME "Qremote_envelope_size_mime8_pipeline"
+		COMMAND testcase_envelope "100b:Z2s2:1" foo@example.net bar@example.com "MAIL FROM:<foo@example.net> SIZE=12345 BODY=8BITMIME\nRCPT TO:<bar@example.com>\n")
 add_test(NAME "Qremote_envelope_noext"
-		COMMAND testcase_envelope "1000:Z2s2:1" foo@example.net bar@example.com)
+		COMMAND testcase_envelope "0000:Z2s2:1" foo@example.net bar@example.com "MAIL FROM:<foo@example.net>\n|RCPT TO:<bar@example.com>\n")
 add_test(NAME "Qremote_envelope_pipeline"
-		COMMAND testcase_envelope "1002:Z2s2:1" foo@example.net bar@example.com)
+		COMMAND testcase_envelope "0002:Z2s2:1" foo@example.net bar@example.com "MAIL FROM:<foo@example.net>\nRCPT TO:<bar@example.com>\n")
+add_test(NAME "Qremote_envelope_pipeline_errMail"
+		COMMAND testcase_envelope "0102:Z505:0" foo@example.net bar@example.com "MAIL FROM:<foo@example.net>\nRCPT TO:<bar@example.com>\n")
+add_test(NAME "Qremote_envelope_errMail"
+		COMMAND testcase_envelope "0100:Z5:0" foo@example.net "MAIL FROM:<foo@example.net>\n")
+add_test(NAME "Qremote_envelope_pipeline_errRcpt"
+		COMMAND testcase_envelope "0102:Z2s5:0" foo@example.net bar@example.com "MAIL FROM:<foo@example.net>\nRCPT TO:<bar@example.com>\n")
+add_test(NAME "Qremote_envelope_3rcpt"
+		COMMAND testcase_envelope "0000:Z2s2s2:2" foo@example.net bar@example.com baz@example.com "MAIL FROM:<foo@example.net>\n|RCPT TO:<bar@example.com>\n|RCPT TO:<baz@example.com>\n")
 
 # This is a brute force test just to get some "real" coverage on the file.
 # It will always fail, either because ${AUTOQMAIL} doesn't exist or doesn't

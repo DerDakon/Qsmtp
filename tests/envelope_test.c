@@ -14,8 +14,8 @@
 char *rhost = (char *)"testremote.example.net";
 unsigned int smtpext;
 off_t msgsize = 12345;
-char netbuffer[1024];
-int hasmorenetbuf;
+static char netbuffer[1024];
+static unsigned int hasmorenetbuf;
 
 static const char *checkreplies;	// return values for checkreplies
 
@@ -130,8 +130,11 @@ write_status_raw(const char *str, const size_t len)
 //    rawstatus: number of calls to write_status_raw() that must happen
 // 2: mail from
 // 3+: recipients
+// LAST: expected network messages,
 // NOTE: this is the same layout as Qremote, just the first argument is
-//       different
+//       different and the last one is new
+// LF in the last argument is expanded to CRLF, | is used to delimit the
+// different network messagess
 
 int
 main(int argc, char *argv[])
@@ -181,24 +184,14 @@ main(int argc, char *argv[])
 
 	netnwrite_msg = netbuffer;
 
-	snprintf(netbuffer, sizeof(netbuffer), "MAIL FROM:<%s>", argv[2]);
-	if (smtpext & esmtp_size)
-		strcat(netbuffer, " SIZE=12345");
-	if (smtpext & esmtp_8bitmime) {
-		if (recodeflag & 1)
-			strcat(netbuffer, " BODY=8BITMIME");
-		else
-			strcat(netbuffer, " BODY=7BIT");
-	}
+	strncpy(netbuffer, argv[argc - 1], sizeof(netbuffer));
 
-	if (smtpext & esmtp_pipelining) {
-		strcat(netbuffer, "\r\nRCPT TO:<");
-		strcat(netbuffer, argv[3]);
-		strcat(netbuffer, ">\r\n");
-	} else {
-		strcat(netbuffer, "\r\n|RCPT TO:<");
-		strcat(netbuffer, argv[3]);
-		strcat(netbuffer, ">\r\n");
+	// looks like one cannot pass \r as argument when using CMake
+	end = netbuffer;
+	while ((end = strchr(end, '\n')) != NULL) {
+		memmove(end + 1, end, strlen(end));
+		*end = '\r';
+		end += 2;
 	}
 
 	while ((end = strrchr(netbuffer, '|')) != NULL) {
@@ -206,12 +199,19 @@ main(int argc, char *argv[])
 		*end = '\0';
 	}
 
-	r = send_envelope(recodeflag, argv[2], argc - 3, argv + 3);
+	r = send_envelope(recodeflag, argv[2], argc - 4, argv + 3);
 
 	if (scount != 0) {
 		fprintf(stderr, "too few calls to write_status_raw(), %u calls missing\n", scount);
 		return EFAULT;
 	}
+
+	if (hasmorenetbuf) {
+		fprintf(stderr, "too few network messages were sent, %u ones missing\n", hasmorenetbuf);
+		return EFAULT;
+	}
+
+	testcase_netnwrite_check("Qremote envelope");
 
 	return r != argv[1][1] - '0';
 }
