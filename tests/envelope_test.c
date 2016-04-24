@@ -22,7 +22,7 @@ static const char *checkreplies;	// return values for checkreplies
 int
 checkreply(const char *status, const char **pre, const int mask)
 {
-	const char *mailerrmsg[] = { "Connected to ", rhost, " but sender was rejected", NULL };
+	const char *mailerrmsg[] = { "Connected to ", rhost, " but sender was rejected\n", NULL };
 	const char *sexp;	// expected status
 	int ret;
 
