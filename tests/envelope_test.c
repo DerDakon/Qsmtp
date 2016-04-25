@@ -5,6 +5,7 @@
 
 #include "test_io/testcase_io.h"
 
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdio.h>
@@ -15,7 +16,7 @@ char *rhost = (char *)"testremote.example.net";
 unsigned int smtpext;
 off_t msgsize = 12345;
 static char netbuffer[1024];
-static unsigned int hasmorenetbuf;
+static const char *netbuffer_next[5];
 
 static const char *checkreplies;	// return values for checkreplies
 
@@ -95,11 +96,9 @@ checkreply(const char *status, const char **pre, const int mask)
 
 	checkreplies++;
 
-	if (hasmorenetbuf) {
-		size_t skip = strlen(netbuffer) + 1;
-		hasmorenetbuf--;
-		memmove(netbuffer, netbuffer + skip, sizeof(netbuffer) - skip);
-		netnwrite_msg = netbuffer;
+	if (!(smtpext & esmtp_pipelining)) {
+		netnwrite_msg = netbuffer_next[0];
+		memmove(netbuffer_next, netbuffer_next + 1, sizeof(netbuffer_next) - sizeof(netbuffer_next[0]));
 	}
 
 	return ret;
@@ -194,10 +193,27 @@ main(int argc, char *argv[])
 		end += 2;
 	}
 
+	unsigned int i = 0;
 	while ((end = strrchr(netbuffer, '|')) != NULL) {
-		hasmorenetbuf++;
 		*end = '\0';
+		netbuffer_next[i++] = end + 1;
+		if (i >= sizeof(netbuffer_next) / sizeof(netbuffer_next[i]) - 1)
+			return EFAULT;
 	}
+	if (i > 1) {
+		// the entries in netbuffer_next are in reverse order, fix this
+		unsigned int j = 0;
+		i--;
+
+		while (i > j) {
+			const char *s = netbuffer_next[j];
+			netbuffer_next[j++] = netbuffer_next[i];
+			netbuffer_next[i--] = s;
+		}
+	}
+
+	if ((smtpext & esmtp_pipelining) && (*netbuffer_next != NULL))
+		netnwrite_msg_next = netbuffer_next;
 
 	r = send_envelope(recodeflag, argv[2], argc - 4, argv + 3);
 
@@ -206,8 +222,8 @@ main(int argc, char *argv[])
 		return EFAULT;
 	}
 
-	if (hasmorenetbuf) {
-		fprintf(stderr, "too few network messages were sent, %u ones missing\n", hasmorenetbuf);
+	if (!(smtpext & esmtp_pipelining) && *netbuffer_next) {
+		fprintf(stderr, "too few network messages were sent\n");
 		return EFAULT;
 	}
 

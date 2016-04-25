@@ -621,8 +621,23 @@ add_test(NAME "Qremote_envelope_errMail"
 		COMMAND testcase_envelope "0100:Z5:0" foo@example.net "MAIL FROM:<foo@example.net>\n")
 add_test(NAME "Qremote_envelope_pipeline_errRcpt"
 		COMMAND testcase_envelope "0102:Z2s5:0" foo@example.net bar@example.com "MAIL FROM:<foo@example.net>\nRCPT TO:<bar@example.com>\n")
+add_test(NAME "Qremote_envelope_pipeline_errRcpt2"
+		COMMAND testcase_envelope "0002:Z2s2s5:1" foo@example.net bar@example.com baz@example.com
+		"MAIL FROM:<foo@example.net>\nRCPT TO:<bar@example.com>\n|RCPT TO:<baz@example.com>\n")
+add_test(NAME "Qremote_envelope_pipeline_errRcpt1of2"
+		COMMAND testcase_envelope "0002:Z2s5s2:1" foo@example.net bar@example.com baz@example.com
+		"MAIL FROM:<foo@example.net>\nRCPT TO:<bar@example.com>\n|RCPT TO:<baz@example.com>\n")
+add_test(NAME "Qremote_envelope_pipeline_errRcpt1of3"
+		COMMAND testcase_envelope "0002:Z2s5s2s2:2" foo@example.net bar@example.com baz@example.com bat@example.com
+		"MAIL FROM:<foo@example.net>\nRCPT TO:<bar@example.com>\n|RCPT TO:<baz@example.com>\nRCPT TO:<bat@example.com>\n")
+add_test(NAME "Qremote_envelope_pipeline_errRcpt1of4"
+		COMMAND testcase_envelope "0002:Z2s5s2s2s2:3" foo@example.net bar@example.com baz@example.com bat@example.com but@example.com
+		"MAIL FROM:<foo@example.net>\nRCPT TO:<bar@example.com>\n|RCPT TO:<baz@example.com>\nRCPT TO:<bat@example.com>\nRCPT TO:<but@example.com>\n")
 add_test(NAME "Qremote_envelope_3rcpt"
 		COMMAND testcase_envelope "0000:Z2s2s2:2" foo@example.net bar@example.com baz@example.com "MAIL FROM:<foo@example.net>\n|RCPT TO:<bar@example.com>\n|RCPT TO:<baz@example.com>\n")
+add_test(NAME "Qremote_envelope_pipeline_5rcpt"
+		COMMAND testcase_envelope "0002:Z2s2s2s2s2s2:5" foo@example.net bar@example.com baz@example.com bat@example.com but@example.com bot@example.com
+		"MAIL FROM:<foo@example.net>\nRCPT TO:<bar@example.com>\n|RCPT TO:<baz@example.com>\nRCPT TO:<bat@example.com>\nRCPT TO:<but@example.com>\n|RCPT TO:<bot@example.com>\n")
 
 # This is a brute force test just to get some "real" coverage on the file.
 # It will always fail, either because ${AUTOQMAIL} doesn't exist or doesn't
