@@ -15,10 +15,11 @@
 char *rhost = (char *)"testremote.example.net";
 unsigned int smtpext;
 off_t msgsize = 12345;
+
 static char netbuffer[1024];
 static const char *netbuffer_next[5];
-
 static const char *checkreplies;	// return values for checkreplies
+static unsigned int scount;
 
 int
 checkreply(const char *status, const char **pre, const int mask)
@@ -80,9 +81,11 @@ checkreply(const char *status, const char **pre, const int mask)
 		}
 	}
 
-	switch (*++checkreplies) {
+	switch (checkreplies[1]) {
 	case '2':
 		ret = 250;
+		if (checkreplies[0] != 'Z')
+			scount++;
 		break;
 	case '4':
 		ret = 421;
@@ -94,7 +97,7 @@ checkreply(const char *status, const char **pre, const int mask)
 		exit(EINVAL);
 	}
 
-	checkreplies++;
+	checkreplies += 2;
 
 	if (!(smtpext & esmtp_pipelining)) {
 		netnwrite_msg = netbuffer_next[0];
@@ -103,8 +106,6 @@ checkreply(const char *status, const char **pre, const int mask)
 
 	return ret;
 }
-
-static unsigned int scount;
 
 void
 write_status_raw(const char *str, const size_t len)
@@ -121,12 +122,11 @@ write_status_raw(const char *str, const size_t len)
 }
 
 // The arguments are expected as follows:
-// 1: control string, consisting of REXX:checkreplies:rawstatus
+// 1: control string, consisting of REXX:checkreplies
 //    R: recodeflag to set ('0'..'3')
 //    E: expected return code of send_envelope (either '0' or '1')
 //    XX: smtpext value to set (2 hex characters)
 //    checkreplies: contol string for checkreply ([0sZ][245])+
-//    rawstatus: number of calls to write_status_raw() that must happen
 // 2: mail from
 // 3+: recipients
 // LAST: expected network messages,
@@ -139,7 +139,6 @@ int
 main(int argc, char *argv[])
 {
 	int recodeflag;
-	const char *rawstatus;
 	int r;
 	char *end;
 
@@ -161,14 +160,6 @@ main(int argc, char *argv[])
 	if (checkreplies == NULL)
 		return EINVAL;
 	if (*++checkreplies != 'Z')
-		return EINVAL;
-
-	rawstatus = strchr(checkreplies, ':');
-	if (rawstatus == NULL)
-		return EINVAL;
-
-	scount = strtoul(++rawstatus, &end, 10);
-	if (*end != '\0')
 		return EINVAL;
 
 	if (!isxdigit(argv[1][2]) || !isxdigit(argv[1][3]))
