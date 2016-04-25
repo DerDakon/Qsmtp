@@ -12,6 +12,7 @@ struct string linein = {
 	.s = lineinbuf
 };
 const char *netnwrite_msg;
+const char **netnwrite_msg_next;
 const char *net_read_msg;
 int net_read_fatal;
 
@@ -181,7 +182,14 @@ testcase_netnwrite_compare(const char *a, const size_t len)
 		abort();
 	}
 
-	netnwrite_msg = NULL;
+	if (netnwrite_msg_next != NULL) {
+		assert(*netnwrite_msg_next != NULL);
+		netnwrite_msg = *netnwrite_msg_next++;
+		if (*netnwrite_msg_next == NULL)
+			netnwrite_msg_next = NULL;
+	} else {
+		netnwrite_msg = NULL;
+	}
 
 	return 0;
 }
@@ -192,6 +200,7 @@ testcase_netnwrite_check(const char *prefix)
 	if (netnwrite_msg == NULL)
 		return 0;
 
+	assert(netnwrite_msg_next == NULL);
 	fprintf(stderr, "%s: the expected network message '%s' was not sent\n", prefix, netnwrite_msg);
 	netnwrite_msg = NULL;
 	return 1;

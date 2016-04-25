@@ -53,6 +53,7 @@ typedef int (func_netnwrite)(const char *, const size_t);
 DECLARE_TC_SETUP(netnwrite);
 
 extern const char *netnwrite_msg; /**< the next message expected in netnwrite() */
+extern const char **netnwrite_msg_next; /**< the next messages expected after netnwrite_msg() */
 
 /**
  * @brief a simple checker for netnwrite()
