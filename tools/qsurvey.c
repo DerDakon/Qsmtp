@@ -298,7 +298,7 @@ main(int argc, char *argv[])
 	char ipname[64]; /* enough for "1122/3344/5566/7788/99aa/bbcc/ddee/ff00/\0" */
 	const char *logdir = getenv("QSURVEY_LOGDIR");
 	struct ips *cur;
-	int i;
+	int i = 0;
 	int dirfd;
 	unsigned short s;
 
@@ -324,32 +324,34 @@ main(int argc, char *argv[])
 	 * process, no need to fork. */
 	cur = mx;
 	s = 0;
-	if (((mx->next == NULL) || (mx->next->priority > 65536)) && (mx->count == 1))
-		goto work;
+	if (((mx->next != NULL) && (mx->next->priority <= 65536)) || (mx->count != 1)) {
+		FOREACH_STRUCT_IPS(cur, s, mx) {
+			if (cur->priority > 65536)
+				break;
 
-	FOREACH_STRUCT_IPS(cur, s, mx) {
-		if (cur->priority > 65536)
-			break;
+			switch (fork()) {
+			case -1:
+				i = errno;
+				write(2, "unable to fork\n", 15);
+				freeips(mx);
+				return i;
+			case 0:
+				i = 1;
+				break;
+			default:
+				continue;
+			}
 
-		switch (fork()) {
-		case -1:
-			i = errno;
-			write(2, "unable to fork\n", 15);
-			freeips(mx);
-			return i;
-		case 0:
+			/* case 0, i.e. new child */
 			break;
-		default:
-			continue;
 		}
 
-		/* case 0, i.e. new child */
-		break;
+		if (i == 0) {
+			freeips(mx);
+			return 0;
+		}
 	}
 
-	freeips(mx);
-	return 0;
-work:
 	if (logdir == NULL)
 		logdir = "/tmp/Qsurvey";
 
