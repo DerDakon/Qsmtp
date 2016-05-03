@@ -60,10 +60,8 @@ send_envelope(const unsigned int recodeflag, const char *sender, int rcptcount, 
 		}
 /* RCPT TO: replies */
 		for (i = rcptcount; i > 0; i--) {
-			if (checkreply(" sh", NULL, 0) < 300) {
-				write_status_raw("r", 2);
+			if (checkreply("rsh", NULL, 8) < 300)
 				rcptstat = 0;
-			}
 		}
 	} else {
 /* server does not allow pipelining: we must do this one by one */
@@ -80,10 +78,8 @@ send_envelope(const unsigned int recodeflag, const char *sender, int rcptcount, 
 		for (i = 0; i < rcptcount; i++) {
 			netmsg[1] = rcpts[i];
 			net_writen(netmsg);
-			if (checkreply(" sh", NULL, 0) < 300) {
-				write_status_raw("r", 2);
+			if (checkreply("rsh", NULL, 8) < 300)
 				rcptstat = 0;
-			}
 		}
 	}
 

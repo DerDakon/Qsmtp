@@ -19,13 +19,13 @@ off_t msgsize = 12345;
 static char netbuffer[1024];
 static const char *netbuffer_next[5];
 static const char *checkreplies;	// return values for checkreplies
-static unsigned int scount;
 
 int
 checkreply(const char *status, const char **pre, const int mask)
 {
 	const char *mailerrmsg[] = { "Connected to ", rhost, " but sender was rejected\n", NULL };
 	const char *sexp;	// expected status
+	int emask;	// expected mask
 	int ret;
 
 	if ((strlen(checkreplies) < 2) || (*checkreplies == ':') || (checkreplies[1] == ':'))
@@ -34,24 +34,32 @@ checkreply(const char *status, const char **pre, const int mask)
 	switch (*checkreplies) {
 	case '0':
 		sexp = NULL;
+		emask = 0;
 		break;
 	case 's':
-		sexp = " sh";
+		sexp = "rsh";
+		emask = 8;
 		break;
 	case 'Z':
 		sexp = " ZD";
+		emask = 6;
 		break;
 	default:
 		exit(EINVAL);
 	}
 
-	if ((status == NULL) || (strcmp(status, " sh") == 0)) {
-		if ((pre != NULL) || (mask != 0)) {
+	if (mask != emask) {
+		fprintf(stderr, "unexpected mask argument 0x%x to %s, expected 0x%x\n", mask, __func__, emask);
+		exit(EFAULT);
+	}
+
+	if ((status == NULL) || (strcmp(status, "rsh") == 0)) {
+		if (pre != NULL) {
 			fprintf(stderr, "unexpected arguments to %s\n", __func__);
 			exit(EFAULT);
 		}
 	} else if (strcmp(status, " ZD") == 0) {
-		int err = (mask != 6);
+		int err = 0;
 		unsigned int i;
 
 		for (i = 0; (i < 3) && !err; i++)
@@ -84,8 +92,6 @@ checkreply(const char *status, const char **pre, const int mask)
 	switch (checkreplies[1]) {
 	case '2':
 		ret = 250;
-		if (checkreplies[0] != 'Z')
-			scount++;
 		break;
 	case '4':
 		ret = 421;
@@ -105,20 +111,6 @@ checkreply(const char *status, const char **pre, const int mask)
 	}
 
 	return ret;
-}
-
-void
-write_status_raw(const char *str, const size_t len)
-{
-	if ((str == NULL) || (strcmp(str, "r") != 0) || (len != 2)) {
-		fprintf(stderr, "%s('%s', %zu) called, but ('r', 2) expected\n", __func__, str, len);
-		exit(EFAULT);
-	}
-
-	if (scount-- == 0) {
-		fprintf(stderr, "%s() called too often\n", __func__);
-		exit(EFAULT);
-	}
 }
 
 // The arguments are expected as follows:
@@ -207,11 +199,6 @@ main(int argc, char *argv[])
 		netnwrite_msg_next = netbuffer_next;
 
 	r = send_envelope(recodeflag, argv[2], argc - 4, argv + 3);
-
-	if (scount != 0) {
-		fprintf(stderr, "too few calls to write_status_raw(), %u calls missing\n", scount);
-		return EFAULT;
-	}
 
 	if (!(smtpext & esmtp_pipelining) && *netbuffer_next) {
 		fprintf(stderr, "too few network messages were sent\n");
