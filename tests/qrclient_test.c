@@ -199,13 +199,17 @@ check_cr(const char *msg, const int statuse, const int statusc)
 					buf);
 			ret++;
 		} else {
-			/* the output must end in \n\0 */
-			if ((r < 2) || (buf[r - 2] != '\n') || (buf[r - 1] != '\0')) {
-				fprintf(stderr, "checkreply() wrote '%s', but did not terminate with \\n\\0\n",
-					buf);
-				ret++;
-			} else {
+			/* one-letter messages do not have a newline */
+			if (strlen(msg) > 1) {
+				/* the output must end in \n\0 */
+				if ((r < 2) || (buf[r - 2] != '\n') || (buf[r - 1] != '\0')) {
+					fprintf(stderr, "checkreply() wrote '%s', but did not terminate with \\n\\0\n",
+						buf);
+					ret++;
+				}
 				buf[r - 2] = '\0';
+			} else {
+				buf[r] = '\0';
 			}
 			if (strcmp(buf, msg) != 0) {
 				fprintf(stderr, "checkreply() wrote '%s', but '%s' was expected\n",
@@ -302,6 +306,18 @@ testcase_checkreply(void)
 
 	netget_input = "500-perm1\n500-perm2\n500 perm3";
 	ret += check_cr(NULL, 500, checkreply(NULL, NULL, 0));
+
+	/* what Qremote actually does for recipients */
+	netget_input  = "200 good";
+	ret += check_cr(NULL, 200, checkreply(" sh", NULL, 0));
+	netget_input  = "400 temp";
+	ret += check_cr("s400 temp", 400, checkreply(" sh", NULL, 0));
+	netget_input  = "500 perm";
+	ret += check_cr("h500 perm", 500, checkreply(" sh", NULL, 0));
+	netget_input  = "200 good";
+	ret += check_cr("r200 good", 200, checkreply("rsh", NULL, 0));
+	netget_input  = "200 good";
+	ret += check_cr("r", 200, checkreply("rsh", NULL, 8));
 
 	close(fds[0]);
 	close(fds[1]);

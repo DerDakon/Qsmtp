@@ -61,7 +61,7 @@ getrhost(const struct ips *m, const unsigned short idx)
  *
  * @param status status codes to print or NULL if not to
  * @param pre text to write to stdout before server reply if mask matches
- * @param mask bitmask for pre: 1: 2xx, 2: 4xx, 4: 5xx
+ * @param mask bitmask for pre: 1: 2xx, 2: 4xx, 4: 5xx, 8: do not write network message for 2xx
  * @return the SMTP result code
  *
  * status must be at least 3 bytes long but only the first 3 will have any effect. The first
@@ -101,8 +101,14 @@ checkreply(const char *status, const char **pre, const int mask)
 					i++;
 				}
 			}
+
+			if ((m == 0) && (mask & 8)) {
+				write_status_raw("", 1);
+				ignore = 1;
+			}
 		}
 	}
+
 	/* consume multiline reply */
 	while (linein.s[3] == '-') {
 		/* send out the last (buffered) line */
