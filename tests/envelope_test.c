@@ -166,7 +166,8 @@ main(int argc, char *argv[])
 
 	netnwrite_msg = netbuffer;
 
-	strncpy(netbuffer, argv[argc - 1], sizeof(netbuffer));
+	strncpy(netbuffer, argv[argc - 1], sizeof(netbuffer) - 1);
+	netbuffer[sizeof(netbuffer) - 1] = '\0';
 
 	// looks like one cannot pass \r as argument when using CMake
 	end = netbuffer;
