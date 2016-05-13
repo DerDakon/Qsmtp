@@ -182,11 +182,31 @@ main(int argc, char *argv[])
 	unsigned int recodeflag;
 	int i;
 
+	/* do this check before opening any files to catch the case that fd 0 is closed at this point */
+	i = fstat(0, &st);
+
 	setup();
 
 	if (rcptcount <= 0) {
 		log_write(LOG_CRIT, "too few arguments");
 		write_status("Z4.3.0 internal error: Qremote called with invalid arguments");
+		net_conn_shutdown(shutdown_abort);
+	}
+
+	/* this shouldn't fail normally: qmail-rspawn did it before successfully */
+	if (i != 0) {
+		if (errno == ENOMEM)
+			err_mem(0);
+		log_write(LOG_CRIT, "can't fstat() input");
+		write_status("Z4.3.0 internal error: can't fstat() input");
+		net_conn_shutdown(shutdown_abort);
+	}
+	msgsize = st.st_size;
+	msgdata = mmap(NULL, msgsize, PROT_READ, MAP_SHARED, 0, 0);
+
+	if (msgdata == MAP_FAILED) {
+		log_write(LOG_CRIT, "can't mmap() input");
+		write_status("Z4.3.0 internal error: can't mmap() input");
 		net_conn_shutdown(shutdown_abort);
 	}
 
@@ -201,25 +221,6 @@ main(int argc, char *argv[])
 		}
 	}
 	sortmx(&mx);
-
-	/* this shouldn't fail normally: qmail-rspawn did it before successfully */
-	if (fstat(0, &st)) {
-		if (errno == ENOMEM)
-			err_mem(0);
-		log_write(LOG_CRIT, "can't fstat() input");
-		write_status("Z4.3.0 internal error: can't fstat() input");
-		freeips(mx);
-		net_conn_shutdown(shutdown_abort);
-	}
-	msgsize = st.st_size;
-	msgdata = mmap(NULL, msgsize, PROT_READ, MAP_SHARED, 0, 0);
-
-	if (msgdata == MAP_FAILED) {
-		log_write(LOG_CRIT, "can't mmap() input");
-		write_status("Z4.3.0 internal error: can't mmap() input");
-		freeips(mx);
-		net_conn_shutdown(shutdown_abort);
-	}
 
 	i = connect_mx(mx, &outgoingip, &outgoingip6);
 	freeips(mx);
