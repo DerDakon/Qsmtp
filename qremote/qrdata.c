@@ -27,7 +27,7 @@
 #include <unistd.h>
 
 const char *successmsg[] = {NULL, " accepted ", NULL, "message", "", "", "./Remote host said: ", NULL};
-const char *msgdata;		/* message will be mmaped here */
+const char *msgdata = MAP_FAILED;		/* message will be mmaped here */
 off_t msgsize;		/* size of the mmaped area */
 static int lastlf = 1;		/* set if last byte sent was a LF */
 
