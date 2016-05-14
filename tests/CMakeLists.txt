@@ -653,25 +653,33 @@ add_test(NAME "Qremote_envelope_pipeline_5rcpt"
 # It will always fail, either because ${AUTOQMAIL} doesn't exist or doesn't
 # have the proper configuration files or simply because we do not pass it
 # any arguments.
+add_test(NAME "Qremote_no_stdin"
+		COMMAND stdin-exec "" $<TARGET_FILE:Qremote> invalid.invalid from@invalid.invalid to@invalid.invalid)
+set_tests_properties(Qremote_no_stdin PROPERTIES
+		PASS_REGULAR_EXPRESSION "^Z4.3.0 internal error: can't fstat\\(\\) input\n")
 add_test(NAME "Qremote_noinput_noargs"
-		COMMAND Qremote)
+		COMMAND stdin-exec "" $<TARGET_FILE:Qremote>)
 
 # In case we have a proper configuration this may even check some more lines.
 # Since the destination address should really not exists this will still fail.
 add_test(NAME "Qremote_to_invalid"
-		COMMAND Qremote invalid.invalid from@invalid.invalid to@invalid.invalid)
+		COMMAND stdin-exec "${CMAKE_CURRENT_LIST_FILE}" $<TARGET_FILE:Qremote> invalid.invalid from@invalid.invalid to@invalid.invalid)
 add_test(NAME "Qremote_to_localhost"
-		COMMAND Qremote "[127.0.0.1]" "from@invalid.invalid" "to@[127.0.0.1]")
+		COMMAND stdin-exec "${CMAKE_CURRENT_LIST_FILE}" $<TARGET_FILE:Qremote> "[127.0.0.1]" "from@invalid.invalid" "to@[127.0.0.1]")
 if (NOT IPV4ONLY)
 	add_test(NAME "Qremote_to_localhost6"
-			COMMAND Qremote "[::1]" "from@invalid.invalid" "to@[::1]")
+			COMMAND stdin-exec "${CMAKE_CURRENT_LIST_FILE}" $<TARGET_FILE:Qremote> "[::1]" "from@invalid.invalid" "to@[::1]")
 endif ()
 add_test(NAME "Qremote_to_bad_expression"
-		COMMAND Qremote "[127.0" "from@invalid.invalid" "to@localhost")
+		COMMAND stdin-exec "${CMAKE_CURRENT_LIST_FILE}" $<TARGET_FILE:Qremote> "[127.0" "from@invalid.invalid" "to@localhost")
 add_test(NAME "Qremote_to_bad_expression2"
-		COMMAND Qremote "[127.0.a.v]" "from@invalid.invalid" "to@localhost")
-add_test(NAME "Qremote_to_ip"
-		COMMAND Qremote "[192.0.2.19]" "from@invalid.invalid" "to@localhost")
+		COMMAND stdin-exec "${CMAKE_CURRENT_LIST_FILE}" $<TARGET_FILE:Qremote> "[127.0.a.v]" "from@invalid.invalid" "to@localhost")
+add_test(NAME "Qremote_no_mmap"
+		COMMAND stdin-exec "s" $<TARGET_FILE:Qremote> "[192.0.2.19]" "from@invalid.invalid" "to@localhost")
+set_tests_properties(Qremote_no_mmap PROPERTIES
+		PASS_REGULAR_EXPRESSION "^Z4.3.0 internal error: can't mmap\\(\\) input\n")
+
+add_executable(stdin-exec stdin-exec.c)
 
 if (AUTOQMAIL_FROM_TESTSUITE)
 	set_tests_properties(Qremote_noinput_noargs PROPERTIES
@@ -686,14 +694,12 @@ if (AUTOQMAIL_FROM_TESTSUITE)
 	endif ()
 	set_tests_properties(Qremote_to_bad_expression Qremote_to_bad_expression2 PROPERTIES
 			PASS_REGULAR_EXPRESSION "^Z4\\.3\\.0 parse error in first argument\n")
-	set_tests_properties(Qremote_to_ip PROPERTIES
-			PASS_REGULAR_EXPRESSION "^Z4.3.0 internal error: can't mmap\\(\\) input\n")
 else ()
 	if (NOT IPV4ONLY)
 		set(V6TESTS Qremote_to_localhost6)
 	endif ()
 	set_tests_properties(Qremote_noinput_noargs Qremote_to_invalid
-			Qremote_to_localhost Qremote_to_ip
+			Qremote_to_localhost
 			Qremote_to_bad_expression Qremote_to_bad_expression2
 			${V6TESTS}
 			PROPERTIES
