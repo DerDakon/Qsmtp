@@ -44,9 +44,7 @@ How to install:
 
     If you are compiling Qsmtpd with the IPV4ONLY option set you may omit the IPv6 patch. You may still use it and
     everything will work as expected. If you use IPv6 you _must_ use it.
-13. chmod 755 /var/qmail/queue /var/qmail/queue/lock
-    This allows Qsmtpd to check the free disk space on the queue filesystem.
-14. Test it.
+13. Test it.
     echo nobounce > /home/vpopmail/domains/one.of.your.domains/user/filterconf
     telnet yourmachine 25
     EHLO mybox.com
@@ -55,7 +53,7 @@ How to install:
     QUIT
 
     The reply to the RCPT TO: should tell you that this user does not accept bounce messages.
-15. If you want qmail-smtpd to accept IPv6 connections you probably also want to send on IPv6 links.
+14. If you want qmail-smtpd to accept IPv6 connections you probably also want to send on IPv6 links.
     First move qmail-remote out of the way, then link Qremote:
 
     mv /var/qmail/bin/qmail-remote /var/qmail/bin/qmail-remote.orig

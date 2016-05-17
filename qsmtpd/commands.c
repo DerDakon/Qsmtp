@@ -1,5 +1,6 @@
 #include <qsmtpd/commands.h>
 
+#include <diropen.h>
 #include <fmt.h>
 #include <log.h>
 #include <netio.h>
@@ -692,8 +693,12 @@ smtp_from_inner(void)
 	if (linein.len > validlength)
 		return E2BIG;
 
-	if (statvfs("queue/lock/sendmutex", &sbuf) != 0) {
+	int fd = get_dirfd(AT_FDCWD, "queue");
+
+	if ((fd < 0) || (fstatvfs(fd, &sbuf) != 0)) {
 		int e = errno;
+
+		close(fd);
 
 		switch (e) {
 		case ENOMEM:
@@ -717,6 +722,7 @@ smtp_from_inner(void)
 			return e;
 		}
 	} else {
+		close(fd);
 		if (sbuf.f_flag & ST_RDONLY)
 			return EROFS;
 		maxqueuebytes = sbuf.f_bsize*sbuf.f_bavail;
