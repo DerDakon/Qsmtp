@@ -63,6 +63,6 @@ struct daneinfo {
  *
  * The DNS answers are NOT (yet?) checked for DNSSEC signatures.
  */
-extern int dnstlsa(const char *host, const unsigned short port, struct daneinfo **out);
+extern int dnstlsa(const char *host, const unsigned short port, struct daneinfo **out) __attribute__((nonnull (1)));
 
 #endif /* QDNS_DANE_H */
