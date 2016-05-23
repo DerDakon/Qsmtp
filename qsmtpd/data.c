@@ -390,19 +390,18 @@ smtp_data(void)
 			WRITE(msgidhost.s, msgidhost.len);
 			WRITEL(">\n");
 		}
-	} else {
-		if (xmitstat.check2822 & 1) {
-			if (!(headerflags & HEADER_HAS_DATE)) {
-				logmail[9] = "no 'Date:' in header}";
-				errmsg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n";
-				goto loop_data;
-			} else if (!(headerflags & HEADER_HAS_FROM)) {
-				logmail[9] = "no 'From:' in header}";
-				errmsg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n";
-				goto loop_data;
-			}
+	} else if (xmitstat.check2822 & 1) {
+		if (!(headerflags & HEADER_HAS_DATE)) {
+			logmail[9] = "no 'Date:' in header}";
+			errmsg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n";
+			goto loop_data;
+		} else if (!(headerflags & HEADER_HAS_FROM)) {
+			logmail[9] = "no 'From:' in header}";
+			errmsg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n";
+			goto loop_data;
 		}
 	}
+
 	if (linein.len == 0) {
 		/* if(linelen) message has no body and we already are at the end */
 		WRITEL("\n");
