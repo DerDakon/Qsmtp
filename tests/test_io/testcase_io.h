@@ -19,6 +19,7 @@ typedef int (func_net_read)(const int);
 DECLARE_TC_SETUP(net_read);
 
 extern const char *net_read_msg;	/**< the message that will be used the next time net_read() is called */
+extern const char **net_read_msg_next;	/**< the next messages to send after net_read_msg() */
 extern int net_read_fatal;	/**< the value of the fatal parameter that is expected on the next call to net_read() */
 /**
  * @brief a simple checker for net_read

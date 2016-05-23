@@ -14,6 +14,7 @@ struct string linein = {
 const char *netnwrite_msg;
 const char **netnwrite_msg_next;
 const char *net_read_msg;
+const char **net_read_msg_next;
 int net_read_fatal;
 
 int
@@ -42,11 +43,10 @@ testcase_net_read_simple(const int fatal)
 		abort();
 	}
 
-	net_read_fatal = -1;
-
 	if ((uintptr_t)net_read_msg < 4096) {
 		errno = (int)(uintptr_t)net_read_msg;
 		net_read_msg = NULL;
+		net_read_fatal = -1;
 		return -1;
 	}
 
@@ -55,7 +55,15 @@ testcase_net_read_simple(const int fatal)
 	strcpy(linein.s, net_read_msg);
 	linein.len = strlen(net_read_msg);
 
-	net_read_msg = NULL;
+	if (net_read_msg_next != NULL) {
+		assert(*net_read_msg_next != NULL);
+		net_read_msg = *net_read_msg_next++;
+		if (*net_read_msg_next == NULL)
+			net_read_msg_next = NULL;
+	} else {
+		net_read_msg = NULL;
+		net_read_fatal = -1;
+	}
 
 	return 0;
 }
