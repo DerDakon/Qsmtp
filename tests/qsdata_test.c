@@ -88,16 +88,48 @@ queue_init(void)
 	}
 }
 
+static unsigned long expect_queue_envelope = -1;
+static unsigned int expect_queue_result = 0;
+
 int
-queue_envelope(const unsigned long sz __attribute__ ((unused)), const int chunked __attribute__ ((unused)))
+queue_envelope(const unsigned long sz, const int chunked)
 {
-	exit(EFAULT);
+	if (expect_queue_envelope == (unsigned long)-1)
+		abort();
+
+	if (sz != expect_queue_envelope)
+		abort();
+
+	if (chunked != 0)
+		abort();
+
+	expect_queue_envelope = -1;
+	expect_queue_result = 1;
+
+	// clean up the envelope, the real function does this, too
+	// if it would be kept here the testcase could cause strange crashes if a different
+	// code path is accidentially run which would free that data elsewhere
+	while (!TAILQ_EMPTY(&head)) {
+		struct recip *l = TAILQ_FIRST(&head);
+
+		TAILQ_REMOVE(&head, TAILQ_FIRST(&head), entries);
+		free(l->to.s);
+		free(l);
+	}
+	thisrecip = NULL;
+
+	return 0;
 }
 
 int
 queue_result(void)
 {
-	exit(EFAULT);
+	if (expect_queue_result != 1)
+		abort();
+
+	expect_queue_result = 0;
+
+	return 0;
 }
 
 int
@@ -115,6 +147,8 @@ spfreceived(int fd, const int spf)
 		return -1;
 }
 
+static unsigned int pass_354;
+
 int
 test_netnwrite(const char *msg, const size_t len)
 {
@@ -125,6 +159,11 @@ test_netnwrite(const char *msg, const size_t len)
 
 	if (strcmp(msg, msg354) != 0)
 		abort();
+
+	if (pass_354) {
+		pass_354 = 0;
+		return 0;
+	}
 
 	errno = 4321;
 	return -1;
@@ -183,16 +222,39 @@ check_date822(void)
 }
 
 static int
-check_queueheader(void)
+setup_recip(void)
 {
-	int err = 0;
-	int fd0[2];
+	thisrecip = malloc(sizeof(*thisrecip));
+	if (thisrecip == NULL)
+		return 3;
 
+	thisrecip->ok = 1;
+	thisrecip->to.s = strdup("test@example.com");
+	if (thisrecip->to.s == NULL) {
+		free(thisrecip);
+		thisrecip = NULL;
+		return 3;
+	}
+	thisrecip->to.len = strlen(thisrecip->to.s);
+	thisrecip = thisrecip;
+
+	TAILQ_INIT(&head);
+	TAILQ_INSERT_TAIL(&head, thisrecip, entries);
+
+	return 0;
+}
+
+static int
+setup_datafd(int *fd0)
+{
 	if (pipe(fd0) != 0)
 		return 1;
 
-	if (fcntl(fd0[0], F_SETFL, fcntl(fd0[0], F_GETFL) | O_NONBLOCK) != 0)
+	if (fcntl(fd0[0], F_SETFL, fcntl(fd0[0], F_GETFL) | O_NONBLOCK) != 0) {
+		close(fd0[0]);
+		close(fd0[1]);
 		return 2;
+	}
 
 	/* setup */
 	testtime = time2012;
@@ -200,27 +262,84 @@ check_queueheader(void)
 	heloname.s = "testcase.example.net";
 	heloname.len = strlen(heloname.s);
 
-	struct recip to = {
-		.ok = 1,
-		.to = {
-			.s = "test@example.com"
-		}
-	};
-	// do this outside the struct, older gcc version can't handle this
-	to.to.len = strlen(to.to.s);
-	thisrecip = &to;
-
-	TAILQ_INIT(&head);
-	TAILQ_INSERT_TAIL(&head, &to, entries);
-
 	queuefd_data = fd0[1];
 
+	int r = setup_recip();
+	if (r != 0) {
+		close(fd0[0]);
+		close(fd0[1]);
+		return r;
+	}
+
+	return 0;
+}
+
+static int
+check_msgbody(const char *expect, int queuefd_read)
+{
+	int err = 0;
+	ssize_t off = 0;
+	ssize_t mismatch = -1;
+	char outbuf[2048];
+	static const char received_from[] = "Received: from ";
+
+	while (off < (ssize_t)sizeof(outbuf) - 1) {
+		const ssize_t r = read(queuefd_read, outbuf + off, 1);
+		if (r < 0) {
+			if (errno != EAGAIN) {
+				fprintf(stderr, "read failed with error %i\n", errno);
+				err = 5;
+			}
+			return err;
+		}
+		if ((mismatch < 0) && (outbuf[off] != expect[off])) {
+			mismatch = off;
+			fprintf(stderr, "output mismatch at position %zi, got %c (0x%02x), expected %c (0x%02x)\n",
+				mismatch, outbuf[off], outbuf[off], expect[off], expect[off]);
+			err = 6;
+			// do not break, read the whole input
+		}
+		off++;
+	}
+	outbuf[off] = '\0';
+
+	if (err != 0) {
+		fprintf(stderr, "expected output not found, got:\n%s\nexpected:\n%s\n", outbuf, expect);
+		if (strlen(outbuf) != strlen(expect))
+			fprintf(stderr, "expected length: %zi, got length: %zi\n", strlen(expect), strlen(outbuf));
+		return err;
+	}
+
+	/* to make sure a syntactically valid line is always received */
+	if (strstr(outbuf, received_from) == NULL) {
+		fprintf(stderr, "'Received: from ' not found in output\n");
+		return 10;
+	}
+
+	if (off == sizeof(outbuf) - 1) {
+		fprintf(stderr, "too long output received\n");
+		return 7;
+	} else if (off == 0) {
+		fprintf(stderr, "no output received\n");
+		return 8;
+	}
+
+	return 0;
+}
+
+static int
+check_queueheader(void)
+{
+	int fd0[2];
+	int err = setup_datafd(fd0);
+
+	if (err != 0)
+		return err;
+
 	for (int idx = 0; idx < 14; idx++) {
-		char outbuf[2048];
 		const char *expect;
 		const char *testname;
 		int chunked = 0;
-		static const char received_from[] = "Received: from ";
 
 		memset(&xmitstat, 0, sizeof(xmitstat));
 
@@ -366,59 +485,26 @@ check_queueheader(void)
 		printf("%s: Running test: %s\n", __func__, testname);
 
 		if (write_received(chunked)) {
-			err = 3;
+			err = 4;
 			break;
 		}
 
-		ssize_t off = 0;
-		ssize_t mismatch = -1;
-		while (off < (ssize_t)sizeof(outbuf) - 1) {
-			const ssize_t r = read(fd0[0], outbuf + off, 1);
-			if (r < 0) {
-				if (errno != EAGAIN) {
-					fprintf(stderr, "read failed with error %i\n", errno);
-					err = 4;
-				}
-				break;
-			}
-			if ((mismatch < 0) && (outbuf[off] != expect[off])) {
-				mismatch = off;
-				fprintf(stderr, "output mismatch at position %zi, got %c (0x%02x), expected %c (0x%02x)\n",
-					mismatch, outbuf[off], outbuf[off], expect[off], expect[off]);
-				err = 5;
-				// do not break, read the whole input
-			}
-			off++;
-		}
-		outbuf[off] = '\0';
-
-		if (err != 0) {
-			fprintf(stderr, "expected output not found, got:\n%s\nexpected:\n%s\n", outbuf, expect);
-			if (strlen(outbuf) != strlen(expect))
-				fprintf(stderr, "expected length: %zi, got length: %zi\n", strlen(expect), strlen(outbuf));
+		err = check_msgbody(expect, fd0[0]);
+		if (err != 0)
 			break;
-		}
-
-		/* to make sure a syntactically valid line is always received */
-		if (strstr(outbuf, received_from) == NULL) {
-			fprintf(stderr, "'Received: from ' not found in output\n");
-			err = 10;
-			break;
-		}
-
-		if (off == sizeof(outbuf) - 1) {
-			fprintf(stderr, "too long output received\n");
-			err = 6;
-			break;
-		} else if (off == 0) {
-			fprintf(stderr, "no output received\n");
-			err = 7;
-			break;
-		}
 	}
 
 	close(fd0[0]);
 	close(fd0[1]);
+
+	struct recip *l = TAILQ_FIRST(&head);
+
+	TAILQ_REMOVE(&head, TAILQ_FIRST(&head), entries);
+	free(l->to.s);
+	free(l);
+	thisrecip = NULL;
+	if (!TAILQ_EMPTY(&head))
+		abort();
 
 	/* pass invalid fd in, this should cause the write() to fail */
 	queuefd_data = -1;
@@ -641,6 +727,155 @@ check_data_354_fail(void)
 	return ret;
 }
 
+static int
+check_data_body(void)
+{
+	int ret = 0;
+	const char *endline[] = { ".", NULL };
+	const char *twolines[] = { "", ".", NULL };
+	const char *twolines_xfoobar[] = { "X-foobar: yes", ".", NULL };
+	const char *minimal_hdr[] = { "Date: Wed, 11 Apr 2012 18:32:17 +0200", "From: <foo@example.com>", ".", NULL };
+	const char *more_msgid[] = { "Message-Id: <123@example.net>", ".", NULL };
+	struct {
+		const char *name;
+		const char *data_expect;
+		const char *netmsg;
+		const char **netmsg_more;
+		unsigned long maxlen;
+		unsigned long msgsize;
+		int check2822_flags;
+	} testdata[] = {
+		{
+			.name = "empty message",
+			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+		},
+		{
+			.name = "single line",
+			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n",
+			.netmsg = "X-foobar: yes",
+			.maxlen = 512,
+			.msgsize = 15
+		},
+		{
+			.name = "x-foobar header",
+			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n\n",
+			.netmsg = "X-foobar: yes",
+			.netmsg_more = twolines,
+			.maxlen = 512,
+			.msgsize = 15
+		},
+		{
+			.name = "x-foobar body",
+			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"\nX-foobar: yes\n",
+			.netmsg = "",
+			.netmsg_more = twolines_xfoobar,
+			.maxlen = 512,
+			.msgsize = 15
+		},
+		{
+			.name = "minimal valid header",
+			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n"
+				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"From: <foo@example.com>\n",
+			.netmsg = "X-foobar: yes",
+			.netmsg_more = minimal_hdr,
+			.maxlen = 512,
+			.msgsize = 79,
+			.check2822_flags = 1
+		},
+		{
+			.name = "submission mode headers inserted",
+			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n"
+				"Message-Id: <123@example.net>\n"
+				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"From: <foo@example.com>\n",
+			.netmsg = "X-foobar: yes",
+			.netmsg_more = more_msgid,
+			.maxlen = 512,
+			.msgsize = 46, // the extra lines that are automatically inserted are not counted
+			.check2822_flags = 2
+		},
+		{
+			.name = NULL
+		}
+	};
+
+	printf("%s\n", __func__);
+
+	testcase_setup_netnwrite(test_netnwrite);
+
+	memset(&xmitstat, 0, sizeof(xmitstat));
+	badbounce = 0;
+	goodrcpt = 1;
+	relayclient = 1;
+	xmitstat.mailfrom.s = "foo@example.com";
+	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
+	strncpy(xmitstat.remoteip, "192.0.2.24", sizeof(xmitstat.remoteip));
+
+	int fd0[2];
+	int r = setup_datafd(fd0);
+	if (r != 0)
+		return r;
+
+	for (unsigned int idx = 0; testdata[idx].name != NULL; idx++) {
+		printf("%s: checking '%s'\n", __func__, testdata[idx].name);
+
+		if (testdata[idx].netmsg) {
+			expect_queue_envelope = strlen(testdata[idx].netmsg) + 2;
+			net_read_msg = testdata[idx].netmsg;
+			if (testdata[idx].netmsg_more)
+				net_read_msg_next = testdata[idx].netmsg_more;
+			else
+				net_read_msg_next = endline;
+		} else {
+			net_read_msg = endline[0];
+		}
+		expect_queue_envelope = testdata[idx].msgsize;
+		net_read_fatal = 1;
+		queue_init_result = 0;
+		queue_reset_expected = 1;
+		pass_354 = 1;
+		maxbytes = testdata[idx].maxlen;
+		xmitstat.check2822 = testdata[idx].check2822_flags & 1;
+		submission_mode = testdata[idx].check2822_flags & 2 ? 1 : 0;
+		if (idx > 0) {
+			int s = setup_recip();
+			if (s != 0)
+				return s;
+		}
+
+		r = smtp_data();
+
+		if (r != 0)
+			ret++;
+
+		if (check_msgbody(testdata[idx].data_expect, fd0[0]) != 0)
+			ret++;
+	}
+
+	close(fd0[0]);
+	close(fd0[1]);
+
+	return ret;
+}
+
 int main()
 {
 	int ret = 0;
@@ -659,6 +894,10 @@ int main()
 	ret += check_data_no_rcpt();
 	ret += check_data_qinit_fail();
 	ret += check_data_354_fail();
+
+	testcase_setup_net_read(testcase_net_read_simple);
+
+	ret += check_data_body();
 
 	return ret;
 }
