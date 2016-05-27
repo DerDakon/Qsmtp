@@ -62,6 +62,7 @@ sync_pipelining(void)
 }
 
 static int queue_reset_expected;
+static char tzbuf[12];
 
 void
 queue_reset(void)
@@ -203,7 +204,6 @@ check_date822(void)
 	const time_t testtimes[] = { 0, time2012 };
 	const char *tzones[] = { "TZ=UTC", "TZ=CET" };
 	int ret = 0;
-	char tzbuf[12];
 
 	for (int i = 0; i < 2; i++) {
 		testtime = testtimes[i];
