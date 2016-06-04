@@ -236,7 +236,6 @@ setup_recip(void)
 		return 3;
 	}
 	thisrecip->to.len = strlen(thisrecip->to.s);
-	thisrecip = thisrecip;
 
 	TAILQ_INIT(&head);
 	TAILQ_INSERT_TAIL(&head, thisrecip, entries);
