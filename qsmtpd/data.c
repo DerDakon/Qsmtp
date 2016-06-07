@@ -407,7 +407,7 @@ smtp_data(void)
 		WRITEL("\n");
 		if (net_read(1))
 			goto loop_data;
-		while (!((linein.len == 1) && (linein.s[0] == '.')) && (msgsize <= maxbytes)) {
+		while (((linein.len != 1) || (linein.s[0] != '.')) && (msgsize <= maxbytes)) {
 			int offset;
 
 			if ((xmitstat.check2822 & 1) && !xmitstat.datatype) {
