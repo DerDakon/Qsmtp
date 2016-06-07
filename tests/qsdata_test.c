@@ -735,6 +735,7 @@ check_data_body(void)
 	const char *twolines_xfoobar[] = { "X-foobar: yes", ".", NULL };
 	const char *minimal_hdr[] = { "Date: Wed, 11 Apr 2012 18:32:17 +0200", "From: <foo@example.com>", ".", NULL };
 	const char *more_msgid[] = { "Message-Id: <123@example.net>", ".", NULL };
+	const char *dotline[] = { "..", "...", "....", ".", NULL };
 	struct {
 		const char *name;
 		const char *data_expect;
@@ -810,6 +811,17 @@ check_data_body(void)
 			.maxlen = 512,
 			.msgsize = 46, // the extra lines that are automatically inserted are not counted
 			.check2822_flags = 2
+		},
+		{
+			.name = "leading data dot",
+			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n.\n..\n...\n",
+			.netmsg = "X-foobar: yes",
+			.netmsg_more = dotline,
+			.maxlen = 512,
+			.msgsize = 27
 		},
 		{
 			.name = NULL
