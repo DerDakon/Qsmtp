@@ -291,6 +291,8 @@ check_msgbody(const char *expect, int queuefd_read)
 			}
 			return err;
 		}
+		if (r == 0)
+			break;
 		if ((mismatch < 0) && (outbuf[off] != expect[off])) {
 			mismatch = off;
 			fprintf(stderr, "output mismatch at position %zi, got %c (0x%02x), expected %c (0x%02x)\n",
@@ -302,11 +304,11 @@ check_msgbody(const char *expect, int queuefd_read)
 	}
 	outbuf[off] = '\0';
 
-	if (err != 0) {
+	if ((err != 0) || (off != strlen(expect))) {
 		fprintf(stderr, "expected output not found, got:\n%s\nexpected:\n%s\n", outbuf, expect);
 		if (strlen(outbuf) != strlen(expect))
 			fprintf(stderr, "expected length: %zi, got length: %zi\n", strlen(expect), strlen(outbuf));
-		return err;
+		return ++err;
 	}
 
 	/* to make sure a syntactically valid line is always received */
@@ -741,9 +743,11 @@ check_data_body(void)
 		const char *data_expect;
 		const char *netmsg;
 		const char **netmsg_more;
+		const char *logmsg;
 		unsigned long maxlen;
 		unsigned long msgsize;
 		int check2822_flags;
+		int data_result;
 	} testdata[] = {
 		{
 			.name = "empty message",
@@ -824,6 +828,18 @@ check_data_body(void)
 			.msgsize = 27
 		},
 		{
+			.name = "message too big",
+			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [192.0.2.24] (27 bytes) {message too big}",
+			.netmsg = "X-foobar: yes",
+			.netmsg_more = dotline,
+			.maxlen = 1,
+			.data_result = EMSGSIZE
+		},
+		{
 			.name = NULL
 		}
 	};
@@ -858,6 +874,8 @@ check_data_body(void)
 		} else {
 			net_read_msg = endline[0];
 		}
+		log_write_msg = testdata[idx].logmsg;
+		log_write_priority = LOG_INFO;
 		expect_queue_envelope = testdata[idx].msgsize;
 		net_read_fatal = 1;
 		queue_init_result = 0;
@@ -874,7 +892,7 @@ check_data_body(void)
 
 		r = smtp_data();
 
-		if (r != 0)
+		if (r != testdata[idx].data_result)
 			ret++;
 
 		if (check_msgbody(testdata[idx].data_expect, fd0[0]) != 0)
@@ -907,6 +925,8 @@ int main()
 	ret += check_data_354_fail();
 
 	testcase_setup_net_read(testcase_net_read_simple);
+	testcase_setup_log_writen(testcase_log_writen_combine);
+	testcase_setup_log_write(testcase_log_write_compare);
 
 	ret += check_data_body();
 
