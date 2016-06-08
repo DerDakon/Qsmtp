@@ -780,6 +780,7 @@ check_data_body(void)
 	const char *date2_hdr[] = { date_hdr[0], date_hdr[0], "", ".", NULL };
 	const char *from2_hdr[] = { from_hdr[0], from_hdr[0], "", ".", NULL };
 	const char *minimal_hdr[] = { date_hdr[0], from_hdr[0], ".", NULL };
+	const char *body8bit[] = { date_hdr[0], from_hdr[0], "", "\222", ".", NULL };
 	const char *more_msgid[] = { "Message-Id: <123@example.net>", ".", NULL };
 	const char *dotline[] = { "..", "...", "....", ".", NULL };
 	struct {
@@ -940,6 +941,34 @@ check_data_body(void)
 			.netmsg_more = date2_hdr,
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: more than one 'Date:'\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (95 bytes) {more than one 'Date:' in header}",
+			.maxlen = 512,
+			.check2822_flags = 1,
+			.data_result = EDONE
+		},
+		{
+			.name = "8bit data in header",
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n",
+			.netmsg = body8bit[3],
+			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 8bit character in message header\r\n",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (3 bytes) {8bit-character in message header}",
+			.maxlen = 512,
+			.check2822_flags = 1,
+			.data_result = EDONE
+		},
+		{
+			.name = "8bit data in body",
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n"
+				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"From: <foo@example.com>\n\n",
+			.netmsg = "X-foobar: yes",
+			.netmsg_more = body8bit,
+			.netwrite_msg = "550 5.6.0 message contains 8bit characters\r\n",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (82 bytes) {8bit-character in message body}",
 			.maxlen = 512,
 			.check2822_flags = 1,
 			.data_result = EDONE
