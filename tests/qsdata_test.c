@@ -717,8 +717,6 @@ check_data_354_fail(void)
 
 	printf("%s\n", __func__);
 
-	testcase_setup_netnwrite(test_netnwrite);
-
 	badbounce = 0;
 	goodrcpt = 1;
 	queue_init_result = 0;
@@ -727,6 +725,44 @@ check_data_354_fail(void)
 	int r = smtp_data();
 
 	if (r != 4321)
+		ret++;
+
+	return ret;
+}
+
+static int
+check_data_write_received_fail(void)
+{
+	int ret = 0;
+	int fd0[2];
+	int r = setup_datafd(fd0);
+	char logbuf[256];
+
+	printf("%s\n", __func__);
+
+	if (r != 0)
+		return r;
+
+	badbounce = 0;
+	goodrcpt = 1;
+	queue_init_result = 0;
+	queue_reset_expected = 1;
+	pass_354 = 1;
+	net_read_msg = ".";
+	net_read_fatal = 1;
+	netnwrite_msg = "451 4.3.0 error writing mail to queue\r\n";
+	snprintf(logbuf, sizeof(logbuf), "error in DATA: %s", strerror(EBADF));
+	log_write_msg = logbuf;
+	log_write_priority = LOG_ERR;
+
+	queuefd_data = -1;
+	queuefd_hdr = -1;
+
+	setup_recip();
+
+	r = smtp_data();
+
+	if (r != EDONE)
 		ret++;
 
 	return ret;
@@ -1002,11 +1038,16 @@ int main()
 	ret += check_data_badbounce();
 	ret += check_data_no_rcpt();
 	ret += check_data_qinit_fail();
+
+	testcase_setup_netnwrite(test_netnwrite);
+
 	ret += check_data_354_fail();
 
 	testcase_setup_net_read(testcase_net_read_simple);
 	testcase_setup_log_writen(testcase_log_writen_combine);
 	testcase_setup_log_write(testcase_log_write_compare);
+
+	ret += check_data_write_received_fail();
 
 	ret += check_data_body();
 

@@ -272,7 +272,7 @@ smtp_data(void)
 #endif
 
 	if ( (rc = write_received(0)) )
-		goto loop_data;
+		goto err_write;
 
 	/* loop until:
 	 * -the message is bigger than allowed
