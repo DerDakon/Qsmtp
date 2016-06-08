@@ -155,19 +155,23 @@ test_netnwrite(const char *msg, const size_t len)
 {
 	const char msg354[] = "354 Start mail input; end with <CRLF>.<CRLF>\r\n";
 
-	if (len != strlen(msg354))
-		abort();
+	if (pass_354 || (netnwrite_msg == NULL)) {
+		if (len != strlen(msg354))
+			abort();
 
-	if (strcmp(msg, msg354) != 0)
-		abort();
+		if (strcmp(msg, msg354) != 0)
+			abort();
 
-	if (pass_354) {
-		pass_354 = 0;
-		return 0;
+		if (pass_354) {
+			pass_354 = 0;
+			return 0;
+		}
+
+		errno = 4321;
+		return -1;
+	} else {
+		return testcase_netnwrite_compare(msg, len);
 	}
-
-	errno = 4321;
-	return -1;
 }
 
 static int
@@ -735,7 +739,11 @@ check_data_body(void)
 	const char *endline[] = { ".", NULL };
 	const char *twolines[] = { "", ".", NULL };
 	const char *twolines_xfoobar[] = { "X-foobar: yes", ".", NULL };
-	const char *minimal_hdr[] = { "Date: Wed, 11 Apr 2012 18:32:17 +0200", "From: <foo@example.com>", ".", NULL };
+	const char *date_hdr[] = { "Date: Wed, 11 Apr 2012 18:32:17 +0200", "", ".", NULL };
+	const char *from_hdr[] = { "From: <foo@example.com>", "", ".", NULL };
+	const char *date2_hdr[] = { date_hdr[0], date_hdr[0], "", ".", NULL };
+	const char *from2_hdr[] = { from_hdr[0], from_hdr[0], "", ".", NULL };
+	const char *minimal_hdr[] = { date_hdr[0], from_hdr[0], ".", NULL };
 	const char *more_msgid[] = { "Message-Id: <123@example.net>", ".", NULL };
 	const char *dotline[] = { "..", "...", "....", ".", NULL };
 	struct {
@@ -744,6 +752,7 @@ check_data_body(void)
 		const char *netmsg;
 		const char **netmsg_more;
 		const char *logmsg;
+		const char *netwrite_msg;
 		unsigned long maxlen;
 		unsigned long msgsize;
 		int check2822_flags;
@@ -751,13 +760,13 @@ check_data_body(void)
 	} testdata[] = {
 		{
 			.name = "empty message",
-			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
 				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
 		},
 		{
 			.name = "single line",
-			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
 				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
 				"X-foobar: yes\n",
@@ -767,7 +776,7 @@ check_data_body(void)
 		},
 		{
 			.name = "x-foobar header",
-			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
 				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
 				"X-foobar: yes\n\n",
@@ -778,7 +787,7 @@ check_data_body(void)
 		},
 		{
 			.name = "x-foobar body",
-			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
 				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
 				"\nX-foobar: yes\n",
@@ -789,7 +798,7 @@ check_data_body(void)
 		},
 		{
 			.name = "minimal valid header",
-			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
 				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
 				"X-foobar: yes\n"
@@ -803,7 +812,7 @@ check_data_body(void)
 		},
 		{
 			.name = "submission mode headers inserted",
-			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
 				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
 				"X-foobar: yes\n"
@@ -818,7 +827,7 @@ check_data_body(void)
 		},
 		{
 			.name = "leading data dot",
-			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
 				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
 				"X-foobar: yes\n.\n..\n...\n",
@@ -829,15 +838,75 @@ check_data_body(void)
 		},
 		{
 			.name = "message too big",
-			.data_expect = "Received: from unknown ([192.0.2.24])\n"
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
 				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
 				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
 				"X-foobar: yes\n",
-			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [192.0.2.24] (27 bytes) {message too big}",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (27 bytes) {message too big}",
 			.netmsg = "X-foobar: yes",
 			.netmsg_more = dotline,
 			.maxlen = 1,
 			.data_result = EMSGSIZE
+		},
+		{
+			.name = "822 missing From:",
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n"
+				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n",
+			.netmsg = "X-foobar: yes",
+			.netmsg_more = date_hdr,
+			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (56 bytes) {no 'From:' in header}",
+			.maxlen = 512,
+			.check2822_flags = 1,
+			.data_result = EDONE
+		},
+		{
+			.name = "822 missing Date:",
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n"
+				"From: <foo@example.com>\n",
+			.netmsg = "X-foobar: yes",
+			.netmsg_more = from_hdr,
+			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (42 bytes) {no 'Date:' in header}",
+			.maxlen = 512,
+			.check2822_flags = 1,
+			.data_result = EDONE
+		},
+		{
+			.name = "822 duplicate From:",
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n"
+				"From: <foo@example.com>\n",
+			.netmsg = "X-foobar: yes",
+			.netmsg_more = from2_hdr,
+			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: more than one 'From:'\r\n",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (67 bytes) {more than one 'From:' in header}",
+			.maxlen = 512,
+			.check2822_flags = 1,
+			.data_result = EDONE
+		},
+		{
+			.name = "822 duplicate Date:",
+			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"X-foobar: yes\n"
+				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n",
+			.netmsg = "X-foobar: yes",
+			.netmsg_more = date2_hdr,
+			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: more than one 'Date:'\r\n",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (95 bytes) {more than one 'Date:' in header}",
+			.maxlen = 512,
+			.check2822_flags = 1,
+			.data_result = EDONE
 		},
 		{
 			.name = NULL
@@ -854,7 +923,7 @@ check_data_body(void)
 	relayclient = 1;
 	xmitstat.mailfrom.s = "foo@example.com";
 	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
-	strncpy(xmitstat.remoteip, "192.0.2.24", sizeof(xmitstat.remoteip));
+	strncpy(xmitstat.remoteip, "::ffff:192.0.2.24", sizeof(xmitstat.remoteip));
 
 	int fd0[2];
 	int r = setup_datafd(fd0);
@@ -884,8 +953,17 @@ check_data_body(void)
 		maxbytes = testdata[idx].maxlen;
 		xmitstat.check2822 = testdata[idx].check2822_flags & 1;
 		submission_mode = testdata[idx].check2822_flags & 2 ? 1 : 0;
+		netnwrite_msg = testdata[idx].netwrite_msg;
 		if (idx > 0) {
-			int s = setup_recip();
+			int s;
+
+			// the error tests close the datafd, in that case reopen it
+			if (queuefd_data < 0) {
+				close(fd0[0]);
+				s = setup_datafd(fd0);
+			}
+			else
+				s = setup_recip();
 			if (s != 0)
 				return s;
 		}
@@ -897,6 +975,8 @@ check_data_body(void)
 
 		if (check_msgbody(testdata[idx].data_expect, fd0[0]) != 0)
 			ret++;
+
+		ret += testcase_netnwrite_check(testdata[idx].name);
 	}
 
 	close(fd0[0]);
