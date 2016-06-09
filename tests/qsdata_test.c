@@ -50,6 +50,13 @@ fork_clean()
 void
 freedata(void)
 {
+	while (!TAILQ_EMPTY(&head)) {
+		struct recip *l = TAILQ_FIRST(&head);
+
+		TAILQ_REMOVE(&head, TAILQ_FIRST(&head), entries);
+		free(l->to.s);
+		free(l);
+	}
 }
 
 void
@@ -1085,7 +1092,7 @@ int main()
 {
 	int ret = 0;
 	/* Block SIGPIPE, otherwise the process will get killed when trying to
-	 * write to a pipe where the remote end was closed. */
+	 * read from a socket where the remote end was closed. */
 	sigset_t mask;
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGPIPE);
