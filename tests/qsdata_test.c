@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
+#include <sys/signal.h>
 #include <time.h>
 #include <unistd.h>
 
@@ -734,14 +735,9 @@ static int
 check_data_write_received_fail(void)
 {
 	int ret = 0;
-	int fd0[2];
-	int r = setup_datafd(fd0);
 	char logbuf[256];
 
 	printf("%s\n", __func__);
-
-	if (r != 0)
-		return r;
 
 	badbounce = 0;
 	goodrcpt = 1;
@@ -760,10 +756,45 @@ check_data_write_received_fail(void)
 
 	setup_recip();
 
+	int r = smtp_data();
+
+	if (r != EDONE)
+		ret++;
+
+	return ret;
+}
+
+static int
+check_data_write_received_pipefail(void)
+{
+	int ret = 0;
+	int fd0[2];
+	int r = setup_datafd(fd0);
+
+	printf("%s\n", __func__);
+
+	if (r != 0)
+		return r;
+
+	badbounce = 0;
+	goodrcpt = 1;
+	queue_init_result = 0;
+	queue_reset_expected = 1;
+	pass_354 = 1;
+	net_read_msg = ".";
+	net_read_fatal = 1;
+	netnwrite_msg = "451 4.3.0 error writing mail to queue\r\n";
+	log_write_msg = "broken pipe to qmail-queue";
+	log_write_priority = LOG_ERR;
+
+	close(fd0[0]);
+
 	r = smtp_data();
 
 	if (r != EDONE)
 		ret++;
+
+	close(fd0[1]);
 
 	return ret;
 }
@@ -1053,6 +1084,17 @@ check_data_body(void)
 int main()
 {
 	int ret = 0;
+	/* Block SIGPIPE, otherwise the process will get killed when trying to
+	 * write to a pipe where the remote end was closed. */
+	sigset_t mask;
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGPIPE);
+
+	if (sigprocmask(SIG_BLOCK, &mask, NULL) == -1) {
+		int e = errno;
+		fprintf(stderr, "Cannot block SIGPIPE, error %i\n", e);
+		return e;
+	}
 
 	memset(&xmitstat, 0, sizeof(xmitstat));
 
@@ -1077,7 +1119,7 @@ int main()
 	testcase_setup_log_write(testcase_log_write_compare);
 
 	ret += check_data_write_received_fail();
-
+	ret += check_data_write_received_pipefail();
 	ret += check_data_body();
 
 	return ret;
