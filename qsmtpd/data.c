@@ -503,12 +503,12 @@ loop_data:
 	queuefd_data = -1;
 	/* eat all data until the transmission ends. But just drop it and return
 	 * an error defined before jumping here */
-	do {
+	while ((linein.len != 1) || (linein.s[0] != '.')) {
 		msgsize += linein.len + 2;
 		if (linein.s[0] == '.')
 			msgsize--;
 		net_read(1);
-	} while ((linein.len != 1) || (linein.s[0] != '.'));
+	}
 	close(queuefd_hdr);
 	ultostr(msgsize, s);
 

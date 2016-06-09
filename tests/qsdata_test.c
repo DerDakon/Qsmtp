@@ -821,7 +821,7 @@ check_data_body(void)
 	const char *twolines[] = { "", ".", NULL };
 	const char *twolines_xfoobar[] = { FOOLINE, ".", NULL };
 	const char *date_hdr[] = { "Date: Wed, 11 Apr 2012 18:32:17 +0200", "", ".", NULL };
-	const char *from_hdr[] = { "From: <foo@example.com>", "", ".", NULL };
+	const char *from_hdr[] = { "From: <foo@example.com>", ".", NULL };
 	const char *date2_hdr[] = { date_hdr[0], date_hdr[0], "", ".", NULL };
 	const char *from2_hdr[] = { from_hdr[0], from_hdr[0], "", ".", NULL };
 	const char *minimal_hdr[] = { date_hdr[0], from_hdr[0], ".", NULL };
@@ -940,7 +940,7 @@ check_data_body(void)
 			.netmsg = FOOLINE,
 			.netmsg_more = from_hdr,
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n",
-			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (42 bytes) {no 'Date:' in header}",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (40 bytes) {no 'Date:' in header}",
 			.maxlen = 512,
 			.check2822_flags = 1,
 			.data_result = EDONE
