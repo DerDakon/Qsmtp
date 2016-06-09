@@ -809,10 +809,17 @@ check_data_write_received_pipefail(void)
 static int
 check_data_body(void)
 {
+#define RCVDHDR "Received: from unknown ([::ffff:192.0.2.24])\n" \
+		"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n" \
+		"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+#define RCVDDUMMYLINE "Received: dummy"
+#define FOOLINE "X-foobar: yes"
+#define FOOHDR FOOLINE "\n"
+
 	int ret = 0;
 	const char *endline[] = { ".", NULL };
 	const char *twolines[] = { "", ".", NULL };
-	const char *twolines_xfoobar[] = { "X-foobar: yes", ".", NULL };
+	const char *twolines_xfoobar[] = { FOOLINE, ".", NULL };
 	const char *date_hdr[] = { "Date: Wed, 11 Apr 2012 18:32:17 +0200", "", ".", NULL };
 	const char *from_hdr[] = { "From: <foo@example.com>", "", ".", NULL };
 	const char *date2_hdr[] = { date_hdr[0], date_hdr[0], "", ".", NULL };
@@ -821,6 +828,8 @@ check_data_body(void)
 	const char *body8bit[] = { date_hdr[0], from_hdr[0], "", "\222", ".", NULL };
 	const char *more_msgid[] = { "Message-Id: <123@example.net>", ".", NULL };
 	const char *dotline[] = { "..", "...", "....", ".", NULL };
+	const char *received_ofl[MAXHOPS + 3];
+	char rcvdbuf[strlen(RCVDHDR) + MAXHOPS * (strlen(RCVDDUMMYLINE) + 1) + 16];
 	struct {
 		const char *name;
 		const char *data_expect;
@@ -835,37 +844,31 @@ check_data_body(void)
 	} testdata[] = {
 		{
 			.name = "empty message",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+			.data_expect = RCVDHDR
 		},
 		{
 			.name = "single line",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n",
-			.netmsg = "X-foobar: yes",
+			.data_expect = RCVDHDR
+				FOOHDR,
+			.netmsg = FOOLINE,
 			.maxlen = 512,
 			.msgsize = 15
 		},
 		{
 			.name = "x-foobar header",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n\n",
-			.netmsg = "X-foobar: yes",
+			.data_expect = RCVDHDR
+				FOOHDR
+				"\n",
+			.netmsg = FOOLINE,
 			.netmsg_more = twolines,
 			.maxlen = 512,
 			.msgsize = 15
 		},
 		{
 			.name = "x-foobar body",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"\nX-foobar: yes\n",
+			.data_expect = RCVDHDR
+				"\n"
+				FOOHDR,
 			.netmsg = "",
 			.netmsg_more = twolines_xfoobar,
 			.maxlen = 512,
@@ -873,13 +876,11 @@ check_data_body(void)
 		},
 		{
 			.name = "minimal valid header",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n"
+			.data_expect = RCVDHDR
+				FOOHDR
 				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n"
 				"From: <foo@example.com>\n",
-			.netmsg = "X-foobar: yes",
+			.netmsg = FOOLINE,
 			.netmsg_more = minimal_hdr,
 			.maxlen = 512,
 			.msgsize = 79,
@@ -887,14 +888,12 @@ check_data_body(void)
 		},
 		{
 			.name = "submission mode headers inserted",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n"
+			.data_expect = RCVDHDR
+				FOOHDR
 				"Message-Id: <123@example.net>\n"
 				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n"
 				"From: <foo@example.com>\n",
-			.netmsg = "X-foobar: yes",
+			.netmsg = FOOLINE,
 			.netmsg_more = more_msgid,
 			.maxlen = 512,
 			.msgsize = 46, // the extra lines that are automatically inserted are not counted
@@ -902,35 +901,30 @@ check_data_body(void)
 		},
 		{
 			.name = "leading data dot",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n.\n..\n...\n",
-			.netmsg = "X-foobar: yes",
+			.data_expect = RCVDHDR
+				FOOHDR
+				".\n..\n...\n",
+			.netmsg = FOOLINE,
 			.netmsg_more = dotline,
 			.maxlen = 512,
 			.msgsize = 27
 		},
 		{
 			.name = "message too big",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n",
+			.data_expect = RCVDHDR
+				FOOHDR,
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (27 bytes) {message too big}",
-			.netmsg = "X-foobar: yes",
+			.netmsg = FOOLINE,
 			.netmsg_more = dotline,
 			.maxlen = 1,
 			.data_result = EMSGSIZE
 		},
 		{
 			.name = "822 missing From:",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n"
+			.data_expect = RCVDHDR
+				FOOHDR
 				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n",
-			.netmsg = "X-foobar: yes",
+			.netmsg = FOOLINE,
 			.netmsg_more = date_hdr,
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (56 bytes) {no 'From:' in header}",
@@ -940,12 +934,10 @@ check_data_body(void)
 		},
 		{
 			.name = "822 missing Date:",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n"
+			.data_expect = RCVDHDR
+				FOOHDR
 				"From: <foo@example.com>\n",
-			.netmsg = "X-foobar: yes",
+			.netmsg = FOOLINE,
 			.netmsg_more = from_hdr,
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (42 bytes) {no 'Date:' in header}",
@@ -955,12 +947,10 @@ check_data_body(void)
 		},
 		{
 			.name = "822 duplicate From:",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n"
+			.data_expect = RCVDHDR
+				FOOHDR
 				"From: <foo@example.com>\n",
-			.netmsg = "X-foobar: yes",
+			.netmsg = FOOLINE,
 			.netmsg_more = from2_hdr,
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: more than one 'From:'\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (67 bytes) {more than one 'From:' in header}",
@@ -970,12 +960,10 @@ check_data_body(void)
 		},
 		{
 			.name = "822 duplicate Date:",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n"
+			.data_expect = RCVDHDR
+				FOOHDR
 				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n",
-			.netmsg = "X-foobar: yes",
+			.netmsg = FOOLINE,
 			.netmsg_more = date2_hdr,
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: more than one 'Date:'\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (95 bytes) {more than one 'Date:' in header}",
@@ -985,9 +973,7 @@ check_data_body(void)
 		},
 		{
 			.name = "8bit data in header",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n",
+			.data_expect = RCVDHDR,
 			.netmsg = body8bit[3],
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 8bit character in message header\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (3 bytes) {8bit-character in message header}",
@@ -997,18 +983,36 @@ check_data_body(void)
 		},
 		{
 			.name = "8bit data in body",
-			.data_expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
-				"X-foobar: yes\n"
+			.data_expect = RCVDHDR
+				FOOHDR
 				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n"
 				"From: <foo@example.com>\n\n",
-			.netmsg = "X-foobar: yes",
+			.netmsg = FOOLINE,
 			.netmsg_more = body8bit,
 			.netwrite_msg = "550 5.6.0 message contains 8bit characters\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (82 bytes) {8bit-character in message body}",
 			.maxlen = 512,
 			.check2822_flags = 1,
+			.data_result = EDONE
+		},
+		{
+			.name = "too many received lines",
+			.data_expect = rcvdbuf,
+			.netmsg = RCVDDUMMYLINE,
+			.netmsg_more = received_ofl,
+			.netwrite_msg = "554 5.4.6 too many hops, this message is looping\r\n",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (1719 bytes) {mail loop}",
+			.maxlen = MAXHOPS * 17 + 256,
+			.data_result = EDONE
+		},
+		{
+			.name = "Delivered-To: loop",
+			.data_expect = RCVDHDR,
+			.netmsg = "Delivered-To: test@example.com",
+			.netmsg_more = twolines,
+			.netwrite_msg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (34 bytes) {mail loop}",
+			.maxlen = MAXHOPS * 17 + 256,
 			.data_result = EDONE
 		},
 		{
@@ -1032,6 +1036,15 @@ check_data_body(void)
 	int r = setup_datafd(fd0);
 	if (r != 0)
 		return r;
+
+	snprintf(rcvdbuf, sizeof(rcvdbuf), "%s", RCVDHDR);
+	for (r = 0; r < MAXHOPS; r++) {
+		received_ofl[r] = RCVDDUMMYLINE;
+		strcat(rcvdbuf, RCVDDUMMYLINE "\n");
+	}
+	received_ofl[r++] = "";
+	received_ofl[r++] = ".";
+	received_ofl[r] = NULL;
 
 	for (unsigned int idx = 0; testdata[idx].name != NULL; idx++) {
 		printf("%s: checking '%s'\n", __func__, testdata[idx].name);
@@ -1079,7 +1092,10 @@ check_data_body(void)
 		if (check_msgbody(testdata[idx].data_expect, fd0[0]) != 0)
 			ret++;
 
-		ret += testcase_netnwrite_check(testdata[idx].name);
+		if (testcase_netnwrite_check(testdata[idx].name)) {
+			ret++;
+			fprintf(stderr, "ERROR: network data pending at end of test\n");
+		}
 	}
 
 	close(fd0[0]);
