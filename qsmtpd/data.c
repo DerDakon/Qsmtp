@@ -283,11 +283,11 @@ smtp_data(void)
 		goto loop_data;
 	/* write the data to mail */
 	while (!((linein.len == 1) && (linein.s[0] == '.')) && (msgsize <= maxbytes) && (linein.len > 0) && (hops <= MAXHOPS)) {
+		unsigned int offset = 0;
 		if (linein.s[0] == '.') {
 			/* write buffer beginning at [1], we do not have to check if the second character
 			 * is also a '.', RfC 2821 says only we should discard the '.' beginning the line */
-			WRITE(linein.s + 1, linein.len - 1);
-			msgsize += linein.len + 1;
+			offset = 1;
 		} else {
 			int flagr = 1;	/* if the line may be a "Received:" or "Delivered-To:"-line */
 
@@ -350,11 +350,9 @@ smtp_data(void)
 					}
 				}
 			}
-
-			/* write buffer beginning at [0] */
-			WRITE(linein.s, linein.len);
-			msgsize += linein.len + 2;
 		}
+		WRITE(linein.s + offset, linein.len - offset);
+		msgsize += linein.len + 2 - offset;
 		WRITEL("\n");
 		/* this has to stay here and can't be combined with the net_read before the while loop:
 		 * if we combine them we add an extra new line for the line that ends the transmission */
@@ -408,7 +406,7 @@ smtp_data(void)
 		if (net_read(1))
 			goto loop_data;
 		while (((linein.len != 1) || (linein.s[0] != '.')) && (msgsize <= maxbytes)) {
-			int offset;
+			unsigned int offset;
 
 			if ((xmitstat.check2822 & 1) && !xmitstat.datatype) {
 				for (i = linein.len - 1; i >= 0; i--)
