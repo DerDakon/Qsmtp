@@ -42,6 +42,21 @@ time(time_t *t __attribute__ ((unused)))
 	return testtime;
 }
 
+int
+gettimeofday(struct timeval *tv, struct timezone *tz)
+{
+	if ((tz != NULL) && ((tz->tz_dsttime != 0) || (tz->tz_minuteswest != 0)))
+		abort();
+
+	if (tv == NULL)
+		abort();
+
+	tv->tv_sec = time(NULL);
+	tv->tv_usec = 10203042;
+
+	return 0;
+}
+
 static SSL dummy_ssl;
 static SSL_CIPHER dummy_cipher;
 #define DUMMY_CIPHER_STRING "<OPENSSL_CIPHER_STRING_DUMMY>"
@@ -943,6 +958,18 @@ check_data_body(void)
 			.check2822_flags = 2
 		},
 		{
+			.name = "submission mode all headers inserted",
+			.data_expect = RCVDHDR
+				FOOHDR
+				"Date: Wed, 11 Apr 2012 18:32:17 +0200\n"
+				"From: <foo@example.com>\n"
+				"Message-Id: <1334161937.10203042@msgid.example.net>\n",
+			.netmsg = FOOLINE,
+			.maxlen = 512,
+			.msgsize = strlen(FOOHDR) + 1, // the extra lines that are automatically inserted are not counted
+			.check2822_flags = 2
+		},
+		{
 			.name = "leading data dot",
 			.data_expect = RCVDHDR
 				FOOHDR
@@ -1163,6 +1190,8 @@ int main()
 	}
 
 	memset(&xmitstat, 0, sizeof(xmitstat));
+	msgidhost.s = "msgid.example.net";
+	msgidhost.len = strlen(msgidhost.s);
 
 	testcase_setup_netnwrite(testcase_netnwrite_compare);
 
