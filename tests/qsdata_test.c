@@ -42,16 +42,26 @@ time(time_t *t __attribute__ ((unused)))
 	return testtime;
 }
 
+static SSL dummy_ssl;
+static SSL_CIPHER dummy_cipher;
+#define DUMMY_CIPHER_STRING "<OPENSSL_CIPHER_STRING_DUMMY>"
+
 const SSL_CIPHER *
-SSL_get_current_cipher(const SSL *s __attribute__ ((unused)))
+SSL_get_current_cipher(const SSL *s)
 {
-	abort();
+	if (s != &dummy_ssl)
+		abort();
+
+	return &dummy_cipher;
 }
 
 const char *
-SSL_CIPHER_get_name(const SSL_CIPHER *c __attribute__ ((unused)))
+SSL_CIPHER_get_name(const SSL_CIPHER *c)
 {
-	abort();
+	if (c != &dummy_cipher)
+		abort();
+
+	return DUMMY_CIPHER_STRING;
 }
 
 pid_t
@@ -362,12 +372,13 @@ check_queueheader(void)
 	if (err != 0)
 		return err;
 
-	for (int idx = 0; idx < 14; idx++) {
+	for (int idx = 0; idx < 16; idx++) {
 		const char *expect;
 		const char *testname;
 		int chunked = 0;
 
 		memset(&xmitstat, 0, sizeof(xmitstat));
+		ssl = NULL;
 
 		strncpy(xmitstat.remoteip, "192.0.2.42", sizeof(xmitstat.remoteip));
 
@@ -496,6 +507,25 @@ check_queueheader(void)
 					"\tby testcase.example.net (" VERSIONSTRING ") with ESMTPA\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
+		case 14:
+			/* plain SSL mail */
+			testname = "SSL minimal";
+			relayclient = 1;
+			ssl = &dummy_ssl;
+			expect = "Received: from unknown ([192.0.2.42])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with (" DUMMY_CIPHER_STRING " encrypted) ESMTPS\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
+		case 15:
+			/* plain SSL mail */
+			testname = "SSL chunked";
+			relayclient = 1;
+			ssl = &dummy_ssl;
+			chunked = 1;
+			expect = "Received: from unknown ([192.0.2.42])\n"
+			"\tby testcase.example.net (" VERSIONSTRING ") with (chunked " DUMMY_CIPHER_STRING " encrypted) ESMTPS\n"
+			"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+			break;
 		}
 
 		if (xmitstat.remotehost.s != NULL)
@@ -505,7 +535,7 @@ check_queueheader(void)
 		if (xmitstat.authname.s != NULL)
 			xmitstat.authname.len = strlen(xmitstat.authname.s);
 
-		if ((xmitstat.authname.s != NULL) || chunked)
+		if ((xmitstat.authname.s != NULL) || chunked || ssl)
 			xmitstat.esmtp = 1;
 
 		printf("%s: Running test: %s\n", __func__, testname);
