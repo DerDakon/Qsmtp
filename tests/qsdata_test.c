@@ -6,6 +6,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <openssl/ssl.h>
 #include <stdio.h>
 #include <sys/signal.h>
 #include <time.h>
@@ -39,6 +40,18 @@ time_t
 time(time_t *t __attribute__ ((unused)))
 {
 	return testtime;
+}
+
+const SSL_CIPHER *
+SSL_get_current_cipher(const SSL *s __attribute__ ((unused)))
+{
+	abort();
+}
+
+const char *
+SSL_CIPHER_get_name(const SSL_CIPHER *c __attribute__ ((unused)))
+{
+	abort();
 }
 
 pid_t
