@@ -2,6 +2,8 @@
  \brief receive and queue message data
  */
 
+#define _STD_SOURCE
+#define _GNU_SOURCE
 #include <qsmtpd/qsdata.h>
 
 #include <fmt.h>
@@ -550,7 +552,7 @@ smtp_bdat(void)
 	int rc;
 #warning FIXME: loop detection missing
 	unsigned int hops = 0;		/* number of "Received:"-lines */
-	long chunksize;
+	unsigned long long chunksize;
 	char *more;
 
 	if (badbounce || !goodrcpt) {
@@ -561,7 +563,7 @@ smtp_bdat(void)
 	if ((linein.s[5] < '0') || (linein.s[5] > '9'))
 		return EINVAL;
 	errno = 0;
-	chunksize = strtoul(linein.s + 5, &more, 10);
+	chunksize = strtoull(linein.s + 5, &more, 10);
 	if ((errno == ERANGE) || (*more && (*more != ' ')))
 		return EINVAL;
 	if (*more && strcasecmp(more + 1, "LAST"))
@@ -581,7 +583,7 @@ smtp_bdat(void)
 		size_t chunk;
 		char inbuf[2048];
 
-		if (chunksize >= (long) sizeof(inbuf)) {
+		if (chunksize >= sizeof(inbuf)) {
 			chunk = net_readbin(sizeof(inbuf) - 1, inbuf);
 		} else {
 			chunk = net_readbin(chunksize, inbuf);

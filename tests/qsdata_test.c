@@ -1227,7 +1227,7 @@ check_bdat_invalid_args(void)
 	printf("%s\n", __func__);
 	badbounce = 0;
 	goodrcpt = 1;
-	snprintf(longintbuf, sizeof(longintbuf), "42%lu", ULONG_MAX);
+	snprintf(longintbuf, sizeof(longintbuf), "42%llu", ULONG_LONG_MAX);
 
 	for (i = 0; inputs[i] != NULL; i++) {
 		sprintf(linein.s, "BDAT %s", inputs[i]);
