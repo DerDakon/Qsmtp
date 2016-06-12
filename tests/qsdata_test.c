@@ -1220,11 +1220,13 @@ check_bdat_invalid_args(void)
 {
 	int ret = 0;
 	unsigned int i = 0;
-	const char *inputs[] = { "#123", "abc", "42 x", NULL };
+	char longintbuf[32];
+	const char *inputs[] = { "#123", "abc", "42 x", longintbuf, NULL };
 
 	printf("%s\n", __func__);
 	badbounce = 0;
 	goodrcpt = 1;
+	snprintf(longintbuf, sizeof(longintbuf), "42%lu", ULONG_MAX);
 
 	for (i = 0; inputs[i] != NULL; i++) {
 		sprintf(linein.s, "BDAT %s", inputs[i]);

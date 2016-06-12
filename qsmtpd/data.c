@@ -560,8 +560,9 @@ smtp_bdat(void)
 
 	if ((linein.s[5] < '0') || (linein.s[5] > '9'))
 		return EINVAL;
-	chunksize = strtol(linein.s + 5, &more, 10);
-	if ((chunksize < 0) || (*more && (*more != ' ')))
+	errno = 0;
+	chunksize = strtoul(linein.s + 5, &more, 10);
+	if ((errno == ERANGE) || (*more && (*more != ' ')))
 		return EINVAL;
 	if (*more && strcasecmp(more + 1, "LAST"))
 		return EINVAL;
