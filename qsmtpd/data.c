@@ -573,9 +573,8 @@ smtp_bdat(void)
 
 		bdaterr = queue_init();
 
-		if (!bdaterr && (rc = write_received(1)) ) {
-			bdaterr = rc;
-		}
+		if (!bdaterr)
+			bdaterr = write_received(1);
 	}
 
 	while (chunksize > 0) {
