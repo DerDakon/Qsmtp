@@ -1174,6 +1174,74 @@ check_data_body(void)
 	return ret;
 }
 
+#ifdef CHUNKING
+static int
+check_bdat_badbounce(void)
+{
+	int ret = 0;
+
+	printf("%s\n", __func__);
+	netnwrite_msg = "554 5.1.1 no valid recipients\r\n";
+	badbounce = 1;
+	goodrcpt = 1;
+
+	int r = smtp_bdat();
+
+	if (r != EDONE)
+		ret++;
+
+	ret += testcase_netnwrite_check(__func__);
+
+	return ret;
+}
+
+static int
+check_bdat_no_rcpt(void)
+{
+	int ret = 0;
+
+	printf("%s\n", __func__);
+	netnwrite_msg = "554 5.1.1 no valid recipients\r\n";
+	badbounce = 0;
+	goodrcpt = 0;
+
+	int r = smtp_bdat();
+
+	if (r != EDONE)
+		ret++;
+
+	ret += testcase_netnwrite_check(__func__);
+
+	return ret;
+}
+
+static int
+check_bdat_invalid_args(void)
+{
+	int ret = 0;
+	unsigned int i = 0;
+	const char *inputs[] = { "#123", "abc", "42 x", NULL };
+
+	printf("%s\n", __func__);
+	badbounce = 0;
+	goodrcpt = 1;
+
+	for (i = 0; inputs[i] != NULL; i++) {
+		sprintf(linein.s, "BDAT %s", inputs[i]);
+		linein.len = strlen(linein.s);
+
+		int r = smtp_bdat();
+
+		if (r != EINVAL)
+			ret++;
+
+		ret += testcase_netnwrite_check(__func__);
+	}
+
+	return ret;
+}
+#endif
+
 int main()
 {
 	int ret = 0;
@@ -1216,6 +1284,12 @@ int main()
 	ret += check_data_write_received_fail();
 	ret += check_data_write_received_pipefail();
 	ret += check_data_body();
+
+#ifdef CHUNKING
+	ret += check_bdat_badbounce();
+	ret += check_bdat_no_rcpt();
+	ret += check_bdat_invalid_args();
+#endif
 
 	return ret;
 }
