@@ -569,7 +569,6 @@ smtp_bdat(void)
 
 	if (comstate != 0x0800) {
 		msgsize = 0;
-		bdaterr = 0;
 		comstate = 0x0800;
 
 		bdaterr = queue_init();
