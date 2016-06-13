@@ -331,6 +331,9 @@ smtp_rcpt(void)
 	if (bugoffset != 0)
 		xmitstat.spacebug = 1;
 
+	if (rcptcount >= MAXRCPT)
+		return netwrite("452 4.5.3 Too many recipients\r\n") ? errno : 0;
+
 	userconf_init(&ds);
 	i = addrparse(linein.s + 9 + bugoffset, 1, &tmp, &more, &ds, rcpthosts, rcpthsize);
 	logmsg[2] = tmp.s;
@@ -393,11 +396,6 @@ smtp_rcpt(void)
 		userconf_free(&ds);
 		free(tmp.s);
 		return EINVAL;
-	}
-	if (rcptcount >= MAXRCPT) {
-		userconf_free(&ds);
-		free(tmp.s);
-		return netwrite("452 4.5.3 Too many recipients\r\n") ? errno : 0;
 	}
 
 	r = malloc(sizeof(*r));
