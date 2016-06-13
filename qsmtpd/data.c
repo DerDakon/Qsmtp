@@ -656,6 +656,9 @@ smtp_bdat(void)
 			queuefd_hdr = -1;
 		}
 	} else {
+		/* This returns the size as given by the client. It has successfully been parsed as number.
+		 * and the contents of this message do not really matter, so we can just reuse that. This
+		 * will not be done in case of the LAST chunk, that will go through queue_envelope() above. */
 		const char *bdatmess[] = {"250 2.5.0 ", linein.s + 5, " octets received", NULL};
 
 		bdaterr = net_writen(bdatmess) ? errno : 0;
