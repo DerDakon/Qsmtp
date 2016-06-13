@@ -137,7 +137,8 @@ queue_init(void)
 }
 
 static unsigned long expect_queue_envelope = -1;
-static unsigned int expect_queue_result = 0;
+static unsigned int expect_queue_result;
+static int expect_queue_chunked;
 
 int
 queue_envelope(const unsigned long sz, const int chunked)
@@ -148,7 +149,7 @@ queue_envelope(const unsigned long sz, const int chunked)
 	if (sz != expect_queue_envelope)
 		abort();
 
-	if (chunked != 0)
+	if (chunked != expect_queue_chunked)
 		abort();
 
 	expect_queue_envelope = -1;
@@ -1253,6 +1254,7 @@ check_bdat_qinit_fail(void)
 	badbounce = 0;
 	goodrcpt = 1;
 	queue_init_result = EDONE;
+	comstate = 0x0040;
 
 	strcpy(linein.s, "BDAT 0");
 	linein.len = strlen(linein.s);
@@ -1261,6 +1263,57 @@ check_bdat_qinit_fail(void)
 
 	if (r != EDONE)
 		ret++;
+
+	return ret;
+}
+
+static int
+check_bdat_empty_chunks(void)
+{
+	int ret = 0;
+
+	printf("%s\n", __func__);
+	badbounce = 0;
+	goodrcpt = 1;
+	queue_init_result = 0;
+	comstate = 0x0040;
+	xmitstat.esmtp = 1;
+
+	int fd0[2];
+	setup_datafd(fd0);
+
+	for (int i = 0; i < 3; i++) {
+		strcpy(linein.s, "BDAT 0");
+		linein.len = strlen(linein.s);
+		netnwrite_msg = "250 2.5.0 0 octets received\r\n";
+
+		int r = smtp_bdat();
+
+		if (r != 0)
+			ret++;
+
+		if (comstate != 0x0800)
+			ret++;
+	}
+
+	strcpy(linein.s, "BDAT 0 LAST");
+	linein.len = strlen(linein.s);
+
+	int r = smtp_bdat();
+
+	if (r != 0)
+		ret++;
+
+	if (comstate != 0x0800)
+		ret++;
+
+	if (check_msgbody("Received: from unknown ([::ffff:192.0.2.24])\n"
+			"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
+			"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n", fd0[0]) != 0)
+		ret++;
+
+	close(fd0[0]);
+	close(fd0[1]);
 
 	return ret;
 }
@@ -1310,10 +1363,17 @@ int main()
 	ret += check_data_body();
 
 #ifdef CHUNKING
+	ssl = NULL;
+
 	ret += check_bdat_badbounce();
 	ret += check_bdat_no_rcpt();
 	ret += check_bdat_invalid_args();
 	ret += check_bdat_qinit_fail();
+
+	expect_queue_chunked = 1;
+	testcase_setup_net_writen(testcase_net_writen_combine);
+
+	ret += check_bdat_empty_chunks();
 #endif
 
 	return ret;
