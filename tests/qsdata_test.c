@@ -1243,6 +1243,27 @@ check_bdat_invalid_args(void)
 
 	return ret;
 }
+
+static int
+check_bdat_qinit_fail(void)
+{
+	int ret = 0;
+
+	printf("%s\n", __func__);
+	badbounce = 0;
+	goodrcpt = 1;
+	queue_init_result = EDONE;
+
+	strcpy(linein.s, "BDAT 0");
+	linein.len = strlen(linein.s);
+
+	int r = smtp_bdat();
+
+	if (r != EDONE)
+		ret++;
+
+	return ret;
+}
 #endif
 
 int main()
@@ -1292,6 +1313,7 @@ int main()
 	ret += check_bdat_badbounce();
 	ret += check_bdat_no_rcpt();
 	ret += check_bdat_invalid_args();
+	ret += check_bdat_qinit_fail();
 #endif
 
 	return ret;
