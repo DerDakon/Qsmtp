@@ -499,8 +499,7 @@ loop_data:
 			logmail[9] = "read error}";
 		}
 	}
-	close(queuefd_data);
-	queuefd_data = -1;
+	queue_reset();
 	/* eat all data until the transmission ends. But just drop it and return
 	 * an error defined before jumping here */
 	while ((linein.len != 1) || (linein.s[0] != '.')) {
@@ -509,7 +508,6 @@ loop_data:
 			msgsize--;
 		net_read(1);
 	}
-	close(queuefd_hdr);
 	ultostr(msgsize, s);
 
 	while (!TAILQ_EMPTY(&head)) {
@@ -651,10 +649,8 @@ smtp_bdat(void)
 	}
 
 	if (bdaterr) {
-		if (queuefd_hdr >= 0) {
+		if (queuefd_hdr >= 0)
 			queue_reset();
-			queuefd_hdr = -1;
-		}
 	} else {
 		/* This returns the size as given by the client. It has successfully been parsed as number.
 		 * and the contents of this message do not really matter, so we can just reuse that. This

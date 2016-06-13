@@ -48,6 +48,7 @@ queue_reset(void)
 		queuefd_data = -1;
 	}
 	close(queuefd_hdr);
+	queuefd_hdr = -1;
 	waitpid(qpid, NULL, 0);
 }
 

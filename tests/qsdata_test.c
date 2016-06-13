@@ -115,8 +115,17 @@ void
 queue_reset(void)
 {
 	if (queue_reset_expected != 1)
-		exit(EFAULT);
+		abort();
 	queue_reset_expected = 0;
+
+	if (queuefd_data >= 0) {
+		close(queuefd_data);
+		queuefd_data = -1;
+	}
+	if (queuefd_hdr >= 0) {
+		close(queuefd_hdr);
+		queuefd_hdr = -1;
+	}
 }
 
 static int queue_init_result = -1;
@@ -132,7 +141,7 @@ queue_init(void)
 		queue_init_result = -1;
 		return r;
 	default:
-		exit(EFAULT);
+		abort();
 	}
 }
 
@@ -871,8 +880,6 @@ check_data_write_received_pipefail(void)
 	if (r != EDONE)
 		ret++;
 
-	close(queuefd_data);
-	queuefd_data = -1;
 	queuefd_data_recv = -1;
 
 	return ret;
