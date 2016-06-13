@@ -139,6 +139,7 @@ queue_init(void)
 static unsigned long expect_queue_envelope = -1;
 static unsigned int expect_queue_result;
 static int expect_queue_chunked;
+static int queuefd_data_recv = -1; // receiving end of the data pipe
 
 int
 queue_envelope(const unsigned long sz, const int chunked)
@@ -166,6 +167,7 @@ queue_envelope(const unsigned long sz, const int chunked)
 		free(l);
 	}
 	thisrecip = NULL;
+	close(queuefd_data);
 
 	return 0;
 }
@@ -296,8 +298,10 @@ setup_recip(void)
 }
 
 static int
-setup_datafd(int *fd0)
+setup_datafd(void)
 {
+	int fd0[2];
+
 	if (pipe(fd0) != 0)
 		return 1;
 
@@ -313,8 +317,6 @@ setup_datafd(int *fd0)
 	heloname.s = "testcase.example.net";
 	heloname.len = strlen(heloname.s);
 
-	queuefd_data = fd0[1];
-
 	int r = setup_recip();
 	if (r != 0) {
 		close(fd0[0]);
@@ -322,11 +324,21 @@ setup_datafd(int *fd0)
 		return r;
 	}
 
+	if (queuefd_data_recv >= 0) {
+		r = close(queuefd_data_recv);
+		if (r != 0)
+			abort();
+		queuefd_data_recv = -1;
+	}
+
+	queuefd_data = fd0[1];
+	queuefd_data_recv = fd0[0];
+
 	return 0;
 }
 
 static int
-check_msgbody(const char *expect, int queuefd_read)
+check_msgbody(const char *expect)
 {
 	int err = 0;
 	ssize_t off = 0;
@@ -335,7 +347,7 @@ check_msgbody(const char *expect, int queuefd_read)
 	static const char received_from[] = "Received: from ";
 
 	while (off < (ssize_t)sizeof(outbuf) - 1) {
-		const ssize_t r = read(queuefd_read, outbuf + off, 1);
+		const ssize_t r = read(queuefd_data_recv, outbuf + off, 1);
 		if (r < 0) {
 			if (errno != EAGAIN) {
 				fprintf(stderr, "read failed with error %i\n", errno);
@@ -383,8 +395,7 @@ check_msgbody(const char *expect, int queuefd_read)
 static int
 check_queueheader(void)
 {
-	int fd0[2];
-	int err = setup_datafd(fd0);
+	int err = setup_datafd();
 
 	if (err != 0)
 		return err;
@@ -530,8 +541,8 @@ check_queueheader(void)
 			relayclient = 1;
 			ssl = &dummy_ssl;
 			expect = "Received: from unknown ([192.0.2.42])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with (" DUMMY_CIPHER_STRING " encrypted) ESMTPS\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+					"\tby testcase.example.net (" VERSIONSTRING ") with (" DUMMY_CIPHER_STRING " encrypted) ESMTPS\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		case 15:
 			/* plain SSL mail */
@@ -540,8 +551,8 @@ check_queueheader(void)
 			ssl = &dummy_ssl;
 			chunked = 1;
 			expect = "Received: from unknown ([192.0.2.42])\n"
-			"\tby testcase.example.net (" VERSIONSTRING ") with (chunked " DUMMY_CIPHER_STRING " encrypted) ESMTPS\n"
-			"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
+					"\tby testcase.example.net (" VERSIONSTRING ") with (chunked " DUMMY_CIPHER_STRING " encrypted) ESMTPS\n"
+					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
 			break;
 		}
 
@@ -562,13 +573,10 @@ check_queueheader(void)
 			break;
 		}
 
-		err = check_msgbody(expect, fd0[0]);
+		err = check_msgbody(expect);
 		if (err != 0)
 			break;
 	}
-
-	close(fd0[0]);
-	close(fd0[1]);
 
 	struct recip *l = TAILQ_FIRST(&head);
 
@@ -580,7 +588,10 @@ check_queueheader(void)
 		abort();
 
 	/* pass invalid fd in, this should cause the write() to fail */
+	close(queuefd_data);
 	queuefd_data = -1;
+	close(queuefd_data_recv);
+	queuefd_data_recv = -1;
 
 	relayclient = 0;
 	xmitstat.spf = SPF_PASS;
@@ -835,8 +846,7 @@ static int
 check_data_write_received_pipefail(void)
 {
 	int ret = 0;
-	int fd0[2];
-	int r = setup_datafd(fd0);
+	int r = setup_datafd();
 
 	printf("%s\n", __func__);
 
@@ -854,14 +864,16 @@ check_data_write_received_pipefail(void)
 	log_write_msg = "broken pipe to qmail-queue";
 	log_write_priority = LOG_ERR;
 
-	close(fd0[0]);
+	close(queuefd_data_recv);
 
 	r = smtp_data();
 
 	if (r != EDONE)
 		ret++;
 
-	close(fd0[1]);
+	close(queuefd_data);
+	queuefd_data = -1;
+	queuefd_data_recv = -1;
 
 	return ret;
 }
@@ -899,8 +911,9 @@ check_data_body(void)
 		const char *netwrite_msg;
 		unsigned long maxlen;
 		unsigned long msgsize;
-		int check2822_flags;
-		int data_result;
+		unsigned int check2822_flags:2;
+		unsigned int hdrfd:1;
+		int data_result:16;
 	} testdata[] = {
 		{
 			.name = "empty message",
@@ -989,6 +1002,7 @@ check_data_body(void)
 			.netmsg = FOOLINE,
 			.netmsg_more = dotline,
 			.maxlen = 1,
+			.hdrfd = 1,
 			.data_result = EMSGSIZE
 		},
 		{
@@ -1002,6 +1016,7 @@ check_data_body(void)
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (56 bytes) {no 'From:' in header}",
 			.maxlen = 512,
 			.check2822_flags = 1,
+			.hdrfd = 1,
 			.data_result = EDONE
 		},
 		{
@@ -1015,6 +1030,7 @@ check_data_body(void)
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (40 bytes) {no 'Date:' in header}",
 			.maxlen = 512,
 			.check2822_flags = 1,
+			.hdrfd = 1,
 			.data_result = EDONE
 		},
 		{
@@ -1028,6 +1044,7 @@ check_data_body(void)
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (67 bytes) {more than one 'From:' in header}",
 			.maxlen = 512,
 			.check2822_flags = 1,
+			.hdrfd = 1,
 			.data_result = EDONE
 		},
 		{
@@ -1041,6 +1058,7 @@ check_data_body(void)
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (95 bytes) {more than one 'Date:' in header}",
 			.maxlen = 512,
 			.check2822_flags = 1,
+			.hdrfd = 1,
 			.data_result = EDONE
 		},
 		{
@@ -1051,6 +1069,7 @@ check_data_body(void)
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (3 bytes) {8bit-character in message header}",
 			.maxlen = 512,
 			.check2822_flags = 1,
+			.hdrfd = 1,
 			.data_result = EDONE
 		},
 		{
@@ -1065,6 +1084,7 @@ check_data_body(void)
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (82 bytes) {8bit-character in message body}",
 			.maxlen = 512,
 			.check2822_flags = 1,
+			.hdrfd = 1,
 			.data_result = EDONE
 		},
 		{
@@ -1075,6 +1095,7 @@ check_data_body(void)
 			.netwrite_msg = "554 5.4.6 too many hops, this message is looping\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (1719 bytes) {mail loop}",
 			.maxlen = MAXHOPS * 17 + 256,
+			.hdrfd = 1,
 			.data_result = EDONE
 		},
 		{
@@ -1085,6 +1106,7 @@ check_data_body(void)
 			.netwrite_msg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (34 bytes) {mail loop}",
 			.maxlen = MAXHOPS * 17 + 256,
+			.hdrfd = 1,
 			.data_result = EDONE
 		},
 		{
@@ -1104,11 +1126,7 @@ check_data_body(void)
 	xmitstat.mailfrom.len = strlen(xmitstat.mailfrom.s);
 	strncpy(xmitstat.remoteip, "::ffff:192.0.2.24", sizeof(xmitstat.remoteip));
 
-	int fd0[2];
-	int r = setup_datafd(fd0);
-	if (r != 0)
-		return r;
-
+	int r;
 	snprintf(rcvdbuf, sizeof(rcvdbuf), "%s", RCVDHDR);
 	for (r = 0; r < MAXHOPS; r++) {
 		received_ofl[r] = RCVDDUMMYLINE;
@@ -1142,36 +1160,40 @@ check_data_body(void)
 		xmitstat.check2822 = testdata[idx].check2822_flags & 1;
 		submission_mode = testdata[idx].check2822_flags & 2 ? 1 : 0;
 		netnwrite_msg = testdata[idx].netwrite_msg;
-		if (idx > 0) {
-			int s;
+		if (testdata[idx].hdrfd)
+			queuefd_hdr = open("/dev/null", O_WRONLY);
+		else
+			queuefd_hdr = -1;
 
-			// the error tests close the datafd, in that case reopen it
-			if (queuefd_data < 0) {
-				close(fd0[0]);
-				s = setup_datafd(fd0);
-			}
-			else
-				s = setup_recip();
-			if (s != 0)
-				return s;
-		}
+		// the error tests close the datafd, in that case reopen it
+		r = setup_datafd();
+		if (r != 0)
+			return r;
 
 		r = smtp_data();
 
 		if (r != testdata[idx].data_result)
 			ret++;
 
-		if (check_msgbody(testdata[idx].data_expect, fd0[0]) != 0)
+		if (check_msgbody(testdata[idx].data_expect) != 0)
 			ret++;
 
 		if (testcase_netnwrite_check(testdata[idx].name)) {
 			ret++;
 			fprintf(stderr, "ERROR: network data pending at end of test\n");
 		}
+
+		freedata();
 	}
 
-	close(fd0[0]);
-	close(fd0[1]);
+	if (queuefd_data_recv >= 0) {
+		close(queuefd_data_recv);
+		queuefd_data_recv = -1;
+	}
+	if (queuefd_data >= 0) {
+		close(queuefd_data);
+		queuefd_data = -1;
+	}
 
 	return ret;
 }
@@ -1279,8 +1301,7 @@ check_bdat_empty_chunks(void)
 	comstate = 0x0040;
 	xmitstat.esmtp = 1;
 
-	int fd0[2];
-	setup_datafd(fd0);
+	setup_datafd();
 
 	for (int i = 0; i < 3; i++) {
 		strcpy(linein.s, "BDAT 0");
@@ -1309,11 +1330,11 @@ check_bdat_empty_chunks(void)
 
 	if (check_msgbody("Received: from unknown ([::ffff:192.0.2.24])\n"
 			"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
-			"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n", fd0[0]) != 0)
+			"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n") != 0)
 		ret++;
 
-	close(fd0[0]);
-	close(fd0[1]);
+	close(queuefd_data_recv);
+	queuefd_data_recv = -1;
 
 	return ret;
 }
