@@ -63,7 +63,6 @@ extern string heloname;			/**< the fqdn to show in helo */
 extern string msgidhost;			/**< the fqdn to use if a message-id is added */
 extern string liphost;			/**< replacement domain if to address is <foo@[ip]> */
 extern unsigned int goodrcpt;		/**< number of valid recipients */
-extern int badbounce;			/**< bounce message with more than one recipient */
 extern unsigned long sslauth;		/**< if SMTP AUTH is only allowed after STARTTLS */
 extern unsigned long databytes;		/**< maximum message size */
 extern int relayclient;			/**< flag if this client is allowed to relay by IP: 0 unchecked, 1 allowed, 2 denied */

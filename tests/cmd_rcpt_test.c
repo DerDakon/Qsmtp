@@ -31,7 +31,6 @@ static int tls_verify_result;
 static int expected_tarpit;
 struct recip *thisrecip;
 unsigned int goodrcpt;
-int badbounce;
 int controldir_fd = AT_FDCWD;
 
 static int expected_uc_load = -1;
@@ -639,11 +638,6 @@ main(void)
 			}
 		} else {
 			if (testdata[i].badbounce) {
-				if (!badbounce) {
-					fprintf(stderr, "%u: bad bounce expected, but not set by smtp_rcpt()\n",
-							i);
-					errcnt++;
-				}
 				if (goodrcpt != 0) {
 					fprintf(stderr, "%u: goodrcpt was %u instead of 0 for bad bounce\n",
 							i, goodrcpt);
@@ -682,7 +676,6 @@ main(void)
 			}
 			goodrcpt = 0;
 			rcptcount = 0;
-			badbounce = 0;
 		}
 	}
 

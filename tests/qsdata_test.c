@@ -17,7 +17,6 @@ int relayclient;
 unsigned long sslauth;
 unsigned long databytes;
 unsigned int goodrcpt;
-int badbounce;
 struct xmitstat xmitstat;
 const char **globalconf;
 string heloname;
@@ -741,33 +740,12 @@ check_check_rfc822_headers(void)
 }
 
 static int
-check_data_badbounce(void)
-{
-	int ret = 0;
-
-	printf("%s\n", __func__);
-	netnwrite_msg = "554 5.1.1 no valid recipients\r\n";
-	badbounce = 1;
-	goodrcpt = 1;
-
-	int r = smtp_data();
-
-	if (r != EDONE)
-		ret++;
-
-	ret += testcase_netnwrite_check(__func__);
-
-	return ret;
-}
-
-static int
 check_data_no_rcpt(void)
 {
 	int ret = 0;
 
 	printf("%s\n", __func__);
 	netnwrite_msg = "554 5.1.1 no valid recipients\r\n";
-	badbounce = 0;
 	goodrcpt = 0;
 
 	int r = smtp_data();
@@ -786,7 +764,6 @@ check_data_qinit_fail(void)
 	int ret = 0;
 
 	printf("%s\n", __func__);
-	badbounce = 0;
 	goodrcpt = 1;
 	queue_init_result = EDONE;
 
@@ -805,7 +782,6 @@ check_data_354_fail(void)
 
 	printf("%s\n", __func__);
 
-	badbounce = 0;
 	goodrcpt = 1;
 	queue_init_result = 0;
 	queue_reset_expected = 1;
@@ -826,7 +802,6 @@ check_data_write_received_fail(void)
 
 	printf("%s\n", __func__);
 
-	badbounce = 0;
 	goodrcpt = 1;
 	queue_init_result = 0;
 	queue_reset_expected = 1;
@@ -862,7 +837,6 @@ check_data_write_received_pipefail(void)
 	if (r != 0)
 		return r;
 
-	badbounce = 0;
 	goodrcpt = 1;
 	queue_init_result = 0;
 	queue_reset_expected = 1;
@@ -1126,7 +1100,6 @@ check_data_body(void)
 	testcase_setup_netnwrite(test_netnwrite);
 
 	memset(&xmitstat, 0, sizeof(xmitstat));
-	badbounce = 0;
 	goodrcpt = 1;
 	relayclient = 1;
 	xmitstat.mailfrom.s = "foo@example.com";
@@ -1207,33 +1180,12 @@ check_data_body(void)
 
 #ifdef CHUNKING
 static int
-check_bdat_badbounce(void)
-{
-	int ret = 0;
-
-	printf("%s\n", __func__);
-	netnwrite_msg = "554 5.1.1 no valid recipients\r\n";
-	badbounce = 1;
-	goodrcpt = 1;
-
-	int r = smtp_bdat();
-
-	if (r != EDONE)
-		ret++;
-
-	ret += testcase_netnwrite_check(__func__);
-
-	return ret;
-}
-
-static int
 check_bdat_no_rcpt(void)
 {
 	int ret = 0;
 
 	printf("%s\n", __func__);
 	netnwrite_msg = "554 5.1.1 no valid recipients\r\n";
-	badbounce = 0;
 	goodrcpt = 0;
 
 	int r = smtp_bdat();
@@ -1255,7 +1207,6 @@ check_bdat_invalid_args(void)
 	const char *inputs[] = { "#123", "abc", "42 x", longintbuf, NULL };
 
 	printf("%s\n", __func__);
-	badbounce = 0;
 	goodrcpt = 1;
 	snprintf(longintbuf, sizeof(longintbuf), "42%llu", ULONG_LONG_MAX);
 
@@ -1280,7 +1231,6 @@ check_bdat_qinit_fail(void)
 	int ret = 0;
 
 	printf("%s\n", __func__);
-	badbounce = 0;
 	goodrcpt = 1;
 	queue_init_result = EDONE;
 	comstate = 0x0040;
@@ -1302,7 +1252,6 @@ check_bdat_empty_chunks(void)
 	int ret = 0;
 
 	printf("%s\n", __func__);
-	badbounce = 0;
 	goodrcpt = 1;
 	queue_init_result = 0;
 	comstate = 0x0040;
@@ -1374,7 +1323,6 @@ int main()
 	ret += check_date822();
 	ret += check_queueheader();
 	ret += check_check_rfc822_headers();
-	ret += check_data_badbounce();
 	ret += check_data_no_rcpt();
 	ret += check_data_qinit_fail();
 
@@ -1393,7 +1341,6 @@ int main()
 #ifdef CHUNKING
 	ssl = NULL;
 
-	ret += check_bdat_badbounce();
 	ret += check_bdat_no_rcpt();
 	ret += check_bdat_invalid_args();
 	ret += check_bdat_qinit_fail();

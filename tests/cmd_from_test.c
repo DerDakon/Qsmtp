@@ -33,7 +33,6 @@ static int expected_tls_verify;
 static int tls_verify_result;
 struct recip *thisrecip;
 unsigned int goodrcpt;
-int badbounce;
 int controldir_fd = AT_FDCWD;
 unsigned long databytes = 20000;
 

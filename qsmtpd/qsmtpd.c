@@ -73,7 +73,6 @@ off_t rcpthsize;			/**< sizeof("control/rcpthosts") */
 unsigned long sslauth;			/**< if SMTP AUTH is only allowed after STARTTLS */
 unsigned long databytes;		/**< maximum message size */
 unsigned int goodrcpt;			/**< number of valid recipients */
-int badbounce;				/**< bounce message with more than one recipient */
 struct xmitstat xmitstat;		/**< This contains some flags describing the transmission and it's status. */
 const char **globalconf;		/**< contents of the global "filterconf" file (or NULL) */
 string heloname;			/**< the fqdn to show in helo */
@@ -395,7 +394,6 @@ freedata(void)
 	}
 	rcptcount = 0;
 	goodrcpt = 0;
-	badbounce = 0;
 }
 
 /**

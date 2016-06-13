@@ -253,7 +253,7 @@ smtp_data(void)
 
 	msgsize = 0;
 
-	if (badbounce || !goodrcpt) {
+	if (!goodrcpt) {
 		tarpit();
 		return netwrite("554 5.1.1 no valid recipients\r\n") ? errno : EDONE;
 	}
@@ -551,7 +551,7 @@ smtp_bdat(void)
 	unsigned long long chunksize;
 	char *more;
 
-	if (badbounce || !goodrcpt) {
+	if (!goodrcpt) {
 		tarpit();
 		return netwrite("554 5.1.1 no valid recipients\r\n") ? errno : EDONE;
 	}

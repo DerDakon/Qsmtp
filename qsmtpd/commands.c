@@ -425,7 +425,6 @@ smtp_rcpt(void)
 			log_writen(LOG_INFO, logmess);
 			l->ok = 0;
 		}
-		badbounce = 1;
 		logmess[1] = r->to.s;
 		log_writen(LOG_INFO, logmess);
 		goodrcpt = 0;
@@ -754,7 +753,6 @@ smtp_from_inner(void)
 		xmitstat.spf = (i & 0x0f);
 	}
 
-	badbounce = 0;
 	goodrcpt = 0;
 	okmsg[1] = MAILFROM;
 	return net_writen(okmsg) ? errno : 0;
