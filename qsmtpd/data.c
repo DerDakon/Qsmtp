@@ -510,16 +510,14 @@ loop_data:
 	}
 	ultostr(msgsize, s);
 
-	while (!TAILQ_EMPTY(&head)) {
-		struct recip *l = TAILQ_FIRST(&head);
-
-		TAILQ_REMOVE(&head, TAILQ_FIRST(&head), entries);
+	{
+	struct recip *l;
+	TAILQ_FOREACH(l, &head, entries) {
 		if (l->ok) {
 			logmail[1] = l->to.s;
 			log_writen(LOG_INFO, logmail);
 		}
-		free(l->to.s);
-		free(l);
+	}
 	}
 	freedata();
 
@@ -626,19 +624,18 @@ smtp_bdat(void)
 	}
 
 	if ((msgsize > maxbytes) && !bdaterr) {
-		logmail[9] = "message too big}";
-		while (!TAILQ_EMPTY(&head)) {
-			struct recip *l = TAILQ_FIRST(&head);
+		struct recip *l;
 
-			TAILQ_REMOVE(&head, TAILQ_FIRST(&head), entries);
+		logmail[9] = "message too big}";
+
+		TAILQ_FOREACH(l, &head, entries) {
 			if (l->ok) {
 				logmail[1] = l->to.s;
 				log_writen(LOG_INFO, logmail);
 			}
-			free(l->to.s);
-			free(l);
 		}
 		bdaterr = EMSGSIZE;
+		freedata();
 	}
 	/* send envelope data if this is last chunk */
 	if (*more && !bdaterr) {
