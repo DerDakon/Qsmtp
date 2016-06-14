@@ -66,17 +66,17 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), 
 }
 
 static int __attribute__((nonnull(1, 2)))
-tls_out(const char *s1, const char *s2)
+tls_out(const char *s1, const char *s2, const int def_return)
 {
 	const char *msg[] = {"454 4.3.0 TLS ", s1, ": ", s2, NULL};
 
-	return net_writen(msg);
+	return net_writen(msg) ? -errno : def_return;
 }
 
 static int __attribute__((nonnull(1)))
 tls_err(const char *s)
 {
-	return tls_out(s, ssl_error());
+	return -tls_out(s, ssl_error(), -EDONE);
 }
 
 #define CLIENTCA "control/clientca.pem"
@@ -143,7 +143,7 @@ tls_verify(void)
 
 		if (SSL_set_session_id_context(ssl, VERSIONSTRING, strlen(VERSIONSTRING)) != 1) {
 			const char *err = ssl_strerror();
-			tlsrelay = tls_out("setting session id failed", err) ? -errno : -EPROTO;
+			tlsrelay = tls_out("setting session id failed", err, -EPROTO);
 			break;
 		}
 
@@ -153,7 +153,7 @@ tls_verify(void)
 			dieerror(ETIMEDOUT);
 		} else if (n < 0) {
 			const char *err = ssl_strerror();
-			tlsrelay = tls_out("rehandshake failed", err) ? -errno : n;
+			tlsrelay = tls_out("rehandshake failed", err, n);
 			break;
 		}
 
@@ -227,7 +227,7 @@ tls_init()
 	/* a new SSL context with the bare minimum of options */
 	ctx = SSL_CTX_new(SSLv23_server_method());
 	if (!ctx) {
-		return tls_err("unable to initialize ctx") ? errno : EDONE;
+		return tls_err("unable to initialize ctx");
 	}
 
 	/* disable obsolete and insecure protocol versions */
@@ -235,7 +235,7 @@ tls_init()
 
 	if (!SSL_CTX_use_certificate_chain_file(ctx, certfilename)) {
 		SSL_CTX_free(ctx);
-		return tls_err("missing certificate") ? errno : EDONE;
+		return tls_err("missing certificate");
 	}
 	SSL_CTX_load_verify_locations(ctx, CLIENTCA, NULL);
 
@@ -272,7 +272,7 @@ tls_init()
 	SSL_CTX_free(ctx);
 	if (!myssl) {
 		free(saciphers.s);
-		return tls_err("unable to initialize ssl") ? errno : EDONE;
+		return tls_err("unable to initialize ssl");
 	}
 
 	SSL_set_verify(myssl, SSL_VERIFY_NONE, NULL);
@@ -281,14 +281,14 @@ tls_init()
 	if (!SSL_use_RSAPrivateKey_file(myssl, certfilename, SSL_FILETYPE_PEM)) {
 		ssl_free(myssl);
 		free(saciphers.s);
-		return tls_err("no valid RSA private key") ? errno : EDONE;
+		return tls_err("no valid RSA private key");
 	}
 
 	j = SSL_set_cipher_list(myssl, ciphers);
 	free(saciphers.s);
 	if (j != 1) {
 		ssl_free(myssl);
-		return tls_err("unable to set ciphers") ? errno : EDONE;
+		return tls_err("unable to set ciphers");
 	}
 
 	SSL_set_tmp_rsa_callback(myssl, tmp_rsa_cb);
@@ -298,7 +298,7 @@ tls_init()
 		j = SSL_set_wfd(myssl, socketd);
 	if (j != 1) {
 		ssl_free(myssl);
-		return tls_err("unable to set fd") ? errno : EDONE;
+		return tls_err("unable to set fd");
 	}
 
 	/* protection against CVE-2011-1431 */
@@ -320,7 +320,7 @@ tls_init()
 
 		ssl_free(ssl);
 		ssl = NULL;
-		return tls_out("connection failed", err) ? errno : EDONE;
+		return -tls_out("connection failed", err, -EDONE);
 	}
 
 	/* have to discard the pre-STARTTLS HELO/EHLO argument, if any */
