@@ -350,7 +350,7 @@ target_link_libraries(testcase_qdns_dane
 		qsmtp_lib
 		${MEMCHECK_LIBRARIES}
 )
-if (NOT CMAKE_VERSION VERSION_LESS 2.8.12)
+if (COMMAND target_compile_definitions)
 	target_compile_definitions(testcase_qdns_dane PRIVATE -DLIBOWFAT_UINT_DNSDOMFD=${LIBOWFAT_UINT_DNSDOMFD})
 else ()
 	add_definitions(-DLIBOWFAT_UINT_DNSDOMFD=${LIBOWFAT_UINT_DNSDOMFD})
