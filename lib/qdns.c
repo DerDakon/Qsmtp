@@ -256,6 +256,8 @@ ask_dnsa(const char *name, struct in6_addr **result)
 			s += 4;
 			idx++;
 		}
+	} else {
+		idx = l / 4;
 	}
 
 	free(r);

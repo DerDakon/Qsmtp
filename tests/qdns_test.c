@@ -392,6 +392,13 @@ test_fwdrev(void)
 				idx++;
 				continue;
 			}
+		} else {
+			const int cntnr = ask_dnsa(dns_entries[idx].name, NULL);
+			if (cntnr != cnt) {
+				fprintf(stderr, "ask_dnsa(%s) returned different results with (%i) and without (%i) result pointer\n",
+						dns_entries[idx].name, cnt, cntnr);
+				err++;
+			}
 		}
 
 		struct in6_addr *cur = res;
