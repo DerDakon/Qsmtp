@@ -40,8 +40,8 @@ static int err_base64(void)
 {
 	tarpit();
 	if (!netwrite("501 5.5.2 base64 decoding error\r\n"))
-		errno = EDONE;
-	return -1;
+		return -EDONE;
+	return -errno;
 }
 
 /**
@@ -116,7 +116,8 @@ auth_login(struct string *user)
 		free(authin.s);
 	}
 	if (r > 0) {
-		return err_base64();
+		errno = -err_base64();
+		return -1;
 	} else if (r < 0) {
 		errno = -r;
 		return -1;
@@ -131,7 +132,7 @@ auth_login(struct string *user)
 	memset(authin.s, 0, authin.len);
 	free(authin.s);
 	if (r > 0) {
-		err_base64();
+		errno = -err_base64();
 		goto err;
 	} else if (r < 0) {
 		errno = -r;
@@ -181,7 +182,8 @@ auth_plain(struct string *user)
 		free(authin.s);
 	}
 	if (r > 0) {
-		return err_base64();
+		errno = -err_base64();
+		return -1;
 	} else if (r < 0) {
 		errno = -r;
 		return -1;
@@ -293,7 +295,7 @@ auth_cram(struct string *user)
 	free(authin.s);
 	if (r > 0) {
 		STREMPTY(slop);
-		err_base64();
+		errno = -err_base64();
 		goto err;
 	} else if (r < 0) {
 		errno = -r;
