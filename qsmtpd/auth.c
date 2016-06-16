@@ -15,6 +15,7 @@
 #include <sstring.h>
 #include <tls.h>
 
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -108,39 +109,34 @@ auth_login(struct string *user)
 		r = b64decode(linein.s + 11, linein.len - 11, user);
 	} else {
 		if (netwrite("334 VXNlcm5hbWU6\r\n")) /* Username: */
-			return -1;
+			return -errno;
 		r = authgetl(&authin);
-		if (r < 0) {
-			errno = -r;
-			return -1;
-		}
+		if (r < 0)
+			return r;
 		r = b64decode(authin.s, authin.len, user);
 		free(authin.s);
 	}
-	if (r > 0) {
-		errno = -err_base64();
-		return -1;
-	} else if (r < 0) {
-		errno = -r;
-		return -1;
-	}
+	if (r > 0)
+		return err_base64();
+	else if (r < 0)
+		return r;
 
-	if (netwrite("334 UGFzc3dvcmQ6\r\n")) /* Password: */
+	if (netwrite("334 UGFzc3dvcmQ6\r\n")) { /* Password: */
+		r = -errno;
 		goto err;
+	}
 
 	r = authgetl(&authin);
-	if (r < 0) {
-		errno = -r;
+	if (r < 0)
 		goto err;
-	}
+
 	r = b64decode(authin.s, authin.len, &pass);
 	memset(authin.s, 0, authin.len);
 	free(authin.s);
 	if (r > 0) {
-		errno = -err_base64();
+		r = err_base64();
 		goto err;
 	} else if (r < 0) {
-		errno = -r;
 		goto err;
 	}
 
@@ -149,7 +145,7 @@ auth_login(struct string *user)
 			memset(pass.s, 0, pass.len);
 			free(pass.s);
 		}
-		errno = -err_input();
+		r = err_input();
 		goto err;
 	}
 	r = auth_backend_execute(user, &pass, NULL);
@@ -157,14 +153,10 @@ auth_login(struct string *user)
 	free(pass.s);
 	if (r != 0)
 		free(user->s);
-	if (r < 0) {
-		errno = -r;
-		return -1;
-	}
 	return r;
 err:
 	free(user->s);
-	return -1;
+	return r;
 }
 
 static int
@@ -180,22 +172,17 @@ auth_plain(struct string *user)
 		string authin;
 
 		if ((r = netwrite("334 \r\n")))
-			return r;
+			return -errno;
 		r = authgetl(&authin);
-		if (r < 0) {
-			errno = -r;
-			return -1;
-		}
+		if (r < 0)
+			return r;
 		r = b64decode(authin.s, authin.len, &slop);
 		free(authin.s);
 	}
-	if (r > 0) {
-		errno = -err_base64();
-		return -1;
-	} else if (r < 0) {
-		errno = -r;
-		return -1;
-	}
+	if (r > 0)
+		return err_base64();
+	else if (r < 0)
+		return r;
 
 	while (slop.s[id])
 		id++; /* ignore authorize-id */
@@ -214,17 +201,13 @@ auth_plain(struct string *user)
 		errno = -err_input();
 		memset(slop.s, 0, slop.len);
 		free(slop.s);
-		return -1;
+		return -errno;
 	}
 
 	r = auth_backend_execute(user, &pass, NULL);
 	memset(pass.s, 0, pass.len);
 	if (r != 0) {
 		free(slop.s);
-		if (r < 0) {
-			errno = -r;
-			return -1;
-		}
 	} else {
 		char *tmp;
 		memmove(slop.s, user->s, user->len + 1);
@@ -252,8 +235,8 @@ auth_cram(struct string *user)
 	if (linein.len != strlen("AUTH CRAM-MD5")) {
 		tarpit();
 		if (!netwrite("501 5.7.0 authentication mechanism does not support initial response\r\n"))
-			errno = EDONE;
-		return -1;
+			return -EDONE;
+		return -errno;
 	}
 
 	ultostr(getpid(), t);
@@ -274,38 +257,35 @@ auth_cram(struct string *user)
 	m = strlen(auth_host);
 	/* '<' + unique + auth_host + '>'+ '\0' */
 	l = 1 + k + m + 1 + 1;
-	if ( (r = newstr(&challenge, l)) )
-		return r;
+	if (newstr(&challenge, l) != 0)
+		return -errno;
 	challenge.s[0] = '<';
 	memcpy(challenge.s + 1, unique, k);
 	memcpy(challenge.s + 1 + k, auth_host, m);
 	challenge.s[1 + k + m] = '>';
 	challenge.s[1 + k + m + 1] = '\0';
 	r = b64encode(&challenge, &slop, -1);
-	if (r < 0) {
-		errno = -r;
+	if (r < 0)
 		goto err;
-	}
 
 	netmsg[1] = slop.s;
-	if (net_writen(netmsg))
+	if (net_writen(netmsg)) {
+		r = -errno;
 		goto err;
+	}
 	free(slop.s);
 	STREMPTY(slop);
 
 	r = authgetl(&authin);
-	if (r < 0) {
-		errno = -r;
+	if (r < 0)
 		goto err;
-	}
 	r = b64decode(authin.s, authin.len, &slop);
 	free(authin.s);
 	if (r > 0) {
 		STREMPTY(slop);
-		errno = -err_base64();
+		r = err_base64();
 		goto err;
 	} else if (r < 0) {
-		errno = -r;
 		goto err;
 	}
 
@@ -313,7 +293,7 @@ auth_cram(struct string *user)
 	i = (s - slop.s);
 
 	if ((s == NULL) || (i == 0)) {
-		errno = -err_input();
+		r = err_input();
 		goto err;
 	}
 
@@ -321,7 +301,7 @@ auth_cram(struct string *user)
 		s++;
 	resp.len = strlen(s);
 	if (resp.len != 32) {
-		errno = -err_input();
+		r = err_input();
 		goto err;
 	}
 
@@ -329,7 +309,7 @@ auth_cram(struct string *user)
 		if (!(((s[r] >= '0') && (s[r] <= '9')) ||
 				((s[r] >= 'a') && (s[r] <= 'f')) ||
 				((s[r] >= 'A') && (s[r] <= 'F')))) {
-			errno = -err_input();
+			r = err_input();
 			goto err;
 		}
 	}
@@ -355,15 +335,11 @@ auth_cram(struct string *user)
 			memset(resp.s, 0, resp.len);
 	}
 
-	if (r < 0) {
-		errno = -r;
-		return -1;
-	}
 	return r;
 err:
 	free(slop.s);
 	free(challenge.s);
-	return -1;
+	return r;
 }
 #endif
 
@@ -397,16 +373,18 @@ smtp_auth(void)
 
 	for (i = 0; authcmds[i].text; i++) {
 		if (!strncasecmp(authcmds[i].text, type, strlen(authcmds[i].text))) {
-			switch (authcmds[i].fun(&xmitstat.authname)) {
+			int r = authcmds[i].fun(&xmitstat.authname);
+			switch (r) {
 			case 0:
 				return netwrite("235 2.7.0 ok, go ahead\r\n") ? errno : 0;
 			case 1:
 				STREMPTY(xmitstat.authname);
 				sleep(5);
 				return netwrite("535 5.7.8 authorization failed\r\n") ? errno : EDONE;
-			case -1:
+			default:
+				assert(r < 0);
 				STREMPTY(xmitstat.authname);
-				return errno;
+				return -r;
 			}
 		}
 	}
