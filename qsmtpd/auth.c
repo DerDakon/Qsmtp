@@ -65,7 +65,7 @@ authgetl(string *authin)
 
 		if (!s) {
 			free(authin->s);
-			return -1;
+			return -errno;
 		}
 		authin->s = s;
 
@@ -73,7 +73,7 @@ authgetl(string *authin)
 		i = net_readline(64, authin->s + authin->len);
 		if (i < 0) {
 			free(authin->s);
-			return -1;
+			return -errno;
 		}
 		authin->len += i;
 	} while (authin->s[authin->len - 1] != '\n');
@@ -85,16 +85,15 @@ authgetl(string *authin)
 		if ((authin->len == 1) && (*authin->s == '*')) {
 			free(authin->s);
 			if (!netwrite("501 5.0.0 auth exchange cancelled\r\n"))
-				errno = EDONE;
-			return -1;
+				return -EDONE;
+			return -errno;
 		}
 		authin->s[authin->len] = '\0';
 	}
 
 	if (authin->len == 0) {
 		free(authin->s);
-		errno = -err_input();
-		return -1;
+		return err_input();
 	}
 	return 0;
 }
@@ -110,8 +109,11 @@ auth_login(struct string *user)
 	} else {
 		if (netwrite("334 VXNlcm5hbWU6\r\n")) /* Username: */
 			return -1;
-		if (authgetl(&authin) < 0)
+		r = authgetl(&authin);
+		if (r < 0) {
+			errno = -r;
 			return -1;
+		}
 		r = b64decode(authin.s, authin.len, user);
 		free(authin.s);
 	}
@@ -126,8 +128,11 @@ auth_login(struct string *user)
 	if (netwrite("334 UGFzc3dvcmQ6\r\n")) /* Password: */
 		goto err;
 
-	if (authgetl(&authin) < 0)
+	r = authgetl(&authin);
+	if (r < 0) {
+		errno = -r;
 		goto err;
+	}
 	r = b64decode(authin.s, authin.len, &pass);
 	memset(authin.s, 0, authin.len);
 	free(authin.s);
@@ -176,8 +181,11 @@ auth_plain(struct string *user)
 
 		if ((r = netwrite("334 \r\n")))
 			return r;
-		if (authgetl(&authin) < 0)
+		r = authgetl(&authin);
+		if (r < 0) {
+			errno = -r;
 			return -1;
+		}
 		r = b64decode(authin.s, authin.len, &slop);
 		free(authin.s);
 	}
@@ -285,8 +293,11 @@ auth_cram(struct string *user)
 	free(slop.s);
 	STREMPTY(slop);
 
-	if (authgetl(&authin) < 0)
+	r = authgetl(&authin);
+	if (r < 0) {
+		errno = -r;
 		goto err;
+	}
 	r = b64decode(authin.s, authin.len, &slop);
 	free(authin.s);
 	if (r > 0) {
