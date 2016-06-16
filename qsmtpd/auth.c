@@ -32,8 +32,8 @@ static int err_input(void)
 {
 	tarpit();
 	if (!netwrite("501 5.5.4 malformed auth input\r\n"))
-		errno = EDONE;
-	return -1;
+		return -EDONE;
+	return -errno;
 }
 
 static int err_base64(void)
@@ -93,7 +93,8 @@ authgetl(string *authin)
 
 	if (authin->len == 0) {
 		free(authin->s);
-		return err_input();
+		errno = -err_input();
+		return -1;
 	}
 	return 0;
 }
@@ -142,7 +143,7 @@ auth_login(struct string *user)
 			memset(pass.s, 0, pass.len);
 			free(pass.s);
 		}
-		err_input();
+		errno = -err_input();
 		goto err;
 	}
 	r = auth_backend_execute(user, &pass, NULL);
@@ -200,7 +201,7 @@ auth_plain(struct string *user)
 		}
 	}
 	if (!user->len || !pass.len) {
-		err_input();
+		errno = -err_input();
 		memset(slop.s, 0, slop.len);
 		free(slop.s);
 		return -1;
@@ -303,7 +304,7 @@ auth_cram(struct string *user)
 	i = (s - slop.s);
 
 	if ((s == NULL) || (i == 0)) {
-		err_input();
+		errno = -err_input();
 		goto err;
 	}
 
@@ -311,7 +312,7 @@ auth_cram(struct string *user)
 		s++;
 	resp.len = strlen(s);
 	if (resp.len != 32) {
-		err_input();
+		errno = -err_input();
 		goto err;
 	}
 
@@ -319,7 +320,7 @@ auth_cram(struct string *user)
 		if (!(((s[r] >= '0') && (s[r] <= '9')) ||
 				((s[r] >= 'a') && (s[r] <= 'f')) ||
 				((s[r] >= 'A') && (s[r] <= 'F')))) {
-			err_input();
+			errno = -err_input();
 			goto err;
 		}
 	}
