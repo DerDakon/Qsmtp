@@ -230,14 +230,6 @@ auth_plain(struct string *user)
 }
 
 #ifdef AUTHCRAM
-static int err_no_initial(void)
-{
-	tarpit();
-	if (!netwrite("501 5.7.0 authentication mechanism does not support initial response\r\n"))
-		errno = EDONE;
-	return -1;
-}
-
 static int
 auth_cram(struct string *user)
 {
@@ -249,8 +241,12 @@ auth_cram(struct string *user)
 	string authin, challenge, slop, resp;
 	char unique[83];
 
-	if (linein.len != strlen("AUTH CRAM-MD5"))
-		return err_no_initial();
+	if (linein.len != strlen("AUTH CRAM-MD5")) {
+		tarpit();
+		if (!netwrite("501 5.7.0 authentication mechanism does not support initial response\r\n"))
+			errno = EDONE;
+		return -1;
+	}
 
 	ultostr(getpid(), t);
 	m = strlen(t);
