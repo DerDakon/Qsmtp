@@ -16,7 +16,7 @@ static struct {
 	int flags;		/* the flags parameter to pass to addrparse() */
 	const int syntaxresult;	/* the desired result of addrsyntax() */
 	int expect_netwrite;	/* if call to netwrite() is expected */
-	int expect_net_writen;	/* if call to netwrite() is expected */
+	int expect_net_writen;	/* if call to net_writen() is expected */
 	const int parseresult;	/* expected result of addrparse() */
 	int expect_tarpit;	/* how often tarpit() is expected to be called */
 	int userexists_result;	/* result to return from user_exists() */

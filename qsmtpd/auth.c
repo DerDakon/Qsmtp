@@ -269,10 +269,9 @@ auth_cram(struct string *user)
 		goto err;
 
 	netmsg[1] = slop.s;
-	if (net_writen(netmsg)) {
-		r = -errno;
+	r = net_writen(netmsg);
+	if (r < 0)
 		goto err;
-	}
 	free(slop.s);
 	STREMPTY(slop);
 

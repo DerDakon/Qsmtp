@@ -654,7 +654,7 @@ smtp_bdat(void)
 		 * will not be done in case of the LAST chunk, that will go through queue_envelope() above. */
 		const char *bdatmess[] = {"250 2.5.0 ", linein.s + 5, " octets received", NULL};
 
-		bdaterr = net_writen(bdatmess) ? errno : 0;
+		bdaterr = -net_writen(bdatmess);
 	}
 
 	return bdaterr;

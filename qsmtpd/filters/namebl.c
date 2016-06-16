@@ -100,7 +100,8 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			netmsg[2] = ", message: ";
 			netmsg[3] = txt;
 		}
-		if (net_writen(netmsg) != 0)
+		errno = -net_writen(netmsg);
+		if (errno != 0)
 			rc = FILTER_ERROR;
 		else
 			rc = FILTER_DENIED_WITH_MESSAGE;

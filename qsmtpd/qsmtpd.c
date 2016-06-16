@@ -502,7 +502,7 @@ smtploop(void)
 				wait_for_quit();
 			}
 		case 0:
-			flagbogus = net_writen(msg) ? errno : 0;
+			flagbogus = -net_writen(msg);
 			if (flagbogus == 0)
 				break;
 		default:

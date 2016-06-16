@@ -69,8 +69,9 @@ static int __attribute__((nonnull(1, 2)))
 tls_out(const char *s1, const char *s2, const int def_return)
 {
 	const char *msg[] = {"454 4.3.0 TLS ", s1, ": ", s2, NULL};
+	int r = net_writen(msg);
 
-	return net_writen(msg) ? -errno : def_return;
+	return r ? r : def_return;
 }
 
 static int __attribute__((nonnull(1)))

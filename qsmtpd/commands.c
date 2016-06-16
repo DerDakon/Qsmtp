@@ -212,7 +212,7 @@ smtp_helo(void)
 		break;
 	}
 
-	return net_writen(s) ? errno : 0;
+	return -net_writen(s);
 }
 
 int
@@ -383,7 +383,7 @@ smtp_rcpt(void)
 				userconf_free(&ds);
 				e = net_writen(netmsg);
 				free(tmp.s);
-				return e ? errno : EDONE;
+				return e ? -e : EDONE;
 				}
 			case 0:
 				freeips(tomx);
@@ -494,7 +494,7 @@ smtp_rcpt(void)
 		r->ok = 1;
 		okmsg[1] = r->to.s;
 
-		return net_writen(okmsg) ? errno : 0;
+		return -net_writen(okmsg);
 	}
 
 	/* handle rejection */
@@ -527,8 +527,7 @@ smtp_rcpt(void)
 		{
 			const char *rcptmsg[] = {"550 5.1.1 no such user <", r->to.s, ">", NULL};
 
-			if ( (i = net_writen(rcptmsg)) )
-				e = errno;
+			i = e = -net_writen(rcptmsg);
 		}
 		break;
 	default:
@@ -755,7 +754,7 @@ smtp_from_inner(void)
 
 	goodrcpt = 0;
 	okmsg[1] = MAILFROM;
-	return net_writen(okmsg) ? errno : 0;
+	return -net_writen(okmsg);
 }
 
 int
@@ -819,10 +818,8 @@ int
 smtp_quit(void)
 {
 	const char *msg[] = {"221 2.0.0 ", heloname.s, " service closing transmission channel", NULL};
-	int rc;
 
-	rc = net_writen(msg);
-	conn_cleanup(rc ? errno : 0);
+	conn_cleanup(-net_writen(msg));
 }
 
 /**

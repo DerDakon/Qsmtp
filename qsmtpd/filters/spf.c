@@ -204,17 +204,16 @@ cb_spf(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	if (r == FILTER_DENIED_WITH_MESSAGE) {
 		const char *netmsg[] = {"550 5.7.1 mail denied by SPF policy", ", SPF record says: ",
 				exps, NULL};
-		int n;
 
 		/* if there was a hard DNS error ignore the spfexp string, it may be inappropriate */
 		if ((exps == NULL) || (spfs == SPF_DNS_HARD_ERROR))
 			netmsg[1] = NULL;
 
-		n = net_writen(netmsg);
+		errno = -net_writen(netmsg);
 		/* only free the string if is was set from rSPF */
 		if (xmitstat.spfexp == NULL)
 			free(exps);
-		if (n != 0)
+		if (errno != 0)
 			return FILTER_ERROR;
 	} else if ((r == FILTER_DENIED_TEMPORARY) && (getsetting(ds, "fail_hard_on_temp", &tmpt) <= 0)) {
 		*logmsg = "temp SPF";

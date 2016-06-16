@@ -67,9 +67,9 @@ cb_nomail(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 
 	netmsg[1] = rejmsg;
 	/* if codebeg do not add the generic error code */
-	i = net_writen(netmsg + !!codebeg);
+	errno = -net_writen(netmsg + !!codebeg);
 
 	free(rejmsg);
 
-	return (i != 0) ? FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
+	return (errno != 0) ? FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
 }

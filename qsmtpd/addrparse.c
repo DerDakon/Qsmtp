@@ -96,13 +96,12 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		const char *logmsg[] = {"550 5.1.1 no such user <", addr->s, ">", NULL};
 
 		tarpit();
-		result = net_writen(logmsg) ? errno : -1;
-		if (result > 0) {
+		result = net_writen(logmsg);
+		if (result < 0) {
 			free(addr->s);
 			STREMPTY(*addr);
 		}
-		return result;
+		return result ? -result : -1;
 	}
 	return 0;
 }
-

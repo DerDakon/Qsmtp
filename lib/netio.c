@@ -460,7 +460,7 @@ netnwrite(const char *s, const size_t l)
  *
  * @param s array of strings to send
  * @retval 0 on success
- * @retval -1 on error (errno is set)
+ * @retval <0 error code
  *
  * does not return on timeout, program will be cancelled
  *
@@ -526,7 +526,7 @@ net_writen(const char *const *s)
 	}
 	msg[len++] = '\r';
 	msg[len++] = '\n';
-	return netnwrite(msg, len);
+	return netnwrite(msg, len) ? -errno : 0;
 }
 
 /**

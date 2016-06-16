@@ -55,8 +55,9 @@ int net_writen(const char *const *s)
 		rc = write(1, s[i], strlen(s[i]));
 		i++;
 	}
-	write(1, "\r\n", 2);
-	return (rc >= 0) ? 0 : rc;
+	if (rc >= 0)
+		rc = write(1, "\r\n", 2);
+	return (rc >= 0) ? 0 : -errno;
 }
 
 int checkreply(const char *status __attribute__ ((unused)), const char **pre __attribute__ ((unused)),

@@ -71,7 +71,8 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 			if (txt)
 				netmsg[2] = ", message: ";
 
-			if (net_writen(netmsg) != 0)
+			errno = -net_writen(netmsg);
+			if (errno != 0)
 				rc = FILTER_ERROR;
 			else
 				rc = FILTER_DENIED_WITH_MESSAGE;
