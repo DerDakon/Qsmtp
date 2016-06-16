@@ -28,13 +28,6 @@
 const char *tempnoauth = "454 4.5.0 AUTH temporaryly not available\r\n";
 static const char *auth_host;			/**< hostname for auth */
 
-static int err_authabrt(void)
-{
-	if (!netwrite("501 5.0.0 auth exchange cancelled\r\n"))
-		errno = EDONE;
-	return -1;
-}
-
 static int err_input(void)
 {
 	tarpit();
@@ -51,6 +44,13 @@ static int err_base64(void)
 	return -1;
 }
 
+/**
+ * @brief read in AUTH line
+ * @param authin buffer to hold authenication data
+ * @returns if reading data was successful
+ * @retval 0 AUTH line was read into authin
+ * @retval -1 error (errno is set)
+ */
 static int
 authgetl(string *authin)
 {
@@ -84,7 +84,9 @@ authgetl(string *authin)
 
 		if ((authin->len == 1) && (*authin->s == '*')) {
 			free(authin->s);
-			return err_authabrt();
+			if (!netwrite("501 5.0.0 auth exchange cancelled\r\n"))
+				errno = EDONE;
+			return -1;
 		}
 		authin->s[authin->len] = '\0';
 	}
@@ -93,7 +95,7 @@ authgetl(string *authin)
 		free(authin->s);
 		return err_input();
 	}
-	return authin->len;
+	return 0;
 }
 
 static int
@@ -172,8 +174,8 @@ auth_plain(struct string *user)
 
 		if ((r = netwrite("334 \r\n")))
 			return r;
-		if ((r = authgetl(&authin)) < 0)
-			return r;
+		if (authgetl(&authin) < 0)
+			return -1;
 		r = b64decode(authin.s, authin.len, &slop);
 		free(authin.s);
 	}
