@@ -233,6 +233,25 @@ test_netnwrite(const char *msg, const size_t len)
 	}
 }
 
+static struct cstring *readbin_data;
+
+size_t
+test_net_readbin(size_t a, char *b)
+{
+	if (readbin_data == NULL)
+		abort();
+
+	if (a < readbin_data->len)
+		abort();
+
+	size_t ret = readbin_data->len;
+	memcpy(b, readbin_data->s, ret);
+
+	readbin_data = NULL;
+
+	return ret;
+}
+
 static int
 check_twodigit(void)
 {
@@ -1300,6 +1319,83 @@ check_bdat_empty_chunks(void)
 
 	return ret;
 }
+
+static int
+check_bdat_single_chunk(void)
+{
+	int ret = 0;
+	struct {
+		const char *name;
+		const char *input;
+		const char *expect;
+	} patterns[] = {
+		{
+			.name = "one line CRLF",
+			.input = FOOLINE "\r\n",
+			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n" FOOLINE "\n"
+		},
+		{
+			.name = "one line LF",
+			.input = FOOLINE "\n",
+			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n" FOOLINE "\n"
+		},
+		{
+			.name = "one line no LF",
+			.input = FOOLINE,
+			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n" FOOLINE
+		},
+		{
+			.name = NULL
+		}
+	};
+
+	printf("%s\n", __func__);
+
+	for (unsigned int j = 0; patterns[j].name != NULL; j++) {
+		struct cstring bindata = {
+			.s = patterns[j].input,
+			.len = strlen(patterns[j].input)
+		};
+
+		printf("Testing %s\n", patterns[j].name);
+		goodrcpt = 1;
+		queue_init_result = 0;
+		comstate = 0x0040;
+		xmitstat.esmtp = 1;
+		readbin_data = &bindata;
+		expect_queue_envelope = bindata.len;
+		expect_queue_chunked = 1;
+
+		setup_datafd();
+
+		sprintf(linein.s, "BDAT %zu LAST", bindata.len);
+		linein.len = strlen(linein.s);
+		netnwrite_msg = "250 2.5.0 0 octets received\r\n";
+
+		int r = smtp_bdat();
+
+		if (r != 0)
+			ret++;
+
+		if (comstate != 0x0800)
+			ret++;
+
+		if (check_msgbody(patterns[j].expect) != 0)
+			ret++;
+
+		close(queuefd_data_recv);
+		queuefd_data_recv = -1;
+	}
+
+	return ret;
+}
+
 #endif
 
 int main()
@@ -1355,6 +1451,10 @@ int main()
 	testcase_setup_net_writen(testcase_net_writen_combine);
 
 	ret += check_bdat_empty_chunks();
+
+	testcase_setup_net_readbin(test_net_readbin);
+
+	ret += check_bdat_single_chunk();
 #endif
 
 	return ret;

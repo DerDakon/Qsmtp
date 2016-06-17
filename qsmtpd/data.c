@@ -606,12 +606,13 @@ smtp_bdat(void)
 						if (inbuf[o] == '\r')
 							break;
 				} while ((o < chunk - 1) && (inbuf[++o] != '\n'));
-				if (o != chunk - 1) {
-				/* overwrite CR with LF to keep number of writes low
-				 * then write it all out */
+				if ((o > 0) && (inbuf[o - 1] == '\r') && (inbuf[o] == '\n')) {
+					/* overwrite CR with LF to keep number of writes low
+					 * then write it all out */
 					inbuf[o - 1] = '\n';
 					WRITE(inbuf + offs, o);
-					o++;	/* skip the original LF */
+					offs += o + 1;	/* skip the original LF */
+					o = 0;
 				}
 			}
 
