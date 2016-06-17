@@ -4,6 +4,7 @@
 #include "test_io/testcase_io.h"
 #include <version.h>
 
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <limits.h>
@@ -365,10 +366,14 @@ check_msgbody(const char *expect)
 		}
 		if (r == 0)
 			break;
-		if ((mismatch < 0) && (outbuf[off] != expect[off])) {
+		if ((mismatch < 0) && (outbuf[off] != expect[off]) && (off < strlen(expect))) {
 			mismatch = off;
+			unsigned char e = expect[off];
+			unsigned char o = outbuf[off];
+			char ech = iscntrl(e) ? '?' : e;
+			char och = iscntrl(o) ? '?' : o;
 			fprintf(stderr, "output mismatch at position %zi, got %c (0x%02x), expected %c (0x%02x)\n",
-				mismatch, outbuf[off], outbuf[off], expect[off], expect[off]);
+				mismatch, och, o, ech, e);
 			err = 6;
 			// do not break, read the whole input
 		}
@@ -377,9 +382,10 @@ check_msgbody(const char *expect)
 	outbuf[off] = '\0';
 
 	if ((err != 0) || (off != strlen(expect))) {
-		fprintf(stderr, "expected output not found, got:\n%s\nexpected:\n%s\n", outbuf, expect);
-		if (strlen(outbuf) != strlen(expect))
-			fprintf(stderr, "expected length: %zi, got length: %zi\n", strlen(expect), strlen(outbuf));
+		if (memcmp(outbuf, expect, strlen(expect)) != 0)
+			fprintf(stderr, "expected output not found, got:\n%s\nexpected:\n%s\n", outbuf, expect);
+		if (off != strlen(expect))
+			fprintf(stderr, "expected length: %zi, got length: %zi\n", strlen(expect), off);
 		return ++err;
 	}
 
