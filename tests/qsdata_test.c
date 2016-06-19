@@ -1388,6 +1388,23 @@ check_bdat_single_chunk(void)
 				MIMELINE "\n"
 		},
 		{
+			.name = "one line CR",
+			.input = FOOLINE "\r",
+			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				FOOLINE "\r"
+		},
+		{
+			.name = "two lines CR",
+			.input = FOOLINE "\r" FOOLINE "\r",
+			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				FOOLINE "\r"
+				FOOLINE "\r"
+		},
+		{
 			.name = NULL
 		}
 	};

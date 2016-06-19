@@ -568,6 +568,7 @@ smtp_bdat(void)
 	if (comstate != 0x0800) {
 		msgsize = 0;
 		comstate = 0x0800;
+		lastcr = 0;
 
 		bdaterr = queue_init();
 
@@ -590,8 +591,9 @@ smtp_bdat(void)
 				bdaterr = errno;
 			}
 		} else if (chunk) {
-			size_t o;
-			size_t offs = 0;
+			char *pos = inbuf;	/**< current input position */
+			size_t rlen;	/**< remaining length */
+			char *cr = pos;	/**< current CR position */
 
 			chunksize -= chunk;
 			msgsize += chunk;
@@ -599,32 +601,41 @@ smtp_bdat(void)
 			if (lastcr && (inbuf[0] != '\n'))
 				WRITEL("\r");
 			lastcr = (inbuf[chunk - 1] == '\r');
+			if (lastcr)
+				/* ignore the trailing CR, it will be handled separately */
+				chunk--;
+			rlen = chunk;
 			/* make sure this will never match in any CRLF checks at end of buffer */
 			inbuf[chunk] = '\0';
 
-			o = 0;
-			while (offs + o < chunk - 1) {
-				offs += o;
-				do {
-					for (; offs + o < chunk; o++)
-						if (inbuf[offs + o] == '\r')
-							break;
-				} while ((offs + o < chunk - 1) && (inbuf[offs + o + 1] != '\n'));
-				if ((inbuf[offs + o] == '\r') && (inbuf[offs + o + 1] == '\n')) {
+			/* handle all CRLF-terminated lines */
+			while ((rlen > 0) && (cr != NULL)) {
+				cr = memchr(cr, '\r', rlen);
+				while ((cr != NULL) && (cr[1] != '\n')) {
+					const ptrdiff_t o = cr - pos;
+					cr = memchr(cr + 1, '\r', rlen - o);
+				}
+				if ((cr != NULL) && (cr[1] == '\n')) {
 					/* overwrite CR with LF to keep number of writes low
 					 * then write it all out */
-					inbuf[offs + o] = '\n';
-					WRITE(inbuf + offs, o);
-					offs += o + 1;	/* skip the original LF */
-					o = 0;
+					const ptrdiff_t l = cr - pos + 1;
+
+					cr[0] = '\n';
+					WRITE(pos, l);
+					rlen -= l + 1; /* skip the original LF */
+					cr += 2;
+					pos = cr;
 				}
 			}
 
-			if (!*more && (inbuf[o] == '\r')) {
-				/* keep '\r' in last chunk */
-				chunk--;
+			/* handle everything after the last CRLF (if any) */
+			if ((*more != '\0') && lastcr) {
+				/* If this is the final chunk and it ended in CR than add it back here.
+				 * The last byte in the buffer was never used before so this can't cause
+				 * an overflow. */
+				pos[rlen++] = '\r';
 			}
-			WRITE(inbuf + offs, chunk - offs);
+			WRITE(pos, rlen);
 		}
 	}
 
