@@ -580,6 +580,7 @@ smtp_bdat(void)
 		char inbuf[2048];
 
 		if (chunksize >= sizeof(inbuf)) {
+			/* read one byte less so no end-of-buffer checks need to be done */
 			chunk = net_readbin(sizeof(inbuf) - 1, inbuf);
 		} else {
 			chunk = net_readbin(chunksize, inbuf);
@@ -594,22 +595,25 @@ smtp_bdat(void)
 
 			chunksize -= chunk;
 			msgsize += chunk;
+			/* if the last chunk ended in CR and there is no LF right here then keep the CR */
 			if (lastcr && (inbuf[0] != '\n'))
 				WRITEL("\r");
 			lastcr = (inbuf[chunk - 1] == '\r');
+			/* make sure this will never match in any CRLF checks at end of buffer */
+			inbuf[chunk] = '\0';
 
 			o = 0;
 			while (offs + o < chunk - 1) {
 				offs += o;
 				do {
-					for (; o < chunk; o++)
-						if (inbuf[o] == '\r')
+					for (; offs + o < chunk; o++)
+						if (inbuf[offs + o] == '\r')
 							break;
-				} while ((o < chunk - 1) && (inbuf[++o] != '\n'));
-				if ((o > 0) && (inbuf[o - 1] == '\r') && (inbuf[o] == '\n')) {
+				} while ((offs + o < chunk - 1) && (inbuf[offs + o + 1] != '\n'));
+				if ((inbuf[offs + o] == '\r') && (inbuf[offs + o + 1] == '\n')) {
 					/* overwrite CR with LF to keep number of writes low
 					 * then write it all out */
-					inbuf[o - 1] = '\n';
+					inbuf[offs + o] = '\n';
 					WRITE(inbuf + offs, o);
 					offs += o + 1;	/* skip the original LF */
 					o = 0;

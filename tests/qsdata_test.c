@@ -1323,6 +1323,7 @@ check_bdat_empty_chunks(void)
 static int
 check_bdat_single_chunk(void)
 {
+#define MIMELINE "MIME-Version: 1.0"
 	int ret = 0;
 	struct {
 		const char *name;
@@ -1349,6 +1350,42 @@ check_bdat_single_chunk(void)
 			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
 				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
 				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n" FOOLINE
+		},
+		{
+			.name = "two lines CRLF",
+			.input = FOOLINE "\r\n" MIMELINE "\r\n",
+			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				FOOLINE "\n"
+				MIMELINE "\n"
+		},
+		{
+			.name = "two lines LF",
+			.input = FOOLINE "\n" MIMELINE "\n",
+			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				FOOLINE "\n"
+				MIMELINE "\n"
+		},
+		{
+			.name = "one line LF one line CRLF",
+			.input = FOOLINE "\n" MIMELINE "\r\n",
+			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				FOOLINE "\n"
+				MIMELINE "\n"
+		},
+		{
+			.name = "one line CRLF one line LF",
+			.input = FOOLINE "\r\n" MIMELINE "\n",
+			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
+				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
+				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+				FOOLINE "\n"
+				MIMELINE "\n"
 		},
 		{
 			.name = NULL
