@@ -234,9 +234,8 @@ static unsigned long msgsize;
 int
 smtp_data(void)
 {
-	char s[ULSTRLEN];		/* msgsize */
 	const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
-					"> from IP [", xmitstat.remoteip, "] (", s, " bytes) {",
+					"> from IP [", xmitstat.remoteip, "] (", NULL, " bytes) {",
 					NULL, NULL, NULL, NULL};
 	int i, rc;
 	unsigned int headerflags = 0;	/* Date: and From: are required in header,
@@ -508,10 +507,14 @@ loop_data:
 			msgsize--;
 		net_read(1);
 	}
-	ultostr(msgsize, s);
 
 	{
 	struct recip *l;
+	char s[ULSTRLEN];		/* msgsize */
+
+	ultostr(msgsize, s);
+	logmail[7] = s;
+
 	TAILQ_FOREACH(l, &head, entries) {
 		if (l->ok) {
 			logmail[1] = l->to.s;
@@ -541,10 +544,6 @@ static int lastcr;
 int
 smtp_bdat(void)
 {
-	char s[ULSTRLEN];		/* msgsize */
-	const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
-					"> from IP [", xmitstat.remoteip, "] (", s, " bytes) {",
-					NULL, NULL};
 	int rc;
 #warning FIXME: loop detection missing
 	unsigned int hops = 0;		/* number of "Received:"-lines */
@@ -641,8 +640,14 @@ smtp_bdat(void)
 
 	if ((msgsize > maxbytes) && !bdaterr) {
 		struct recip *l;
+#define LOG_BRACES "] ("
+		char s[ULSTRLEN + sizeof(LOG_BRACES)] = LOG_BRACES;		/* msgsize */
+		const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
+				"> from IP [", xmitstat.remoteip, s, " bytes) {message too big}",
+				NULL, NULL};
 
-		logmail[9] = "message too big}";
+		ultostr(msgsize, s + strlen(LOG_BRACES));
+#undef LOG_BRACES
 
 		TAILQ_FOREACH(l, &head, entries) {
 			if (l->ok) {

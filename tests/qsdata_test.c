@@ -1412,6 +1412,7 @@ check_bdat_single_chunk(void)
 	};
 
 	printf("%s\n", __func__);
+	maxbytes = 16 * 1024;
 
 	for (unsigned int j = 0; patterns[j].name != NULL; j++) {
 		struct cstring bindata = {
@@ -1500,6 +1501,57 @@ check_bdat_readerror(void)
 
 	return ret;
 }
+
+static int
+check_bdat_msgsize(void)
+{
+	int ret = 0;
+	struct cstring d = {
+		.s = FOOLINE,
+		.len = strlen(FOOLINE)
+	};
+	char logbuf[256];
+
+	printf("%s\n", __func__);
+
+	goodrcpt = 1;
+	queue_init_result = 0;
+	comstate = 0x0040;
+	xmitstat.esmtp = 1;
+	readbin_expected = 1;
+	queue_reset_expected = 1;
+	queuefd_hdr = open("/dev/null", O_WRONLY);
+	maxbytes = 1;
+	readbin_data = &d;
+	snprintf(logbuf, sizeof(logbuf),
+			"rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (%zu bytes) {message too big}",
+			d.len);
+	log_write_msg = logbuf;
+	log_write_priority = LOG_INFO;
+	if (queuefd_hdr < 0)
+		abort();
+
+	setup_datafd();
+
+	sprintf(linein.s, "BDAT %zu LAST", d.len);
+	linein.len = strlen(linein.s);
+
+	int r = smtp_bdat();
+
+	if (r != EMSGSIZE)
+		ret++;
+
+	if (comstate != 0x0800)
+		ret++;
+
+	if (testcase_netnwrite_check(__func__))
+		ret++;
+
+	close(queuefd_data_recv);
+	queuefd_data_recv = -1;
+
+	return ret;
+}
 #endif
 
 int main()
@@ -1559,6 +1611,7 @@ int main()
 
 	testcase_setup_net_readbin(test_net_readbin);
 
+	ret += check_bdat_msgsize();
 	ret += check_bdat_single_chunk();
 #endif
 
