@@ -587,9 +587,9 @@ smtp_bdat(void)
 			chunk = net_readbin(chunksize, inbuf);
 		}
 		if (chunk == (size_t) -1) {
-			if (!bdaterr) {
+			if (!bdaterr)
 				bdaterr = errno;
-			}
+			break;
 		} else if (chunk) {
 			char *pos = inbuf;	/**< current input position */
 			size_t rlen;	/**< remaining length */

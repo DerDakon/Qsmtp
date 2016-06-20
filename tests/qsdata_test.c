@@ -252,6 +252,20 @@ test_net_readbin(size_t a, char *b)
 	return ret;
 }
 
+static unsigned int readbin_expected;
+
+size_t
+test_net_readbin_err(size_t a __attribute__((unused)), char *b __attribute__((unused)))
+{
+	if (readbin_expected == 0)
+		abort();
+
+	readbin_expected--;
+
+	errno = 1234;
+	return -1;
+}
+
 static int
 check_twodigit(void)
 {
@@ -1324,6 +1338,9 @@ static int
 check_bdat_single_chunk(void)
 {
 #define MIMELINE "MIME-Version: 1.0"
+#define RCVDHDRCHUNKED "Received: from unknown ([::ffff:192.0.2.24])\n" \
+		"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n" \
+		"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
 	int ret = 0;
 	struct {
 		const char *name;
@@ -1333,74 +1350,59 @@ check_bdat_single_chunk(void)
 		{
 			.name = "one line CRLF",
 			.input = FOOLINE "\r\n",
-			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n" FOOLINE "\n"
+			.expect = RCVDHDRCHUNKED
+				FOOLINE "\n"
 		},
 		{
 			.name = "one line LF",
 			.input = FOOLINE "\n",
-			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n" FOOLINE "\n"
+			.expect = RCVDHDRCHUNKED
+				FOOLINE "\n"
 		},
 		{
 			.name = "one line no LF",
 			.input = FOOLINE,
-			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n" FOOLINE
+			.expect = RCVDHDRCHUNKED
+				FOOLINE
 		},
 		{
 			.name = "two lines CRLF",
 			.input = FOOLINE "\r\n" MIMELINE "\r\n",
-			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+			.expect = RCVDHDRCHUNKED
 				FOOLINE "\n"
 				MIMELINE "\n"
 		},
 		{
 			.name = "two lines LF",
 			.input = FOOLINE "\n" MIMELINE "\n",
-			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+			.expect = RCVDHDRCHUNKED
 				FOOLINE "\n"
 				MIMELINE "\n"
 		},
 		{
 			.name = "one line LF one line CRLF",
 			.input = FOOLINE "\n" MIMELINE "\r\n",
-			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+			.expect = RCVDHDRCHUNKED
 				FOOLINE "\n"
 				MIMELINE "\n"
 		},
 		{
 			.name = "one line CRLF one line LF",
 			.input = FOOLINE "\r\n" MIMELINE "\n",
-			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+			.expect = RCVDHDRCHUNKED
 				FOOLINE "\n"
 				MIMELINE "\n"
 		},
 		{
 			.name = "one line CR",
 			.input = FOOLINE "\r",
-			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+			.expect = RCVDHDRCHUNKED
 				FOOLINE "\r"
 		},
 		{
 			.name = "two lines CR",
 			.input = FOOLINE "\r" FOOLINE "\r",
-			.expect = "Received: from unknown ([::ffff:192.0.2.24])\n"
-				"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
-				"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n"
+			.expect = RCVDHDRCHUNKED
 				FOOLINE "\r"
 				FOOLINE "\r"
 		},
@@ -1430,7 +1432,6 @@ check_bdat_single_chunk(void)
 
 		sprintf(linein.s, "BDAT %zu LAST", bindata.len);
 		linein.len = strlen(linein.s);
-		netnwrite_msg = "250 2.5.0 0 octets received\r\n";
 
 		int r = smtp_bdat();
 
@@ -1438,6 +1439,9 @@ check_bdat_single_chunk(void)
 			ret++;
 
 		if (comstate != 0x0800)
+			ret++;
+
+		if (testcase_netnwrite_check(__func__))
 			ret++;
 
 		if (check_msgbody(patterns[j].expect) != 0)
@@ -1450,6 +1454,52 @@ check_bdat_single_chunk(void)
 	return ret;
 }
 
+static int
+check_bdat_readerror(void)
+{
+	int ret = 0;
+
+	printf("%s\n", __func__);
+
+	testcase_setup_net_readbin(test_net_readbin_err);
+
+	goodrcpt = 1;
+	queue_init_result = 0;
+	comstate = 0x0040;
+	xmitstat.esmtp = 1;
+	readbin_expected = 1;
+	queue_reset_expected = 1;
+	queuefd_hdr = open("/dev/null", O_WRONLY);
+	if (queuefd_hdr < 0)
+		abort();
+
+	setup_datafd();
+
+	sprintf(linein.s, "BDAT 42 LAST");
+	linein.len = strlen(linein.s);
+
+	int r = smtp_bdat();
+
+	if (r != 1234)
+		ret++;
+
+	if (comstate != 0x0800)
+		ret++;
+
+	if (check_msgbody(RCVDHDRCHUNKED) != 0)
+		ret++;
+
+	if (testcase_netnwrite_check(__func__))
+		ret++;
+
+	// Ignore the message body here, it will usually contain the received line and
+	// the beginning of the mail, but it is totally irrelevant what is in there.
+
+	close(queuefd_data_recv);
+	queuefd_data_recv = -1;
+
+	return ret;
+}
 #endif
 
 int main()
@@ -1505,6 +1555,7 @@ int main()
 	testcase_setup_net_writen(testcase_net_writen_combine);
 
 	ret += check_bdat_empty_chunks();
+	ret += check_bdat_readerror();
 
 	testcase_setup_net_readbin(test_net_readbin);
 
