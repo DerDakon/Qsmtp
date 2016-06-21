@@ -234,6 +234,7 @@ test_netnwrite(const char *msg, const size_t len)
 }
 
 static struct cstring *readbin_data;
+static size_t readbin_data_pos;
 
 size_t
 test_net_readbin(size_t a, char *b)
@@ -241,13 +242,19 @@ test_net_readbin(size_t a, char *b)
 	if (readbin_data == NULL)
 		abort();
 
-	if (a < readbin_data->len)
+	if (a == 0)
 		abort();
 
-	size_t ret = readbin_data->len;
-	memcpy(b, readbin_data->s, ret);
+	size_t ret = readbin_data->len - readbin_data_pos;
+	if (a < ret)
+		ret = a;
+	memcpy(b, readbin_data->s + readbin_data_pos, ret);
 
-	readbin_data = NULL;
+	readbin_data_pos += ret;
+	if (readbin_data_pos == readbin_data->len) {
+		readbin_data = NULL;
+		readbin_data_pos = 0;
+	}
 
 	return ret;
 }
@@ -1552,6 +1559,68 @@ check_bdat_msgsize(void)
 
 	return ret;
 }
+
+// use the same pattern, split at every possible position, the output should be constant
+static int
+check_bdat_multiple_chunks(void)
+{
+	const char inpattern[] = "a\rb\nc\r\nA\nB\rC\r\n\r\n\n\rD\nE\nF\rd\re\rf\n";
+	const char outpattern[] = RCVDHDRCHUNKED "a\rb\nc\nA\nB\rC\n\n\n\rD\nE\nF\rd\re\rf\n";
+	int ret = 0;
+	struct cstring bindata = {
+		.s = inpattern,
+		.len = strlen(inpattern)
+	};
+
+	for (size_t i = 1; i <= strlen(inpattern); i++) {
+		char msgbuf[64];
+
+		readbin_data = &bindata;
+		readbin_data_pos = 0;
+		goodrcpt = 1;
+		queue_init_result = 0;
+		comstate = 0x0040;
+		xmitstat.esmtp = 1;
+		expect_queue_envelope = bindata.len;
+		expect_queue_chunked = 1;
+
+		setup_datafd();
+
+		printf("%s split: %zu\n", __func__, i);
+		sprintf(msgbuf, "250 2.5.0 %zu octets received\r\n", i);
+
+		for (size_t nextpos = 0; nextpos < strlen(inpattern); nextpos = readbin_data_pos + i) {
+			size_t chunksize;
+
+			if (nextpos < strlen(inpattern)) {
+				chunksize = i;
+				sprintf(linein.s, "BDAT %zu", chunksize);
+				netnwrite_msg = msgbuf;
+			} else {
+				chunksize = strlen(inpattern) - readbin_data_pos;
+				sprintf(linein.s, "BDAT %zu LAST", chunksize);
+			}
+			linein.len = strlen(linein.s);
+
+			int r = smtp_bdat();
+
+			if (r != 0)
+				ret++;
+
+			if (comstate != 0x0800)
+				ret++;
+		}
+
+		if (check_msgbody(outpattern) != 0)
+			ret++;
+
+		if (testcase_netnwrite_check(__func__))
+			ret++;
+	}
+
+	return ret;
+}
+
 #endif
 
 int main()
@@ -1613,6 +1682,7 @@ int main()
 
 	ret += check_bdat_msgsize();
 	ret += check_bdat_single_chunk();
+	ret += check_bdat_multiple_chunks();
 #endif
 
 	return ret;
