@@ -1617,6 +1617,11 @@ check_bdat_multiple_chunks(void)
 
 		if (testcase_netnwrite_check(__func__))
 			ret++;
+
+		close(queuefd_data);
+		queuefd_data = -1;
+		close(queuefd_data_recv);
+		queuefd_data_recv = -1;
 	}
 
 	return ret;
