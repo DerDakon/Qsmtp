@@ -716,10 +716,6 @@ target_link_libraries(testcase_qsdata
 		${MEMCHECK_LIBRARIES}
 )
 
-if (COMMAND target_compile_definitions)
-	target_compile_definitions(testcase_qsdata PRIVATE -DCHUNKING)
-endif ()
-
 add_test(NAME "Qsmtpd_data"
 		COMMAND testcase_qsdata)
 

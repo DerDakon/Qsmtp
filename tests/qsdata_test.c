@@ -1,3 +1,4 @@
+#define CHUNKING
 #include "../qsmtpd/data.c"
 
 #include <qsmtpd/antispam.h>
@@ -1665,7 +1666,6 @@ int main()
 	ret += check_data_write_received_pipefail();
 	ret += check_data_body();
 
-#ifdef CHUNKING
 	ssl = NULL;
 
 	ret += check_bdat_no_rcpt();
@@ -1683,7 +1683,6 @@ int main()
 	ret += check_bdat_msgsize();
 	ret += check_bdat_single_chunk();
 	ret += check_bdat_multiple_chunks();
-#endif
 
 	return ret;
 }
