@@ -533,6 +533,7 @@ loop_data:
 }
 
 #ifdef CHUNKING
+#define CHUNK_READ_SIZE 2048
 static int bdaterr;
 static int lastcr;
 
@@ -577,7 +578,7 @@ smtp_bdat(void)
 
 	while (chunksize > 0) {
 		size_t chunk;
-		char inbuf[2048];
+		char inbuf[CHUNK_READ_SIZE];
 
 		if (chunksize >= sizeof(inbuf)) {
 			/* read one byte less so no end-of-buffer checks need to be done */
