@@ -401,9 +401,9 @@ check_msgbody(const char *expect)
 		if (r < 0) {
 			if (errno != EAGAIN) {
 				fprintf(stderr, "read failed with error %i\n", errno);
-				err = 5;
+				return 5;
 			}
-			return err;
+			break;
 		}
 		if (r == 0)
 			break;
@@ -1575,6 +1575,7 @@ check_bdat_multiple_chunks(void)
 
 	for (size_t i = 1; i <= strlen(inpattern); i++) {
 		char msgbuf[64];
+		size_t nextpos = 0;
 
 		readbin_data = &bindata;
 		readbin_data_pos = 0;
@@ -1590,10 +1591,10 @@ check_bdat_multiple_chunks(void)
 		printf("%s split: %zu\n", __func__, i);
 		sprintf(msgbuf, "250 2.5.0 %zu octets received\r\n", i);
 
-		for (size_t nextpos = 0; nextpos < strlen(inpattern); nextpos = readbin_data_pos + i) {
+		while (nextpos < strlen(inpattern)) {
 			size_t chunksize;
 
-			if (nextpos < strlen(inpattern)) {
+			if (nextpos + i < strlen(inpattern)) {
 				chunksize = i;
 				sprintf(linein.s, "BDAT %zu", chunksize);
 				netnwrite_msg = msgbuf;
@@ -1610,12 +1611,17 @@ check_bdat_multiple_chunks(void)
 
 			if (comstate != 0x0800)
 				ret++;
+
+			nextpos += chunksize;
 		}
 
 		if (check_msgbody(outpattern) != 0)
 			ret++;
 
 		if (testcase_netnwrite_check(__func__))
+			ret++;
+
+		if (expect_queue_envelope != (unsigned long)-1)
 			ret++;
 
 		close(queuefd_data);
