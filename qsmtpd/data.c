@@ -670,6 +670,7 @@ smtp_bdat(void)
 	if (bdaterr) {
 		if (queuefd_hdr >= 0)
 			queue_reset();
+		freedata();
 	} else {
 		/* This returns the size as given by the client. It has successfully been parsed as number.
 		 * and the contents of this message do not really matter, so we can just reuse that. This
