@@ -52,6 +52,12 @@ queue_reset(void)
 	waitpid(qpid, NULL, 0);
 }
 
+/**
+ * @brief set up communication with queueing process
+ * @return if queue was setup
+ * @retval 0 queueing process is running and awaiting input
+ * @retval >0 error code
+ */
 int
 queue_init(void)
 {
@@ -130,6 +136,9 @@ queue_init(void)
  * @brief write the envelope data to qmail-queue and syslog
  * @param msgsize size of the received message in bytes
  * @param chunked if message was transferred using BDAT
+ * @returns if writing the envelope was successful
+ * @retval 0 envelope was written to queue
+ * @retval -1 an error occurred (errno is set)
  */
 int
 queue_envelope(const unsigned long msgsize, const int chunked)
@@ -219,6 +228,12 @@ err_write:
 	return rc;
 }
 
+/**
+ * @brief check if queueing process accepted the mail
+ * @return if mail was successfully written to queue
+ * @retval 0 mail is in queue
+ * @retval >0 error code
+ */
 int
 queue_result(void)
 {
