@@ -189,15 +189,11 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		msg = -220;
 		break;
 	case 17:
-		close(socketd);
-		socketd = -1;
 		printf("simulating ECONNRESET after initial message\n");
 		log_write_msg = "connection to prio2.example.org [2001:db8::2] died";
 		log_write_priority = LOG_WARNING;
 		return -ECONNRESET;
 	case 18:
-		close(socketd);
-		socketd = -1;
 		printf("simulating ECONNRESET at initial message\n");
 		log_write_msg = "connection to prio1.example.org [2001:db8::1] died";
 		log_write_priority = LOG_WARNING;
@@ -246,6 +242,11 @@ tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 {
 	if ((mx->priority == 0) || (mx->priority == MX_PRIORITY_SINGLE_TLSA - 1))
 		return -ENOENT;
+
+	if (wpipe >= 0) {
+		close(wpipe);
+		wpipe = -1;
+	}
 
 	int p[2];
 	if (pipe(p) != 0)
