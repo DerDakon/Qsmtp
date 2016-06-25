@@ -79,6 +79,19 @@ tls_init(void)
 	return ret;
 }
 
+static struct ips testmx[3];
+
+static void
+mxsetup(struct ips *mx, const unsigned int priority)
+{
+	static char namebuf[64];
+
+	mx->priority = priority;
+
+	mx->name = namebuf;
+	snprintf(namebuf, sizeof(namebuf), "prio%u.example.org", mx->priority);
+}
+
 int
 netget(const unsigned int terminate __attribute__ ((unused)))
 {
@@ -97,6 +110,7 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		quitnext = 1;
 		break;
 	case 1:
+		mxsetup(testmx, testmx[0].priority);
 		msg = -220;
 		break;
 	case 2:
@@ -105,6 +119,7 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		quitnext = 1;
 		break;
 	case 3:
+		mxsetup(testmx, testmx[0].priority);
 		msg = -440;
 		break;
 	case 4:
@@ -112,6 +127,7 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		quitnext = 1;
 		break;
 	case 5:
+		mxsetup(testmx, testmx[0].priority);
 		msg = -220;
 		break;
 	case 6:
@@ -125,6 +141,7 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		log_write_priority = LOG_WARNING;
 		break;
 	case 8:
+		mxsetup(testmx, testmx[0].priority);
 		msg = -220;
 		break;
 	case 9:
@@ -135,6 +152,7 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		log_write_priority = LOG_WARNING;
 		return -EINVAL;
 	case 10:
+		mxsetup(testmx, testmx[0].priority);
 		msg = -220;
 		break;
 	case 11:
@@ -150,6 +168,7 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		log_write_priority = LOG_WARNING;
 		return -EINVAL;
 	case 13:
+		mxsetup(testmx, testmx[0].priority);
 		msg = -220;
 		break;
 	case 14:
@@ -159,12 +178,14 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		quitnext = 1;
 		break;
 	case 15:
+		mxsetup(testmx, testmx[0].priority);
 		greet_result = esmtp_8bitmime | esmtp_starttls;
 		msg = 220;
 		tls_result = 1;
 		quitnext = 1;
 		break;
 	case 16:
+		mxsetup(testmx, testmx[0].priority);
 		msg = -220;
 		break;
 	case 17:
@@ -182,6 +203,7 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 		log_write_priority = LOG_WARNING;
 		return -ECONNRESET;
 	case 19:
+		mxsetup(testmx, testmx[0].priority);
 		msg = -220;
 		break;
 	case 20:
@@ -222,11 +244,6 @@ int
 tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 		const struct in6_addr *outip6 __attribute__ ((unused)))
 {
-	static char namebuf[64];
-
-	mx->name = namebuf;
-	snprintf(namebuf, sizeof(namebuf), "prio%u.example.org", mx->priority);
-
 	if ((mx->priority == 0) || (mx->priority == MX_PRIORITY_SINGLE_TLSA - 1))
 		return -ENOENT;
 
@@ -235,7 +252,7 @@ tryconn(struct ips *mx, const struct in6_addr *outip4 __attribute__ ((unused)),
 		exit(errno);
 
 	wpipe = p[0];
-	snprintf(rhostbuf, sizeof(rhostbuf), "%s [2001:db8::%u]", namebuf, mx->priority);
+	snprintf(rhostbuf, sizeof(rhostbuf), "%s [2001:db8::%u]", mx->name, mx->priority);
 	rhost = rhostbuf;
 	mx->priority--;
 
@@ -263,19 +280,18 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 int
 main(void)
 {
-	struct ips mx[3];
 	int ret = 0;
 
-	// run the first 9 subtests (two more because of the CONNRESETs in between */
-	memset(mx, 0, sizeof(mx));
-	mx[0].priority = 11;
-	mx[0].next = mx + 1;
-	mx[1].next = mx + 2;
+	// run the first 9 subtests, two more because of the CONNRESETs in between */
+	memset(testmx, 0, sizeof(testmx));
+	testmx[0].next = testmx + 1;
+	testmx[1].next = testmx + 2;
+	mxsetup(testmx, 11);
 
 	testcase_setup_log_writen(testcase_log_writen_combine);
 	testcase_setup_log_write(testcase_log_write_compare);
 
-	int i = connect_mx(mx, NULL, NULL);
+	int i = connect_mx(testmx, NULL, NULL);
 	if (i != -ENOENT) {
 		fprintf(stderr, "connect_mx() returned %i instead of %i (-ENOENT)\n", i, -ENOENT);
 		ret++;
@@ -284,9 +300,9 @@ main(void)
 	if (socketd >= 0)
 		close(socketd);
 
-	mx[0].priority = 1;
+	mxsetup(testmx, 1);
 
-	i = connect_mx(mx, NULL, NULL);
+	i = connect_mx(testmx, NULL, NULL);
 	if (i != 0) {
 		fprintf(stderr, "connect_mx() returned %i instead of 0\n", i);
 		ret++;
@@ -295,12 +311,12 @@ main(void)
 	if (socketd >= 0)
 		close(socketd);
 
-	mx[0].priority = 1;
+	mxsetup(testmx, 1);
 	clientcertbuf = "";
 	log_write_msg = "no STARTTLS offered by prio1.example.org [2001:db8::1], but TLS certificate is configured";
 	log_write_priority = LOG_WARNING;
 
-	i = connect_mx(mx, NULL, NULL);
+	i = connect_mx(testmx, NULL, NULL);
 	if (i != -ENOENT) {
 		fprintf(stderr, "connect_mx() returned %i instead of -ENOENT when expected STARTTLS was not offered because clientcert is configured\n", i);
 		ret++;
@@ -309,12 +325,12 @@ main(void)
 	if (socketd >= 0)
 		close(socketd);
 
-	mx[0].priority = MX_PRIORITY_SINGLE_TLSA;
+	mxsetup(testmx, MX_PRIORITY_SINGLE_TLSA);
 	clientcertbuf = NULL;
 	log_write_msg = "no STARTTLS offered by prio800.example.org [2001:db8::800], but TLSA record exists";
 	log_write_priority = LOG_WARNING;
 
-	i = connect_mx(mx, NULL, NULL);
+	i = connect_mx(testmx, NULL, NULL);
 	if (i != -ENOENT) {
 		fprintf(stderr, "connect_mx() returned %i instead of -ENOENT when expected STARTTLS was not offered because TLSA record is present\n", i);
 		ret++;
@@ -323,9 +339,9 @@ main(void)
 	if (socketd >= 0)
 		close(socketd);
 
-	mx[0].priority = 1;
+	mxsetup(testmx, 1);
 
-	i = connect_mx(mx, NULL, NULL);
+	i = connect_mx(testmx, NULL, NULL);
 	if (i != 0) {
 		fprintf(stderr, "connect_mx() returned %i instead of 0\n", i);
 		ret++;
@@ -345,8 +361,8 @@ main(void)
 		fprintf(stderr, "expected call to quitmsg() missing\n");
 		ret++;
 	}
-	if (mx[0].priority != 0) {
-		fprintf(stderr, "mx[0].priority is %u instead of 0\n", mx[0].priority);
+	if (testmx[0].priority != 0) {
+		fprintf(stderr, "mx[0].priority is %u instead of 0\n", testmx[0].priority);
 		ret++;
 	}
 
