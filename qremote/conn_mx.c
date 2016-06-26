@@ -55,6 +55,9 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 	do {
 		int flagerr = 0;
 		int s;
+		/* query DNS before opening the socket, otherwise a long DNS timeout could lead to SMTP
+		 * socket timeout */
+		const int tlsa = (mx->name == NULL) ? 0 : dnstlsa(mx->name, targetport, NULL);
 
 		socketd = tryconn(mx, outip4, outip6);
 		if (socketd < 0)
@@ -156,7 +159,7 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 
 			quitmsg();
 			continue;
-		} else if ((mx->name != NULL) && (dnstlsa(mx->name, targetport, NULL) > 0)) {
+		} else if (tlsa > 0) {
 			const char *dropmsg[] = { "no STARTTLS offered by ", rhost, ", but TLSA record exists", NULL };
 
 			log_writen(LOG_WARNING, dropmsg);
