@@ -11,7 +11,6 @@
 #define MAXRCPT		500		/**< maximum number of recipients in a single mail */
 
 extern int smtp_noop(void);
-extern int smtp_quit(void);
 extern int smtp_rset(void);
 extern int smtp_helo(void);
 extern int smtp_ehlo(void);
