@@ -56,7 +56,7 @@ need_recode(const char *buf, off_t len)
 			else
 				res |= 2;
 		}
-		if (buf[pos] <= 0) {
+		if (((signed char)buf[pos]) <= 0) {
 			res |= 1;
 			llen++;
 		} else if ((buf[pos] == '\r') || (buf[pos] == '\n')) {

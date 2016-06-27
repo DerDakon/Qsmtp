@@ -205,7 +205,7 @@ check_rfc822_headers(unsigned int *headerflags, const char **hdrname)
 	int j;
 
 	for (j = linein.len - 1; j >= 0; j--) {
-		if (linein.s[j] < 0)
+		if (((signed char)linein.s[j]) < 0)
 			return -8;
 	}
 
@@ -411,7 +411,7 @@ smtp_data(void)
 
 			if ((xmitstat.check2822 & 1) && !xmitstat.datatype) {
 				for (i = linein.len - 1; i >= 0; i--)
-					if (linein.s[i] < 0) {
+					if (((signed char)linein.s[i]) < 0) {
 						logmail[9] = "8bit-character in message body}";
 						errmsg = "550 5.6.0 message contains 8bit characters\r\n";
 						goto loop_data;
