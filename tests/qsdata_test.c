@@ -1688,10 +1688,10 @@ run_multibuffer_test(const char *name, const char *pattern)
 				plen = endpos - wpos;
 			else
 				plen = 2;
-			strcat(inbuf, ws + sizeof(ws) - 1 - plen);
+			strncat(inbuf + wpos, ws + sizeof(ws) - 1 - plen, sizeof(inbuf) - wpos - 1);
 			ws[sizeof(ws) - 3] = '\n';
 			ws[sizeof(ws) - 2] = '\0';
-			strcat(outbuf, ws + sizeof(ws) - 1 - plen);
+			strncat(outbuf, ws + sizeof(ws) - 1 - plen, sizeof(outbuf) - strlen(outbuf) - 1);
 
 			break;
 			}
@@ -1792,10 +1792,9 @@ check_bdat_multiple_buffers(void)
 			char pbuf[32] = "P";
 			char nbuf[32];
 
-			for (unsigned int k = j; k > 0; k--)
-				strcat(pbuf, ".");
+			memset(pbuf + 1, '.', j);
 
-			strcat(pbuf, shiftpattern[l]);
+			strncpy(pbuf + 1 + j, shiftpattern[l], sizeof(pbuf) - 1 - j);
 			snprintf(nbuf, sizeof(nbuf), "pattern %u dot %u", l, j);
 
 			ret += run_multibuffer_test(nbuf, pbuf);
