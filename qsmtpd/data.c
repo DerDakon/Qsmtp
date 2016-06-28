@@ -629,7 +629,7 @@ smtp_bdat(void)
 			}
 
 			/* handle everything after the last CRLF (if any) */
-			if ((*more != '\0') && lastcr) {
+			if ((*more != '\0') && lastcr && (chunksize == 0)) {
 				/* If this is the final chunk and it ended in CR than add it back here.
 				 * The last byte in the buffer was never used before so this can't cause
 				 * an overflow. */

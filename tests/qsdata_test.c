@@ -5,6 +5,7 @@
 #include "test_io/testcase_io.h"
 #include <version.h>
 
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -393,7 +394,7 @@ check_msgbody(const char *expect)
 	int err = 0;
 	ssize_t off = 0;
 	ssize_t mismatch = -1;
-	char outbuf[2048];
+	char outbuf[CHUNK_READ_SIZE * 4];
 	static const char received_from[] = "Received: from ";
 
 	while (off < (ssize_t)sizeof(outbuf) - 1) {
@@ -1633,6 +1634,176 @@ check_bdat_multiple_chunks(void)
 	return ret;
 }
 
+// Since the trick here is to have multiple buffers and the buffers are large the
+// contents are not directly given, but encoded as follows:
+// value  meaning  value in input buffer               value in output buffer
+// P      padding  (97*whitespace + 'X' + CR + LF)*X   97*whitespace + 'X' + LF
+//        [enough to fill up all but 5 byte of the read buffer]
+// c      bare CR  CR                                  CR
+// l      bare LF  LF                                  LF
+// N      CRLF     CR + LF                             LF
+// .      dot      .                                   .
+static int
+run_multibuffer_test(const char *name, const char *pattern)
+{
+	char inbuf[CHUNK_READ_SIZE * 3];
+	char outbuf[sizeof(inbuf) + sizeof(RCVDHDRCHUNKED)];
+	struct cstring bindata = {
+		.s = inbuf
+	};
+	int ret = 0;
+
+	inbuf[0] = outbuf[0] = '\0';
+	printf("Testing %s\n", name);
+	strcat(outbuf, RCVDHDRCHUNKED);
+
+	for (size_t p = 0; p < strlen(pattern); p++) {
+		switch (pattern[p]) {
+		case 'P':
+			{
+			char ws[101];
+			size_t wpos = strlen(inbuf);
+			// position 5 before next buffer break
+			size_t endpos = ((wpos + CHUNK_READ_SIZE) / CHUNK_READ_SIZE) * CHUNK_READ_SIZE - 5;
+
+			memset(ws, ' ', sizeof(ws) - 4);
+			ws[sizeof(ws) - 4] = 'X';
+			ws[sizeof(ws) - 3] = '\r';
+			ws[sizeof(ws) - 2] = '\n';
+			ws[sizeof(ws) - 1] = '\0';
+
+			while (wpos < endpos - sizeof(ws) - 2) {
+				strcat(inbuf, ws);
+				strcat(outbuf, ws);
+				size_t opos = strlen(outbuf);
+				assert(outbuf[opos - 2] == '\r');
+				outbuf[opos - 2] = '\n';
+				outbuf[opos - 1] = '\0';
+				wpos += sizeof(ws) - 1;
+			}
+
+			size_t plen;
+			// reduce the write
+			if (endpos > wpos + 2)
+				plen = endpos - wpos;
+			else
+				plen = 2;
+			strcat(inbuf, ws + sizeof(ws) - 1 - plen);
+			ws[sizeof(ws) - 3] = '\n';
+			ws[sizeof(ws) - 2] = '\0';
+			strcat(outbuf, ws + sizeof(ws) - 1 - plen);
+
+			break;
+			}
+		case 'c':
+			strcat(inbuf, "\r");
+			strcat(outbuf, "\r");
+			break;
+		case 'l':
+			strcat(inbuf, "\n");
+			strcat(outbuf, "\n");
+			break;
+		case 'N':
+			strcat(inbuf, "\r\n");
+			strcat(outbuf, "\n");
+			break;
+		case '.':
+			strcat(inbuf, ".");
+			strcat(outbuf, ".");
+			break;
+		default:
+			abort();
+		}
+	}
+
+	goodrcpt = 1;
+	queue_init_result = 0;
+	comstate = 0x0040;
+	xmitstat.esmtp = 1;
+	bindata.len = strlen(bindata.s);
+	readbin_data = &bindata;
+	expect_queue_envelope = bindata.len;
+	expect_queue_chunked = 1;
+
+	setup_datafd();
+
+	sprintf(linein.s, "BDAT %zu LAST", bindata.len);
+	linein.len = strlen(linein.s);
+
+	int r = smtp_bdat();
+
+	if (r != 0)
+		ret++;
+
+	if (comstate != 0x0800)
+		ret++;
+
+	if (testcase_netnwrite_check(__func__))
+		ret++;
+
+	if (check_msgbody(outbuf) != 0)
+		ret++;
+
+	close(queuefd_data_recv);
+	queuefd_data_recv = -1;
+
+
+	return ret;
+}
+
+static int
+check_bdat_multiple_buffers(void)
+{
+	int ret = 0;
+	struct {
+		const char *name;
+		const char *pattern;
+	} patterns[] = {
+		{
+			.name = "multi data buffers",
+			.pattern = "PNNNNNPNNNNNP"
+		},
+		{
+			.name = "multi data buffers ending in CR",
+			.pattern = "PNNNNNPNNNNNPc"
+		},
+		{
+			.name = NULL
+		}
+	};
+
+	printf("%s\n", __func__);
+	maxbytes = 16 * 1024;
+
+	for (unsigned int j = 0; patterns[j].name != NULL; j++)
+		ret += run_multibuffer_test(patterns[j].name, patterns[j].pattern);
+
+	// now shift the CRLF pairs over the buffer limit
+	for (unsigned int j = 1; j < 5; j++) {
+		const char *shiftpattern[] = {
+			"NNNNlPNNNNNP",
+			"cNcNlPNNNNNP",
+			"ccNllPNNNNNP",
+			"NNcNlPNNNNNP",
+			NULL
+		};
+
+		for (unsigned int l = 0; shiftpattern[l] != NULL; l++) {
+			char pbuf[32] = "P";
+			char nbuf[32];
+
+			for (unsigned int k = j; k > 0; k--)
+				strcat(pbuf, ".");
+
+			strcat(pbuf, shiftpattern[l]);
+			snprintf(nbuf, sizeof(nbuf), "pattern %u dot %u", l, j);
+
+			ret += run_multibuffer_test(nbuf, pbuf);
+		}
+	}
+
+	return ret;
+}
 #endif
 
 int main()
@@ -1694,6 +1865,7 @@ int main()
 	ret += check_bdat_msgsize();
 	ret += check_bdat_single_chunk();
 	ret += check_bdat_multiple_chunks();
+	ret += check_bdat_multiple_buffers();
 
 	return ret;
 }
