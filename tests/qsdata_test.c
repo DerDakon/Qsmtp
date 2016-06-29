@@ -1746,7 +1746,6 @@ run_multibuffer_test(const char *name, const char *pattern)
 	close(queuefd_data_recv);
 	queuefd_data_recv = -1;
 
-
 	return ret;
 }
 
@@ -1803,7 +1802,56 @@ check_bdat_multiple_buffers(void)
 	return ret;
 }
 
-int main()
+static int
+check_bdat_write_received_pipefail(void)
+{
+	int ret = 0;
+	struct cstring bindata = {
+		.s = "123"
+	};
+	int r = setup_datafd();
+
+	printf("%s\n", __func__);
+
+	if (r != 0)
+		return r;
+
+	goodrcpt = 1;
+	queue_init_result = 0;
+	queue_reset_expected = 1;
+	comstate = 0x0040;
+	xmitstat.esmtp = 1;
+	bindata.len = strlen(bindata.s);
+	readbin_data = &bindata;
+	expect_queue_envelope = bindata.len;
+	expect_queue_chunked = 1;
+	netnwrite_msg = "451 4.3.0 error writing mail to queue\r\n";
+	log_write_msg = "broken pipe to qmail-queue";
+	log_write_priority = LOG_ERR;
+
+	close(queuefd_data_recv);
+
+	sprintf(linein.s, "BDAT %zu LAST", bindata.len);
+	linein.len = strlen(linein.s);
+
+	r = smtp_bdat();
+
+	if (r != EDONE)
+		ret++;
+
+	if (comstate != 0x0800)
+		ret++;
+
+	if (testcase_netnwrite_check(__func__))
+		ret++;
+
+	queuefd_data_recv = -1;
+
+	return ret;
+}
+
+int
+main()
 {
 	int ret = 0;
 	/* Block SIGPIPE, otherwise the process will get killed when trying to
@@ -1863,6 +1911,8 @@ int main()
 	ret += check_bdat_single_chunk();
 	ret += check_bdat_multiple_chunks();
 	ret += check_bdat_multiple_buffers();
+
+	ret += check_bdat_write_received_pipefail();
 
 	return ret;
 }
