@@ -149,6 +149,7 @@ queue_init(void)
 
 static unsigned long expect_queue_envelope = -1;
 static unsigned int expect_queue_result;
+static int queue_envelope_error;
 static int expect_queue_chunked;
 static int queuefd_data_recv = -1; // receiving end of the data pipe
 
@@ -165,6 +166,13 @@ queue_envelope(const unsigned long sz, const int chunked)
 		abort();
 
 	expect_queue_envelope = -1;
+
+	if (queue_envelope_error) {
+		errno = queue_envelope_error;
+		queue_envelope_error = -1;
+		return -1;
+	}
+
 	expect_queue_result = 1;
 
 	// clean up the envelope, the real function does this, too
@@ -1850,6 +1858,59 @@ check_bdat_write_received_pipefail(void)
 	return ret;
 }
 
+static int
+check_bdat_write_received_queuefail(void)
+{
+	int ret = 0;
+	struct cstring bindata = {
+		.s = "123"
+	};
+	char logbuf[128];
+	int r = setup_datafd();
+
+	printf("%s\n", __func__);
+
+	if (r != 0)
+		return r;
+
+	goodrcpt = 1;
+	queue_init_result = 0;
+	queue_reset_expected = 1;
+	comstate = 0x0040;
+	xmitstat.esmtp = 1;
+	bindata.len = strlen(bindata.s);
+	readbin_data = &bindata;
+	expect_queue_envelope = bindata.len;
+	expect_queue_chunked = 1;
+	queue_envelope_error = EFAULT;
+	netnwrite_msg = "451 4.3.0 error writing mail to queue\r\n";
+	snprintf(logbuf, sizeof(logbuf), "error in BDAT: %s", strerror(queue_envelope_error));
+	log_write_msg = logbuf;
+	log_write_priority = LOG_ERR;
+
+	sprintf(linein.s, "BDAT %zu LAST", bindata.len);
+	linein.len = strlen(linein.s);
+
+	r = smtp_bdat();
+
+	if (r != EDONE)
+		ret++;
+
+	if (comstate != 0x0800)
+		ret++;
+
+	if (testcase_netnwrite_check(__func__))
+		ret++;
+
+	if (check_msgbody(RCVDHDRCHUNKED "123") != 0)
+		ret++;
+
+	close(queuefd_data_recv);
+	queuefd_data_recv = -1;
+
+	return ret;
+}
+
 int
 main()
 {
@@ -1913,6 +1974,7 @@ main()
 	ret += check_bdat_multiple_buffers();
 
 	ret += check_bdat_write_received_pipefail();
+	ret += check_bdat_write_received_queuefail();
 
 	return ret;
 }
