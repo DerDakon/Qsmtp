@@ -1226,7 +1226,6 @@ check_data_body(void)
 	return ret;
 }
 
-#ifdef CHUNKING
 static int
 check_bdat_no_rcpt(void)
 {
@@ -1803,7 +1802,6 @@ check_bdat_multiple_buffers(void)
 
 	return ret;
 }
-#endif
 
 int main()
 {
