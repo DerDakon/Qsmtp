@@ -1176,7 +1176,6 @@ check_data_body(void)
 		printf("%s: checking '%s'\n", __func__, testdata[idx].name);
 
 		if (testdata[idx].netmsg) {
-			expect_queue_envelope = strlen(testdata[idx].netmsg) + 2;
 			net_read_msg = testdata[idx].netmsg;
 			if (testdata[idx].netmsg_more)
 				net_read_msg_next = testdata[idx].netmsg_more;
