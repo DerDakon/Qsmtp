@@ -1039,6 +1039,7 @@ check_data_body(void)
 			.netmsg = FOOLINE,
 			.netmsg_more = dotline,
 			.maxlen = 1,
+			.msgsize = -1,
 			.hdrfd = 1,
 			.data_result = EMSGSIZE
 		},
@@ -1052,6 +1053,7 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (56 bytes) {no 'From:' in header}",
 			.maxlen = 512,
+			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1066,6 +1068,7 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (40 bytes) {no 'Date:' in header}",
 			.maxlen = 512,
+			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1080,6 +1083,7 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: more than one 'From:'\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (67 bytes) {more than one 'From:' in header}",
 			.maxlen = 512,
+			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1094,6 +1098,7 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: more than one 'Date:'\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (95 bytes) {more than one 'Date:' in header}",
 			.maxlen = 512,
+			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1105,6 +1110,7 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 8bit character in message header\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (3 bytes) {8bit-character in message header}",
 			.maxlen = 512,
+			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1120,6 +1126,7 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message contains 8bit characters\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (82 bytes) {8bit-character in message body}",
 			.maxlen = 512,
+			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1132,6 +1139,7 @@ check_data_body(void)
 			.netwrite_msg = "554 5.4.6 too many hops, this message is looping\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (1719 bytes) {mail loop}",
 			.maxlen = MAXHOPS * 17 + 256,
+			.msgsize = -1,
 			.hdrfd = 1,
 			.data_result = EDONE
 		},
@@ -1143,6 +1151,7 @@ check_data_body(void)
 			.netwrite_msg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (34 bytes) {mail loop}",
 			.maxlen = MAXHOPS * 17 + 256,
+			.msgsize = -1,
 			.hdrfd = 1,
 			.data_result = EDONE
 		},
@@ -1218,6 +1227,9 @@ check_data_body(void)
 			fprintf(stderr, "ERROR: network data pending at end of test\n");
 		}
 
+		if (expect_queue_envelope != (unsigned long)-1)
+			ret++;
+
 		freedata();
 	}
 
@@ -1229,6 +1241,7 @@ check_data_body(void)
 		close(queuefd_data);
 		queuefd_data = -1;
 	}
+	expect_queue_envelope = -1;
 
 	return ret;
 }
@@ -1310,6 +1323,7 @@ check_bdat_empty_chunks(void)
 	queue_init_result = 0;
 	comstate = 0x0040;
 	xmitstat.esmtp = 1;
+	expect_queue_envelope = 0;
 
 	setup_datafd();
 
@@ -1345,6 +1359,9 @@ check_bdat_empty_chunks(void)
 
 	close(queuefd_data_recv);
 	queuefd_data_recv = -1;
+
+	if (expect_queue_envelope != (unsigned long)-1)
+		ret++;
 
 	return ret;
 }
