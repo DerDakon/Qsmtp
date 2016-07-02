@@ -937,8 +937,10 @@ check_data_body(void)
 	const char *body8bit[] = { date_hdr[0], from_hdr[0], "", "\222", ".", NULL };
 	const char *more_msgid[] = { "Message-Id: <123@example.net>", ".", NULL };
 	const char *dotline[] = { "..", "...", "....", ".", NULL };
+	const char *delivered[] = { "Delivered-To: test@example.com", ".", NULL };
 	const char *received_ofl[MAXHOPS + 3];
 	char rcvdbuf[strlen(RCVDHDR) + MAXHOPS * (strlen(RCVDDUMMYLINE) + 1) + 16];
+	char rcvdbuf_body[sizeof(rcvdbuf) + 4];
 	struct {
 		const char *name;
 		const char *data_expect;
@@ -1146,7 +1148,7 @@ check_data_body(void)
 		{
 			.name = "Delivered-To: loop",
 			.data_expect = RCVDHDR,
-			.netmsg = "Delivered-To: test@example.com",
+			.netmsg = delivered[0],
 			.netmsg_more = twolines,
 			.netwrite_msg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (34 bytes) {mail loop}",
@@ -1154,6 +1156,24 @@ check_data_body(void)
 			.msgsize = -1,
 			.hdrfd = 1,
 			.data_result = EDONE
+		},
+		{
+			.name = "received lines in body",
+			.data_expect = rcvdbuf_body,
+			.netmsg = "",
+			.netmsg_more = received_ofl,
+			.maxlen = MAXHOPS * 17 + 256,
+			.msgsize = 1702
+		},
+		{
+			.name = "body with Delivered-To:",
+			.data_expect = RCVDHDR
+				"\n"
+				"Delivered-To: test@example.com\n",
+			.netmsg = "",
+			.netmsg_more = delivered,
+			.maxlen = 256,
+			.msgsize = 32
 		},
 		{
 			.name = NULL
@@ -1173,13 +1193,16 @@ check_data_body(void)
 
 	int r;
 	snprintf(rcvdbuf, sizeof(rcvdbuf), "%s", RCVDHDR);
+	snprintf(rcvdbuf_body, sizeof(rcvdbuf), "%s\n", RCVDHDR);
 	for (r = 0; r < MAXHOPS; r++) {
 		received_ofl[r] = RCVDDUMMYLINE;
 		strcat(rcvdbuf, RCVDDUMMYLINE "\n");
+		strcat(rcvdbuf_body, RCVDDUMMYLINE "\n");
 	}
 	received_ofl[r++] = "";
 	received_ofl[r++] = ".";
 	received_ofl[r] = NULL;
+	strcat(rcvdbuf_body, "\n");
 
 	for (unsigned int idx = 0; testdata[idx].name != NULL; idx++) {
 		printf("%s: checking '%s'\n", __func__, testdata[idx].name);
