@@ -686,28 +686,32 @@ err_write:
 	queue_reset();
 	freedata();
 
-	if ((rc == ENOSPC) || (rc == EFBIG)) {
-		rc = EMSGSIZE;
-	} else if ((errno != ENOMEM) && (errno != EMSGSIZE) && (errno != E2BIG)) {
-		if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
-			return errno;
-	}
 	switch (rc) {
+	case ENOSPC:
+	case EFBIG:
+		rc = EMSGSIZE;
+		/* fallthrough */
 	case EMSGSIZE:
+	case E2BIG:
 	case ENOMEM:
 		return rc;
+	}
+
+	if (netwrite("451 4.3.0 error writing mail to queue\r\n"))
+		return errno;
+
+	switch (rc) {
 	case EPIPE:
 		log_write(LOG_ERR, "broken pipe to qmail-queue");
-		return EDONE;
-	case E2BIG:
-		return rc;
-	default: 	/* normally none of the other errors may ever occur. But who knows what I'm missing here? */
+		break;
+	default:	/* normally none of the other errors may ever occur. But who knows what I'm missing here? */
 		{
-			const char *logmsg[] = {"error in BDAT: ", strerror(rc), NULL};
+			const char *logmsg[] = { "error in BDAT: ", strerror(rc), NULL };
 
 			log_writen(LOG_ERR, logmsg);
-			return EDONE; // will not be caught in main
 		}
 	}
+
+	return EDONE; // will not be caught in main
 }
 #endif
