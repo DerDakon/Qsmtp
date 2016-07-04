@@ -953,14 +953,15 @@ check_data_body(void)
 		const char *logmsg;
 		const char *netwrite_msg;
 		unsigned long maxlen;
-		unsigned long msgsize;
 		unsigned int check2822_flags:2;
 		unsigned int hdrfd:1;
+		unsigned int queue_expect:1;
 		int data_result:16;
 	} testdata[] = {
 		{
 			.name = "empty message",
-			.data_expect = RCVDHDR
+			.data_expect = RCVDHDR,
+			.queue_expect = 1
 		},
 		{
 			.name = "single line",
@@ -968,7 +969,7 @@ check_data_body(void)
 				FOOHDR,
 			.netmsg = FOOLINE,
 			.maxlen = 512,
-			.msgsize = 15
+			.queue_expect = 1
 		},
 		{
 			.name = "x-foobar header",
@@ -978,7 +979,7 @@ check_data_body(void)
 			.netmsg = FOOLINE,
 			.netmsg_more = twolines,
 			.maxlen = 512,
-			.msgsize = 17
+			.queue_expect = 1
 		},
 		{
 			.name = "x-foobar body",
@@ -988,7 +989,7 @@ check_data_body(void)
 			.netmsg = "",
 			.netmsg_more = twolines_xfoobar,
 			.maxlen = 512,
-			.msgsize = 17
+			.queue_expect = 1
 		},
 		{
 			.name = "minimal valid header",
@@ -999,7 +1000,7 @@ check_data_body(void)
 			.netmsg = FOOLINE,
 			.netmsg_more = minimal_hdr,
 			.maxlen = 512,
-			.msgsize = 79,
+			.queue_expect = 1,
 			.check2822_flags = 1
 		},
 		{
@@ -1012,8 +1013,8 @@ check_data_body(void)
 			.netmsg = FOOLINE,
 			.netmsg_more = more_msgid,
 			.maxlen = 512,
-			.msgsize = 46, // the extra lines that are automatically inserted are not counted
-			.check2822_flags = 2
+			.check2822_flags = 2,
+			.queue_expect = 1 // the extra lines that are automatically inserted are not counted
 		},
 		{
 			.name = "submission mode all headers inserted",
@@ -1024,8 +1025,8 @@ check_data_body(void)
 				"Message-Id: <1334161937.10203042@msgid.example.net>\n",
 			.netmsg = FOOLINE,
 			.maxlen = 512,
-			.msgsize = strlen(FOOHDR) + 1, // the extra lines that are automatically inserted are not counted
-			.check2822_flags = 2
+			.check2822_flags = 2,
+			.queue_expect = 1 // the extra lines that are automatically inserted are not counted
 		},
 		{
 			.name = "leading data dot",
@@ -1035,7 +1036,7 @@ check_data_body(void)
 			.netmsg = FOOLINE,
 			.netmsg_more = dotline,
 			.maxlen = 512,
-			.msgsize = 27
+			.queue_expect = 1
 		},
 		{
 			.name = "message too big",
@@ -1045,7 +1046,6 @@ check_data_body(void)
 			.netmsg = FOOLINE,
 			.netmsg_more = dotline,
 			.maxlen = 1,
-			.msgsize = -1,
 			.hdrfd = 1,
 			.data_result = EMSGSIZE
 		},
@@ -1059,7 +1059,6 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (56 bytes) {no 'From:' in header}",
 			.maxlen = 512,
-			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1074,7 +1073,6 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (40 bytes) {no 'Date:' in header}",
 			.maxlen = 512,
-			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1089,7 +1087,6 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: more than one 'From:'\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (67 bytes) {more than one 'From:' in header}",
 			.maxlen = 512,
-			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1104,7 +1101,6 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: more than one 'Date:'\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (95 bytes) {more than one 'Date:' in header}",
 			.maxlen = 512,
-			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1116,7 +1112,6 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message does not comply to RfC2822: 8bit character in message header\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (3 bytes) {8bit-character in message header}",
 			.maxlen = 512,
-			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1132,7 +1127,6 @@ check_data_body(void)
 			.netwrite_msg = "550 5.6.0 message contains 8bit characters\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (84 bytes) {8bit-character in message body}",
 			.maxlen = 512,
-			.msgsize = -1,
 			.check2822_flags = 1,
 			.hdrfd = 1,
 			.data_result = EDONE
@@ -1145,7 +1139,6 @@ check_data_body(void)
 			.netwrite_msg = "554 5.4.6 too many hops, this message is looping\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (1719 bytes) {mail loop}",
 			.maxlen = MAXHOPS * 17 + 256,
-			.msgsize = -1,
 			.hdrfd = 1,
 			.data_result = EDONE
 		},
@@ -1157,7 +1150,6 @@ check_data_body(void)
 			.netwrite_msg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n",
 			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (34 bytes) {mail loop}",
 			.maxlen = MAXHOPS * 17 + 256,
-			.msgsize = -1,
 			.hdrfd = 1,
 			.data_result = EDONE
 		},
@@ -1167,7 +1159,7 @@ check_data_body(void)
 			.netmsg = "",
 			.netmsg_more = received_ofl,
 			.maxlen = MAXHOPS * 17 + 256,
-			.msgsize = 1704
+			.queue_expect = 1
 		},
 		{
 			.name = "body with Delivered-To:",
@@ -1177,7 +1169,7 @@ check_data_body(void)
 			.netmsg = "",
 			.netmsg_more = delivered,
 			.maxlen = 256,
-			.msgsize = 34
+			.queue_expect = 1
 		},
 		{
 			.name = NULL
@@ -1210,6 +1202,7 @@ check_data_body(void)
 
 	for (unsigned int idx = 0; testdata[idx].name != NULL; idx++) {
 		printf("%s: checking '%s'\n", __func__, testdata[idx].name);
+		size_t msglen = 0;
 
 		if (testdata[idx].netmsg) {
 			net_read_msg = testdata[idx].netmsg;
@@ -1217,12 +1210,23 @@ check_data_body(void)
 				net_read_msg_next = testdata[idx].netmsg_more;
 			else
 				net_read_msg_next = endline;
+
+			for (r = 0; net_read_msg_next[r] != NULL; r++) {
+				msglen += strlen(net_read_msg_next[r]) + 2;
+				if (net_read_msg_next[r][0] == '.')
+					msglen--;
+			}
+			// + 2 for CRLF - 2 for "." line
+			msglen += strlen(net_read_msg);
 		} else {
 			net_read_msg = endline[0];
 		}
 		log_write_msg = testdata[idx].logmsg;
 		log_write_priority = LOG_INFO;
-		expect_queue_envelope = testdata[idx].msgsize;
+		if (testdata[idx].queue_expect)
+			expect_queue_envelope = msglen;
+		else
+			expect_queue_envelope = (unsigned long)-1;
 		net_read_fatal = 1;
 		queue_init_result = 0;
 		queue_reset_expected = 1;
