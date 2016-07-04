@@ -1269,6 +1269,91 @@ check_data_body(void)
 	return ret;
 }
 
+// simulate error return codes from net_read()
+// if the current read string has the form "#<error code>" then the given error code
+// is returned instead of success
+int
+test_net_read_error(const int fatal)
+{
+	int r = testcase_net_read_simple(fatal);
+
+	if ((r == 0) && (linein.len > 0) && (linein.s[0] == '#')) {
+		if (strcmp(linein.s + 1, "EINVAL") == 0) {
+			errno = EINVAL;
+			r = -1;
+		} else if (strcmp(linein.s + 1, "E2BIG") == 0) {
+			errno = E2BIG;
+			r = -1;
+		} else {
+			abort();
+		}
+		linein.len = 0;
+	}
+
+	return r;
+}
+
+static int
+check_data_read_fails(void)
+{
+	int ret = 0;
+
+	printf("%s\n", __func__);
+	testcase_setup_net_read(test_net_read_error);
+
+	for (unsigned int i = 0; ; i++) {
+		const char *msgs[] = { "X-header: foo", "X-header: bar", "", "", "body 1", "body 2", ".", NULL };
+		unsigned int msglen = 0;
+		char logbuf[160];
+
+		if (msgs[i][0] == '.')
+			break;
+
+		int r = setup_datafd();
+		if (r != 0)
+			return r;
+
+		for (unsigned int j = 0; msgs[j] != NULL; j++) {
+			if (i == j)
+				msgs[j] = "#EINVAL";
+			else
+				msglen += strlen(msgs[j]) + 2;
+		}
+		msglen -= (i < 3) ? 1 : 3; // "."
+
+		net_read_msg = "";
+		net_read_msg_next = msgs;
+		net_read_fatal = 1;
+
+		// let the testcase function do the rotation so the first buffer entry is set
+		testcase_net_read_simple(net_read_fatal);
+
+		snprintf(logbuf, sizeof(logbuf), "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (%u bytes) {bad CRLF sequence}", msglen);
+		log_write_msg = logbuf;
+		log_write_priority = LOG_INFO;
+		queue_init_result = 0;
+		queue_reset_expected = 1;
+		pass_354 = 1;
+		maxbytes = 256;
+		netnwrite_msg = "500 5.5.2 bad <CRLF> sequence\r\n";
+		queuefd_hdr = open("/dev/null", O_WRONLY);
+
+		r = smtp_data();
+
+		if (r != EDONE)
+			ret++;
+
+		if (testcase_netnwrite_check(__func__)) {
+			ret++;
+			fprintf(stderr, "ERROR: network data pending at end of test loop %u\n", i);
+		}
+	}
+
+	testcase_setup_net_read(testcase_net_read_simple);
+
+	return ret;
+}
+
 static int
 check_bdat_no_rcpt(void)
 {
@@ -1992,6 +2077,8 @@ main()
 	ret += check_data_write_received_fail();
 	ret += check_data_write_received_pipefail();
 	ret += check_data_body();
+
+	ret += check_data_read_fails();
 
 	ssl = NULL;
 
