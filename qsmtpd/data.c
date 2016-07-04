@@ -404,6 +404,7 @@ smtp_data(void)
 	if (linein.len == 0) {
 		/* if (linein.len) message has no body and we already are at the end */
 		WRITEL("\n");
+		msgsize += 2;
 		if (net_read(1))
 			goto loop_data;
 		while (((linein.len != 1) || (linein.s[0] != '.')) && (msgsize <= maxbytes)) {

@@ -978,7 +978,7 @@ check_data_body(void)
 			.netmsg = FOOLINE,
 			.netmsg_more = twolines,
 			.maxlen = 512,
-			.msgsize = 15
+			.msgsize = 17
 		},
 		{
 			.name = "x-foobar body",
@@ -988,7 +988,7 @@ check_data_body(void)
 			.netmsg = "",
 			.netmsg_more = twolines_xfoobar,
 			.maxlen = 512,
-			.msgsize = 15
+			.msgsize = 17
 		},
 		{
 			.name = "minimal valid header",
@@ -1130,7 +1130,7 @@ check_data_body(void)
 			.netmsg = FOOLINE,
 			.netmsg_more = body8bit,
 			.netwrite_msg = "550 5.6.0 message contains 8bit characters\r\n",
-			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (82 bytes) {8bit-character in message body}",
+			.logmsg = "rejected message to <test@example.com> from <foo@example.com> from IP [::ffff:192.0.2.24] (84 bytes) {8bit-character in message body}",
 			.maxlen = 512,
 			.msgsize = -1,
 			.check2822_flags = 1,
@@ -1167,7 +1167,7 @@ check_data_body(void)
 			.netmsg = "",
 			.netmsg_more = received_ofl,
 			.maxlen = MAXHOPS * 17 + 256,
-			.msgsize = 1702
+			.msgsize = 1704
 		},
 		{
 			.name = "body with Delivered-To:",
@@ -1177,7 +1177,7 @@ check_data_body(void)
 			.netmsg = "",
 			.netmsg_more = delivered,
 			.maxlen = 256,
-			.msgsize = 32
+			.msgsize = 34
 		},
 		{
 			.name = NULL
@@ -1323,7 +1323,7 @@ check_data_read_fails(void)
 			else
 				msglen += strlen(msgs[j]) + 2;
 		}
-		msglen -= (i < 3) ? 1 : 3; // "."
+		msglen--; // "."
 
 		net_read_msg = "";
 		net_read_msg_next = msgs;
