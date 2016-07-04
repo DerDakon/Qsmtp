@@ -402,7 +402,7 @@ smtp_data(void)
 	}
 
 	if (linein.len == 0) {
-		/* if(linelen) message has no body and we already are at the end */
+		/* if (linein.len) message has no body and we already are at the end */
 		WRITEL("\n");
 		if (net_read(1))
 			goto loop_data;
