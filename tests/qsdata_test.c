@@ -159,11 +159,15 @@ queue_envelope(const unsigned long sz, const int chunked)
 	if (expect_queue_envelope == (unsigned long)-1)
 		abort();
 
-	if (sz != expect_queue_envelope)
+	if (sz != expect_queue_envelope) {
+		fprintf(stderr, "%s(%lu, %i) called, but (%lu, %i) expected\n", __func__, sz, chunked, expect_queue_envelope, expect_queue_chunked);
 		abort();
+	}
 
-	if (chunked != expect_queue_chunked)
+	if (chunked != expect_queue_chunked) {
+		fprintf(stderr, "%s(%lu, %i) called, but (%lu, %i) expected\n", __func__, sz, chunked, expect_queue_envelope, expect_queue_chunked);
 		abort();
+	}
 
 	expect_queue_envelope = -1;
 
