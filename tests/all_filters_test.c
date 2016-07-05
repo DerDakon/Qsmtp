@@ -371,9 +371,7 @@ main(void)
 	struct userconf uc = {
 		.domainpath = STREMPTY_INIT,
 		.userdirfd = -1,
-		.domaindirfd = -1,
-		.userconf = NULL,
-		.domainconf = NULL
+		.domaindirfd = -1
 	};
 	globalconf = NULL;
 	memset(&xmitstat, 0, sizeof(xmitstat));

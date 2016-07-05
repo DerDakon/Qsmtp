@@ -80,9 +80,7 @@ testcase_no_args(void)
 			.extension = esmtp_chunking
 		},
 #endif /* CHUNKING */
-		{
-			.line = NULL
-		}
+		{ }
 	};
 	int ret = 0;
 
@@ -117,9 +115,7 @@ testcase_size(void)
 			.line = "SIZE 1024",
 			.parsedsize = 1024
 		},
-		{
-			.line = NULL
-		}
+		{ }
 	};
 	int ret = 0;
 
@@ -181,8 +177,7 @@ testcase_auth(void)
 		const char *mechs;
 	} lines[] = {
 		{
-			.line = "AUTH ",
-			.mechs = NULL
+			.line = "AUTH "
 		},
 		{
 			.line = "AUTH LOGIN PLAIN",
@@ -192,9 +187,7 @@ testcase_auth(void)
 			.line = "AUTH  LOGIN PLAIN",
 			.mechs = " LOGIN PLAIN "
 		},
-		{
-			.line = NULL
-		}
+		{ }
 	};
 	int ret = 0;
 

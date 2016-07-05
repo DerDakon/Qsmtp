@@ -347,9 +347,7 @@ static struct spftestcase spftest_redhat = {
 			.value = "v=spf1 mx ip4:204.14.234.13 ip4:204.14.232.13 ip4:204.14.234.14 ip4:204.14.232.14 ip4:209.132.177.0/24 ip4:65.125.54.185 ip4:65.125.54.186 ip4:65.125.54.187 ip4:65.125.54.188 ip4:65.125.54.189 ip4:65.125.54.190 ip4:219.120.63.242"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		}
 	}
 };
@@ -376,9 +374,7 @@ static struct spftestcase spftest_sfmail = {
 			.value = "v=spf1 mx -all"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		}
 	}
 };
@@ -674,13 +670,10 @@ test_parse_ip4()
 	struct dnsentry ip4entries[] = {
 		{
 			.type = DNSTYPE_TXT,
-			.key = "ipv4test.example.net",
-			.value = NULL
+			.key = "ipv4test.example.net"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		}
 	};
 	const char *ip4invalid[] = {
@@ -775,13 +768,10 @@ test_parse_ip6()
 	struct dnsentry ip6entries[] = {
 		{
 			.type = DNSTYPE_TXT,
-			.key = "ipv6test.example.net",
-			.value = NULL
+			.key = "ipv6test.example.net"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		}
 	};
 	const char *ip6invalid[] = {
@@ -876,8 +866,7 @@ test_parse_mx()
 	struct dnsentry mxentries[] = {
 		{
 			.type = DNSTYPE_TXT,
-			.key = "mxtest.example.net",
-			.value = NULL
+			.key = "mxtest.example.net"
 		},
 		{
 			.type = DNSTYPE_MX,
@@ -938,9 +927,7 @@ test_parse_mx()
 					"mxtest6b.example.net;mxtest6b.example.net;mxtest6b.example.net;mxtest6b.example.net"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		}
 	};
 	const char *mxinvalid[] = {
@@ -1601,9 +1588,7 @@ test_suite_all()
 			.value = "v=spf1 all -all"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		},
 	};
 	const struct suite_testcase alltestcases[] = {
@@ -2184,9 +2169,7 @@ test_suite_ptr()
 			.value = "v=spf1 ptr:"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		},
 	};
 	const struct suite_testcase ptrtestcases[] = {
@@ -2464,9 +2447,7 @@ test_suite_a()
 			.value = "::ffff:1.2.3.4"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		}
 	};
 	const struct suite_testcase atestcases[] = {
@@ -3251,9 +3232,7 @@ test_suite_include()
 			.value = ""
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		},
 	};
 	const struct suite_testcase includetestcases[] = {
@@ -3601,9 +3580,7 @@ test_parse()
 			.value = "v=spf1 +all redirect=allfail.example.net"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		}
 	};
 	static int spfresults[] = {
@@ -3789,9 +3766,7 @@ test_behavior()
 			.value = "v=spf1 ip4: exp=exp.example.org"
 		},
 		{
-			.type = DNSTYPE_NONE,
-			.key = NULL,
-			.value = NULL
+			.type = DNSTYPE_NONE
 		},
 	};
 	const struct suite_testcase ptrtestcases[] = {

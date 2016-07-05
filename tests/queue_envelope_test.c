@@ -292,9 +292,7 @@ test_log_messages(void)
 			.envelope = envelope1ip,
 			.envsize = sizeof(envelope1ip)
 		},
-		{
-			.rcpt1 = NULL
-		}
+		{ }
 	};
 	/* this doesn't really look right, but it works for now */
 	SSL myssl

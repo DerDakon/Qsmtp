@@ -351,7 +351,7 @@ static struct authcmd {
 #ifdef AUTHCRAM
 	{	.text = "cram-md5",	.fun = auth_cram },
 #endif
-	{	.text = NULL,}
+	{ }
 };
 
 /**

@@ -60,9 +60,7 @@ static struct {
 		.name = "third.aaaa.example.net",
 		.ip = "abcd::ffff:10:333"
 	},
-	{
-		.name = NULL
-	}
+	{ }
 };
 
 static const char timeouthost[] = "timeout.example.com";
@@ -282,9 +280,7 @@ static struct {
 			}
 		}
 	},
-	{
-		.name = NULL
-	}
+	{ }
 };
 
 int dnsmx(char **out, size_t *len, const char *host)

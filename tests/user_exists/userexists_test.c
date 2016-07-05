@@ -111,9 +111,7 @@ struct {
 		.result = 0,
 		.dirs = 0
 	},
-	{
-		.email = NULL
-	}
+	{ }
 };
 
 int

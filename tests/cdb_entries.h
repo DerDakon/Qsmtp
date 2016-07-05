@@ -33,15 +33,9 @@ static struct {
 		.realdomain = "foo.example.org"
 	},
 	{
-		.key = "nonexistent.example.org",
-		.value = NULL,
-		.realdomain = NULL
+		.key = "nonexistent.example.org"
 	},
-	{
-		.key = NULL,
-		.value = NULL,
-		.realdomain = NULL
-	}
+	{ }
 };
 
 #endif

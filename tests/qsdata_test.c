@@ -758,9 +758,7 @@ check_check_rfc822_headers(void)
 			.rc = 0,
 			.pattern = "D"
 		},
-		{
-			.pattern = NULL
-		},
+		{ }
 	};
 	int ret = 0;
 
@@ -1171,9 +1169,7 @@ check_data_body(void)
 			.maxlen = 256,
 			.queue_expect = 1
 		},
-		{
-			.name = NULL
-		}
+		{ }
 	};
 
 	printf("%s\n", __func__);
@@ -1554,9 +1550,7 @@ check_bdat_single_chunk(void)
 				FOOLINE "\r"
 				FOOLINE "\r"
 		},
-		{
-			.name = NULL
-		}
+		{ }
 	};
 
 	printf("%s\n", __func__);
@@ -1905,9 +1899,7 @@ check_bdat_multiple_buffers(void)
 			.name = "multi data buffers ending in CR",
 			.pattern = "PNNNNNPNNNNNPc"
 		},
-		{
-			.name = NULL
-		}
+		{ }
 	};
 
 	printf("%s\n", __func__);

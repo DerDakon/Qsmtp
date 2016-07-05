@@ -580,9 +580,7 @@ main(void)
 			.logmsg1 = "temporarily rejected message to <abc@notthere.example.com> from <baz@example.org> from IP [] {no target MX}",
 			.log_prio1 = LOG_INFO
 		},
-		{
-			.input = NULL
-		}
+		{ }
 	};
 
 	TAILQ_INIT(&head);

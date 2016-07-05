@@ -122,10 +122,7 @@ test_ws(void)
 			.raw = "(comment) \\(no comment\\) a",
 			.result = "\\(no comment\\) a"
 		},
-		{
-			.raw = NULL,
-			.result = NULL
-		}
+		{ }
 	};
 	const char *badpatterns[] = {
 		" (a broken text",

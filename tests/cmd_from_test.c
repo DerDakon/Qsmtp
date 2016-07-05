@@ -416,9 +416,7 @@ main(void)
 			.input = "mail from:<> foo=bar size=20",
 			.from_result = EBADRQC
 		},
-		{
-			.input = NULL
-		}
+		{ }
 	};
 
 	testcase_setup_net_writen(testcase_net_writen_combine);

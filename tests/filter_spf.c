@@ -417,9 +417,7 @@ main(void)
 			.expected_logmsg = "SPF",
 			.expected_t = CONFIG_DOMAIN
 		},
-		{
-			.name = NULL
-		}
+		{ }
 	};
 
 	testcase_setup_netnwrite(testcase_netnwrite_compare);

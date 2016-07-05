@@ -27,11 +27,7 @@ static struct {
 		.username = "longerfoo@long.foo.and.even.longer.foo.foo.foo.example.com",
 		.password = "!\"$%&/&((&%1234567890000ajsdhfkajshdkfajhsdkfbuwbausdfakeufaasdmnb"
 	},
-	{
-		.testname = NULL,
-		.username = NULL,
-		.password = NULL
-	}
+	{ }
 };
 
 static const char autharg[] = "auth1";

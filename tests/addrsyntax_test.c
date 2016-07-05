@@ -193,9 +193,7 @@ static struct {
 		.flags = 1,
 		.retval = 0
 	},
-	{
-		.in = NULL
-	}
+	{ }
 };
 
 static int

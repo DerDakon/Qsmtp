@@ -455,9 +455,7 @@ static struct {
 		.recodeflag = 1,
 		.log_count = 0
 	},
-	{
-		.name = NULL
-	}
+	{ }
 };
 static unsigned int usepattern;
 

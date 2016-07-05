@@ -113,10 +113,7 @@ test_controlfiles(void)
 			.subdir = "duplicate_plain",
 			.expect = plainonly
 		},
-		{
-			.subdir = NULL,
-			.expect = NULL
-		}
+		{ }
 	};
 	unsigned int idx = 0;
 	int errcnt = 0;
