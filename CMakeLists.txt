@@ -63,6 +63,11 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -fprofile-arcs -ftest-covera
 ADD_C_COMPILER_FLAG(-Wall -W -Wshadow)
 add_definitions(-D_FILE_OFFSET_BITS=64)
 
+# these warnings also warn about entirely empty (i.e. 0) structs
+if (CMAKE_COMPILER_IS_GNUCC AND CMAKE_C_COMPILER_VERSION VERSION_LESS 4.9)
+	ADD_SUPPORTED_C_COMPILER_FLAG(CFLAGS_NO_STRUCT_INIT -Wno-missing-field-initializers)
+endif ()
+
 CHECK_SYMBOL_EXISTS(O_CLOEXEC "fcntl.h" HAS_O_CLOEXEC)
 if (NOT HAS_O_CLOEXEC)
 	add_definitions(-DO_CLOEXEC=0)
