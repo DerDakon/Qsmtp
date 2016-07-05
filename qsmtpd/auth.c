@@ -371,20 +371,27 @@ smtp_auth(void)
 	STREMPTY(xmitstat.authname);
 
 	for (i = 0; authcmds[i].text; i++) {
-		if (!strncasecmp(authcmds[i].text, type, strlen(authcmds[i].text))) {
-			int r = authcmds[i].fun(&xmitstat.authname);
-			switch (r) {
-			case 0:
-				return netwrite("235 2.7.0 ok, go ahead\r\n") ? errno : 0;
-			case 1:
-				STREMPTY(xmitstat.authname);
-				sleep(5);
-				return netwrite("535 5.7.8 authorization failed\r\n") ? errno : EDONE;
-			default:
-				assert(r < 0);
-				STREMPTY(xmitstat.authname);
-				return -r;
-			}
+		const size_t mechlen = strlen(authcmds[i].text);
+		int r;
+
+		if (strncasecmp(authcmds[i].text, type, mechlen) != 0)
+			continue;
+
+		if ((type[mechlen] != '\0') && (type[mechlen] != ' '))
+			continue;
+
+		r = authcmds[i].fun(&xmitstat.authname);
+		switch (r) {
+		case 0:
+			return netwrite("235 2.7.0 ok, go ahead\r\n") ? errno : 0;
+		case 1:
+			STREMPTY(xmitstat.authname);
+			sleep(5);
+			return netwrite("535 5.7.8 authorization failed\r\n") ? errno : EDONE;
+		default:
+			assert(r < 0);
+			STREMPTY(xmitstat.authname);
+			return -r;
 		}
 	}
 	return netwrite("504 5.5.4 Unrecognized authentication type.\r\n") ? errno : EDONE;

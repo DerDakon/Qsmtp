@@ -118,16 +118,22 @@ main(int argc __attribute__((unused)), char **argv)
 	auth_setup(2, argv_auth);
 
 	/* invalid AUTH mechanism */
-	setinput("AUTH BOGUS");
+	const char *invalid_auths[] = { "BOGUS", "LOGINx", "cram-md5x", "xPLAIN", "PLAINx", NULL };
+	for (unsigned int i = 0; invalid_auths[i] != NULL; i++) {
+		char inputbuf[32] = "AUTH ";
 
-	expected_net_write1 = "504 5.5.4 Unrecognized authentication type.\r\n";
+		strcat(inputbuf, invalid_auths[i]);
+		setinput(inputbuf);
 
-	if (smtp_auth() != EDONE) {
-		fprintf(stderr, "unrecognized AUTH mechanism was not rejected\n");
-		err++;
+		expected_net_write1 = "504 5.5.4 Unrecognized authentication type.\r\n";
+
+		if (smtp_auth() != EDONE) {
+			fprintf(stderr, "unrecognized AUTH mechanism was not rejected\n");
+			err++;
+		}
+
+		check_all_msgs();
 	}
-
-	check_all_msgs();
 
 	/* invalid base64 message */
 	setinput("AUTH PLAIN #");
@@ -302,7 +308,7 @@ main(int argc __attribute__((unused)), char **argv)
 
 #ifdef AUTHCRAM
 	/* CRAM-MD5 does not support initial client response */
-	setinput("AUTH CRAM-MD5 YQ==");
+	setinput("AUTH CRAM-md5 YQ==");
 
 	expected_net_write1 = "501 5.7.0 authentication mechanism does not support initial response\r\n";
 
