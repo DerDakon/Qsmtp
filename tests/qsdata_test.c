@@ -1,4 +1,6 @@
+#ifndef CHUNKING
 #define CHUNKING
+#endif
 #include "../qsmtpd/data.c"
 
 #include <qsmtpd/antispam.h>
