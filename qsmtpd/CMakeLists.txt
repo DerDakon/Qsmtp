@@ -17,6 +17,10 @@ set(QSMTPD_SRCS
 	xtext.c
 )
 
+if (CHUNKING)
+	set_property(SOURCE data.c APPEND PROPERTY COMPILE_DEFINITIONS INCOMING_CHUNK_SIZE=${INCOMING_CHUNK_SIZE})
+endif ()
+
 set(QSMTPD_HDRS
 	../include/qsmtpd/addrparse.h
 	../include/qsmtpd/antispam.h

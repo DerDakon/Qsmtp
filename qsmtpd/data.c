@@ -534,7 +534,7 @@ loop_data:
 }
 
 #ifdef CHUNKING
-#define CHUNK_READ_SIZE 2048
+#define CHUNK_READ_SIZE (INCOMING_CHUNK_SIZE * 1024)
 static int bdaterr;
 static int lastcr;
 
