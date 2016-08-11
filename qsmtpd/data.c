@@ -226,6 +226,26 @@ check_rfc822_headers(unsigned int *headerflags, const char **hdrname)
 
 static unsigned long msgsize;
 
+static void log_recips(const char *reason)
+{
+#define LOG_BRACES "] ("
+	char s[ULSTRLEN + sizeof(LOG_BRACES)] = LOG_BRACES;		/* msgsize */
+	const char *logmail[] = { "rejected message to <", NULL, "> from <", MAILFROM,
+					"> from IP [", xmitstat.remoteip, s, " bytes) {",
+					reason, NULL };
+	struct recip *l;
+
+	ultostr(msgsize, s + strlen(LOG_BRACES));
+#undef LOG_BRACES
+
+	TAILQ_FOREACH(l, &head, entries) {
+		if (l->ok) {
+			logmail[1] = l->to.s;
+			log_writen(LOG_INFO, logmail);
+		}
+	}
+}
+
 /**
  * handle DATA command and store data into queue
  *
@@ -234,9 +254,8 @@ static unsigned long msgsize;
 int
 smtp_data(void)
 {
-	const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
-					"> from IP [", xmitstat.remoteip, "] (", NULL, " bytes) {",
-					NULL, NULL, NULL, NULL};
+	const char *logreason = NULL;
+	char logreason_buf[64];
 	int i, rc;
 	unsigned int headerflags = 0;	/* Date: and From: are required in header,
 					 * else message is bogus (RfC 2822, section 3.6).
@@ -304,9 +323,10 @@ smtp_data(void)
 					const char *errtext = "550 5.6.0 message does not comply to RfC2822: "
 							"more than one '";
 
-					logmail[9] = "more than one '";
-					logmail[10] = hdrname;
-					logmail[11] = "' in header}";
+					strcpy(logreason_buf, "more than one '");
+					strcat(logreason_buf, hdrname);
+					strcat(logreason_buf, "' in header}");
+					logreason = logreason_buf;
 
 					errmsg = errbuf;
 					memcpy(errbuf, errtext, strlen(errtext));
@@ -315,7 +335,7 @@ smtp_data(void)
 					goto loop_data;
 				}
 				case -8:
-					logmail[9] = "8bit-character in message header}";
+					logreason = "8bit-character in message header}";
 					errmsg = "550 5.6.0 message does not comply to RfC2822: "
 							"8bit character in message header\r\n";
 					goto loop_data;
@@ -324,7 +344,7 @@ smtp_data(void)
 			if (flagr) {
 				if (!strncasecmp("Received:", linein.s, 9)) {
 					if (++hops > MAXHOPS) {
-						logmail[9] = "mail loop}";
+						logreason = "mail loop}";
 						errmsg = "554 5.4.6 too many hops, this message is looping\r\n";
 						goto loop_data;
 					}
@@ -344,7 +364,7 @@ smtp_data(void)
 
 					TAILQ_FOREACH(np, &head, entries) {
 						if (np->ok && !strcmp(linein.s + 14, np->to.s)) {
-							logmail[9] = "mail loop}";
+							logreason = "mail loop}";
 							errmsg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n";
 							goto loop_data;
 						}
@@ -391,11 +411,11 @@ smtp_data(void)
 		}
 	} else if (xmitstat.check2822 & 1) {
 		if (!(headerflags & HEADER_HAS_DATE)) {
-			logmail[9] = "no 'Date:' in header}";
+			logreason = "no 'Date:' in header}";
 			errmsg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n";
 			goto loop_data;
 		} else if (!(headerflags & HEADER_HAS_FROM)) {
-			logmail[9] = "no 'From:' in header}";
+			logreason = "no 'From:' in header}";
 			errmsg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n";
 			goto loop_data;
 		}
@@ -413,7 +433,7 @@ smtp_data(void)
 			if ((xmitstat.check2822 & 1) && !xmitstat.datatype) {
 				for (i = linein.len - 1; i >= 0; i--)
 					if (((signed char)linein.s[i]) < 0) {
-						logmail[9] = "8bit-character in message body}";
+						logreason = "8bit-character in message body}";
 						errmsg = "550 5.6.0 message contains 8bit characters\r\n";
 						goto loop_data;
 					}
@@ -429,7 +449,7 @@ smtp_data(void)
 		}
 	}
 	if (msgsize > maxbytes) {
-		logmail[9] = "message too big}";
+		logreason = "message too big}";
 		errno = EMSGSIZE;
 		errmsg = NULL;
 		goto loop_data;
@@ -486,17 +506,17 @@ err_write:
 	return rc;
 loop_data:
 	rc = errno;
-	if (logmail[9] == NULL) {
+	if (logreason == NULL) {
 		switch (rc) {
 		case EINVAL:
-			logmail[9] = "bad CRLF sequence}";
+			logreason = "bad CRLF sequence}";
 			errmsg = "500 5.5.2 bad <CRLF> sequence\r\n";
 			break;
 		case E2BIG:
-			logmail[9] = "too long SMTP line}";
+			logreason = "too long SMTP line}";
 			break;
 		default:
-			logmail[9] = "read error}";
+			logreason = "read error}";
 		}
 	}
 	queue_reset();
@@ -509,20 +529,7 @@ loop_data:
 		net_read(1);
 	}
 
-	{
-	struct recip *l;
-	char s[ULSTRLEN];		/* msgsize */
-
-	ultostr(msgsize, s);
-	logmail[7] = s;
-
-	TAILQ_FOREACH(l, &head, entries) {
-		if (l->ok) {
-			logmail[1] = l->to.s;
-			log_writen(LOG_INFO, logmail);
-		}
-	}
-	}
+	log_recips(logreason);
 	freedata();
 
 #ifdef DEBUG_IO
@@ -641,22 +648,7 @@ smtp_bdat(void)
 	}
 
 	if ((msgsize > maxbytes) && !bdaterr) {
-		struct recip *l;
-#define LOG_BRACES "] ("
-		char s[ULSTRLEN + sizeof(LOG_BRACES)] = LOG_BRACES;		/* msgsize */
-		const char *logmail[] = {"rejected message to <", NULL, "> from <", MAILFROM,
-				"> from IP [", xmitstat.remoteip, s, " bytes) {message too big}",
-				NULL, NULL};
-
-		ultostr(msgsize, s + strlen(LOG_BRACES));
-#undef LOG_BRACES
-
-		TAILQ_FOREACH(l, &head, entries) {
-			if (l->ok) {
-				logmail[1] = l->to.s;
-				log_writen(LOG_INFO, logmail);
-			}
-		}
+		log_recips("message too big}");
 		bdaterr = EMSGSIZE;
 		freedata();
 	}
