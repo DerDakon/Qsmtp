@@ -127,9 +127,15 @@ ctest_start(${dashboard_model})
 ctest_update()
 
 # avoid spamming the syslog with our messages: USESYSLOG off
+list(APPEND CONF_OPTIONS "-DUSESYSLOG=Off" "-DNOSTDERR=On" "-DREALLY_NO_LOGGING=On")
 # avoid spamming the dashboard with doxygen warnings: BUILD_DOC off
+list(APPEND CONF_OPTIONS "-DBUILD_DOC=Off")
 # get coverage: debug build
-list(APPEND CONF_OPTIONS "-DUSESYSLOG=Off;-DNOSTDERR=On;-DREALLY_NO_LOGGING=On;-DBUILD_DOC=Off;-DAUTHCRAM=On;-DCMAKE_BUILD_TYPE=Debug;-DAUTOQMAIL=${CTEST_BINARY_DIRECTORY}/var/qmail")
+list(APPEND CONF_OPTIONS "-DCMAKE_BUILD_TYPE=Debug")
+# let testcases find the prepared config files: set AUTOQMAIL
+list(APPEND CONF_OPTIONS "-DAUTOQMAIL=${CTEST_BINARY_DIRECTORY}/var/qmail")
+# get more coverage: enable some optional features
+list(APPEND CONF_OPTIONS "-DCHUNKING=On" "-DAUTHCRAM=On")
 
 ctest_configure(
 		OPTIONS "${CONF_OPTIONS}"
