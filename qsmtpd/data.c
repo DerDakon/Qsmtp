@@ -28,6 +28,9 @@
 
 size_t maxbytes;			/* the maximum allowed size of message data */
 static char datebuf[35] = ">; ";		/* the date for the From- and Received-lines */
+static const char *loop_logmsg = "mail loop}";
+static const char *loop_netmsg = "554 5.4.6 too many hops, this message is looping\r\n";
+
 
 static inline void
 two_digit(char *buf, int num)
@@ -344,8 +347,8 @@ smtp_data(void)
 			if (flagr) {
 				if (!strncasecmp("Received:", linein.s, 9)) {
 					if (++hops > MAXHOPS) {
-						logreason = "mail loop}";
-						errmsg = "554 5.4.6 too many hops, this message is looping\r\n";
+						logreason = loop_logmsg;
+						errmsg = loop_netmsg;
 						goto loop_data;
 					}
 				} else if ((linein.len >= 20) && !strncmp("Delivered-To:", linein.s, 13)) {
@@ -364,7 +367,7 @@ smtp_data(void)
 
 					TAILQ_FOREACH(np, &head, entries) {
 						if (np->ok && !strcmp(linein.s + 14, np->to.s)) {
-							logreason = "mail loop}";
+							logreason = loop_logmsg;
 							errmsg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n";
 							goto loop_data;
 						}
@@ -664,6 +667,13 @@ smtp_bdat(void)
 		if (queuefd_hdr >= 0)
 			queue_reset();
 		freedata();
+	} else if (hops > MAXHOPS) {
+		log_recips(loop_logmsg);
+		freedata();
+		if (netwrite(loop_netmsg)) {
+			bdaterr = -errno;
+		} else
+			bdaterr = -EDONE;
 	} else {
 		/* This returns the size as given by the client. It has successfully been parsed as number.
 		 * and the contents of this message do not really matter, so we can just reuse that. This
