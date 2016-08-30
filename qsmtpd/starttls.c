@@ -24,12 +24,18 @@
 static RSA *
 tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)
 {
+	BIGNUM *bn;
+#if !((OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER))
+	BIGNUM bn_store;
+#endif
+	RSA *rsa;
+
 	if (keylen < 2048)
 		keylen = 2048;
 	if (keylen == 2048) {
 		FILE *in = fdopen(openat(controldir_fd, "rsa2048.pem", O_RDONLY | O_CLOEXEC), "r");
 		if (in) {
-			RSA *rsa = PEM_read_RSAPrivateKey(in, NULL, NULL, NULL);
+			rsa = PEM_read_RSAPrivateKey(in, NULL, NULL, NULL);
 
 			fclose(in);
 
@@ -37,7 +43,30 @@ tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)),
 				return rsa;
 		}
 	}
-	return RSA_generate_key(keylen, RSA_F4, NULL, NULL);
+
+	rsa = RSA_new();
+	if (rsa == NULL)
+		return NULL;
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+	bn = BN_new();
+	if (bn == NULL)
+		return NULL;
+#else
+	bn = &bn_store;
+#endif
+
+	BN_set_word(bn, RSA_F4);
+	if (RSA_generate_key_ex(rsa, keylen, bn, NULL) == 0) {
+		RSA_free(rsa);
+		rsa = NULL;
+	}
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+	BN_free(bn);
+#endif
+
+	return rsa;
 }
 
 static DH *
@@ -45,6 +74,7 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), 
 {
 	FILE *in = NULL;
 	char fname[ULSTRLEN + strlen("dh.pem") + 1];
+	DH *dh;
 
 	if (keylen < 2048)
 		keylen = 2048;
@@ -55,14 +85,24 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), 
 
 	in = fdopen(openat(controldir_fd, fname, O_RDONLY | O_CLOEXEC), "r");
 	if (in) {
-		DH *dh = PEM_read_DHparams(in, NULL, NULL, NULL);
+		dh = PEM_read_DHparams(in, NULL, NULL, NULL);
 
 		fclose(in);
 
 		if (dh)
 			return dh;
 	}
-	return DH_generate_parameters(keylen, DH_GENERATOR_2, NULL, NULL);
+
+	dh = DH_new();
+	if (dh == NULL)
+		return NULL;
+
+	if (DH_generate_parameters_ex(dh, keylen, DH_GENERATOR_2, NULL) != 1) {
+		DH_free(dh);
+		dh = NULL;
+	}
+
+	return dh;
 }
 
 static int __attribute__((nonnull(1, 2)))
