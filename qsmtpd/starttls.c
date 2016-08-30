@@ -212,10 +212,15 @@ tls_verify(void)
 			/* seems not, maybe it is a host authenticating for relaying? */
 			n = X509_NAME_get_index_by_NID(subj, NID_commonName, -1);
 		if (n >= 0) {
-			const ASN1_STRING *s = X509_NAME_get_entry(subj, n)->value;
+			const ASN1_STRING *s = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(subj, n));
 			if (s) {
-				email.len = (M_ASN1_STRING_length(s) > 0) ? M_ASN1_STRING_length(s) : 0;
+				int l = ASN1_STRING_length(s);
+				email.len = (l > 0) ? l : 0;
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+				email.s = ASN1_STRING_get0_data(s);
+#else
 				email.s = M_ASN1_STRING_data(s);
+#endif
 			}
 		}
 
