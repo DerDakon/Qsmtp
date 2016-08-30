@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 static RSA *
 tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)
@@ -283,7 +284,13 @@ tls_init()
 		SSL_CTX_free(ctx);
 		return tls_err("missing certificate");
 	}
-	SSL_CTX_load_verify_locations(ctx, CLIENTCA, NULL);
+	if (SSL_CTX_load_verify_locations(ctx, CLIENTCA, NULL) != 1) {
+		struct stat st;
+		if ((stat(CLIENTCA, &st) != -1) || (errno != ENOENT)) {
+			SSL_CTX_free(ctx);
+			return tls_err("cannot load client CAs");
+		}
+	}
 
 	/* crl checking */
 	store = SSL_CTX_get_cert_store(ctx);
