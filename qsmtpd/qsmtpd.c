@@ -425,8 +425,7 @@ fork_clean()
 		/* the fds need to be removed from SSL first, otherwise
 		 * destroying the SSL object will terminate the SSL connection
 		 * to the remote host. */
-		SSL_set_wfd(ssl, -1);
-		SSL_set_rfd(ssl, -1);
+		SSL_set_fd(ssl, -1);
 		close(wfd);
 		if (rfd != wfd)
 			close(rfd);
