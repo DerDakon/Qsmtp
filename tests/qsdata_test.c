@@ -63,23 +63,23 @@ gettimeofday(struct timeval *tv, struct timezone *tz)
 	return 0;
 }
 
-static SSL dummy_ssl;
-static SSL_CIPHER dummy_cipher;
+static SSL *dummy_ssl = ((SSL*)(uintptr_t)0xabcdcafe);
+static SSL_CIPHER *dummy_cipher = ((SSL_CIPHER*)(uintptr_t)0xdeadabcd);
 #define DUMMY_CIPHER_STRING "<OPENSSL_CIPHER_STRING_DUMMY>"
 
 const SSL_CIPHER *
 SSL_get_current_cipher(const SSL *s)
 {
-	if (s != &dummy_ssl)
+	if (s != dummy_ssl)
 		abort();
 
-	return &dummy_cipher;
+	return dummy_cipher;
 }
 
 const char *
 SSL_CIPHER_get_name(const SSL_CIPHER *c)
 {
-	if (c != &dummy_cipher)
+	if (c != dummy_cipher)
 		abort();
 
 	return DUMMY_CIPHER_STRING;
@@ -610,7 +610,7 @@ check_queueheader(void)
 			/* plain SSL mail */
 			testname = "SSL minimal";
 			relayclient = 1;
-			ssl = &dummy_ssl;
+			ssl = dummy_ssl;
 			expect = "Received: from unknown ([192.0.2.42])\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with (" DUMMY_CIPHER_STRING " encrypted) ESMTPS\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
@@ -619,7 +619,7 @@ check_queueheader(void)
 			/* plain SSL mail */
 			testname = "SSL chunked";
 			relayclient = 1;
-			ssl = &dummy_ssl;
+			ssl = dummy_ssl;
 			chunked = 1;
 			expect = "Received: from unknown ([192.0.2.42])\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with (chunked " DUMMY_CIPHER_STRING " encrypted) ESMTPS\n"

@@ -7,6 +7,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <netinet/in.h>
+#include <openssl/conf.h>
+#include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -202,8 +204,9 @@ test_pending()
 	}
 
 	/* pretend we would be in SSL mode */
-	SSL dummyssl;
-	ssl = &dummyssl;
+	SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
+	ssl = SSL_new(ctx);
+	SSL_CTX_free(ctx);
 	allow_ssl_pending = 0;
 	if (data_pending()) {
 		fprintf(stderr, "spurious SSL data pending\n");
@@ -214,6 +217,7 @@ test_pending()
 		fprintf(stderr, "SSL pseudo data missing\n");
 		ret++;
 	}
+	SSL_free(ssl);
 	ssl = NULL;
 	allow_ssl_pending = -1;
 	if (data_pending()) {
@@ -1169,6 +1173,11 @@ main(int argc, char **argv)
 	ret += test_netread_socketpair_closed();
 	ret += test_netread_socketpair_timeout();
 	ret += test_chunks(argv[1]);
+
+	ERR_remove_state(0);
+	CONF_modules_unload(1);
+	CRYPTO_cleanup_all_ex_data();
+	EVP_cleanup();
 
 	return ret;
 }

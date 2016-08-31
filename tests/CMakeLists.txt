@@ -714,6 +714,7 @@ target_link_libraries(testcase_qsdata
 		testcase_io_lib
 		qsmtp_lib
 		${MEMCHECK_LIBRARIES}
+		${OPENSSL_LIBRARIES}
 )
 
 add_test(NAME "Qsmtpd_data"
