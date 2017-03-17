@@ -121,10 +121,13 @@ static const char hostname_spfignore_fail[] = "failure.spfignore.example.com";
 static const char hostname_spfstrict[] = "spfstrict.example.com";
 
 int
-userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const char *key,
+userconf_find_domain(const struct userconf *ds, const char *key,
 		const char *domain, const unsigned int flags)
 {
 	assert(flags & userconf_global);
+	assert(ds);
+	assert(key);
+	assert(domain);
 
 	if (strcmp(key, "spfignore") == 0) {
 		if (strcmp(domain, hostname_spfignore) == 0)
@@ -134,7 +137,7 @@ userconf_find_domain(const struct userconf *ds __attribute__ ((unused)), const c
 		else
 			return CONFIG_NONE;
 	} else if (strcmp(key, "spfstrict") == 0) {
-		if ((domain != NULL) && (strcmp(domain, hostname_spfstrict) == 0))
+		if (strcmp(domain, hostname_spfstrict) == 0)
 			return CONFIG_DOMAIN;
 		else
 			return CONFIG_NONE;
@@ -221,6 +224,7 @@ main(void)
 		},
 		{
 			.name = "spf == SPF_NONE with rspf attempt",
+			.helo = "[127.0.0.1]",
 			.spf = SPF_NONE,
 			.spfpolicy = 1,
 			.cd_policy = CONFIG_GLOBAL,
@@ -351,6 +355,7 @@ main(void)
 		},
 		{
 			.name = "spf == SPF_DNS_HARD_ERROR and spfpolicy = 2",
+			.helo = "[127.0.0.1]",
 			.spf = SPF_DNS_HARD_ERROR,
 			.spfpolicy = 2,
 			.cd_policy = CONFIG_DOMAIN,
@@ -368,6 +373,7 @@ main(void)
 		},
 		{
 			.name = "spf == SPF_SOFTFAIL and spfpolicy = 3",
+			.helo = "[127.0.0.1]",
 			.spf = SPF_SOFTFAIL,
 			.spfpolicy = 3,
 			.cd_policy = CONFIG_DOMAIN,
@@ -385,6 +391,7 @@ main(void)
 		},
 		{
 			.name = "spf == SPF_NEUTRAL and spfpolicy = 4",
+			.helo = "[127.0.0.1]",
 			.spf = SPF_NEUTRAL,
 			.spfpolicy = 4,
 			.cd_policy = CONFIG_DOMAIN,
@@ -402,6 +409,7 @@ main(void)
 		},
 		{
 			.name = "spf == SPF_NONE and spfpolicy = 5",
+			.helo = "[127.0.0.1]",
 			.spf = SPF_NONE,
 			.spfpolicy = 5,
 			.cd_policy = CONFIG_DOMAIN,

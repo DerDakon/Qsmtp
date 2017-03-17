@@ -51,10 +51,8 @@ time(time_t *t __attribute__ ((unused)))
 int
 gettimeofday(struct timeval *tv, struct timezone *tz)
 {
+	assert(tv);
 	if ((tz != NULL) && ((tz->tz_dsttime != 0) || (tz->tz_minuteswest != 0)))
-		abort();
-
-	if (tv == NULL)
 		abort();
 
 	tv->tv_sec = time(NULL);
