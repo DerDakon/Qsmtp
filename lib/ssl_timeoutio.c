@@ -190,7 +190,7 @@ int ssl_timeoutread(time_t t, char *buf, const int len)
  * @param len length of buf
  * @return return code of SSL_write
  */
-inline int
+int
 ssl_timeoutwrite(time_t t, const char *buf, const int len)
 {
 	/* SSL_write takes a const char* as second argument so
