@@ -1178,6 +1178,7 @@ main(int argc, char **argv)
 	CONF_modules_unload(1);
 	CRYPTO_cleanup_all_ex_data();
 	EVP_cleanup();
+	SSL_COMP_free_compression_methods();
 
 	return ret;
 }
