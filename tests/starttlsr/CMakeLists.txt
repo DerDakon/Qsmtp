@@ -61,10 +61,6 @@ add_test(NAME "STARTTLSr_matching_tlshost"
 		COMMAND testcase_starttlsr testcert.example.org
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/matching_tlshost")
 
-if (OPENSSL_VERSION VERSION_LESS 1.0.2)
-	set_tests_properties(STARTTLSr_matching_tlshost PROPERTIES
-			PASS_REGULAR_EXPRESSION "^CONFIG error: control/tlshosts/ verification requires at least OpenSSL 1\\.0\\.2\n$")
-else ()
 set_tests_properties(STARTTLSr_matching_tlshost PROPERTIES
 		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: STARTTLS failed at testcert.example.org: 421 <content of linein>\nRETURN VALUE: 1003\n$")
 
@@ -89,4 +85,3 @@ add_test(NAME "STARTTLSr_invalid_multiline"
 
 set_tests_properties(STARTTLSr_invalid_multiline PROPERTIES
 		PASS_REGULAR_EXPRESSION "^LOG OUTPUT\\[3\\]: STARTTLS failed at testcert.example.org: 221-<content of linein>\nRETURN VALUE: 1003\n$")
-endif ()

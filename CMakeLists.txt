@@ -31,7 +31,7 @@ set(QSMTP_VERSION_MINOR 34)
 set(QSMTP_VERSION_EXTRAVERSION dev)
 set(QSMTP_VERSION "${QSMTP_VERSION_MAJOR}.${QSMTP_VERSION_MINOR}${QSMTP_VERSION_EXTRAVERSION}")
 
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL 1.0.2 REQUIRED)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/version.h.tmpl ${CMAKE_BINARY_DIR}/version.h @ONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/qmaildir.h.tmpl ${CMAKE_BINARY_DIR}/qmaildir.h @ONLY)
@@ -129,12 +129,7 @@ add_subdirectory(qsmtpd)
 add_subdirectory(qremote)
 add_subdirectory(tools)
 
-# testcases use the continue() command which was introduced in 3.2,
-# but only if OpenSSL is older than 1.0.2
-if (NOT CMAKE_VERSION VERSION_LESS 3.2 OR NOT OPENSSL_VERSION VERSION_LESS 1.0.2)
-	option(BUILD_TESTS "Build testcases" ON)
-endif ()
-
+option(BUILD_TESTS "Build testcases" ON)
 if (BUILD_TESTS)
 	include(CTest)
 

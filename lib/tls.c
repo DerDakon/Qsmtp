@@ -38,9 +38,7 @@ ssl_library_destroy()
 	CRYPTO_cleanup_all_ex_data();
 	EVP_cleanup();
 
-#if OPENSSL_VERSION_NUMBER >= 0x10200000
 	SSL_COMP_free_compression_methods();
-#endif
 }
 
 const char *ssl_error(void)

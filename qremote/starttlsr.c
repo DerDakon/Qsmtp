@@ -101,11 +101,6 @@ tls_init(void)
 	}
 
 	if (*servercert) {
-#if OPENSSL_VERSION_NUMBER < 0x10002000L
-		/* the hostname checking code was added in 1.0.2 */
-		ssl_free(myssl);
-		err_conf("control/tlshosts/ verification requires at least OpenSSL 1.0.2\n");
-#else
 		X509_VERIFY_PARAM *vparam = SSL_get0_param(myssl);
 
 		/* Enable automatic hostname checks */
@@ -118,7 +113,6 @@ tls_init(void)
 			ssl_library_destroy();
 			return -1;
 		}
-#endif
 	}
 	SSL_set_verify(myssl, SSL_VERIFY_NONE, NULL);
 
