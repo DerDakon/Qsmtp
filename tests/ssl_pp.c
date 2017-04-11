@@ -253,7 +253,7 @@ server(void)
 		printf("SERVER: got ping\n");
 
 		const int v = tls_verify();
-		printf("SERVER: verify returned %i\n", v);
+		printf("SERVER: verify returned %i, expected %i\n", v, expect_verify_success);
 		if (v != expect_verify_success)
 			r++;
 		if (v == 1) {
