@@ -504,6 +504,7 @@ smtploop(void)
 			flagbogus = -net_writen(msg);
 			if (flagbogus == 0)
 				break;
+			/* fallthrough */
 		default:
 			/* There was a communication error. Announce temporary error. */
 			(void) net_writen(msg);

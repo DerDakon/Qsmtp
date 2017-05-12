@@ -375,8 +375,8 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 					}
 					break;
 				}
-				/* fallthrough */
 			}
+			/* fallthrough */
 		default:
 			off++;
 			while ((off < len) && (buf[off] != '\r') && (buf[off] != '\n')) {

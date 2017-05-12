@@ -840,16 +840,16 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 
 			switch (i) {
 			case SPF_MAKRO_NONE:
-				if (*t == '%') {
-					// never used: i = SPF_MAKRO_PERCENT;
-					t++;
-					/* fallthrough */
-				} else {
+				if (*t != '%') {
 					if ((*t < 0x21) || (*t > 0x7e))
 						return SPF_PERMERROR;
 					t++;
 					continue;
+				} else {
+					// never used: i = SPF_MAKRO_PERCENT;
+					t++;
 				}
+				/* fallthrough */
 			case SPF_MAKRO_PERCENT:
 				switch (*t) {
 				case '%':
