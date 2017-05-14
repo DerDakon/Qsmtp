@@ -9,8 +9,8 @@
 ##
 ## All platforms:
 ## -cmake >= 2.8.3
-## -Subversion command line client
-## -all the other stuff needed to build Qsmtp like openssl, compiler, ...
+## -git command line client
+## -all the other stuff needed to build Qsmtp like OpenSSL, libowfat, compiler, ...
 ##
 
 ##
