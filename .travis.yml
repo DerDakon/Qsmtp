@@ -37,7 +37,7 @@ script:
  - export PATH=/tmp/cmake-${CMAKE_VERSION}-Linux-x86_64/bin:${PATH}
  - export OPENSSL_ROOT_DIR=/tmp/openssl
  - echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nset(CONF_OPTIONS "-DIPV4ONLY=On")\nset(CTEST_SITE "travis-ci.org")\ninclude("/home/travis/build/DerDakon/Qsmtp/ctest_qsmtp.cmake")' > my_qsmtp.cmake
- - ctest -V -S my_qsmtp.cmake
+ - ctest -V -D "CTEST_BUILD_NAME=Ubuntu Precise ${CC}" -S my_qsmtp.cmake
 after_success:
  - lcov --directory /tmp/Qs-build --capture --output-file coverage.info # capture coverage info
  - lcov --remove coverage.info '/usr/*' --output-file coverage.info # filter out system
