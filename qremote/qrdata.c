@@ -358,7 +358,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 				static const char content_tr_enc[] = "ontent-Transfer-Encoding:";
 				const char *cr = buf + off;
 
-				if ((rest >= strlen(content_type)) &&
+				if ((rest >= (off_t)strlen(content_type)) &&
 						!strncasecmp(cr + 1, content_type, strlen(content_type))) {
 					ctype.len = getfieldlen(cr, len - off);
 					if (ctype.len) {
@@ -366,7 +366,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 						off += ctype.len - 2;
 					}
 					break;
-				} else if ((rest >= strlen(content_tr_enc)) &&
+				} else if ((rest >= (off_t)strlen(content_tr_enc)) &&
 						!strncasecmp(cr + 1, content_tr_enc, strlen(content_tr_enc))) {
 					cenc.len = getfieldlen(cr, len - off);
 					if (cenc.len) {

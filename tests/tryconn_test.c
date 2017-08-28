@@ -95,7 +95,7 @@ test_exhausted(void)
 }
 
 static int
-test_fork(int mxindex)
+test_fork(unsigned int mxindex)
 {
 	struct in_addr l4 = {
 		.s_addr = htonl(INADDR_LOOPBACK)
@@ -119,22 +119,21 @@ test_fork(int mxindex)
 	const char pingmsg[] = "ping";
 	const char pongmsg[] = "pong";
 	char rbuf[strlen(pingmsg) + 2];
-	ssize_t rlen;
 	int r;
 
 	if (s < 0) {
-		printf("%s[%i]: server socket() error %i\n", __func__, mxindex, errno);
+		printf("%s[%u]: server socket() error %i\n", __func__, mxindex, errno);
 		return 1;
 	}
 	r = bind(s, (struct sockaddr *)&sa, sizeof(sa));
 	if (r < 0) {
-		printf("%s[%i]: server bind() error %i\n", __func__, mxindex, errno);
+		printf("%s[%u]: server bind() error %i\n", __func__, mxindex, errno);
 		close(s);
 		return 1;
 	}
 	r = getsockname(s, (struct sockaddr *)&sa, &salen);
 	if (r < 0) {
-		printf("%s[%i]: server getsockname() error %i\n", __func__, mxindex, errno);
+		printf("%s[%u]: server getsockname() error %i\n", __func__, mxindex, errno);
 		close(s);
 		return 1;
 	}
@@ -184,38 +183,38 @@ test_fork(int mxindex)
 			printf("%s[%i]: tryconn() failed: %i\n", __func__, mxindex, s);
 			r = 1;
 		} else {
-			rlen = write(s, pingmsg, strlen(pingmsg));
-			if (rlen != strlen(pingmsg)) {
-				printf("%s[%i]: client write error %zi (%i)\n", __func__, mxindex, rlen, errno);
+			ssize_t rlen = write(s, pingmsg, strlen(pingmsg));
+			if ((size_t)rlen != strlen(pingmsg)) {
+				printf("%s[%u]: client write error %zi (%i)\n", __func__, mxindex, rlen, errno);
 				r = 1;
 			}
 			rlen = read(s, rbuf, sizeof(rbuf) - 1);
 			rbuf[sizeof(rbuf) - 1] = '\0';
-			if ((rlen != strlen(pongmsg)) || (memcmp(rbuf, pongmsg, rlen) != 0)) {
-				printf("%s[%i]: client read error, got %s (len %zu)\n", __func__, mxindex, rbuf, rlen);
+			if (((size_t)rlen != strlen(pongmsg)) || (memcmp(rbuf, pongmsg, rlen) != 0)) {
+				printf("%s[%u]: client read error, got %s (len %zu)\n", __func__, mxindex, rbuf, rlen);
 				r = 1;
 			}
 			close(s);
 		}
 		if (r == 0)
-			printf("tryconn() on index %i succeeded\n", mxindex);
+			printf("tryconn() on index %u succeeded\n", mxindex);
 		exit(r);
 	} else {
 		r = listen(s, 1);
 		int t = accept(s, (struct sockaddr *)&sa, &salen);
 		if (t < 0) {
-			printf("%s[%i]: server access() error %i\n", __func__, mxindex, errno);
+			printf("%s[%u]: server access() error %i\n", __func__, mxindex, errno);
 			r = 1;
 		} else {
-			rlen = read(t, rbuf, sizeof(rbuf) - 1);
+			ssize_t rlen = read(t, rbuf, sizeof(rbuf) - 1);
 			rbuf[sizeof(rbuf) - 1] = '\0';
-			if ((rlen != strlen(pingmsg)) || (memcmp(rbuf, pingmsg, rlen) != 0)) {
-				printf("%s[%i]: server read error, got %s (len %zu)\n", __func__, mxindex, rbuf, rlen);
+			if (((size_t)rlen != strlen(pingmsg)) || (memcmp(rbuf, pingmsg, rlen) != 0)) {
+				printf("%s[%u]: server read error, got %s (len %zu)\n", __func__, mxindex, rbuf, rlen);
 				r = 1;
 			} else {
 				rlen = write(t, pongmsg, strlen(pongmsg));
-				if (rlen != strlen(pingmsg)) {
-					printf("%s[%i]: server write error %zi (%i)\n", __func__, mxindex, rlen, errno);
+				if ((size_t)rlen != strlen(pingmsg)) {
+					printf("%s[%u]: server write error %zi (%i)\n", __func__, mxindex, rlen, errno);
 					r = 1;
 				}
 			}
@@ -224,11 +223,11 @@ test_fork(int mxindex)
 		close(s);
 
 		if (waitpid(child, &t, 0) != child) {
-			printf("%s[%i]: server waitpid() error %i\n", __func__, mxindex, errno);
+			printf("%s[%u]: server waitpid() error %i\n", __func__, mxindex, errno);
 			r = 1;
 		}
 		if (!WIFEXITED(r) || (WEXITSTATUS(r) != 0)) {
-			printf("%s[%i]: child error %i\n", __func__, mxindex, WEXITSTATUS(r));
+			printf("%s[%u]: child error %i\n", __func__, mxindex, WEXITSTATUS(r));
 			r = 1;
 		}
 	}
@@ -239,7 +238,8 @@ test_fork(int mxindex)
 int
 main(void)
 {
-	int i, r = 0;
+	unsigned int i;
+	int  r = 0;
 
 	r += test_exhausted();
 	for (i = 0; i < 2; i++)

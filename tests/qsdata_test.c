@@ -405,12 +405,12 @@ static int
 check_msgbody(const char *expect)
 {
 	int err = 0;
-	ssize_t off = 0;
+	size_t off = 0;
 	ssize_t mismatch = -1;
 	char outbuf[CHUNK_READ_SIZE * 4];
 	static const char received_from[] = "Received: from ";
 
-	while (off < (ssize_t)sizeof(outbuf) - 1) {
+	while (off < sizeof(outbuf) - 1) {
 		const ssize_t r = read(queuefd_data_recv, outbuf + off, 1);
 		if (r < 0) {
 			if (errno != EAGAIN) {
@@ -440,7 +440,7 @@ check_msgbody(const char *expect)
 		if (memcmp(outbuf, expect, strlen(expect)) != 0)
 			fprintf(stderr, "expected output not found, got:\n%s\nexpected:\n%s\n", outbuf, expect);
 		if (off != strlen(expect))
-			fprintf(stderr, "expected length: %zi, got length: %zi\n", strlen(expect), off);
+			fprintf(stderr, "expected length: %zu, got length: %zu\n", strlen(expect), off);
 		return ++err;
 	}
 
