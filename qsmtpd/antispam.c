@@ -21,6 +21,7 @@
 #include <netinet/in.h>
 #include <openssl/ssl.h>
 #include <poll.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/file.h>
 #include <sys/mman.h>
