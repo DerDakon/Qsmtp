@@ -138,6 +138,80 @@ verify_callback(int preverify_ok __attribute__ ((unused)), X509_STORE_CTX *x509_
 	return 1;
 }
 
+static int
+tls_check_cert(char * const *clients)
+{
+	X509 *peercert;
+	X509_NAME *subj;
+	cstring email = { .len = 0, .s = NULL };
+	int n;
+	int ret = 0;
+
+	if (SSL_set_session_id_context(ssl, VERSIONSTRING, strlen(VERSIONSTRING)) != 1) {
+		const char *err = ssl_strerror();
+		return tls_out("setting session id failed", err, -EPROTO);
+	}
+
+	/* renegotiate to force the client to send it's certificate */
+	n = ssl_timeoutrehandshake(timeout);
+	if (n == -ETIMEDOUT) {
+		dieerror(ETIMEDOUT);
+	} else if (n < 0) {
+		const char *err = ssl_strerror();
+		return tls_out("rehandshake failed", err, n);
+	}
+
+	if (SSL_get_verify_result(ssl) != X509_V_OK)
+		return 0;
+
+	peercert = SSL_get_peer_certificate(ssl);
+	if (!peercert)
+		return 0;
+
+	subj = X509_get_subject_name(peercert);
+	/* try if this is a user authenticating with a personal certificate */
+	n = X509_NAME_get_index_by_NID(subj, NID_pkcs9_emailAddress, -1);
+	if (n < 0)
+		/* seems not, maybe it is a host authenticating for relaying? */
+		n = X509_NAME_get_index_by_NID(subj, NID_commonName, -1);
+	if (n >= 0) {
+		const ASN1_STRING *s = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(subj, n));
+		if (s) {
+			int l = ASN1_STRING_length(s);
+			email.len = (l > 0) ? l : 0;
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+			email.s = ASN1_STRING_get0_data(s);
+#else
+			email.s = M_ASN1_STRING_data(s);
+#endif
+		}
+	}
+
+	if (email.len != 0) {
+		unsigned int i;
+
+		for (i = 0; clients[i] != NULL; i++) {
+			/* protect against malicious '\0' chars in the cert fields */
+			if (strlen(clients[i]) != email.len)
+				continue;
+
+			if (strcmp(email.s, clients[i]) == 0) {
+				xmitstat.tlsclient = strdup(email.s);
+
+				if (xmitstat.tlsclient == NULL)
+					ret = -ENOMEM;
+				else
+					ret = 1;
+				break;
+			}
+		}
+	}
+
+	X509_free(peercert);
+
+	return ret;
+}
+
 /**
  * @brief verify is authenticated to relay by SSL certificate
  *
@@ -150,7 +224,7 @@ tls_verify(void)
 {
 	char **clients;
 	STACK_OF(X509_NAME) *sk;
-	int tlsrelay = 0;
+	int tlsrelay;
 
 	if (!ssl || ssl_verified || is_authenticated_client())
 		return 0;
@@ -177,76 +251,7 @@ tls_verify(void)
 	SSL_set_client_CA_list(ssl, sk);
 	SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, verify_callback);
 
-	do { /* one iteration */
-		X509 *peercert;
-		X509_NAME *subj;
-		cstring email = { .len = 0, .s = NULL };
-		int n;
-
-		if (SSL_set_session_id_context(ssl, VERSIONSTRING, strlen(VERSIONSTRING)) != 1) {
-			const char *err = ssl_strerror();
-			tlsrelay = tls_out("setting session id failed", err, -EPROTO);
-			break;
-		}
-
-		/* renegotiate to force the client to send it's certificate */
-		n = ssl_timeoutrehandshake(timeout);
-		if (n == -ETIMEDOUT) {
-			dieerror(ETIMEDOUT);
-		} else if (n < 0) {
-			const char *err = ssl_strerror();
-			tlsrelay = tls_out("rehandshake failed", err, n);
-			break;
-		}
-
-		if (SSL_get_verify_result(ssl) != X509_V_OK)
-			break;
-
-		peercert = SSL_get_peer_certificate(ssl);
-		if (!peercert)
-			break;
-
-		subj = X509_get_subject_name(peercert);
-		/* try if this is a user authenticating with a personal certificate */
-		n = X509_NAME_get_index_by_NID(subj, NID_pkcs9_emailAddress, -1);
-		if (n < 0)
-			/* seems not, maybe it is a host authenticating for relaying? */
-			n = X509_NAME_get_index_by_NID(subj, NID_commonName, -1);
-		if (n >= 0) {
-			const ASN1_STRING *s = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(subj, n));
-			if (s) {
-				int l = ASN1_STRING_length(s);
-				email.len = (l > 0) ? l : 0;
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
-				email.s = ASN1_STRING_get0_data(s);
-#else
-				email.s = M_ASN1_STRING_data(s);
-#endif
-			}
-		}
-
-		if (email.len != 0) {
-			unsigned int i;
-
-			for (i = 0; clients[i] != NULL; i++) {
-				/* protect against malicious '\0' chars in the cert fields */
-				if (strlen(clients[i]) != email.len)
-					continue;
-
-				if (strcmp(email.s, clients[i]) == 0) {
-					xmitstat.tlsclient = strdup(email.s);
-
-					if (xmitstat.tlsclient == NULL)
-						tlsrelay = -ENOMEM;
-					else
-						tlsrelay = 1;
-					break;
-				}
-			}
-		}
-
-		X509_free(peercert);
-	} while (0);
+	tlsrelay = tls_check_cert(clients);
 
 	free(clients);
 	SSL_set_client_CA_list(ssl, NULL);
