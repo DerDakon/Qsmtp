@@ -58,11 +58,6 @@ endforeach ()
 
 cmake_minimum_required(VERSION 2.8.6)
 
-if (NOT GIT_EXECUTABLE)
-	find_package(Git REQUIRED)
-endif()
-set(UpdateCommand ${GIT_EXECUTABLE})
-
 set(CTEST_SOURCE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 set(CTEST_BINARY_DIRECTORY ${QSMTP_BUILD_DIR})
 
@@ -128,7 +123,14 @@ file(WRITE "${CTEST_BINARY_DIRECTORY}/var/qmail/control/me" "${CTEST_SITE}\n")
 
 ctest_start(${dashboard_model})
 
-ctest_update()
+if (NOT dashboard_model STREQUAL "Experimental")
+	if (NOT GIT_EXECUTABLE)
+		find_package(Git REQUIRED)
+	endif()
+	set(UpdateCommand ${GIT_EXECUTABLE})
+
+	ctest_update()
+endif ()
 
 # avoid spamming the syslog with our messages: USESYSLOG off
 list(APPEND CONF_OPTIONS "-DUSESYSLOG=Off" "-DNOSTDERR=On" "-DREALLY_NO_LOGGING=On")
