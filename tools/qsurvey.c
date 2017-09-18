@@ -128,8 +128,6 @@ quitmsg(void)
 int
 netget(const unsigned int terminate __attribute__ ((unused)))
 {
-	int q, r;
-
 	if (net_read(1)) {
 		switch (errno) {
 		case ENOMEM:
@@ -146,28 +144,23 @@ netget(const unsigned int terminate __attribute__ ((unused)))
 			}
 		}
 	} else {
-		do {
-			if (linein.len <= 3)
-				break;
-			if ((linein.s[3] != ' ') && (linein.s[3] != '-'))
-				break;
-			r = linein.s[0] - '0';
-			if ((r < 2) || (r > 5))
-				break;
-			q = linein.s[1] - '0';
-			if ((q < 0) || (q > 9))
-				break;
-			r = r * 10 + q;
-			q = linein.s[2] - '0';
-			if ((q >= 0) && (q <= 9)) {
-				if (logfd > 0) {
-					write(logfd, linein.s, linein.len);
-					write(logfd, "\n" ,1);
-				}
+		if ((linein.len > 3) && ((linein.s[3] == ' ') || (linein.s[3] == '-'))) {
+			int r = linein.s[0] - '0';
+			int q = linein.s[1] - '0';
 
-				return r * 10 + q;
+			if ((r >= 2) && (r <= 5) && (q >= 0) && (q <= 9)) {
+				r = r * 10 + q;
+				q = linein.s[2] - '0';
+				if ((q >= 0) && (q <= 9)) {
+					if (logfd > 0) {
+						write(logfd, linein.s, linein.len);
+						write(logfd, "\n" ,1);
+					}
+
+					return r * 10 + q;
+				}
 			}
-		} while (0);
+		}
 	}
 
 	/* if this fails we're already in bad trouble */

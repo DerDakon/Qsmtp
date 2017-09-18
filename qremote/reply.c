@@ -13,7 +13,7 @@
 #include <string.h>
 #include <syslog.h>
 
-static void
+static int
 err_network(int error)
 {
 	const char *logmsg[] = { "connection to ", rhost, NULL, NULL };
@@ -26,17 +26,17 @@ err_network(int error)
 		logmsg[2] = " died";
 		break;
 	default:
-		return;
+		return error;
 	}
 
 	log_writen(LOG_ERR, logmsg);
+
+	return error;
 }
 
 int
 netget(const unsigned int terminate)
 {
-	int q, r;
-
 	if (net_read(terminate)) {
 		switch (errno) {
 		case ENOMEM:
@@ -46,9 +46,7 @@ netget(const unsigned int terminate)
 			break;
 		case ECONNRESET:
 		case ETIMEDOUT:
-			r = errno;
-			err_network(r);
-			return -r;
+			return -err_network(errno);
 		default:
 			if (terminate) {
 				const char *tmp[] = { "Z4.3.0 ", strerror(errno) };
@@ -56,28 +54,23 @@ netget(const unsigned int terminate)
 				write_status_m(tmp, 2);
 				net_conn_shutdown(shutdown_clean);
 			} else {
-				r = -errno;
+				int r = -errno;
 				quitmsg();
 				return r;
 			}
 		}
 	} else {
-		do {
-			if (linein.len <= 3)
-				break;
-			if ((linein.s[3] != ' ') && (linein.s[3] != '-'))
-				break;
-			r = linein.s[0] - '0';
-			if ((r < 2) || (r > 5))
-				break;
-			q = linein.s[1] - '0';
-			if ((q < 0) || (q > 9))
-				break;
-			r = r * 10 + q;
-			q = linein.s[2] - '0';
-			if ((q >= 0) && (q <= 9))
-				return r * 10 + q;
-		} while (0);
+		if ((linein.len > 3) && ((linein.s[3] == ' ') || (linein.s[3] == '-'))) {
+			int r = linein.s[0] - '0';
+			int q = linein.s[1] - '0';
+
+			if ((r >= 2) && (r <= 5) && (q >= 0) && (q <= 9)) {
+				r = r * 10 + q;
+				q = linein.s[2] - '0';
+				if ((q >= 0) && (q <= 9))
+					return r * 10 + q;
+			}
+		}
 	}
 
 	if (terminate) {
