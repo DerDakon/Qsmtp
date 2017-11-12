@@ -796,15 +796,18 @@ set(TEST_REMOTE_IP4 "203.0.113.24")
 set(TEST_LOCAL_IP6 "2001:db8::42:42")
 set(TEST_REMOTE_IP6 "2001:db8::24:24")
 
-set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/no_auth_submission.cmake")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_submission.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_no_auth_submission.cmake" @ONLY)
-add_test(NAME "Qsmtpd_no_auth_submission"
-		COMMAND "${CMAKE_COMMAND}"
-				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_no_auth_submission.cmake")
-# Do not add \r here, looks like CMake automatically strips it, so just
-# assume we are doing it right.
-set_tests_properties(Qsmtpd_no_auth_submission PROPERTIES
-		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}(250-[^\n]+\n)+250-AUTH [^\n]+\n(250-[^\n]+\n)*250 SIZE( [0-9]+)?\n550 5.7.1 authentication required\n${QSMTPD_QUIT_LINE}$")
+# on an installed system the user could have disabled AUTH without STARTTLS
+if (NOT EXISTS ${AUTOQMAIL}/control/forcesslauth)
+	set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/no_auth_submission.cmake")
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_submission.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_no_auth_submission.cmake" @ONLY)
+	add_test(NAME "Qsmtpd_no_auth_submission"
+			COMMAND "${CMAKE_COMMAND}"
+					-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_no_auth_submission.cmake")
+	# Do not add \r here, looks like CMake automatically strips it, so just
+	# assume we are doing it right.
+	set_tests_properties(Qsmtpd_no_auth_submission PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}(250-[^\n]+\n)+250-AUTH [^\n]+\n(250-[^\n]+\n)*250 SIZE( [0-9]+)?\n550 5.7.1 authentication required\n${QSMTPD_QUIT_LINE}$")
+endif ()
 
 set(TEST_LOCAL_IP4 "192.0.2.19")
 set(TEST_REMOTE_IP4 "203.0.113.24")
