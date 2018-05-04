@@ -73,7 +73,6 @@ main(int argc, char *argv[])
 		inet_ntop(AF_INET6, &xmitstat.sremoteip, xmitstat.remoteip, sizeof(xmitstat.remoteip));
 	} else {
 		strcpy(xmitstat.remoteip, "5f05:2000:80ad:5800::1");
-		inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.remoteip);
 	}
 	inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
 
