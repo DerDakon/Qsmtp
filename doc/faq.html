@@ -26,7 +26,7 @@ If anyone has knowledge if this is fixed in later revisions of Outlook please dr
 <h2 id="free-queue">Why do I get &quot;warning: can not get free queue disk space&quot; for every mail?</h2>
 <p>Qsmtpd wants to check the queue size to see if the mail it is receiving would fit onto the disk. You can fix it with:</p>
 <pre>
-chmod 755 /var/qmail/queue /var/qmail/queue/lock
+chmod 755 /var/qmail/queue
 </pre>
 <p>This will not allow Qsmtpd to read any file in the queue as the subdirectories with the actual queue contents are still not readable. This is only needed to that Qsmtpd can call statvfs() on a file in the queue directory that must exists (/var/qmail/queue/lock/sendmutex in this case).</p>
 </body>
