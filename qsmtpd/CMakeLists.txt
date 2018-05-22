@@ -48,6 +48,12 @@ target_link_libraries(Qsmtpd
 	${MEMCHECK_LIBRARIES}
 )
 
+if (HAS_BSD_EXP_BZERO)
+	target_link_libraries(Qsmtpd
+		${LIBBSD}
+	)
+endif()
+
 install(TARGETS Qsmtpd DESTINATION bin COMPONENT core)
 
 #install:

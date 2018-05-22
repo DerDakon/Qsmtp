@@ -104,6 +104,12 @@ target_link_libraries(testcase_authsetup
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES})
 
+if (HAS_BSD_EXP_BZERO)
+	target_link_libraries(testcase_authsetup
+		${LIBBSD}
+	)
+endif()
+
 add_test(NAME "AUTH_Setup"
 		COMMAND testcase_authsetup "${CMAKE_CURRENT_SOURCE_DIR}/authsetup")
 
@@ -115,6 +121,12 @@ target_link_libraries(testcase_auth_errors
 		qsmtp_lib
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES})
+
+if (HAS_BSD_EXP_BZERO)
+	target_link_libraries(testcase_auth_errors
+		${LIBBSD}
+	)
+endif()
 
 add_test(NAME "AUTH_errors"
 		COMMAND testcase_auth_errors)
@@ -142,6 +154,12 @@ target_link_libraries(testcase_auth
 		qsmtp_lib
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES})
+
+if (HAS_BSD_EXP_BZERO)
+	target_link_libraries(testcase_auth
+		${LIBBSD}
+	)
+endif()
 
 add_executable(auth_dummy auth_dummy.c)
 

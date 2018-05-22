@@ -25,6 +25,9 @@
 #include <syslog.h>
 #include <time.h>
 #include <unistd.h>
+#ifdef NEED_BSD_STRING_H
+#include <bsd/string.h>
+#endif
 
 const char *tempnoauth = "454 4.5.0 AUTH temporaryly not available\r\n";
 static const char *auth_host;			/**< hostname for auth */
@@ -131,7 +134,7 @@ auth_login(struct string *user)
 		goto err;
 
 	r = b64decode(authin.s, authin.len, &pass);
-	memset(authin.s, 0, authin.len);
+	explicit_bzero(authin.s, authin.len);
 	free(authin.s);
 	if (r > 0) {
 		r = err_base64();
@@ -142,14 +145,14 @@ auth_login(struct string *user)
 
 	if (!user->len || !pass.len) {
 		if (pass.s != NULL) {
-			memset(pass.s, 0, pass.len);
+			explicit_bzero(pass.s, pass.len);
 			free(pass.s);
 		}
 		r = err_input();
 		goto err;
 	}
 	r = auth_backend_execute(user, &pass, NULL);
-	memset(pass.s, 0, pass.len);
+	explicit_bzero(pass.s, pass.len);
 	free(pass.s);
 	if (r != 0)
 		free(user->s);
@@ -199,13 +202,13 @@ auth_plain(struct string *user)
 	}
 	if (!user->len || !pass.len) {
 		errno = -err_input();
-		memset(slop.s, 0, slop.len);
+		explicit_bzero(slop.s, slop.len);
 		free(slop.s);
 		return -errno;
 	}
 
 	r = auth_backend_execute(user, &pass, NULL);
-	memset(pass.s, 0, pass.len);
+	explicit_bzero(pass.s, pass.len);
 	if (r != 0) {
 		free(slop.s);
 	} else {
@@ -331,7 +334,7 @@ auth_cram(struct string *user)
 		else
 			/* if truncating failed just keep the old pointer,
 			 * this just has extra stuff at the end. Clear that. */
-			memset(resp.s, 0, resp.len);
+			explicit_bzero((resp.s, resp.len);
 	}
 
 	return r;
