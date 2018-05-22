@@ -24,6 +24,7 @@ addons:
       - openssl
       - valgrind
       - lcov
+      - libbsd-dev
   coverity_scan:
     project:
       name: "DerDakon/Qsmtp"
