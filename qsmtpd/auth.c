@@ -334,7 +334,7 @@ auth_cram(struct string *user)
 		else
 			/* if truncating failed just keep the old pointer,
 			 * this just has extra stuff at the end. Clear that. */
-			explicit_bzero((resp.s, resp.len);
+			explicit_bzero(resp.s, resp.len);
 	}
 
 	return r;
