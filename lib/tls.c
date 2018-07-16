@@ -33,7 +33,9 @@ void ssl_free(SSL *myssl)
 void
 ssl_library_destroy()
 {
-	ERR_remove_state(0);
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	ERR_remove_thread_state(NULL);
+#endif
 	CONF_modules_unload(1);
 	CRYPTO_cleanup_all_ex_data();
 	EVP_cleanup();
