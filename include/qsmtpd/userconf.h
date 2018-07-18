@@ -7,6 +7,9 @@
 #include <control.h>
 #include <sstring.h>
 
+/**
+ * @brief the filter configuration for the current user
+ */
 struct userconf {
 	string domainpath;		/**< Path of the domain for domain settings */
 	char **userconf;		/**< contents of the "filterconf" file in user directory (or NULL) */

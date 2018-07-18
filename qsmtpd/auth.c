@@ -345,6 +345,9 @@ err:
 }
 #endif
 
+/**
+ * @brief list of supported authentication methods and their handler functions
+ */
 static struct authcmd {
 	char *text;
 	int (*fun)(struct string *);

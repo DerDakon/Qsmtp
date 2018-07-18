@@ -6,7 +6,13 @@
 
 #include <sys/types.h>
 
-typedef int (*checkfunc)(const char *);
+/**
+ * @brief callback to determine if a line in file is valid
+ * @param line the 0-terminated string of the current line
+ * @returns if the line is valid or not
+ * @retval 0 the line is not valid and should be ignored
+ */
+typedef int (*checkfunc)(const char *line);
 
 extern int controldir_fd;
 
