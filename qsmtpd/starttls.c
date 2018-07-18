@@ -73,9 +73,7 @@ tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)),
 static DH *
 tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)
 {
-	FILE *in = NULL;
 	char fname[ULSTRLEN + strlen("dh.pem") + 1];
-	DH *dh;
 
 	if (keylen < 2048)
 		keylen = 2048;
@@ -84,9 +82,9 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), 
 	ultostr(keylen, fname + strlen("dh"));
 	strcat(fname, ".pem");
 
-	in = fdopen(openat(controldir_fd, fname, O_RDONLY | O_CLOEXEC), "r");
+	FILE *in = fdopen(openat(controldir_fd, fname, O_RDONLY | O_CLOEXEC), "r");
 	if (in) {
-		dh = PEM_read_DHparams(in, NULL, NULL, NULL);
+		DH *dh = PEM_read_DHparams(in, NULL, NULL, NULL);
 
 		fclose(in);
 
@@ -94,7 +92,7 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), 
 			return dh;
 	}
 
-	dh = DH_new();
+	DH *dh = DH_new();
 	if (dh == NULL)
 		return NULL;
 
@@ -141,10 +139,7 @@ verify_callback(int preverify_ok __attribute__ ((unused)), X509_STORE_CTX *x509_
 static int
 tls_check_cert(char * const *clients)
 {
-	X509 *peercert;
-	X509_NAME *subj;
 	cstring email = { .len = 0, .s = NULL };
-	int n;
 	int ret = 0;
 
 	if (SSL_set_session_id_context(ssl, VERSIONSTRING, strlen(VERSIONSTRING)) != 1) {
@@ -153,7 +148,7 @@ tls_check_cert(char * const *clients)
 	}
 
 	/* renegotiate to force the client to send it's certificate */
-	n = ssl_timeoutrehandshake(timeout);
+	int n = ssl_timeoutrehandshake(timeout);
 	if (n == -ETIMEDOUT) {
 		dieerror(ETIMEDOUT);
 	} else if (n < 0) {
@@ -164,11 +159,11 @@ tls_check_cert(char * const *clients)
 	if (SSL_get_verify_result(ssl) != X509_V_OK)
 		return 0;
 
-	peercert = SSL_get_peer_certificate(ssl);
+	X509 *peercert = SSL_get_peer_certificate(ssl);
 	if (!peercert)
 		return 0;
 
-	subj = X509_get_subject_name(peercert);
+	X509_NAME *subj = X509_get_subject_name(peercert);
 	/* try if this is a user authenticating with a personal certificate */
 	n = X509_NAME_get_index_by_NID(subj, NID_pkcs9_emailAddress, -1);
 	if (n < 0)
@@ -223,8 +218,6 @@ int
 tls_verify(void)
 {
 	char **clients;
-	STACK_OF(X509_NAME) *sk;
-	int tlsrelay;
 
 	if (!ssl || ssl_verified || is_authenticated_client())
 		return 0;
@@ -238,7 +231,7 @@ tls_verify(void)
 	if (clients == NULL)
 		return 0;
 
-	sk = SSL_load_client_CA_file(CLIENTCA);
+	STACK_OF(X509_NAME) *sk = SSL_load_client_CA_file(CLIENTCA);
 	if (sk == NULL) {
 		/* if CLIENTCA contains all the standard root certificates, a
 		 * 0.9.6b client might fail with SSL_R_EXCESSIVE_MESSAGE_SIZE;
@@ -251,7 +244,7 @@ tls_verify(void)
 	SSL_set_client_CA_list(ssl, sk);
 	SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, verify_callback);
 
-	tlsrelay = tls_check_cert(clients);
+	int tlsrelay = tls_check_cert(clients);
 
 	free(clients);
 	SSL_set_client_CA_list(ssl, NULL);
@@ -263,21 +256,16 @@ tls_verify(void)
 static int
 tls_init()
 {
-	SSL *myssl;
-	SSL_CTX *ctx;
 	const char *ciphers = "DEFAULT";
 	string saciphers;
-	X509_STORE *store;
-	X509_LOOKUP *lookup;
 	const char ciphfn[] = "tlsserverciphers";
-	int j;
 	long ssl_options = SSL_OP_SINGLE_DH_USE;
 
 	SSL_library_init();
 	STREMPTY(saciphers);
 
 	/* a new SSL context with the bare minimum of options */
-	ctx = SSL_CTX_new(SSLv23_server_method());
+	SSL_CTX *ctx = SSL_CTX_new(SSLv23_server_method());
 	if (!ctx) {
 		return tls_err("unable to initialize ctx");
 	}
@@ -298,11 +286,10 @@ tls_init()
 	}
 
 	/* crl checking */
-	store = SSL_CTX_get_cert_store(ctx);
-	if ((lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file())) &&
-				(X509_load_crl_file(lookup, CLIENTCRL, X509_FILETYPE_PEM) == 1))
-		X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK |
-						X509_V_FLAG_CRL_CHECK_ALL);
+	X509_STORE *store = SSL_CTX_get_cert_store(ctx);
+	X509_LOOKUP *lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
+	if (lookup && (X509_load_crl_file(lookup, CLIENTCRL, X509_FILETYPE_PEM) == 1))
+		X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
 
 	saciphers.len = lloadfilefd(openat(controldir_fd, ciphfn, O_RDONLY | O_CLOEXEC), &(saciphers.s), 1);
 	if (saciphers.len == (size_t)-1) {
@@ -326,7 +313,7 @@ tls_init()
 	SSL_CTX_set_options(ctx, ssl_options);
 
 	/* a new SSL object, with the rest added to it directly to avoid copying */
-	myssl = SSL_new(ctx);
+	SSL *myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);
 	if (!myssl) {
 		free(saciphers.s);
@@ -342,7 +329,7 @@ tls_init()
 		return tls_err("no valid RSA private key");
 	}
 
-	j = SSL_set_cipher_list(myssl, ciphers);
+	int j = SSL_set_cipher_list(myssl, ciphers);
 	free(saciphers.s);
 	if (j != 1) {
 		ssl_free(myssl);

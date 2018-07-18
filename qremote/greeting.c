@@ -38,7 +38,6 @@ cb_auth(const char *more)
 	if (*more != '\0') {
 		/* detect any 8bit or unprintable character here */
 		const char *cur = more;
-		size_t len;
 		while (*cur) {
 			if ((*cur < 32) || (*cur >= 127))
 				return -1;
@@ -51,7 +50,7 @@ cb_auth(const char *more)
 		auth_mechs_copy[0] = ' ';
 		strncpy(auth_mechs_copy + 1, more, sizeof(auth_mechs_copy) - 3);
 		auth_mechs_copy[sizeof(auth_mechs_copy) - 3] = '\0';
-		len = strlen(auth_mechs_copy);
+		size_t len = strlen(auth_mechs_copy);
 		auth_mechs_copy[len++] = ' ';
 		auth_mechs_copy[len] = '\0';
 
@@ -116,12 +115,11 @@ int
 greeting(void)
 {
 	const char *cmd[] = { "EHLO ", heloname.s, NULL };
-	int s = -1;			/* SMTP status */
 	int ret = 0;
 	int err = 0;
 
 	net_writen(cmd);
-	s = netget(0);
+	int s = netget(0);		/* SMTP status */
 	if (s < 0)
 		return s;
 	while (linein.s[3] == '-') {

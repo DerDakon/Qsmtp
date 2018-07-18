@@ -17,9 +17,7 @@
 static inline uint32_t
 cdb_hash(const char *buf, unsigned int len)
 {
-	uint32_t h;
-
-	h = CDB_HASHSTART;
+	uint32_t h = CDB_HASHSTART;
 	while (len--) {
 		h += (h << 5);
 		h ^= (uint32_t) *buf++;
@@ -61,17 +59,8 @@ cdb_unpack(const char *buf)
 const char *
 cdb_seekmm(int fd, const char *key, unsigned int len, char **mm, const struct stat *st)
 {
-	uint32_t pos;
-	uint32_t h;
-	uint32_t lenhash;
-	uint32_t h2;
-	uint32_t loop;
-	uint32_t poskd;
-	char *cur;
-	int err;
-
 	*mm = mmap(NULL, st->st_size, PROT_READ, MAP_SHARED, fd, 0);
-	err = errno;
+	int err = errno;
 
 	if ((*mm != MAP_FAILED) || (err != EBADF))
 		close(fd);
@@ -82,20 +71,19 @@ cdb_seekmm(int fd, const char *key, unsigned int len, char **mm, const struct st
 	}
 
 	errno = 0;
-	h = cdb_hash(key, len);
+	uint32_t h = cdb_hash(key, len);
 
-	pos = 8 * (h & 255);
-
-	lenhash = cdb_unpack(*mm + pos + 4);
+	uint32_t pos = 8 * (h & 255);
+	uint32_t lenhash = cdb_unpack(*mm + pos + 4);
 
 	if (lenhash != 0) {
-		h2 = (h >> 8) % lenhash;
+		uint32_t h2 = (h >> 8) % lenhash;
 
 		pos = cdb_unpack(*mm + pos);
 
-		for (loop = 0; loop < lenhash; ++loop) {
-			cur = *mm + pos + 8 * h2;
-			poskd = cdb_unpack(cur + 4);
+		for (uint32_t loop = 0; loop < lenhash; ++loop) {
+			char *cur = *mm + pos + 8 * h2;
+			uint32_t poskd = cdb_unpack(cur + 4);
 
 			if (!poskd)
 				break;

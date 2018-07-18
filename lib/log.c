@@ -19,13 +19,11 @@
 void
 log_writen(int priority, const char **s)
 {
-	unsigned int j;
 	size_t i = 0;
-	char *buf;
 
-	for (j = 0; s[j]; j++)
+	for (unsigned int j = 0; s[j]; j++)
 		i += strlen(s[j]);
-	buf = malloc(i + 2);
+	char *buf = malloc(i + 2);
 	if (!buf) {
 #ifdef USESYSLOG
 		syslog(LOG_ERR, "out of memory\n");
@@ -36,7 +34,7 @@ log_writen(int priority, const char **s)
 		return;
 	} else {
 		i = 0;
-		for (j = 0; s[j]; j++) {
+		for (unsigned int j = 0; s[j]; j++) {
 			strcpy(buf + i, s[j]);
 			i += strlen(s[j]);
 		}

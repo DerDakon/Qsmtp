@@ -37,9 +37,6 @@ const char *clientcertname = "control/clientcert.pem";
 int
 tls_init(void)
 {
-	int i = 0;
-	SSL *myssl;
-	SSL_CTX *ctx;
 	char **saciphers;
 	const char *ciphers;
 	size_t fqlen = 0;
@@ -63,7 +60,7 @@ tls_init(void)
 	}
 
 	SSL_library_init();
-	ctx = SSL_CTX_new(SSLv23_client_method());
+	SSL_CTX *ctx = SSL_CTX_new(SSLv23_client_method());
 	if (!ctx) {
 		const char *msg[] = { "Z4.5.0 TLS error initializing ctx: ", ssl_error(), "; connecting to ",
 				rhost };
@@ -89,7 +86,7 @@ tls_init(void)
 	if (SSL_CTX_use_certificate_chain_file(ctx, clientcertname) == 1)
 		SSL_CTX_use_RSAPrivateKey_file(ctx, clientcertname, SSL_FILETYPE_PEM);
 
-	myssl = SSL_new(ctx);
+	SSL *myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);
 	if (!myssl) {
 		const char *msg[] = { "Z4.5.0 TLS error initializing ssl: ", ssl_error(), "; connecting to ",
@@ -124,6 +121,7 @@ tls_init(void)
 		err_conf("can't open tlsclientciphers\n");
 	}
 	if (saciphers) {
+		int i = 0;
 		while (saciphers[i + 1]) {
 			saciphers[i][strlen(saciphers[i])] = ':';
 			i++;
@@ -132,7 +130,7 @@ tls_init(void)
 	} else {
 		ciphers = "DEFAULT";
 	}
-	i = SSL_set_cipher_list(myssl, ciphers);
+	int i = SSL_set_cipher_list(myssl, ciphers);
 	free(saciphers);
 	if (i != 1) {
 		ssl_free(myssl);

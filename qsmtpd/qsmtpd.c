@@ -145,12 +145,10 @@ dieerror(int error)
 static int
 setup(void)
 {
-	int j;
 	char *tmp;
 	unsigned long tl;
 	char **tmpconf;
 	int rcpthfd;		/* file descriptor of control/rcpthosts */
-	sigset_t mask;
 
 #ifdef USESYSLOG
 	openlog("Qsmtpd", LOG_PID, LOG_MAIL);
@@ -178,7 +176,8 @@ setup(void)
 		do_debug_io = (faccessat(controldir_fd, "Qsmtpd_debug", R_OK, 0) == 0);
 #endif
 
-	if ( (j = loadoneliner(controldir_fd, "me", &heloname.s, 0)) < 0)
+	int j = loadoneliner(controldir_fd, "me", &heloname.s, 0);
+	if (j < 0)
 		return errno;
 	heloname.len = j;
 	if (domainvalid(heloname.s)) {
@@ -333,6 +332,7 @@ setup(void)
 
 	/* Block SIGPIPE, otherwise write errors can't be handled correctly and remote host
 	 * will see a connection drop on error (which is bad and violates RfC) */
+	sigset_t mask;
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGPIPE);
 	j = sigprocmask(SIG_BLOCK, &mask, NULL);
@@ -346,15 +346,13 @@ setup(void)
 static int
 connsetup(void)
 {
-	int j;
-
 #ifdef IPV4ONLY
 	xmitstat.ipv4conn = 1;
 #else /* IPV4ONLY */
 	xmitstat.ipv4conn = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip) ? 1 : 0;
 #endif /* IPV4ONLY */
 
-	j = ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s);
+	int j = ask_dnsname(&xmitstat.sremoteip, &xmitstat.remotehost.s);
 	if (j == DNS_ERROR_LOCAL) {
 		log_write(LOG_ERR, "can't look up remote host name");
 		return -1;
@@ -466,9 +464,7 @@ smtp_temperror(void)
 static int
 line_valid()
 {
-	size_t i;
-
-	for (i = 0; i < linein.len; i++) {
+	for (size_t i = 0; i < linein.len; i++) {
 		/* linein is signed char, so non-ASCII characters are <0 */
 		if (linein.s[i] <= 0)
 			return EINVAL;
@@ -526,7 +522,6 @@ smtploop(void)
 
 /* the state machine */
 	while (1) {
-		unsigned int i;
 /* read the line (but only if there is not already an error condition, in this case handle the error first) */
 		if (!flagbogus) {
 			flagbogus = net_read(1);
@@ -602,7 +597,7 @@ smtploop(void)
 /* set flagbogus to catch if client writes crap. Will be overwritten if a good command comes in */
 		flagbogus = EINVAL;
 /* handle the commands */
-		for (i = 0; i < sizeof(commands) / sizeof(commands[0]); i++) {
+		for (unsigned int i = 0; i < sizeof(commands) / sizeof(commands[0]); i++) {
 			if (!strncasecmp(linein.s, commands[i].name, commands[i].len)) {
 				if (comstate & commands[i].mask) {
 					const long ostate = commands[i].state; /* the state originally recorded for this command */

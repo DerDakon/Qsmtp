@@ -35,11 +35,6 @@ static const char *b64alpha =
 int
 b64decode(const char *in, size_t l, string *out)
 {
-	size_t i, j;
-	unsigned char a[4];
-	unsigned char b[3];
-	char *s;
-
 	if (l == 0) {
 		STREMPTY(*out);
 		return 0;
@@ -51,10 +46,12 @@ b64decode(const char *in, size_t l, string *out)
 	if (!out->s)
 		return -ENOMEM;
 
-	s = out->s;
+	char *s = out->s;
 
-	for (i = 0; i < l; i += 4) {
-		for (j = 0; j < 4; j++) {
+	for (size_t i = 0; i < l; i += 4) {
+		unsigned char a[4];
+		unsigned char b[3];
+		for (size_t j = 0; j < 4; j++) {
 			if ((i + j < l) && (in[i + j] == '\r')) {
 				if (i + j + 1 == l) {
 					free(out->s);
@@ -118,7 +115,6 @@ int
 b64encode(const string *in, string *out, const unsigned int wraplimit)
 {
 	size_t i;
-	char *s;
 	unsigned int oline = 0;
 
 	if (in->len == 0) {
@@ -134,7 +130,7 @@ b64encode(const string *in, string *out, const unsigned int wraplimit)
 	if (!out->s)
 		return -ENOMEM;
 
-	s = out->s;
+	char *s = out->s;
 
 	for (i = 0; i < in->len; i += 3) {
 		const unsigned char a = in->s[i];

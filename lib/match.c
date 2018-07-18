@@ -51,16 +51,15 @@ int
 ip6_matchnet(const struct in6_addr *ip, const struct in6_addr *net, const unsigned char mask)
 {
 	struct in6_addr maskv6;
-	int i;
 
 	memset(maskv6.s6_addr, 0, sizeof(maskv6.s6_addr));
-	for (i = 0; i < mask / 32; ++i) {
+	for (int i = 0; i < mask / 32; ++i) {
 		maskv6.s6_addr32[i] = -1;
 	}
 	if ((mask % 32) != 0)
 		maskv6.s6_addr32[mask / 32] = htonl(-1 - ((1U << (32 - (mask % 32))) - 1));
 
-	for (i = 3; i >= 0; i--) {
+	for (int i = 3; i >= 0; i--) {
 		if ((ip->s6_addr32[i] & maskv6.s6_addr32[i]) != (net->s6_addr32[i] & maskv6.s6_addr32[i])) {
 			return 0;
 		}

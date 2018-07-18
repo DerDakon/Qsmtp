@@ -49,10 +49,8 @@ ssl_timeoutio(int (*func)(), time_t t, char *buf, const int len)
 	assert(fds[1].fd >= 0);
 
 	do {
-		int r;
-
 		errno = 0;
-		r = buf ? func(ssl, buf, len) : func(ssl);
+		int r = buf ? func(ssl, buf, len) : func(ssl);
 
 		if (r > 0)
 			return r;
@@ -108,14 +106,13 @@ ssl_timeoutio(int (*func)(), time_t t, char *buf, const int len)
 int
 ssl_timeoutaccept(time_t t)
 {
-	int r;
 	int ssl_wfd = SSL_get_wfd(ssl);
 	int ssl_rfd = SSL_get_rfd(ssl);
 
 	/* if connection is established, keep NDELAY */
 	if (ndelay_on(ssl_rfd) == -1 || ndelay_on(ssl_wfd) == -1)
 		return -errno;
-	r = ssl_timeoutio(SSL_accept, t, NULL, 0);
+	int r = ssl_timeoutio(SSL_accept, t, NULL, 0);
 
 	if (r < 0) {
 		ndelay_off(ssl_rfd);
@@ -136,14 +133,13 @@ ssl_timeoutaccept(time_t t)
 int
 ssl_timeoutconn(time_t t)
 {
-	int r;
 	int ssl_wfd = SSL_get_wfd(ssl);
 	int ssl_rfd = SSL_get_rfd(ssl);
 
 	/* if connection is established, keep NDELAY */
 	if ( (ndelay_on(ssl_rfd) == -1) || (ndelay_on(ssl_wfd) == -1) )
 		return -errno;
-	r = ssl_timeoutio(SSL_connect, t, NULL, 0);
+	int r = ssl_timeoutio(SSL_connect, t, NULL, 0);
 
 	if (r < 0) {
 		/* keep nonblocking, the socket is closed anyway */
@@ -163,9 +159,7 @@ ssl_timeoutconn(time_t t)
 int
 ssl_timeoutrehandshake(time_t t)
 {
-	int r;
-
-	r = SSL_renegotiate(ssl);
+	int r = SSL_renegotiate(ssl);
 	if (r <= 0)
 		return -EPROTO;
 	r = ssl_timeoutio(SSL_do_handshake, t, NULL, 0);

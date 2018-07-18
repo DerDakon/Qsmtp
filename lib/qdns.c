@@ -25,13 +25,11 @@
 int
 ask_dnsmx(const char *name, struct ips **result)
 {
-	int i;
 	char *r;
 	size_t l;
-	char *s;
 	int errtype = 0;
 
-	i = dnsmx(&r, &l, name);
+	int i = dnsmx(&r, &l, name);
 
 	if ((i != 0) && (errno != ENOENT)) {
 		switch (errno) {
@@ -52,7 +50,7 @@ ask_dnsmx(const char *name, struct ips **result)
 		}
 	}
 
-	s = r;
+	char *s = r;
 
 	/* there is no MX record, so we look for an AAAA record */
 	if (!l) {

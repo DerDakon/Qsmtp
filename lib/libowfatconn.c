@@ -66,12 +66,11 @@ dnsip6(char **out, size_t *len, const char *host)
 	 * modifies it's second argument. */
 	stralloc fqdn = {.a = 0, .len = 0, .s = NULL};
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
-	int r;
 
 	if (!stralloc_copys(&fqdn, host))
 		return -1;
 
-	r = dns_ip6(&sa, &fqdn);
+	int r = dns_ip6(&sa, &fqdn);
 	free(fqdn.s);
 	return mangle_ip_ret(&sa, out, len, r);
 }
@@ -90,9 +89,7 @@ dnsip4(char **out, size_t *len, const char *host)
 {
 	const stralloc fqdn = const_stralloc_from_string(host);
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
-	int r;
-
-	r = dns_ip4(&sa, &fqdn);
+	int r = dns_ip4(&sa, &fqdn);
 	return mangle_ip_ret(&sa, out, len, r);
 }
 
@@ -110,9 +107,7 @@ dnsmx(char **out, size_t *len, const char *host)
 {
 	const stralloc fqdn = const_stralloc_from_string(host);
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
-	int r;
-
-	r = dns_mx(&sa, &fqdn);
+	int r = dns_mx(&sa, &fqdn);
 	return mangle_ip_ret(&sa, out, len, r);
 }
 
@@ -129,9 +124,8 @@ dnstxt(char **out, const char *host)
 {
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
 	const stralloc fqdn = const_stralloc_from_string(host);
-	int r;
+	int r = dns_txt(&sa, &fqdn);
 
-	r = dns_txt(&sa, &fqdn);
 	if ((r != 0) || (sa.len == 0)) {
 		free(sa.s);
 		*out = NULL;
@@ -160,9 +154,8 @@ int
 dnsname(char **out, const struct in6_addr *ip)
 {
 	stralloc sa = {.a = 0, .len = 0, .s = NULL};
-	int r;
+	int r = dns_name6(&sa, (const char *)ip->s6_addr);
 
-	r = dns_name6(&sa, (const char *)ip->s6_addr);
 	if ((r != 0) || (sa.len == 0)) {
 		free(sa.s);
 		*out = NULL;

@@ -20,7 +20,6 @@ struct in6_addr outgoingip6;
 void
 remote_common_setup(void)
 {
-	int j;
 	unsigned long tmp;
 	char *ipbuf;
 
@@ -31,7 +30,8 @@ remote_common_setup(void)
 	if (controldir_fd < 0)
 		err_conf("cannot get a file descriptor for " AUTOQMAIL "/control");
 
-	if ( (j = loadoneliner(controldir_fd, "helohost", &heloname.s, 1) ) < 0 ) {
+	int j = loadoneliner(controldir_fd, "helohost", &heloname.s, 1);
+	if (j < 0) {
 		if ( ( j = loadoneliner(controldir_fd, "me", &heloname.s, 0) ) < 0 )
 			err_conf("can open neither control/helohost nor control/me");
 		if (domainvalid(heloname.s))

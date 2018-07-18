@@ -49,15 +49,13 @@ two_digit(char *buf, int num)
 static void
 date822(char *buf)
 {
-	time_t ti;
 	struct tm stm;
 	const char *weekday[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 	const char *month[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-	long tz;
 
-	ti = time(NULL);
+	time_t ti = time(NULL);
 	tzset();
-	tz = timezone / 60;
+	long tz = timezone / 60;
 	localtime_r(&ti, &stm);
 	memcpy(buf, weekday[stm.tm_wday], 3);
 	memcpy(buf + 3, ", ", 2);
@@ -86,7 +84,8 @@ date822(char *buf)
 
 #define WRITE(buf,len) \
 		do { \
-			if ( (rc = write(queuefd_data, buf, len)) < 0 ) { \
+			int rc = write(queuefd_data, buf, len); \
+			if (rc < 0 ) { \
 				return rc; \
 			} \
 		} while (0)
@@ -106,14 +105,14 @@ write_received(const int chunked)
 	 * find this out anyway and will allocate space only for one of them,
 	 * and hopefully merge both code paths and use an offset or something
 	 * like that. */
-	int rc;
 	size_t i = (authhide && is_authenticated_client()) ? 1 : 0;
 	const char afterprot[]     =  "\n\tfor <";	/* the string to be written after the protocol */
 	const char afterprotauth[] = "A\n\tfor <";	/* the string to be written after the protocol for authenticated mails*/
 
 	/* write "Received-SPF: " line */
 	if (!is_authenticated_client() && (relayclient != 1)) {
-		if ( (rc = spfreceived(queuefd_data, xmitstat.spf)) )
+		int rc = spfreceived(queuefd_data, xmitstat.spf);
+		if (rc)
 			return rc;
 	}
 	/* write the "Received: " line to mail header */
@@ -186,7 +185,8 @@ write_received(const int chunked)
 #undef WRITE
 #define WRITE(buf, len) \
 		do { \
-			if ( (rc = write(queuefd_data, buf, len)) < 0 ) { \
+			int wret = write(queuefd_data, buf, len); \
+			if (wret < 0) { \
 				goto err_write; \
 			} \
 		} while (0)
@@ -205,14 +205,13 @@ static int
 check_rfc822_headers(unsigned int *headerflags, const char **hdrname)
 {
 	const char *searchpattern[] = { "Date:", "From:", "Message-Id:", NULL };
-	int j;
 
-	for (j = linein.len - 1; j >= 0; j--) {
+	for (int j = linein.len - 1; j >= 0; j--) {
 		if (((signed char)linein.s[j]) < 0)
 			return -8;
 	}
 
-	for (j = 0; searchpattern[j] != NULL; j++) {
+	for (int j = 0; searchpattern[j] != NULL; j++) {
 		if (!strncasecmp(searchpattern[j], linein.s, strlen(searchpattern[j]))) {
 			if ((*headerflags) & (1 << j)) {
 				*hdrname = searchpattern[j];
@@ -259,7 +258,6 @@ smtp_data(void)
 {
 	const char *logreason = NULL;
 	char logreason_buf[64];
-	int i, rc;
 	unsigned int headerflags = 0;	/* Date: and From: are required in header,
 					 * else message is bogus (RfC 2822, section 3.6).
 					 * We also scan for Message-Id here.
@@ -281,7 +279,8 @@ smtp_data(void)
 
 	sync_pipelining();
 
-	if ( (i = queue_init()) )
+	int i = queue_init();
+	if (i)
 		return i;
 
 	if (netwrite("354 Start mail input; end with <CRLF>.<CRLF>\r\n")) {
@@ -294,7 +293,8 @@ smtp_data(void)
 	in_data = 1;
 #endif
 
-	if ( (rc = write_received(0)) )
+	int rc = write_received(0);
+	if (rc)
 		goto err_write;
 
 	/* loop until:
@@ -434,8 +434,8 @@ smtp_data(void)
 			unsigned int offset;
 
 			if ((xmitstat.check2822 & 1) && !xmitstat.datatype) {
-				for (i = linein.len - 1; i >= 0; i--)
-					if (((signed char)linein.s[i]) < 0) {
+				for (int j = linein.len - 1; j >= 0; j--)
+					if (((signed char)linein.s[j]) < 0) {
 						logreason = "8bit-character in message body}";
 						errmsg = "550 5.6.0 message contains 8bit characters\r\n";
 						goto loop_data;
@@ -556,10 +556,8 @@ static int lastcr;
 int
 smtp_bdat(void)
 {
-	int rc;
 #warning FIXME: loop detection missing
 	unsigned int hops = 0;		/* number of "Received:"-lines */
-	unsigned long long chunksize;
 	char *more;
 
 	if (!goodrcpt) {
@@ -570,7 +568,7 @@ smtp_bdat(void)
 	if ((linein.s[5] < '0') || (linein.s[5] > '9'))
 		return EINVAL;
 	errno = 0;
-	chunksize = strtoull(linein.s + 5, &more, 10);
+	unsigned long long chunksize = strtoull(linein.s + 5, &more, 10);
 	if ((errno == ERANGE) || (*more && (*more != ' ')))
 		return EINVAL;
 	if (*more && strcasecmp(more + 1, "LAST"))
@@ -685,7 +683,8 @@ smtp_bdat(void)
 
 	return bdaterr;
 err_write:
-	rc = errno;
+	{ // extra block to be able to declare local variables
+	int rc = errno;
 	queue_reset();
 	freedata();
 
@@ -716,5 +715,6 @@ err_write:
 	}
 
 	return EDONE; // will not be caught in main
+	}
 }
 #endif

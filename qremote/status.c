@@ -33,9 +33,7 @@ write_status(const char *str)
 void
 write_status_m(const char **strs, const unsigned int count)
 {
-	unsigned int i;
-
-	for (i = 0; i < count - 1; i++)
+	for (unsigned int i = 0; i < count - 1; i++)
 		write_status_raw(strs[i], strlen(strs[i]));
 	write_status(strs[count - 1]);
 }

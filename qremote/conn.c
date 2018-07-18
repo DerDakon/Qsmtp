@@ -36,7 +36,6 @@ unsigned int targetport = 25;
 static int
 conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 {
-	int rc;
 	int sd;
 
 #ifdef IPV4ONLY
@@ -83,7 +82,7 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 	sock.sin6_addr = remoteip;
 #endif
 
-	rc = connect(sd, (struct sockaddr *) &sock, sizeof(sock));
+	int rc = connect(sd, (struct sockaddr *) &sock, sizeof(sock));
 
 	if (rc < 0) {
 		int err = errno;

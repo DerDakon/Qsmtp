@@ -6,6 +6,9 @@ option(CHECK_MEMORY "Add memory access checks" OFF)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED On)
+
 include(AddCCompilerFlag)
 include(CheckCCompilerFlag)
 include(CheckSymbolExists)

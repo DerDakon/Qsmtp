@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 /**
@@ -183,7 +184,6 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	char *f, *l;			/* pointer to the begin and end of the mail address
 					 * in "in" (without source route and other crap) */
 	char *t;			/* temporary storage */
-	int len;			/* length of the recip address */
 	int x = 1;
 
 	f = in;
@@ -217,7 +217,7 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	if (!l)
 		return 0;
 
-	len = l - f;
+	size_t len = l - f;		/* length of the recip address */
 	/* check if something follow the '>' */
 	if (more && *(l + 1)) {
 		*more = l + 1;

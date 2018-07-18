@@ -137,17 +137,13 @@ err_confn(const char **errmsg, void *freebuf)
 static void
 setup(void)
 {
-#ifdef CHUNKING
-	unsigned long chunk;
-#endif
-	sigset_t mask;
-
 #ifdef USESYSLOG
 	openlog("Qremote", LOG_PID, LOG_MAIL);
 #endif
 
 	/* Block SIGPIPE, otherwise the process will get killed when the remote
 	 * end cancels the connection improperly. */
+	sigset_t mask;
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGPIPE);
 
@@ -160,6 +156,7 @@ setup(void)
 	remote_common_setup();
 
 #ifdef CHUNKING
+	unsigned long chunk;
 	if (loadintfd(openat(controldir_fd, "chunksizeremote", O_RDONLY | O_CLOEXEC), &chunk, 32768) < 0) {
 		err_conf("parse error in control/chunksizeremote");
 	} else {
@@ -181,11 +178,9 @@ main(int argc, char *argv[])
 	struct ips *mx = NULL;
 	int rcptcount = argc - 3;
 	struct stat st;
-	unsigned int recodeflag;
-	int i;
 
 	/* do this check before opening any files to catch the case that fd 0 is closed at this point */
-	i = fstat(0, &st);
+	int i = fstat(0, &st);
 
 	setup();
 
@@ -239,7 +234,7 @@ main(int argc, char *argv[])
 	}
 
 /* check if message is plain ASCII or not */
-	recodeflag = need_recode(msgdata, msgsize);
+	const unsigned int recodeflag = need_recode(msgdata, msgsize);
 
 	if (send_envelope(recodeflag, argv[2], argc - 3, argv + 3) != 0)
 		net_conn_shutdown(shutdown_clean);

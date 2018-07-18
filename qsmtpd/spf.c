@@ -25,7 +25,12 @@
 
 static const char spf_delimiters[] = ".-+,/_=";
 
-#define WRITEl(fd, s, l) if ( (rc = write((fd), (s), (l))) < 0 ) return rc
+#define WRITEl(fd, s, l) \
+	do { \
+		ssize_t rc = write((fd), (s), (l)); \
+		if (rc < 0) \
+			return (int)rc; \
+	} while (0)
 #define WRITE(fd, s) WRITEl((fd), (s), strlen(s))
 
 /**
@@ -50,7 +55,6 @@ spfreceived(int fd, const int spf)
 		"PermError"
 	};
 
-	int rc;
 	char clientip[INET6_ADDRSTRLEN];
 	const char *spfdomain = (xmitstat.mailfrom.len == 0) ? HELOSTR : xmitstat.mailfrom.s;
 	const size_t spfdomainlen = (xmitstat.mailfrom.len == 0) ? HELOLEN : xmitstat.mailfrom.len;
@@ -293,7 +297,6 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	int dc = 0;	/* how many delimiters we find */
 	unsigned int nl;
 	char *start;
-	char *r2;
 	unsigned int oldl = *l;
 	char *news = strndup(s, sl);
 	char *urldata = NULL;
@@ -398,7 +401,7 @@ spf_appendmakro(char **res, unsigned int *l, const char *const s, const unsigned
 	}
 
 	*l += nl;
-	r2 = realloc(*res, *l);
+	char *r2 = realloc(*res, *l);
 	if (!r2) {
 		free(*res);
 		free(news);
@@ -425,11 +428,9 @@ static int
 validate_domain(char ***domainlist)
 {
 	char *rnames = NULL;
-	int i, r;
-	char *d;
 	int cnt = 0;
 
-	r = ask_dnsname(&xmitstat.sremoteip, &rnames);
+	int r = ask_dnsname(&xmitstat.sremoteip, &rnames);
 	if (r <= 0)
 		return r;
 
@@ -444,8 +445,8 @@ validate_domain(char ***domainlist)
 		return -1;
 	}
 
-	d = rnames;
-	for (i = 0; i < r; i++) {
+	char *d = rnames;
+	for (int i = 0; i < r; i++) {
 		struct in6_addr *ptrs;
 		int j, k;
 
@@ -493,16 +494,15 @@ validate_domain(char ***domainlist)
 }
 
 #define APPEND(addlen, addstr) \
-	{\
-		char *r2;\
+	do {\
 		unsigned int oldl = *l;\
 		\
 		*l += addlen;\
-		r2 = realloc(*res, *l);\
-		if (!r2) { free(*res); return -1;}\
+		char *r2 = realloc(*res, *l);\
+		if (!r2) { free(*res); return -1; }\
 		*res = r2;\
 		memcpy(*res + oldl, addstr, addlen);\
-	}
+	} while (0)
 
 #define PARSEERR	do { free(*res); return -SPF_PERMERROR; } while (0)
 
@@ -520,11 +520,10 @@ static int
 spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned int *l)
 {
 	const char *q = p;
-	char ch;
-	int offs, num, r, delim;
+	int num, r, delim;
 
-	ch = *p++;
-	offs = spf_makroparam(p, &num, &r, &delim);
+	char ch = *p++;
+	int offs = spf_makroparam(p, &num, &r, &delim);
 	p += offs;
 	if ((offs < 0) || (*p != '}'))
 		PARSEERR;
@@ -686,12 +685,11 @@ spf_makroletter(const char *p, const char *domain, int ex, char **res, unsigned 
 #undef APPEND
 #define APPEND(addlen, addstr) \
 	{\
-		char *r2;\
 		unsigned int oldl = l;\
 		\
 		l += addlen;\
-		r2 = realloc(res, l);\
-		if (!r2) { free(res); return -1;}\
+		char *r2 = realloc(res, l);\
+		if (!r2) { free(res); return -1; }\
 		res = r2;\
 		memcpy(res + oldl, addstr, addlen);\
 	}
@@ -715,7 +713,6 @@ spf_makro(const char *token, const char *domain, int ex, char **result)
 {
 	char *res = NULL;
 	const char *p;
-	unsigned int l;
 	size_t toklen = 0;
 
 	if (ex == 1) {
@@ -731,7 +728,7 @@ spf_makro(const char *token, const char *domain, int ex, char **result)
 	p = memchr(token, '%', toklen);
 
 	if (p == NULL) {
-		l = toklen + 1;
+		size_t l = toklen + 1;
 
 		res = malloc(l);
 		if (!res) {
@@ -740,7 +737,7 @@ spf_makro(const char *token, const char *domain, int ex, char **result)
 		memcpy(res, token, toklen);
 		res[toklen] = '\0';
 	} else {
-		l = p - token;
+		int l = p - token;
 
 		if (l != 0) {
 			res = malloc(l);
@@ -1074,7 +1071,6 @@ spfmx(const char *domain, const char *token)
 	int i;
 	struct ips *mx;
 	char *domainspec = NULL;
-	struct ips *cur;
 
 	switch (may_have_domainspec(token)) {
 	case 0:
@@ -1127,7 +1123,7 @@ spfmx(const char *domain, const char *token)
 	 * mechanism MUST produce a "permerror" result.
 	 */
 	i = 1;
-	cur = mx;
+	struct ips *cur = mx;
 	while (cur != NULL) {
 		cur = cur->next;
 		i++;
@@ -1170,8 +1166,7 @@ spfa(const char *domain, const char *token)
 {
 	int ip6l = -1;
 	int ip4l = -1;
-	int i, j;
-	int r = 0;
+	int i;
 	struct in6_addr *ip;
 	char *domainspec = NULL;
 	const int v4 = IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip);
@@ -1221,8 +1216,8 @@ spfa(const char *domain, const char *token)
 			return SPF_DNS_HARD_ERROR;
 	}
 
-	r = SPF_NONE;
-	for (j = 0; j < i; j++) {
+	int r = SPF_NONE;
+	for (int j = 0; j < i; j++) {
 		int match = 0;
 		if (v4) {
 			if (IN6_IS_ADDR_V4MAPPED(ip + j))
@@ -1245,12 +1240,13 @@ spfa(const char *domain, const char *token)
 static int
 spfexists(const char *domain, const char *token)
 {
-	int ip6l, ip4l, i, r = 0;
+	int ip6l, ip4l, r = 0;
 	char *domainspec;
 
-	if ( (i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l)) ) {
+	int i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l);
+	if (i)
 		return i;
-	}
+
 	if ((ip4l > 0) || (ip6l > 0) || !domainspec) {
 		free(domainspec);
 		return SPF_PERMERROR;
@@ -1280,7 +1276,7 @@ spfexists(const char *domain, const char *token)
 static int
 spfptr(const char *domain, const char *token)
 {
-	int i, r = 0;
+	int r = 0;
 	char *domainspec = NULL;
 	char **validdomains = NULL;
 	const char *checkdom;
@@ -1294,7 +1290,7 @@ spfptr(const char *domain, const char *token)
 		if (*token == ':')
 			token++;
 
-		i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l);
+		int i = spf_domainspec(domain, token, &domainspec, &ip4l, &ip6l);
 		if (i != 0)
 			return i;
 		if ((ip4l >= 0) || (ip6l >= 0)) {
@@ -1312,7 +1308,7 @@ spfptr(const char *domain, const char *token)
 		return SPF_NONE;
 	}
 
-	i = validate_domain(&validdomains);
+	int i = validate_domain(&validdomains);
 	switch (i) {
 	case 0:
 		free(domainspec);
@@ -1377,7 +1373,6 @@ spfip4(const char *domain)
 	struct in_addr net;
 	unsigned long u;
 	char ip4buf[INET_ADDRSTRLEN];
-	size_t ip4len;
 
 	if (!IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
 		return SPF_NONE;
@@ -1386,7 +1381,7 @@ spfip4(const char *domain)
 		sl++;
 	}
 
-	ip4len = sl - domain;
+	size_t ip4len = sl - domain;
 	if ((ip4len >= sizeof(ip4buf)) || (ip4len < 7))
 		return SPF_PERMERROR;
 
@@ -1418,7 +1413,6 @@ spfip6(const char *domain)
 	struct in6_addr net;
 	unsigned long u;
 	char ip6buf[INET6_ADDRSTRLEN];
-	size_t ip6len;
 
 	if (IN6_IS_ADDR_V4MAPPED(&xmitstat.sremoteip))
 		return SPF_NONE;
@@ -1427,7 +1421,7 @@ spfip6(const char *domain)
 		sl++;
 	}
 
-	ip6len = sl - domain;
+	size_t ip6len = sl - domain;
 	if ((ip6len >= sizeof(ip6buf)) || (ip6len < 3))
 		return SPF_PERMERROR;
 
@@ -1505,7 +1499,6 @@ match_mechanism(const char *token, const char *mechanism, const char *delimiters
 {
 	const size_t mechlen = strlen(mechanism);
 	const char * const nextchar = token + mechlen;
-	unsigned int i;
 
 	if (strncasecmp(token, mechanism, mechlen) != 0)
 		return 0;
@@ -1513,7 +1506,7 @@ match_mechanism(const char *token, const char *mechanism, const char *delimiters
 	if (WSPACE(*nextchar) || (*nextchar == '\0'))
 		return mechlen;
 
-	for (i = 0; delimiters[i] != '\0'; i++)
+	for (unsigned int i = 0; delimiters[i] != '\0'; i++)
 		if (*nextchar == delimiters[i])
 			return mechlen;
 
@@ -1530,15 +1523,13 @@ match_mechanism(const char *token, const char *mechanism, const char *delimiters
 static size_t
 spf_modifier_name(const char *token)
 {
-	size_t res = 0;
-
 	/* modifier name is ALPHA *( ALPHA / DIGIT / "-" / "_" / "." ), i.e.
 	 * ([a-zA-Z][a-zA-Z0-9-_\.]*) */
 	if (!(((*token >= 'a') && (*token <= 'z')) ||
 			((*token >= 'A') && (*token <= 'Z'))))
 		return 0;
 
-	res++;
+	size_t res = 1;
 
 	while (token[res] && !WSPACE(token[res])) {
 		if (token[res] == '=')
@@ -1640,8 +1631,7 @@ find_modifier(const char *s, const char *mod)
 static int
 spflookup(const char *domain, unsigned int *queries)
 {
-	char *txt, *token, *valid = NULL;
-	const char *redirect = NULL, *expl = NULL;
+	char *txt, *valid = NULL;
 	int i, result = SPF_NONE, prefix;
 	const char *mechanism = NULL;
 
@@ -1672,7 +1662,7 @@ spflookup(const char *domain, unsigned int *queries)
 	}
 	if (!txt)
 		return SPF_NONE;
-	token = txt;
+	char *token = txt;
 	while ((token = strstr(token, "v=spf1"))) {
 		if (valid) {
 			free(txt);
@@ -1692,7 +1682,7 @@ spflookup(const char *domain, unsigned int *queries)
 	 * These two modifiers [exp and redirect] MUST NOT appear in a record more than once
 	 * each.  If they do, then check_host() exits with a result of "permerror".
 	 */
-	redirect = find_modifier(token, "redirect=");
+	const char *redirect = find_modifier(token, "redirect=");
 	if (redirect != NULL) {
 		const char *next = redirect + strlen("redirect=");
 		if (WSPACE(*next) || (*next == '\0') ||
@@ -1702,7 +1692,7 @@ spflookup(const char *domain, unsigned int *queries)
 		}
 		redirect = next;
 	}
-	expl = find_modifier(token, "exp=");
+	const char *expl = find_modifier(token, "exp=");
 	if (expl != NULL) {
 		const char *next = expl + strlen("exp=");
 		if (find_modifier(next, "exp=") != NULL) {

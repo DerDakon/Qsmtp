@@ -317,7 +317,7 @@ wrap_header(const char *buf, const off_t len)
 static off_t
 qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, const unsigned int body_recode)
 {
-	off_t off, header = 0;
+	off_t header = 0;
 	cstring cenc = STREMPTY_INIT, ctype = STREMPTY_INIT;
 /* scan header */
 
@@ -327,7 +327,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 	} else if (buf[0] == '\n') {
 		header = 1;
 	}
-	off = header;
+	off_t off = header;
 
 	/* first: find the newline between header and body */
 	while (!header && (off < len)) {
@@ -433,8 +433,6 @@ recode_qp(const char *buf, const off_t len)
 {
 	unsigned int idx = 0;
 	char sendbuf[1280];
-	size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
-	off_t off = 0;
 	int llen = 0;		/* length of this line, needed for qp line break */
 
 	assert(len >= 0);
@@ -442,7 +440,8 @@ recode_qp(const char *buf, const off_t len)
 	if (len <= 0)
 		return;
 
-	while (off < len) {
+	for (off_t off = 0; off < len; ) {
+		size_t chunk = 0;	/* size of the chunk to copy into sendbuf */
 		if (idx > 0) {
 			/* flush out everything already in the buffer */
 			netnwrite(sendbuf, idx);
@@ -569,7 +568,6 @@ recode_qp(const char *buf, const off_t len)
 			memcpy(sendbuf + idx, buf + off, chunk);
 			off += chunk;
 			idx += chunk;
-			chunk = 0;
 		}
 	}
 	lastlf = (sendbuf[idx - 1] == '\n');
@@ -606,14 +604,12 @@ skip_tpad(const char *buf, const off_t len)
 static void
 send_qp(const char *buf, const off_t len)
 {
-	off_t off = 0;
 	cstring boundary;
 	int multipart;		/* set to one if this is a multipart message */
-	unsigned int recodeflag;
 
-	recodeflag = need_recode(buf, len);
+	unsigned int recodeflag = need_recode(buf, len);
 
-	off = qp_header(buf, len, &boundary, &multipart, (recodeflag & 0x3));
+	off_t off = qp_header(buf, len, &boundary, &multipart, (recodeflag & 0x3));
 
 	if (!multipart) {
 		if (recodeflag & 0x3)
@@ -726,11 +722,10 @@ send_qp(const char *buf, const off_t len)
 void
 send_data(unsigned int recodeflag)
 {
-	int num;
-
 	successmsg[2] = "";
 	netwrite("DATA\r\n");
-	if ( (num = netget(1)) != 354) {
+	int num = netget(1);
+	if (num != 354) {
 		const char *msg[] = { num >= 500 ? "D5" : "Z4", ".3.0 remote host rejected DATA command: ",
 				linein.s + 4 };
 		write_status_m(msg, 3);

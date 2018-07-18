@@ -15,7 +15,6 @@ send_envelope(const unsigned int recodeflag, const char *sender, int rcptcount, 
 	int rcptstat = 1;	/* this means: all recipients have been rejected */
 	char sizebuf[ULSTRLEN];
 	unsigned int lastmsg = 2;	/* last message in array */
-	int i;
 
 /* ESMTP SIZE extension */
 	if (smtpext & esmtp_size) {
@@ -41,7 +40,7 @@ send_envelope(const unsigned int recodeflag, const char *sender, int rcptcount, 
 
 		lastmsg = 1;
 		netmsg[0] = "RCPT TO:<";
-		for (i = 1; i < rcptcount; i++) {
+		for (int i = 1; i < rcptcount; i++) {
 			netmsg[lastmsg++] = rcpts[i];
 			if ((i == rcptcount - 1) || ((i % 4) == 3)) {
 				netmsg[lastmsg++] = ">\r\n";
@@ -54,12 +53,12 @@ send_envelope(const unsigned int recodeflag, const char *sender, int rcptcount, 
 		}
 /* MAIL FROM: reply */
 		if (checkreply(" ZD", mailerrmsg, 6) >= 300) {
-			for (i = rcptcount; i > 0; i--)
+			for (int i = rcptcount; i > 0; i--)
 				checkreply(NULL, NULL, 0);
 			return 1;
 		}
 /* RCPT TO: replies */
-		for (i = rcptcount; i > 0; i--) {
+		for (int i = rcptcount; i > 0; i--) {
 			if (checkreply("rsh", NULL, 8) < 300)
 				rcptstat = 0;
 		}
@@ -75,7 +74,7 @@ send_envelope(const unsigned int recodeflag, const char *sender, int rcptcount, 
 		netmsg[2] = ">";
 		netmsg[3] = NULL;
 
-		for (i = 0; i < rcptcount; i++) {
+		for (int i = 0; i < rcptcount; i++) {
 			netmsg[1] = rcpts[i];
 			net_writen(netmsg);
 			if (checkreply("rsh", NULL, 8) < 300)

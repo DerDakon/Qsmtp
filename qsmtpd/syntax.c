@@ -29,7 +29,7 @@ void
 check_max_bad_commands(void)
 {
 	const char *msg[] = {"dropped connection from [", xmitstat.remoteip,
-	"] {too many bad commands}", NULL };
+		"] {too many bad commands}", NULL };
 
 	if (badcmds++ <= MAXBADCMDS)
 		return;

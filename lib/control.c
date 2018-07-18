@@ -107,8 +107,6 @@ compact_buffer(char **buf, char *inbuf, size_t oldlen)
 size_t
 lloadfilefd(int fd, char **buf, const int striptab)
 {
-	char *inbuf;
-	size_t oldlen, j;
 	struct stat st;
 
 	*buf = NULL;
@@ -138,14 +136,14 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	if (!st.st_size) {
 		return close(fd);
 	}
-	oldlen = st.st_size;
-	inbuf = malloc(oldlen + 1);
+	size_t oldlen = st.st_size;
+	char *inbuf = malloc(oldlen + 1);
 	if (!inbuf) {
 		close(fd);
 		errno = ENOMEM;
 		return -1;
 	}
-	j = 0;
+	size_t j = 0;
 	while (j < oldlen) {
 		const ssize_t k = read(fd, inbuf + j, oldlen - j);
 		if (k == -1) {
@@ -253,9 +251,8 @@ size_t
 loadoneliner(int base, const char *filename, char **buf, const int optional)
 {
 	size_t j;
-	int fd;
 
-	fd = openat(base, filename, O_RDONLY | O_CLOEXEC);
+	int fd = openat(base, filename, O_RDONLY | O_CLOEXEC);
 	if (fd == -1) {
 		j = (size_t)-1;
 		*buf = NULL;
@@ -366,7 +363,6 @@ data_array(unsigned int entries, size_t datalen, void *oldbuf, size_t oldlen)
 int
 loadlistfd(int fd, char ***bufa, checkfunc cf)
 {
-	size_t i, j, k;
 	char *buf;
 	const size_t datalen = lloadfilefd(fd, &buf, 3);
 	int haserr = 0;
@@ -379,8 +375,9 @@ loadlistfd(int fd, char ***bufa, checkfunc cf)
 		return 0;
 	}
 	/* count the lines in buf */
-	i = datalen - 1;
-	k = j = 0;
+	size_t i = datalen - 1;
+	size_t j;
+	size_t k = j = 0;
 	while (k < i) {
 		if (!cf || !cf(buf + k))
 			j++;
@@ -440,8 +437,7 @@ loadlistfd(int fd, char ***bufa, checkfunc cf)
 int
 finddomainfd(int fd, const char *domain, const int cl)
 {
-	char *map;
-	int rc = 0, i;
+	int i;
 	off_t len;
 
 	if (fd < 0) {
@@ -455,7 +451,7 @@ finddomainfd(int fd, const char *domain, const int cl)
 		return -1;
 	}
 
-	map = mmap_fd(fd, &len);
+	char *map = mmap_fd(fd, &len);
 
 	if (map == NULL) {
 		int e = errno;
@@ -465,7 +461,7 @@ finddomainfd(int fd, const char *domain, const int cl)
 		return -1;
 	}
 
-	rc = finddomain(map, len, domain);
+	int rc = finddomain(map, len, domain);
 
 	munmap(map, len);
 	if (cl) {
@@ -495,14 +491,13 @@ finddomainfd(int fd, const char *domain, const int cl)
 int
 finddomain(const char *buf, const off_t size, const char *domain)
 {
-	const char *cur;
-	size_t dl = strlen(domain);
-	off_t pos = 0;
-
 	if (!buf)
 		return 0;
 
-	cur = buf;
+	size_t dl = strlen(domain);
+	off_t pos = 0;
+
+	const char *cur = buf;
 	do {
 		char *cure = memchr(cur, '\n', size - pos);
 

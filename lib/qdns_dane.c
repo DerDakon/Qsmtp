@@ -16,10 +16,8 @@
 static int
 free_tlsa_data(struct daneinfo **out, const int cnt)
 {
-	int i;
-
 	if (out != NULL) {
-		for (i = 0; i < cnt; i++)
+		for (int i = 0; i < cnt; i++)
 			free((*out)[i].data);
 		free(*out);
 		*out = NULL;
@@ -32,9 +30,7 @@ free_tlsa_data(struct daneinfo **out, const int cnt)
 static int
 dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 {
-	unsigned int pos;
 	char header[12];
-	uint16_t numanswers;
 	int ret = 0;
 
 	if (len < sizeof(header)) {
@@ -43,8 +39,8 @@ dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 	}
 	memcpy(header, buf, sizeof(header));
 
-	numanswers = ntohs(*((unsigned short *)(header + 6)));
-	pos = dns_packet_skipname(buf, len, sizeof(header));
+	uint16_t numanswers = ntohs(*((unsigned short *)(header + 6)));
+	unsigned int pos = dns_packet_skipname(buf, len, sizeof(header));
 	if (!pos)
 		return -1;
 	pos += 4;
@@ -56,8 +52,6 @@ dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 	}
 
 	while (numanswers--) {
-		uint16_t datalen;
-
 		pos = dns_packet_skipname(buf, len, pos);
 		if (!pos)
 			return free_tlsa_data(out, ret);
@@ -67,7 +61,7 @@ dns_tlsa_packet(struct daneinfo **out, const char *buf, unsigned int len)
 		}
 		memcpy(header, buf + pos, 10);
 		pos += 10;
-		datalen = ntohs(*((unsigned short *)(header + 8)));
+		uint16_t datalen = ntohs(*((unsigned short *)(header + 8)));
 
 		if (memcmp(header, DNS_T_TLSA, 2) == 0) {
 			if (memcmp(header + 2, DNS_C_IN, 2) == 0) {
@@ -146,7 +140,6 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 {
 	char hostbuf[strlen("_65535._tcp.") + strlen(host) + 1];
 	char *q = NULL;
-	int r;
 
 	hostbuf[0] = '_';
 	ultostr(port, hostbuf + 1);
@@ -160,7 +153,7 @@ dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 		return -1;
 	if (dns_resolve(q, DNS_T_TLSA) == -1)
 		return -1;
-	r = dns_tlsa_packet(out, dns_resolve_tx.packet, dns_resolve_tx.packetlen);
+	int r = dns_tlsa_packet(out, dns_resolve_tx.packet, dns_resolve_tx.packetlen);
 	if (r < 0)
 		return r;
 	dns_transmit_free(&dns_resolve_tx);

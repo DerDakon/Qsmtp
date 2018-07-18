@@ -54,7 +54,6 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 	 * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
 	do {
 		int flagerr = 0;
-		int s;
 		/* query DNS before opening the socket, otherwise a long DNS timeout could lead to SMTP
 		 * socket timeout */
 		const int tlsa = (mx->name == NULL) ? 0 : dnstlsa(mx->name, targetport, NULL);
@@ -65,7 +64,7 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		if (dup2(socketd, 0) < 0)
 			net_conn_shutdown(shutdown_abort);
 
-		s = netget(0);
+		int s = netget(0);
 		if (s < 0) {
 			switch (-s) {
 			case ECONNRESET:

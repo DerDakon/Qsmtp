@@ -25,7 +25,6 @@ void *
 mmap_fd(int fd, off_t *len)
 {
 	struct stat st;
-	void *res;
 
 	if (fstat(fd, &st) != 0)
 		return NULL;
@@ -35,7 +34,7 @@ mmap_fd(int fd, off_t *len)
 	if (!st.st_size)
 		return NULL;
 
-	res = mmap(NULL, *len, PROT_READ, MAP_SHARED, fd, 0);
+	void *res = mmap(NULL, *len, PROT_READ, MAP_SHARED, fd, 0);
 
 	return (res == MAP_FAILED) ? NULL : res;
 }
@@ -54,8 +53,6 @@ mmap_fd(int fd, off_t *len)
 void *
 mmap_name(int dirfd, const char *fname, off_t *len, int *fd)
 {
-	void *buf;
-
 	*fd = openat(dirfd, fname, O_RDONLY | O_CLOEXEC);
 
 	if (*fd < 0)
@@ -67,7 +64,7 @@ mmap_name(int dirfd, const char *fname, off_t *len, int *fd)
 		return NULL;
 	}
 
-	buf = mmap_fd(*fd, len);
+	void *buf = mmap_fd(*fd, len);
 
 	if (buf == NULL) {
 		flock(*fd, LOCK_UN);

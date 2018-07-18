@@ -73,10 +73,9 @@ getrhost(const struct ips *m, const unsigned short idx)
 int
 checkreply(const char *status, const char **pre, const int mask)
 {
-	int res;
 	int ignore = (status == NULL);
 
-	res = netget(1);
+	int res = netget(1);
 	if (status) {
 		unsigned int m;	// mask bit
 

@@ -29,13 +29,13 @@
 struct ips *
 filter_my_ips(struct ips *ipl)
 {
-	struct ifaddrs *ifap, *curi;
+	struct ifaddrs *ifap;
 	struct ips *ret = ipl;
 
 	if (getifaddrs(&ifap) != 0)
 		return ipl;
 
-	for (curi = ifap; curi != NULL; curi = curi->ifa_next) {
+	for (struct ifaddrs *curi = ifap; curi != NULL; curi = curi->ifa_next) {
 		struct ips *tmp;
 		struct ips *prev = NULL;
 

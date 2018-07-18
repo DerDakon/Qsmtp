@@ -1102,7 +1102,6 @@ int
 main(int argc, char **argv)
 {
 	int ret = 0;
-	int i;
 
 	if (argc != 2) {
 		fprintf(stderr, "Usage: %s /path/to/client\n", argv[0]);
@@ -1128,7 +1127,7 @@ main(int argc, char **argv)
 	socketd = pipefd[1];
 
 	/* test any combination of tests */
-	for (i = 1; i < 0x400; i++) {
+	for (int i = 1; i < 0x400; i++) {
 		if (i & 1)
 			ret += test_pending();
 		if (i & 2)
@@ -1154,7 +1153,7 @@ main(int argc, char **argv)
 	ret += test_net_writen();
 	ret += test_net_write_multiline();
 
-	i = data_pending();
+	int i = data_pending();
 	if (i != 0) {
 		fprintf(stderr, "data pending at end of tests: %i\n", i);
 		ret++;

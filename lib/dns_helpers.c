@@ -123,7 +123,7 @@ ip6_sort(const void *l, const void *r)
 void
 sortmx(struct ips **p)
 {
-	struct ips *next, *res = NULL;
+	struct ips *next;
 
 	/* first sort the IPs in every entry */
 	for (next = *p; next != NULL; next = next->next) {
@@ -159,7 +159,7 @@ sortmx(struct ips **p)
 #endif
 
 	/* make us live easy: copy first entry */
-	res = *p;
+	struct ips *res = *p;
 	next = (*p)->next;
 	(*p)->next = NULL;
 	*p = next;
@@ -204,11 +204,9 @@ sortmx(struct ips **p)
 struct ips *
 in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority)
 {
-	struct ips *res;
-
 	assert(cnt > 0);
 
-	res = malloc(sizeof(*res));
+	struct ips *res = malloc(sizeof(*res));
 	if (res == NULL) {
 		free(a);
 		return NULL;

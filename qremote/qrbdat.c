@@ -20,13 +20,9 @@ size_t chunksize;	/**< the maximum allowed size for an outgoing send buffer in B
 void
 send_bdat(unsigned int recodeflag)
 {
-	off_t off = 0;		/* offset in incoming message data */
-	char *chunkbuf;
-	size_t lenlen;			/* "reserved" length for "BDAT <len> (LAST)?" */
-	int i;
 	int bare_cr_warning = 0;
 
-	chunkbuf = malloc(chunksize);
+	char *chunkbuf = malloc(chunksize);
 
 	if (chunkbuf == NULL) {
 		log_write(LOG_WARNING, "cannot allocate buffer for chunked transfer, fallback to normal transfer\n");
@@ -36,8 +32,8 @@ send_bdat(unsigned int recodeflag)
 
 	successmsg[2] = "chunked ";
 	/* calculate length needed to send out the "BDAT <len>" stuff */
-	lenlen = 0;
-	i = chunksize;
+	size_t lenlen = 0;			/* "reserved" length for "BDAT <len> (LAST)?" */
+	size_t i = chunksize;
 	while (i) {
 		lenlen++;
 		i /= 10;
@@ -47,7 +43,7 @@ send_bdat(unsigned int recodeflag)
 #ifdef DEBUG_IO
 	in_data = 1;
 #endif
-	while (off < msgsize) {
+	for (off_t off = 0; off < msgsize; ) {
 		size_t len = lenlen;	/* currently used space in chunkbuf */
 		size_t cpoff = off;	/* offset the current line starts at */
 		size_t linel = 0;	/* length of the currently parsed line */

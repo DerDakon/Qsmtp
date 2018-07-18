@@ -73,8 +73,6 @@ static int
 validroute(const char *s)
 {
 	const char *last = strchr(s, '=');
-	size_t len;
-	unsigned int i;
 
 	/* must be key=value */
 	if (last == NULL)
@@ -84,9 +82,9 @@ validroute(const char *s)
 	if (last == s)
 		return 1;
 
-	len = last - s;
+	size_t len = last - s;
 
-	for (i = 0; tags[i] != NULL; i++) {
+	for (unsigned int i = 0; tags[i] != NULL; i++) {
 		/* catch if tag is longer than the key found here */
 		if (strlen(tags[i]) != len)
 			continue;

@@ -35,12 +35,9 @@ int
 addrparse(char *in, const int flags, string *addr, char **more, struct userconf *ds, const char *rcpthosts, const off_t rcpthsize)
 {
 	char *at;			/* guess! ;) */
-	int result = 0;			/* return code */
-	int i, j;
-	string localpart;
 	const char *lookupdomain;	/*  the domain to lookup in user backend */
 
-	j = addrsyntax(in, flags, addr, more);
+	int j = addrsyntax(in, flags, addr, more);
 	if ((j == 0) || ((flags != 1) && (j == 4))) {
 		tarpit();
 		return netwrite("501 5.1.3 domain of mail address is syntactically incorrect\r\n") ? errno : EBOGUS;
@@ -58,7 +55,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		return 0;
 	if (j < 4) {
 		/* at this point either @ is set or addrsyntax has already caught this */
-		i = finddomain(rcpthosts, rcpthsize, at + 1);
+		int i = finddomain(rcpthosts, rcpthsize, at + 1);
 
 		if (!i)
 			return -2;
@@ -82,12 +79,16 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		}
 	}
 
-/* get the localpart out of the RCPT TO */
-	localpart.len = (at - addr->s);
-	localpart.s = addr->s;
 
-	if (lookupdomain != NULL)
+	if (lookupdomain != NULL) {
+		/* get the localpart out of the RCPT TO */
+		string localpart = {
+			.len = (at - addr->s),
+			.s = addr->s
+		};
+
 		j = user_exists(&localpart, lookupdomain, ds);
+	}
 	if (j < 0) {
 		free(addr->s);
 		STREMPTY(*addr);
@@ -96,7 +97,7 @@ addrparse(char *in, const int flags, string *addr, char **more, struct userconf 
 		const char *logmsg[] = {"550 5.1.1 no such user <", addr->s, ">", NULL};
 
 		tarpit();
-		result = net_writen(logmsg);
+		int result = net_writen(logmsg);
 		if (result < 0) {
 			free(addr->s);
 			STREMPTY(*addr);

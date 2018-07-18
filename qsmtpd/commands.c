@@ -54,7 +54,6 @@ static int __attribute__ ((nonnull (1)))
 helovalid(const char *helo, size_t len)
 {
 	char *s;
-	int rc;
 
 	/* ignore any trailing spaces */
 	while ((len > 0) && (helo[len - 1] == ' '))
@@ -80,7 +79,7 @@ helovalid(const char *helo, size_t len)
 		}
 	}
 
-	rc = dupstr(&xmitstat.helostr, helo);
+	int rc = dupstr(&xmitstat.helostr, helo);
 	if (rc < 0)
 		return rc;
 
@@ -196,8 +195,6 @@ is_authenticated(void)
 int
 smtp_helo(void)
 {
-	const char *s[] = {"250 ", heloname.s, NULL};
-
 	freedata();
 	xmitstat.esmtp = 0;
 	xmitstat.spf = 0;
@@ -212,6 +209,7 @@ smtp_helo(void)
 		break;
 	}
 
+	const char *s[] = {"250 ", heloname.s, NULL};
 	return -net_writen(s);
 }
 
@@ -222,10 +220,6 @@ smtp_ehlo(void)
 	const char *msg[] = {"250-", heloname.s, "\r\n250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-8BITMIME\r\n",
 			NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 	unsigned int next = 3;	/* next index in to be used */
-	char sizebuf[ULSTRLEN + 2]; /* holds a size and CRLF */
-	int rc;
-	char *authtypes = NULL;
-	const char *localport = getenv("TCPLOCALPORT");
 
 #ifdef CHUNKING
 	msg[next++] = "250-CHUNKING\r\n";
@@ -240,7 +234,7 @@ smtp_ehlo(void)
 		break;
 	}
 
-	authtypes = smtp_authstring();
+	char *authtypes = smtp_authstring();
 
 	if (authtypes != NULL) {
 		msg[next++] = "250-AUTH";
@@ -248,6 +242,7 @@ smtp_ehlo(void)
 		msg[next++] = authtypes;
 	}
 	/* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
+	const char *localport = getenv("TCPLOCALPORT");
 	if (!ssl && ((localport == NULL) || (strcmp(localport, "465") != 0))) {
 		const size_t oldlen = strlen(certfilename);
 		/* here we can use openat(), but the SSL functions can't,
@@ -290,6 +285,7 @@ smtp_ehlo(void)
 	}
 
 	/* this must stay last: it begins with "250 " */
+	char sizebuf[ULSTRLEN + 2]; /* holds a size and CRLF */
 	if (databytes) {
 		msg[next++] = "250 SIZE ";
 		ultostr(databytes, sizebuf);
@@ -298,7 +294,7 @@ smtp_ehlo(void)
 	} else {
 		msg[next] = "250 SIZE\r\n";
 	}
-	rc = (net_write_multiline(msg) < 0) ? errno : 0;
+	int rc = (net_write_multiline(msg) < 0) ? errno : 0;
 	xmitstat.spf = 0;
 	xmitstat.esmtp = 1;
 	xmitstat.datatype = 1;
@@ -309,14 +305,9 @@ smtp_ehlo(void)
 int
 smtp_rcpt(void)
 {
-	struct recip *r;
-	int i, e;
-	enum filter_result fr;	/* result of user filter */
 	string tmp;
 	char *more = NULL;
 	struct userconf ds;
-	const char *errmsg;
-	enum config_domain bt;			/* which policy matched */
 	const char *logmsg[] = { "temporarily ", "rejected message to <", NULL, "> from <", MAILFROM,
 					"> from IP [", xmitstat.remoteip, "] {", NULL, ", ", NULL, " policy}", NULL };
 	const char *okmsg[] = { "250 2.1.0 recipient <", NULL, "> OK", NULL };
@@ -335,7 +326,7 @@ smtp_rcpt(void)
 		return netwrite("452 4.5.3 Too many recipients\r\n") ? errno : 0;
 
 	userconf_init(&ds);
-	i = addrparse(linein.s + 9 + bugoffset, 1, &tmp, &more, &ds, rcpthosts, rcpthsize);
+	int i = addrparse(linein.s + 9 + bugoffset, 1, &tmp, &more, &ds, rcpthosts, rcpthsize);
 	logmsg[2] = tmp.s;
 
 	if  (i > 0) {
@@ -381,7 +372,7 @@ smtp_rcpt(void)
 
 				log_writen(LOG_INFO, logmsg);
 				userconf_free(&ds);
-				e = net_writen(netmsg);
+				int e = net_writen(netmsg);
 				free(tmp.s);
 				return e ? -e : EDONE;
 				}
@@ -398,7 +389,7 @@ smtp_rcpt(void)
 		return EINVAL;
 	}
 
-	r = malloc(sizeof(*r));
+	struct recip *r = malloc(sizeof(*r));
 	if (!r) {
 		userconf_free(&ds);
 		free(tmp.s);
@@ -438,8 +429,12 @@ smtp_rcpt(void)
 		return err_control2("user/domain filterconf for ", r->to.s) ? errno : EDONE;
 	}
 
-	i = e = 0;
-	fr = FILTER_PASSED;
+	i = 0;
+	int e = 0;
+	enum filter_result fr = FILTER_PASSED;	/* result of user filter */
+	const char *errmsg;
+	enum config_domain bt;			/* which policy matched */
+
 	/* Use all filters until there is a hard state: either rejection or whitelisting.
 	 * Continue on temporary errors to see if a later filter would introduce a hard
 	 * rejection to avoid that mail to come back to us just to fail. */
@@ -640,7 +635,6 @@ smtp_from_extensions(const char *more, unsigned int * const validlength)
 static int
 smtp_from_inner(void)
 {
-	int i = 0;
 	char *more = NULL;
 	/* this is the maximum allowed length of the command line. Since every extension
 	 * may raise this we use this variable. Every successfully used command extension
@@ -673,7 +667,7 @@ smtp_from_inner(void)
 		}
 	}
 
-	i = addrparse(linein.s + 11 + bugoffset, 0, &xmitstat.mailfrom, &more, NULL, rcpthosts, rcpthsize);
+	int i = addrparse(linein.s + 11 + bugoffset, 0, &xmitstat.mailfrom, &more, NULL, rcpthosts, rcpthsize);
 	if (i > 0)
 		return i;
 	else if (i == -1)
@@ -760,15 +754,13 @@ smtp_from_inner(void)
 int
 smtp_from(void)
 {
-	int r;
-
 	xmitstat.frommx = NULL;
 	xmitstat.fromdomain = 0;
 	xmitstat.thisbytes = 0;
 	xmitstat.datatype = 0;
 	STREMPTY(xmitstat.mailfrom);
 
-	r = smtp_from_inner();
+	int r = smtp_from_inner();
 
 	if (r != 0) {
 		/* make sure nothing is left behind */

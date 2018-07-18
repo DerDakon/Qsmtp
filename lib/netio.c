@@ -62,7 +62,6 @@ void DEBUG_IN(const size_t len)
 {
 	char buffer[len + 4];
 	size_t en = 0;
-	size_t i;
 
 	if (!do_debug_io || in_data)
 		return;
@@ -75,7 +74,7 @@ void DEBUG_IN(const size_t len)
 	buffer[1 + en] = ' ';
 	memcpy(buffer + 2 + en, linein.s, len);
 	buffer[2 + en + len] = '\0';
-	for (i = len + 1 + en; i > 0; i--) {
+	for (size_t i = len + 1 + en; i > 0; i--) {
 		if (buffer[i] < 32)
 			buffer[i] = '?';
 	}
@@ -87,7 +86,6 @@ void DEBUG_OUT(const char *s, const size_t l)
 {
 	char buffer[l + 4];
 	int en = 0;
-	const char *b, *c;
 
 	if (!do_debug_io || in_data)
 		return;
@@ -99,7 +97,7 @@ void DEBUG_OUT(const char *s, const size_t l)
 	}
 	buffer[1 + en] = ' ';
 
-	b = s;
+	const char *b = s, *c;
 	while ( (c = strchr(b, '\r')) && (b < s + l) ) {
 		memcpy(buffer + 2 + en, b, c - b);
 		buffer[2 + c - b + en] = '\0';
@@ -206,10 +204,8 @@ readinput(char *buffer, const size_t len, const int fatal)
 static const char *
 find_eol(const char *buffer, const size_t buflen, int *valid)
 {
-	const char *cr, *lf;
-
-	cr = memchr(buffer, '\r', buflen);
-	lf = memchr(buffer, '\n', buflen);
+	const char *cr = memchr(buffer, '\r', buflen);
+	const char *lf = memchr(buffer, '\n', buflen);
 
 	/* both are found and form a correct CRLF pair */
 	if ((cr != NULL) && (lf == cr + 1)) {
@@ -471,7 +467,6 @@ netnwrite(const char *s, const size_t l)
 int
 net_writen(const char *const *s)
 {
-	unsigned int i;
 	size_t len = strlen(s[0]);
 	/* RfC 2821, section 4.5.3: reply line
 	 *   The maximum total length of a reply line including the reply code
@@ -484,7 +479,7 @@ net_writen(const char *const *s)
 
 	memcpy(msg, s[0], len);
 
-	for (i = 1; s[i]; i++) {
+	for (unsigned int i = 1; s[i]; i++) {
 		size_t off = 0;
 		const size_t l = strlen(s[i]);
 
@@ -551,7 +546,6 @@ int
 net_write_multiline(const char *const *s)
 {
 	size_t len = 0;
-	char *buf;
 	int i;
 
 	for (i = 0; s[i]; i++)
@@ -560,7 +554,7 @@ net_write_multiline(const char *const *s)
 	assert(i > 0);
 	assert(len > 2);
 
-	buf = malloc(len + 1);
+	char *buf = malloc(len + 1);
 	if (buf == NULL) {
 		/* Combining into one buffer failed, just send everything on it's
 		 * own. This is less efficient, but will give the same result. */
@@ -611,9 +605,7 @@ net_readbin(size_t num, char *buf)
 		}
 	}
 	while (num) {
-		size_t r;
-
-		r = readinput(buf + offs, num + 1, 1);
+		size_t r = readinput(buf + offs, num + 1, 1);
 		if (r == (size_t) -1)
 			return -1;
 		offs += r;
@@ -640,7 +632,6 @@ size_t
 net_readline(size_t num, char *buf)
 {
 	size_t offs = 0;
-	const char *n;
 	int valid;
 
 	if (linenlen) {
@@ -652,7 +643,7 @@ net_readline(size_t num, char *buf)
 			return 1;
 		}
 
-		n = find_eol(lineinn, linenlen, &valid);
+		const char *n = find_eol(lineinn, linenlen, &valid);
 		/* copy data to the user if:
 		 * -everything is fine, i.e. valid EOL found
 		 * -no EOL found
@@ -717,7 +708,7 @@ net_readline(size_t num, char *buf)
 		/* Now we know that there is neither CR nor LF in buf as we would
 		 * have detected that before. All further CRLF detection can be
 		 * limited to lineinn. */
-		n = find_eol(lineinn, linenlen, &valid);
+		const char *n = find_eol(lineinn, linenlen, &valid);
 
 		if (n) {
 			size_t rest = lineinn + linenlen - n;
@@ -772,9 +763,8 @@ data_pending(void)
 		      .fd = 0,
 		      .events = POLL_IN_OR_ERROR
 		};
-		int i;
 
-		i = poll(&rfd, 1, 0);
+		int i = poll(&rfd, 1, 0);
 		if (i <= 0)
 			return i < 0 ? -errno : 0;
 

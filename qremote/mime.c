@@ -167,8 +167,7 @@ mime_param(const char *line, const size_t len)
 int
 is_multipart(const cstring *line, cstring *boundary)
 {
-	const char *ch;
-	size_t i = strlen("multipart/"), j;
+	size_t i = strlen("multipart/");
 	const size_t ct_len = strlen("Content-Type:"); /** initial text to skip over */
 
 	if (!line->len)
@@ -176,7 +175,7 @@ is_multipart(const cstring *line, cstring *boundary)
 
 	assert(line->len >= ct_len);
 
-	ch = skipwhitespace(line->s + ct_len, line->len - ct_len);
+	const char *ch = skipwhitespace(line->s + ct_len, line->len - ct_len);
 	if ((ch == NULL) || (ch == line->s + line->len))
 		return -1;
 
@@ -185,7 +184,7 @@ is_multipart(const cstring *line, cstring *boundary)
 	if (strncasecmp(ch, "multipart/", i) != 0)
 		return 0;
 
-	j = mime_token(ch + i, line->len - (ch - line->s) - i);
+	size_t j = mime_token(ch + i, line->len - (ch - line->s) - i);
 	i += j;
 	if (!j || (ch[i] == '='))
 		return -1;
