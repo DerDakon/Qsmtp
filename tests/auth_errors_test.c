@@ -94,11 +94,13 @@ check_all_msgs(void)
 	}
 }
 
-static inline void
+static void
 setinput(const char *str)
 {
-	assert(strlen(str) < sizeof(lineinbuf));
-	strncpy(linein.s, str, TESTIO_MAX_LINELEN);
+	const char *auth = "AUTH ";
+	assert(strlen(str) < sizeof(lineinbuf) - strlen(auth));
+	strncpy(linein.s, auth, sizeof(lineinbuf) - 1);
+	strncat(linein.s + strlen(linein.s), str, sizeof(lineinbuf) - strlen(linein.s) - 1);
 	linein.len = strlen(linein.s);
 }
 
@@ -120,10 +122,7 @@ main(int argc __attribute__((unused)), char **argv)
 	/* invalid AUTH mechanism */
 	const char *invalid_auths[] = { "BOGUS", "LOGINx", "cram-md5x", "xPLAIN", "PLAINx", NULL };
 	for (unsigned int i = 0; invalid_auths[i] != NULL; i++) {
-		char inputbuf[32] = "AUTH ";
-
-		strcat(inputbuf, invalid_auths[i]);
-		setinput(inputbuf);
+		setinput(invalid_auths[i]);
 
 		expected_net_write1 = "504 5.5.4 Unrecognized authentication type.\r\n";
 
@@ -136,7 +135,7 @@ main(int argc __attribute__((unused)), char **argv)
 	}
 
 	/* invalid base64 message */
-	setinput("AUTH PLAIN #");
+	setinput("PLAIN #");
 
 	expected_net_write1 = invalid_base64;
 
@@ -149,7 +148,7 @@ main(int argc __attribute__((unused)), char **argv)
 
 	/* auth aborted */
 	extra_read = "*\r\n";
-	setinput("AUTH PLAIN");
+	setinput("PLAIN");
 
 	expected_net_write1 = "334 \r\n";
 	expected_net_write2 = cancel_msg;
@@ -163,7 +162,7 @@ main(int argc __attribute__((unused)), char **argv)
 
 	/* empty line as AUTH data */
 	extra_read = "\r\n";
-	setinput("AUTH PLAIN");
+	setinput("PLAIN");
 
 	expected_net_write1 = "334 \r\n";
 	expected_net_write2 = invalid_msg;
@@ -177,7 +176,7 @@ main(int argc __attribute__((unused)), char **argv)
 
 	/* invalid base64 as AUTH data */
 	extra_read = "#\r\n";
-	setinput("AUTH PLAIN");
+	setinput("PLAIN");
 
 	expected_net_write1 = "334 \r\n";
 	expected_net_write2 = invalid_base64;
@@ -190,7 +189,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* missing password */
-	setinput("AUTH PLAIN AGZvbwA=");
+	setinput("PLAIN AGZvbwA=");
 
 	expected_net_write1 = invalid_msg;
 
@@ -202,7 +201,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* invalid base64 message */
-	setinput("AUTH LOGIN #");
+	setinput("LOGIN #");
 
 	expected_net_write1 = invalid_base64;
 
@@ -214,7 +213,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* syntactically valid, but will cause a backend error */
-	setinput("AUTH PLAIN AGEAYg==");
+	setinput("PLAIN AGEAYg==");
 
 	if (smtp_auth() != EDONE) {
 		fprintf(stderr, "AUTH PLAIN did not catch backend error as expected\n");
@@ -224,7 +223,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* invalid base64 message as username */
-	setinput("AUTH LOGIN");
+	setinput("LOGIN");
 
 	expected_net_write1 = "334 VXNlcm5hbWU6\r\n";
 	expected_net_write2 = invalid_base64;
@@ -238,7 +237,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* invalid base64 message as password */
-	setinput("AUTH LOGIN YQ==");
+	setinput("LOGIN YQ==");
 
 	expected_net_write1 = "334 UGFzc3dvcmQ6\r\n";
 	expected_net_write2 = invalid_base64;
@@ -252,7 +251,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* empty line as username */
-	setinput("AUTH LOGIN");
+	setinput("LOGIN");
 
 	expected_net_write1 = "334 VXNlcm5hbWU6\r\n";
 	expected_net_write2 = invalid_msg;
@@ -266,7 +265,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* empty line as password */
-	setinput("AUTH LOGIN YQ==");
+	setinput("LOGIN YQ==");
 
 	expected_net_write1 = "334 UGFzc3dvcmQ6\r\n";
 	expected_net_write2 = invalid_msg;
@@ -280,7 +279,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* empty line as password */
-	setinput("AUTH LOGIN YQ==");
+	setinput("LOGIN YQ==");
 
 	expected_net_write1 = "334 UGFzc3dvcmQ6\r\n";
 	expected_net_write2 = invalid_msg;
@@ -294,7 +293,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* LOGIN syntactically valid, but will cause a backend error */
-	setinput("AUTH LOGIN YQ==");
+	setinput("LOGIN YQ==");
 
 	expected_net_write1 = "334 UGFzc3dvcmQ6\r\n";
 	extra_read = "YQ==\r\n";
@@ -308,7 +307,7 @@ main(int argc __attribute__((unused)), char **argv)
 
 #ifdef AUTHCRAM
 	/* CRAM-MD5 does not support initial client response */
-	setinput("AUTH CRAM-md5 YQ==");
+	setinput("CRAM-md5 YQ==");
 
 	expected_net_write1 = "501 5.7.0 authentication mechanism does not support initial response\r\n";
 
@@ -320,7 +319,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* CRAM-MD5 with empty username */
-	setinput("AUTH CRAM-MD5");
+	setinput("CRAM-MD5");
 
 	testcase_ignore_net_writen();
 	expected_net_write1 = "501 5.5.4 malformed auth input\r\n";
@@ -334,7 +333,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* CRAM-MD5 with invalid base64 */
-	setinput("AUTH CRAM-MD5");
+	setinput("CRAM-MD5");
 
 	testcase_ignore_net_writen();
 	expected_net_write1 = "501 5.5.2 base64 decoding error\r\n";
@@ -348,7 +347,7 @@ main(int argc __attribute__((unused)), char **argv)
 	check_all_msgs();
 
 	/* CRAM-MD5 with empty MD5 response of invalid length */
-	setinput("AUTH CRAM-MD5");
+	setinput("CRAM-MD5");
 
 	expected_net_write1 = "501 5.5.4 malformed auth input\r\n";
 	extra_read = "Zm9vIGFiYw==\r\n";
@@ -359,7 +358,7 @@ main(int argc __attribute__((unused)), char **argv)
 	}
 
 	/* CRAM-MD5 with empty MD5 response of valid length, but containing invalid characters */
-	setinput("AUTH CRAM-MD5");
+	setinput("CRAM-MD5");
 
 	expected_net_write1 = "501 5.5.4 malformed auth input\r\n";
 	extra_read = "Zm9vIDAxMjN4NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm\r\n";
@@ -370,7 +369,7 @@ main(int argc __attribute__((unused)), char **argv)
 	}
 
 	/* CRAM-MD5 syntactically valid, but will cause a backend error */
-	setinput("AUTH CRAM-MD5");
+	setinput("CRAM-MD5");
 
 	extra_read = "Zm9vIDAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2Nzg5YWJjZGVm\r\n";
 
