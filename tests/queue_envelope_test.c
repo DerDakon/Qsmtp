@@ -3,8 +3,11 @@
 #include <tls.h>
 #include "test_io/testcase_io.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <openssl/conf.h>
+#include <openssl/ssl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -294,16 +297,10 @@ test_log_messages(void)
 		},
 		{ }
 	};
-	/* this doesn't really look right, but it works for now */
-	SSL myssl
-#if defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) <= 406
-	/* early gcc versions fail here with:
-	 * missing initializer (near initialization for 'myssl.type') */
-	;
-	memset(&myssl, 0, sizeof(myssl));
-#else
-		= { 0 };
-#endif
+	SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
+	SSL *myssl = SSL_new(ctx);
+	SSL_CTX_free(ctx);
+	assert(myssl != NULL);
 
 	strncpy(xmitstat.remoteip, "::ffff:172.28.19.44", sizeof(xmitstat.remoteip) - 1);
 	xmitstat.remoteip[sizeof(xmitstat.remoteip) - 1] = '\0';
@@ -323,7 +320,7 @@ test_log_messages(void)
 		xmitstat.spacebug = testpattern[i].spacebug;
 		goodrcpt = 0;
 		if (testpattern[i].encrypted)
-			ssl = &myssl;
+			ssl = myssl;
 		else
 			ssl = NULL;
 
@@ -376,7 +373,31 @@ test_log_messages(void)
 		ret += check_logmsg(testpattern[i].logmsg);
 	}
 
+	ssl_free(myssl);
+
 	return ret;
+}
+
+void
+test_ssl_free(SSL *myssl)
+{
+	if (SSL_shutdown(myssl) == 0)
+		SSL_shutdown(myssl);
+	SSL_free(myssl);
+
+	ssl_library_destroy();
+}
+
+void
+ssl_library_destroy()
+{
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+	ERR_remove_thread_state(NULL);
+#endif
+	CONF_modules_unload(1);
+	CRYPTO_cleanup_all_ex_data();
+	EVP_cleanup();
+	SSL_COMP_free_compression_methods();
 }
 
 int
@@ -385,6 +406,7 @@ main(void)
 	int ret = 0;
 
 	testcase_setup_log_writen(tc_log_writen);
+	testcase_setup_ssl_free(test_ssl_free);
 
 	ret += test_invalid_close();
 	ret += test_invalid_write();
