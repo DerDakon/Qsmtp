@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <openssl/conf.h>
+#include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <stdio.h>
 #include <stdlib.h>
