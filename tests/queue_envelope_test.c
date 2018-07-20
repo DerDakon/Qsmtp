@@ -298,7 +298,8 @@ test_log_messages(void)
 		},
 		{ }
 	};
-	SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
+	SSL_CTX *ctx = SSL_CTX_new(SSLv23_server_method());
+	assert(ctx != NULL);
 	SSL *myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);
 	assert(myssl != NULL);
@@ -405,6 +406,8 @@ int
 main(void)
 {
 	int ret = 0;
+
+	SSL_library_init();
 
 	testcase_setup_log_writen(tc_log_writen);
 	testcase_setup_ssl_free(test_ssl_free);
