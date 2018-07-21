@@ -30,16 +30,13 @@ addons:
       name: "DerDakon/Qsmtp"
       description: "Build submitted via Travis CI"
     notification_email: eike@sf-mail.de
-    build_command_prepend: "export PATH=/tmp/coverity-scan-analysis/cov-analysis-linux64-7.7.0.4/bin:${PATH}; export OPENSSL_ROOT_DIR=/tmp/openssl; mkdir covbuild; cd covbuild; cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_DOC=Off /home/travis/build/DerDakon/Qsmtp"
+    build_command_prepend: "export PATH=/tmp/coverity-scan-analysis/cov-analysis-linux64-7.7.0.4/bin:${PATH}; export OPENSSL_ROOT_DIR=/tmp/openssl; mkdir covbuild; cd covbuild; cmake -D CMAKE_BUILD_TYPE=Debug -DALLOW_INSECURE_BZERO=On -D BUILD_DOC=Off /home/travis/build/DerDakon/Qsmtp"
     build_command: "make -j 4"
     branch_pattern: coverity_scan
 script:
  - if [ ! -d /tmp/openssl/lib ]; then wget -O /tmp/openssl-${OPENSSL_VERSION}.tar.gz https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz; tar xf /tmp/openssl-${OPENSSL_VERSION}.tar.gz -C /tmp; pushd /tmp/openssl-${OPENSSL_VERSION}; ./config --prefix=/tmp/openssl shared; make install; popd; fi
  - export OPENSSL_ROOT_DIR=/tmp/openssl
- # this is insecurem but it allows to build with the old libbsd on Travis
- # DON'T DO THIS IN PRODUCTION
- - sed "s|ctest_build|execute_process(COMMAND sed \"32i#define explicit_bzero(a,b) memset(a,0,b)\" -i qsmtpd/auth.c)\n&|" -i ctest_qsmtp.cmake
- - echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nset(CONF_OPTIONS "-DIPV4ONLY=On" "-DHAS_EXP_BZERO=On")\nset(CTEST_SITE "travis-ci.org")\ninclude("/home/travis/build/DerDakon/Qsmtp/ctest_qsmtp.cmake")' > my_qsmtp.cmake
+ - echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nset(CONF_OPTIONS "-DIPV4ONLY=On" "-DALLOW_INSECURE_BZERO=On")\nset(CTEST_SITE "travis-ci.org")\ninclude("/home/travis/build/DerDakon/Qsmtp/ctest_qsmtp.cmake")' > my_qsmtp.cmake
  - ctest -V -D "CTEST_BUILD_NAME=Ubuntu Trusty ${CC}" -S my_qsmtp.cmake
 after_success:
  - lcov --directory /tmp/Qs-build --capture --output-file coverage.info # capture coverage info

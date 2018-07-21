@@ -27,6 +27,9 @@
 #include <unistd.h>
 #ifdef NEED_BSD_STRING_H
 #include <bsd/string.h>
+#elif defined(INSECURE_BZERO)
+// insecure fallback, could be optimized out by the compiler so memory is not overwritten
+#define explicit_bzero(a, b) memset((a), 0, (b))
 #endif
 
 const char *tempnoauth = "454 4.5.0 AUTH temporaryly not available\r\n";
