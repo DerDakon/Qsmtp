@@ -9,6 +9,7 @@ env:
    #   via the "travis encrypt" command using the project repo's public key
    - secure: "MVb7IsCI3oSZS2Frwn2qQLpxjIWIOCFx8qsx1Mdh++7GWTQyikSOSnKV+ThFHK/QS8yLBQ76uwhyieoAPUmWtBBa7JBkuo52FUdkzhmX+hvKL5zaCzlP0LvmXdgU6rbnberrKRZyhLMVh+UKxF0cRlcSa21oQrnigx8wSJOjuyWGZ1OL1xeRqjmuroGt1KEy1VyUpquc3uTL4c/F2JXnaOHFX+RApJCP2uFZFvInBDyH5L/hRNax7kg49QyEi8E/8AmnfMOf+OYAROk7PvB9djXkfFwXpi7jXenAb0O/JO+JTkCNFZriXjQi5PgZ+y4H4/waHIbMlia+J4+FeoFvdda0iGurdE8D0/xZdITS0+0ubfaVUt3Z1tNAAL+Ont4Xru8LMq+sXz45QC0RhlzrIddvKU/97NdK/it/f2dQSpKl2j57u5j4Fnk4A1Tv7nSC1xx/6RPH9kYub4O2TfrM6PFWUxRBpn06rCJaTrP3GGuoBrkE2ezJDj4Lo8RqZXrSL/22taacwXx+yhNMQmEvLzVaKFR4Qlck6e6RhId9ktprn3/U9F5PrljkEjj2j3vb0PmKei3iFiJyw+UWRV02LP18tvqxv1gKBoI5QGkxQejGfeBHbb58oe0GqRY6FFyE+Dhkc3aarYrJB4dF4V9ssy+JbmvGlAp8LP3Uztoo/gk="
    - OPENSSL_VERSION=1.0.2o
+   - OPENSSL_ROOT_DIR=/tmp/openssl
 sudo: false
 cache:
   directories:
@@ -30,12 +31,11 @@ addons:
       name: "DerDakon/Qsmtp"
       description: "Build submitted via Travis CI"
     notification_email: eike@sf-mail.de
-    build_command_prepend: "export PATH=/tmp/coverity-scan-analysis/cov-analysis-linux64-7.7.0.4/bin:${PATH}; export OPENSSL_ROOT_DIR=/tmp/openssl; mkdir covbuild; cd covbuild; cmake -D CMAKE_BUILD_TYPE=Debug -DALLOW_INSECURE_BZERO=On -D BUILD_DOC=Off /home/travis/build/DerDakon/Qsmtp"
+    build_command_prepend: "mkdir covbuild; cd covbuild; cmake -D CMAKE_BUILD_TYPE=Debug -DALLOW_INSECURE_BZERO=On -D BUILD_DOC=Off /home/travis/build/DerDakon/Qsmtp"
     build_command: "make -j 4"
     branch_pattern: coverity_scan
 script:
- - if [ ! -d /tmp/openssl/lib ]; then wget -O /tmp/openssl-${OPENSSL_VERSION}.tar.gz https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz; tar xf /tmp/openssl-${OPENSSL_VERSION}.tar.gz -C /tmp; pushd /tmp/openssl-${OPENSSL_VERSION}; ./config --prefix=/tmp/openssl shared; make install; popd; fi
- - export OPENSSL_ROOT_DIR=/tmp/openssl
+ - if [ ! -d ${OPENSSL_ROOT_DIR}/lib ]; then wget -O /tmp/openssl-${OPENSSL_VERSION}.tar.gz https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz; tar xf /tmp/openssl-${OPENSSL_VERSION}.tar.gz -C /tmp; pushd /tmp/openssl-${OPENSSL_VERSION}; ./config --prefix=${OPENSSL_ROOT_DIR} shared; make install; popd; fi
  - echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nset(CONF_OPTIONS "-DIPV4ONLY=On" "-DALLOW_INSECURE_BZERO=On")\nset(CTEST_SITE "travis-ci.org")\ninclude("/home/travis/build/DerDakon/Qsmtp/ctest_qsmtp.cmake")' > my_qsmtp.cmake
  - ctest -V -D "CTEST_BUILD_NAME=Ubuntu Trusty ${CC}" -S my_qsmtp.cmake
 after_success:
