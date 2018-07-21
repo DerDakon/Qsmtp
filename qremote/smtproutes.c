@@ -203,8 +203,6 @@ parse_route_params(struct ips **mx, const char *remhost, unsigned int *targetpor
 struct ips *
 smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 {
-	char **smtproutes;
-	struct ips *mx = NULL;
 	/* check if the dir exists at all to avoid probing for every
 	 * subdomain if the dir does not exist. */
 	const int dirfd = get_dirfd(controldir_fd, "smtproutes.d");
@@ -263,8 +261,6 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 				err_confn(errmsg, NULL);
 			}
 
-			fd = 0;
-
 			for (i = 0; tags[i] != NULL; i++) {
 				const char *v;
 				if (!(tagmask & (1 << i)))
@@ -289,9 +285,10 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 						err_confn(logmsg, array);
 					} else {
 						clientcertbuf = strdup(v);
-						if (clientcertbuf == NULL)
-							fd = -ENOMEM;
-						else
+						if (clientcertbuf == NULL) {
+							free(array);
+							err_mem(0);
+						} else
 							clientcertname = clientcertbuf;
 					}
 					break;
@@ -322,20 +319,20 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 				}
 			}
 
-			if (fd == 0) {
-				fd = parse_route_params(&mx, remhost, targetport, array, hv, pv);
-				if (fd != 0) {
-					free(clientcertbuf);
-					clientcertbuf = NULL;
-				}
-			}
-
+			struct ips *mx = NULL;
+			fd = parse_route_params(&mx, remhost, targetport, array, hv, pv);
 			free(array);
-
-			return (fd == 0) ? mx : NULL;
+			if (fd != 0) {
+				free(clientcertbuf);
+				clientcertbuf = NULL;
+				return NULL;
+			}
+			return mx;
 		}
 	}
 
+	char **smtproutes;
+	struct ips *mx = NULL;
 	if ((loadlistfd(openat(controldir_fd, "smtproutes", O_RDONLY | O_CLOEXEC), &smtproutes, hascolon) == 0) && (smtproutes != NULL)) {
 		unsigned int k = 0;
 

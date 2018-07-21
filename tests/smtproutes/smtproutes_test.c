@@ -5,6 +5,7 @@
 #include "test_io/testcase_io.h"
 
 #include <arpa/inet.h>
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -37,6 +38,12 @@ err_confn(const char **msg, void *freebuf)
 	exit(1);
 }
 
+void
+err_mem(const int doquit)
+{
+	assert(doquit == 0);
+	abort();
+}
 
 int
 test_ask_dnsaaaa(const char *domain, struct in6_addr **ips)
