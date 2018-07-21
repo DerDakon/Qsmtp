@@ -30,7 +30,7 @@ addons:
       name: "DerDakon/Qsmtp"
       description: "Build submitted via Travis CI"
     notification_email: eike@sf-mail.de
-    build_command_prepend: "export PATH=/tmp/coverity-scan-analysis/cov-analysis-linux64-7.7.0.4/bin:${PATH}; mkdir covbuild; cd covbuild; cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_DOC=Off /home/travis/build/DerDakon/Qsmtp"
+    build_command_prepend: "export PATH=/tmp/coverity-scan-analysis/cov-analysis-linux64-7.7.0.4/bin:${PATH}; export OPENSSL_ROOT_DIR=/tmp/openssl; mkdir covbuild; cd covbuild; cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_DOC=Off /home/travis/build/DerDakon/Qsmtp"
     build_command: "make -j 4"
     branch_pattern: coverity_scan
 script:
