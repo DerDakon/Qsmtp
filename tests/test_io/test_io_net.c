@@ -92,23 +92,22 @@ int
 testcase_net_writen_combine(const char *const *msg)
 {
 	size_t len = 0;
-	unsigned int i;
 
-	for (i = 0; msg[i] != NULL; i++)
+	for (unsigned int i = 0; msg[i] != NULL; i++)
 		len += strlen(msg[i]);
 
-	{
-		char buf[len + 3];
+	char buf[len + 3];
 
-		memset(buf, 0, len + 1);
+	memset(buf, 0, len + 1);
 
-		for (i = 0; msg[i] != NULL; i++)
-			strcat(buf, msg[i]);
+	for (unsigned int i = 0; msg[i] != NULL; i++)
+		strcat(buf, msg[i]);
 
-		strcat(buf, "\r\n");
+	buf[len++] = '\r';
+	buf[len++] = '\n';
+	buf[len] = '\0';
 
-		netnwrite(buf, len + 2);
-	}
+	netnwrite(buf, len);
 
 	return 0;
 }
