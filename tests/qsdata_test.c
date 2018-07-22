@@ -2078,6 +2078,7 @@ main()
 
 	ret += check_data_write_received_fail();
 	ret += check_data_write_received_pipefail();
+	testcase_setup_net_writen(testcase_net_writen_combine);
 	ret += check_data_body();
 
 	ret += check_data_read_fails();
@@ -2089,7 +2090,6 @@ main()
 	ret += check_bdat_qinit_fail();
 
 	expect_queue_chunked = 1;
-	testcase_setup_net_writen(testcase_net_writen_combine);
 
 	ret += check_bdat_empty_chunks();
 	ret += check_bdat_readerror();

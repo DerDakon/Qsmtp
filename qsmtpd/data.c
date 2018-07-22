@@ -29,7 +29,7 @@
 size_t maxbytes;			/* the maximum allowed size of message data */
 static char datebuf[35] = ">; ";		/* the date for the From- and Received-lines */
 static const char *loop_logmsg = "mail loop}";
-static const char *loop_netmsg = "554 5.4.6 too many hops, this message is looping\r\n";
+static const char *loop_netmsg = "554 5.4.6 too many hops, this message is looping";
 
 
 static inline void
@@ -256,7 +256,7 @@ static void log_recips(const char *reason1, const char *reason2, const char *rea
 int
 smtp_data(void)
 {
-	const char *logreasons[3] = { NULL, NULL, NULL };
+	const char *logreasons[] = { NULL, NULL, NULL };
 	unsigned int headerflags = 0;	/* Date: and From: are required in header,
 					 * else message is bogus (RfC 2822, section 3.6).
 					 * We also scan for Message-Id here.
@@ -265,8 +265,7 @@ smtp_data(void)
 #define HEADER_HAS_DATE 0x1
 #define HEADER_HAS_FROM 0x2
 #define HEADER_HAS_MSGID 0x4
-	const char *errmsg = NULL;
-	char errbuf[96];			/* for dynamically constructed error messages */
+	const char *errmsgs[] = { NULL, NULL, NULL, NULL };
 	unsigned int hops = 0;		/* number of "Received:"-lines */
 
 	msgsize = 0;
@@ -321,24 +320,20 @@ smtp_data(void)
 				case 1:
 					flagr = 0;
 					break;
-				case -2: {
-					const char *errtext = "550 5.6.0 message does not comply to RfC2822: "
-							"more than one '";
-
+				case -2:
 					logreasons[0] = "more than one '";
 					logreasons[1] = hdrname;
 					logreasons[2] = "' in header}";
 
-					errmsg = errbuf;
-					memcpy(errbuf, errtext, strlen(errtext));
-					memcpy(errbuf + strlen(errtext), hdrname, strlen(hdrname));
-					memcpy(errbuf + strlen(errtext) + strlen(hdrname), "'\r\n", 4);
+					errmsgs[0] = "550 5.6.0 message does not comply to RfC2822: "
+							"more than one '";
+					errmsgs[1] = hdrname;
+					errmsgs[2] = "'";
 					goto loop_data;
-				}
 				case -8:
 					logreasons[0] = "8bit-character in message header}";
-					errmsg = "550 5.6.0 message does not comply to RfC2822: "
-							"8bit character in message header\r\n";
+					errmsgs[0] = "550 5.6.0 message does not comply to RfC2822: "
+							"8bit character in message header";
 					goto loop_data;
 				}
 			}
@@ -346,7 +341,7 @@ smtp_data(void)
 				if (!strncasecmp("Received:", linein.s, 9)) {
 					if (++hops > MAXHOPS) {
 						logreasons[0] = loop_logmsg;
-						errmsg = loop_netmsg;
+						errmsgs[0] = loop_netmsg;
 						goto loop_data;
 					}
 				} else if ((linein.len >= 20) && !strncmp("Delivered-To:", linein.s, 13)) {
@@ -366,7 +361,7 @@ smtp_data(void)
 					TAILQ_FOREACH(np, &head, entries) {
 						if (np->ok && !strcmp(linein.s + 14, np->to.s)) {
 							logreasons[0] = loop_logmsg;
-							errmsg = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients\r\n";
+							errmsgs[0] = "554 5.4.6 message is looping, found a \"Delivered-To:\" line with one of the recipients";
 							goto loop_data;
 						}
 					}
@@ -413,11 +408,11 @@ smtp_data(void)
 	} else if (xmitstat.check2822 & 1) {
 		if (!(headerflags & HEADER_HAS_DATE)) {
 			logreasons[0] = "no 'Date:' in header}";
-			errmsg = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing\r\n";
+			errmsgs[0] = "550 5.6.0 message does not comply to RfC2822: 'Date:' missing";
 			goto loop_data;
 		} else if (!(headerflags & HEADER_HAS_FROM)) {
 			logreasons[0] = "no 'From:' in header}";
-			errmsg = "550 5.6.0 message does not comply to RfC2822: 'From:' missing\r\n";
+			errmsgs[0] = "550 5.6.0 message does not comply to RfC2822: 'From:' missing";
 			goto loop_data;
 		}
 	}
@@ -435,7 +430,7 @@ smtp_data(void)
 				for (int j = linein.len - 1; j >= 0; j--)
 					if (((signed char)linein.s[j]) < 0) {
 						logreasons[0] = "8bit-character in message body}";
-						errmsg = "550 5.6.0 message contains 8bit characters\r\n";
+						errmsgs[0] = "550 5.6.0 message contains 8bit characters";
 						goto loop_data;
 					}
 			}
@@ -452,7 +447,7 @@ smtp_data(void)
 	if (msgsize > maxbytes) {
 		logreasons[0] = "message too big}";
 		errno = EMSGSIZE;
-		errmsg = NULL;
+		errmsgs[0] = NULL;
 		goto loop_data;
 	}
 
@@ -511,7 +506,8 @@ loop_data:
 		switch (rc) {
 		case EINVAL:
 			logreasons[0] = "bad CRLF sequence}";
-			errmsg = "500 5.5.2 bad <CRLF> sequence\r\n";
+			errmsgs[0] = "500 5.5.2 bad <CRLF> sequence";
+			errmsgs[1] = NULL;
 			break;
 		case E2BIG:
 			logreasons[0] = "too long SMTP line}";
@@ -536,8 +532,8 @@ loop_data:
 #ifdef DEBUG_IO
 	in_data = 0;
 #endif
-	if (errmsg)
-		return netwrite(errmsg) ? errno : EDONE;
+	if (errmsgs[0])
+		return net_writen(errmsgs) ? errno : EDONE;
 	return rc;
 }
 
@@ -664,11 +660,12 @@ smtp_bdat(void)
 			queue_reset();
 		freedata();
 	} else if (hops > MAXHOPS) {
+		const char *errmsgs[] = { loop_netmsg, NULL };
 		log_recips(loop_logmsg, NULL, NULL);
 		freedata();
-		if (netwrite(loop_netmsg)) {
+		if (net_writen(errmsgs))
 			bdaterr = -errno;
-		} else
+		else
 			bdaterr = -EDONE;
 	} else {
 		/* This returns the size as given by the client. It has successfully been parsed as number.
