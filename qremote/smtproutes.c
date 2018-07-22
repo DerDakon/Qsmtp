@@ -210,11 +210,9 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 	*targetport = 25;
 
 	if (dirfd >= 0) {
-		char fn[320]; /* length of domain + control/smtproutes.d */
+		char fnbuf[DOMAINNAME_MAX + 2];
+		const char *fn = remhost;
 		const char *curpart = remhost;
-		const size_t diroffs = 0;
-
-		strcpy(fn + diroffs, remhost);
 
 		while (1) {
 			char **array;
@@ -237,11 +235,13 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 					const char *dot = strchr(curpart, '.');
 
 					if (dot == NULL) {
-						strcpy(fn + diroffs, "default");
+						fn = "default";
 						curpart = NULL;
 					} else {
-						fn[diroffs] = '*';
-						strcpy(fn + diroffs + 1, dot);
+						assert(strlen(dot) < sizeof(fnbuf) - 2);
+						fnbuf[0] = '*';
+						strcpy(fnbuf + 1, dot);
+						fn = fnbuf;
 
 						curpart = dot + 1;
 					}
