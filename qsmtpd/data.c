@@ -82,11 +82,14 @@ date822(char *buf)
 	two_digit(buf + 29, tz % 60);
 }
 
-#define WRITE(buf,len) \
+#define WRITE(buf, len) \
 		do { \
-			int rc = write(queuefd_data, buf, len); \
-			if (rc < 0 ) { \
-				return rc; \
+			ssize_t _wlen = (len); \
+			ssize_t _wret = write(queuefd_data, (buf), _wlen); \
+			if (_wret != _wlen) { \
+				if (_wret >= 0) \
+					errno = EPIPE; \
+				return -1; \
 			} \
 		} while (0)
 
@@ -185,8 +188,11 @@ write_received(const int chunked)
 #undef WRITE
 #define WRITE(buf, len) \
 		do { \
-			int wret = write(queuefd_data, buf, len); \
-			if (wret < 0) { \
+			ssize_t _wlen = (len); \
+			ssize_t _wret = write(queuefd_data, (buf), _wlen); \
+			if (_wret != _wlen) { \
+				if (_wret >= 0) \
+					errno = EPIPE; \
 				goto err_write; \
 			} \
 		} while (0)
