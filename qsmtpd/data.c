@@ -20,6 +20,7 @@
 #include <openssl/ssl.h>
 #include <string.h>
 #include <sys/time.h>
+#include <sys/uio.h>
 #include <syslog.h>
 #include <time.h>
 #include <unistd.h>
@@ -84,13 +85,10 @@ date822(char *buf)
 
 #define WRITE(buf, len) \
 		do { \
-			ssize_t _wlen = (len); \
-			ssize_t _wret = write(queuefd_data, (buf), _wlen); \
-			if (_wret != _wlen) { \
-				if (_wret >= 0) \
-					errno = EPIPE; \
-				return -1; \
-			} \
+			wdata[wpos].iov_base = (void*)(buf); \
+			wdata[wpos].iov_len = (len); \
+			wlen += wdata[wpos].iov_len; \
+			wpos++; \
 		} while (0)
 
 #define WRITEL(str)		WRITE(str, strlen(str))
@@ -111,6 +109,9 @@ write_received(const int chunked)
 	size_t i = (authhide && is_authenticated_client()) ? 1 : 0;
 	const char afterprot[]     =  "\n\tfor <";	/* the string to be written after the protocol */
 	const char afterprotauth[] = "A\n\tfor <";	/* the string to be written after the protocol for authenticated mails*/
+	struct iovec wdata[20];
+	unsigned int wpos = 0;
+	ssize_t wlen = 0;
 
 	/* write "Received-SPF: " line */
 	if (!is_authenticated_client() && (relayclient != 1)) {
@@ -182,6 +183,14 @@ write_received(const int chunked)
 	date822(datebuf + 3);
 	datebuf[34] = '\n';
 	WRITE(datebuf, 35);
+
+	ssize_t wres = writev(queuefd_data, wdata, wpos);
+	if (wres != wlen) {
+		if (wres >= 0)
+			errno = EPIPE;
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -192,6 +201,15 @@ write_received(const int chunked)
 			ssize_t _wret = write(queuefd_data, (buf), _wlen); \
 			if (_wret != _wlen) { \
 				if (_wret >= 0) \
+					errno = EPIPE; \
+				goto err_write; \
+			} \
+		} while (0)
+#define WRITEVEC(vec, cnt, len) \
+		do { \
+			ssize_t wret = writev(queuefd_data, (vec), (cnt)); \
+			if (wret != (ssize_t)(len)) { \
+				if (wret >= 0) \
 					errno = EPIPE; \
 				goto err_write; \
 			} \
@@ -374,23 +392,47 @@ smtp_data(void)
 				}
 			}
 		}
-		WRITE(linein.s + offset, linein.len - offset);
-		msgsize += linein.len + 2 - offset;
-		WRITEL("\n");
+
+		struct iovec wdata[2] = {
+			{
+				.iov_base = linein.s + offset,
+				.iov_len = linein.len - offset
+			},
+			{
+				.iov_base = "\n",
+				.iov_len = 1
+			}
+		};
+		WRITEVEC(wdata, 2, wdata[0].iov_len + wdata[1].iov_len);
+		/* +1 for the CR that is not written to the queue */
+		msgsize += wdata[0].iov_len + wdata[1].iov_len + 1;
 		/* this has to stay here and can't be combined with the net_read before the while loop:
 		 * if we combine them we add an extra new line for the line that ends the transmission */
 		if (net_read(1))
 			goto loop_data;
 	}
 	if (submission_mode) {
+		struct iovec wdata[10];
+		unsigned int wpos = 0;
+
 		if (!(headerflags & HEADER_HAS_DATE)) {
-			WRITEL("Date: ");
-			WRITE(datebuf + 3, 32);
+			wdata[wpos].iov_base = "Date: ";
+			wdata[wpos].iov_len = strlen("Date: ");
+			wpos++;
+			wdata[wpos].iov_base = datebuf + 3;
+			wdata[wpos].iov_len = 32;
+			wpos++;
 		}
 		if (!(headerflags & HEADER_HAS_FROM)) {
-			WRITEL("From: <");
-			WRITE(xmitstat.mailfrom.s, xmitstat.mailfrom.len);
-			WRITEL(">\n");
+			wdata[wpos].iov_base = "From: <";
+			wdata[wpos].iov_len = strlen("From: <");
+			wpos++;
+			wdata[wpos].iov_base = xmitstat.mailfrom.s;
+			wdata[wpos].iov_len = xmitstat.mailfrom.len;
+			wpos++;
+			wdata[wpos].iov_base = ">\n";
+			wdata[wpos].iov_len = strlen(">\n");
+			wpos++;
 		}
 		if (!(headerflags & HEADER_HAS_MSGID)) {
 			char timebuf[20];
@@ -398,7 +440,9 @@ smtp_data(void)
 			struct timezone tz = { .tz_minuteswest = 0, .tz_dsttime = 0 };
 			size_t l;
 
-			WRITEL("Message-Id: <");
+			wdata[wpos].iov_base = "Message-Id: <";
+			wdata[wpos].iov_len = strlen("Message-Id: <");
+			wpos++;
 
 			gettimeofday(&ti, &tz);
 			ultostr((const unsigned long) ti.tv_sec, timebuf);
@@ -406,11 +450,25 @@ smtp_data(void)
 			timebuf[l] = '.';
 			ultostr(ti.tv_usec, timebuf + l + 1);
 			l += 1 + strlen(timebuf + l + 1);
-			WRITE(timebuf, l);
-			WRITEL("@");
-			WRITE(msgidhost.s, msgidhost.len);
-			WRITEL(">\n");
+
+			wdata[wpos].iov_base = timebuf;
+			wdata[wpos].iov_len = l;
+			wpos++;
+			wdata[wpos].iov_base = "@";
+			wdata[wpos].iov_len = 1;
+			wpos++;
+			wdata[wpos].iov_base = msgidhost.s;
+			wdata[wpos].iov_len = msgidhost.len;
+			wpos++;
+			wdata[wpos].iov_base = ">\n";
+			wdata[wpos].iov_len = strlen(">\n");
+			wpos++;
 		}
+
+		ssize_t wlen = 0;
+		for (unsigned int k = 0; k < wpos; k++)
+			wlen += wdata[k].iov_len;
+		WRITEVEC(wdata, wpos, wlen);
 	} else if (xmitstat.check2822 & 1) {
 		if (!(headerflags & HEADER_HAS_DATE)) {
 			logreasons[0] = "no 'Date:' in header}";
@@ -442,10 +500,21 @@ smtp_data(void)
 			}
 
 			offset = (linein.s[0] == '.') ? 1 : 0;
-			WRITE(linein.s + offset, linein.len - offset);
-			msgsize += linein.len + 2 - offset;
 
-			WRITEL("\n");
+			struct iovec wdata[2] = {
+				{
+					.iov_base = linein.s + offset,
+					.iov_len = linein.len - offset
+				},
+				{
+					.iov_base = "\n",
+					.iov_len = 1
+				}
+			};
+			WRITEVEC(wdata, 2, wdata[0].iov_len + wdata[1].iov_len);
+			/* +1 for the CR that is not written to the queue */
+			msgsize += wdata[0].iov_len + wdata[1].iov_len + 1;
+
 			if (net_read(1))
 				goto loop_data;
 		}
