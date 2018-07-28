@@ -93,12 +93,8 @@ checkreply(const char *status, const char **pre, const int mask)
 			write_status_raw(status + m, 1);
 
 			if (pre && ((1 << m) & mask)) {
-				int i = 0;
-
-				while (pre[i]) {
+				for (int i = 0; pre[i]; i++)
 					write_status_raw(pre[i], strlen(pre[i]));
-					i++;
-				}
 			}
 
 			if ((m == 0) && (mask & 8)) {
