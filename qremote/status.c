@@ -54,14 +54,32 @@ write_status(const char *str)
 }
 
 void
+write_status_raw_m(const char **strs, const unsigned int count)
+{
+	struct iovec *vectors = calloc(count, sizeof(*vectors));
+
+	if (vectors == NULL) {
+		// fallback, less efficient
+		for (unsigned int i = 0; i < count; i++)
+			write_status_raw(strs[i], strlen(strs[i]));
+	} else {
+		for (unsigned int i = 0; i < count; i++) {
+			vectors[i].iov_base = (void*)strs[i];
+			vectors[i].iov_len = strlen(strs[i]);
+		}
+		write_status_vec(vectors, count);
+		free(vectors);
+	}
+}
+
+void
 write_status_m(const char **strs, const unsigned int count)
 {
 	struct iovec *vectors = calloc(count + 1, sizeof(*vectors));
 
 	if (vectors == NULL) {
 		// fallback, less efficient
-		for (unsigned int i = 0; i < count - 1; i++)
-			write_status_raw(strs[i], strlen(strs[i]));
+		write_status_raw_m(strs, count - 1);
 		write_status(strs[count - 1]);
 	} else {
 		for (unsigned int i = 0; i < count; i++) {

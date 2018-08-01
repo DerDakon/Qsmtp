@@ -57,6 +57,13 @@ extern void write_status(const char *str) __attribute__ ((nonnull (1)));
 extern void write_status_m(const char **strs, const unsigned int count) __attribute__ ((nonnull (1)));
 
 /**
+ * @brief write status messages to qmail-rspawn
+ * @param strs the strings to write
+ * @param count how many strings to write
+ */
+extern void write_status_raw_m(const char **strs, const unsigned int count) __attribute__ ((nonnull (1)));
+
+/**
  * @brief send the SMTP envelope
  * @param recodeflag the 8bit status of the mail as returned by need_recode()
  * @param sender envelope sender address
