@@ -167,7 +167,7 @@ ssl_timeoutrehandshake(time_t t)
 		return r;
 
 	/* this is for the server only */
-	ssl->state = SSL_ST_ACCEPT;
+	SSL_set_accept_state(ssl);
 	return ssl_timeoutio(SSL_do_handshake, t, NULL, 0);
 }
 
