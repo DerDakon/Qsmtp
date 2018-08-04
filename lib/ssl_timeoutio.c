@@ -167,7 +167,11 @@ ssl_timeoutrehandshake(time_t t)
 		return r;
 
 	/* this is for the server only */
+#if !((OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER))
+	ssl->state = SSL_ST_ACCEPT;
+#else
 	SSL_set_accept_state(ssl);
+#endif
 	return ssl_timeoutio(SSL_do_handshake, t, NULL, 0);
 }
 
