@@ -12,17 +12,15 @@
 int main(int argc, char *argv[])
 {
 	string clear;
-	int err;
-	size_t i;
 
 	if (argc == 1)
 		return 1;
 
-	err = b64decode(argv[1], strlen(argv[1]), &clear);
+	int err = b64decode(argv[1], strlen(argv[1]), &clear);
 	if (err != 0)
 		return err;
 
-	for (i = 0; i < clear.len; i++) {
+	for (size_t i = 0; i < clear.len; i++) {
 		if (!clear.s[i]) {
 			write(1, "\\0", 2);
 		} else {

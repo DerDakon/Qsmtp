@@ -35,9 +35,7 @@ void write_status(const char *str)
 
 void write_status_m(const char **strs, const unsigned int count)
 {
-	unsigned int i;
-
-	for (i = 0; i < count - 1; i++)
+	for (unsigned int i = 0; i < count - 1; i++)
 		fputs(strs[i], stdout);
 	puts(strs[count - 1]);
 }
@@ -92,9 +90,6 @@ int netnwrite(const char *s, size_t l)
 
 int main(int argc, char *argv[])
 {
-	int fd, i;
-	struct stat st;
-
 	if (argc != 2) {
 		write(2, "Usage: qp filename\n", 19);
 		return 1;
@@ -103,12 +98,13 @@ int main(int argc, char *argv[])
 	heloname.s = "caliban.sf-tec.de";
 	heloname.len = strlen(heloname.s);
 
-	fd = open(argv[1], O_RDONLY | O_CLOEXEC);
+	int fd = open(argv[1], O_RDONLY | O_CLOEXEC);
 
 	if (fd < 0)
 		return errno;
 
-	i = fstat(fd, &st);
+	struct stat st;
+	int i = fstat(fd, &st);
 	if (i) {
 		close(fd);
 		return i;

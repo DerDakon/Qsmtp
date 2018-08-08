@@ -24,8 +24,6 @@ extern int spf_makro(char *token, const char *domain, int ex, char **result);
 int
 main(int argc, char *argv[])
 {
-	char *tst;
-	int i;
 	char *arg;
 
 	xmitstat.mailfrom.s = getenv("SENDER");
@@ -51,7 +49,8 @@ main(int argc, char *argv[])
 		arg = "%{s}";
 	}
 	inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
-	i = spf_makro(arg, "email.example.com", 0, &tst);
+	char *tst;
+	int i = spf_makro(arg, "email.example.com", 0, &tst);
 
 	if (!i)
 		puts(tst);

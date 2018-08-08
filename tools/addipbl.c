@@ -36,11 +36,7 @@ err_syntax(const char *arg)
 int
 main(int argc, char *argv[])
 {
-	int fd, j;
 	int mode = 0;	/* IPv4 addresses */
-	int af;
-	unsigned long minmask;
-	unsigned long maxmask;
 
 	if (argc == 1) {
 		fputs("Usage: ", stdout);
@@ -48,12 +44,12 @@ main(int argc, char *argv[])
 		fputs(" file ip [ip ...]\n", stdout);
 		return 1;
 	}
-	fd = open(argv[1], O_CREAT | O_APPEND | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+	int fd = open(argv[1], O_CREAT | O_APPEND | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (fd == -1)
 		return errno;
 
 	/* Find out if these are IPv6 or IPv4 addresses. */
-	for (j = 2; j < argc; j++) {
+	for (int j = 2; j < argc; j++) {
 		struct in6_addr ip;
 		char cpbuf[INET6_ADDRSTRLEN + 1];
 		const char *sl = strchr(argv[j], '/');
@@ -82,6 +78,9 @@ main(int argc, char *argv[])
 		}
 	}
 
+	int af;
+	unsigned long minmask;
+	unsigned long maxmask;
 	if (mode == 4) {
 		af = AF_INET;
 		minmask = 8;
@@ -92,14 +91,15 @@ main(int argc, char *argv[])
 		maxmask = 128;
 	}
 
-	for (j = 2; j < argc; j++) {
-		char *s, *t, c;
+	for (int j = 2; j < argc; j++) {
 		unsigned long m;
 
-		s = strchr(argv[j], '/');
+		char *s = strchr(argv[j], '/');
 		if (!s) {
 			m = maxmask;
 		} else {
+			char *t;
+
 			*s = '\0';
 			m = strtoul(s + 1, &t, 10);
 			if (*t) {
@@ -126,7 +126,7 @@ main(int argc, char *argv[])
 		}
 		assert(mode == 1);
 
-		c = m & 0xff;
+		char c = m & 0xff;
 		write(fd, &c, 1);
 	}
 	return close(fd) ? errno : 0;

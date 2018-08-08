@@ -215,9 +215,6 @@ static int
 mkdir_pr(const char *pattern)
 {
 	char fnbuf[PATH_MAX];
-	const char *end;
-	const char *start;
-	int r;
 	int dirfd = dup(logdirfd);
 
 	if (dirfd < 0) {
@@ -226,8 +223,8 @@ mkdir_pr(const char *pattern)
 		exit(1);
 	}
 
-	end = pattern + strlen(pattern);
-	start = strrchr(pattern, '.');
+	const char *end = pattern + strlen(pattern);
+	const char *start = strrchr(pattern, '.');
 
 	if (start == NULL)
 		start = pattern;
@@ -237,7 +234,7 @@ mkdir_pr(const char *pattern)
 		int nextdir;
 		strncpy(fnbuf, start + 1, end - start - 1);
 		fnbuf[len] = '\0';
-		r = mkdirat(dirfd, fnbuf, 0755);
+		int r = mkdirat(dirfd, fnbuf, 0755);
 
 		if ((r < 0) && (errno != EEXIST)) {
 			fprintf(stderr, "cannot create %s: %s\n",
@@ -264,7 +261,7 @@ mkdir_pr(const char *pattern)
 	strncpy(fnbuf, pattern, end - pattern);
 	fnbuf[end - pattern] = '\0';
 
-	r = mkdirat(dirfd, fnbuf, 0755);
+	int r = mkdirat(dirfd, fnbuf, 0755);
 	if ((r < 0) && (errno != EEXIST)) {
 		fprintf(stderr, "cannot create %s: %s\n",
 				fnbuf, strerror(errno));
@@ -287,13 +284,8 @@ mkdir_pr(const char *pattern)
 int
 main(int argc, char *argv[])
 {
-	char iplinkname[PATH_MAX];
-	char ipname[64]; /* enough for "1122/3344/5566/7788/99aa/bbcc/ddee/ff00/\0" */
 	const char *logdir = getenv("QSURVEY_LOGDIR");
-	struct ips *cur;
 	int i = 0;
-	int dirfd;
-	unsigned short s;
 
 	if (argc != 2) {
 		write(2, "Usage: Qsurvey hostname\n", 24);
@@ -315,8 +307,8 @@ main(int argc, char *argv[])
 
 	/* only one address is available: just do it in this
 	 * process, no need to fork. */
-	cur = mx;
-	s = 0;
+	struct ips *cur = mx;
+	unsigned short s = 0;
 	if (((mx->next != NULL) && (mx->next->priority <= 65536)) || (mx->count != 1)) {
 		FOREACH_STRUCT_IPS(cur, s, mx) {
 			if (cur->priority > 65536)
@@ -357,8 +349,9 @@ main(int argc, char *argv[])
 		return 1;
 	}
 
-	dirfd = mkdir_pr(argv[1]);
+	int dirfd = mkdir_pr(argv[1]);
 
+	char ipname[64]; /* enough for "1122/3344/5566/7788/99aa/bbcc/ddee/ff00/\0" */
 	memset(ipname, 0, sizeof(ipname));
 	if (IN6_IS_ADDR_V4MAPPED(cur->addr + s)) {
 		for (i = 12; i <= 15; i++) {
@@ -396,6 +389,7 @@ main(int argc, char *argv[])
 	logdirfd = i;
 
 	ipname[strlen(ipname) - 1] = '\0';
+	char iplinkname[PATH_MAX];
 	sprintf(iplinkname, "%s/%s", logdir, ipname);
 
 	if (IN6_IS_ADDR_V4MAPPED(cur->addr + s))

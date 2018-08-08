@@ -8,21 +8,18 @@
 int
 main(int argc, char **argv)
 {
-	int i;
-
 	if (argc == 1) {
 		fprintf(stderr, "Usage: %s name [name ...]\n", argv[0]);
 		return 1;
 	}
 
-	for (i = 1; i < argc; i++) {
+	for (int i = 1; i < argc; i++) {
 		struct daneinfo *info;
-		int j, k;
 
 		printf("querying: %s\n", argv[i]);
 		fflush(stdout);
 
-		j = dnstlsa(argv[i], 25, &info);
+		int j = dnstlsa(argv[i], 25, &info);
 		if (j < 0) {
 			printf("failed\n");
 			continue;
@@ -33,11 +30,10 @@ main(int argc, char **argv)
 			continue;
 		}
 
-		for (k = 0; k < j; k++) {
-			size_t l;
+		for (int k = 0; k < j; k++) {
 			printf("record %i: %u %u %u ", k, info[k].cert_usage, info[k].selector, info[k].matching_type);
 
-			for (l = 0; l < info[k].datalen; l++)
+			for (size_t l = 0; l < info[k].datalen; l++)
 				printf("%02X", info[k].data[l]);
 
 			free(info[k].data);

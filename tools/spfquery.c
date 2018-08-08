@@ -24,7 +24,6 @@ extern int spf_makro(char *token, const char *domain, int ex, char **result);
 int
 main(int argc, char *argv[])
 {
-	int i;
 	const char *s;
 
 	xmitstat.mailfrom.s = getenv("SENDER");
@@ -46,7 +45,7 @@ main(int argc, char *argv[])
 	if (argc > 1) {
 		if (strcmp(argv[1], "-4") == 0) {
 			if (argc > 2) {
-				i = inet_pton_v4mapped(argv[2], &xmitstat.sremoteip);
+				int i = inet_pton_v4mapped(argv[2], &xmitstat.sremoteip);
 				if (i <= 0) {
 					fprintf(stderr, "failed to parse '%s' as IPv4 address\n", argv[2]);
 					return EINVAL;
@@ -57,7 +56,7 @@ main(int argc, char *argv[])
 			}
 		} else if (strcmp(argv[1], "-6") == 0) {
 			if (argc > 2) {
-				i = inet_pton(AF_INET6, argv[2], &xmitstat.sremoteip);
+				int i = inet_pton(AF_INET6, argv[2], &xmitstat.sremoteip);
 				if (i <= 0) {
 					fprintf(stderr, "failed to parse '%s' as IPv6 address\n", argv[2]);
 					return EINVAL;
@@ -76,7 +75,5 @@ main(int argc, char *argv[])
 	}
 	inet_pton(AF_INET6, xmitstat.remoteip, &xmitstat.sremoteip);
 
-	i = check_host(s);
-
-	return i;
+	return check_host(s);
 }
