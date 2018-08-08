@@ -16,13 +16,6 @@ else ()
 	set(QSMTPD_GREETING_LINE "220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n")
 endif ()
 
-if (NOT CMAKE_VERSION VERSION_LESS 3.1)
-	set(CMAKE_C_STANDARD 99)
-	set(CMAKE_C_STANDARD_REQUIRED On)
-else ()
-	add_definitions(-std=c99)
-endif ()
-
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
 	set(PROFILE_MSG "(LLVM Profile Note: Set profile file path to \".*\" via default setting\\.\n)?")
 else ()
