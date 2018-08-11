@@ -89,8 +89,9 @@ send_test_data(const char *buf, const size_t len)
 static int
 read_check(const char *data)
 {
-	if (net_read(0) != 0) {
-		fprintf(stderr, "%s: reading good data did not succeed\n", testname);
+	int r = net_read(0);
+	if (r != 0) {
+		fprintf(stderr, "%s: reading good data did not succeed, return value %i error %i\n", testname, r, errno);
 		return 1;
 	} else if ((linein.len != strlen(data)) || (strcmp(linein.s, data) != 0)) {
 		fprintf(stderr, "%s: reading valid data did not return the correct data\nexpected:\t%s\ngot:      \t\n%s\n", testname, data, linein.s);
@@ -754,8 +755,9 @@ test_net_writen(void)
 	int ret = 0;
 	const char *simple[] = { "250 first", "second", "third", NULL};
 	const char *longthings[] = { "250 012345678901234567890123456789", NULL, "abcdefghijklmnopqrstuvwxyz", NULL };
-	const char *many[60] = { "250 ", digits };
-	char exp[520];
+#define MANY_THINGS 60
+	const char *many[MANY_THINGS] = { "250 ", digits };
+	char exp[220 + MANY_THINGS * 10];
 
 	testname = "net_writen";
 
@@ -776,9 +778,9 @@ test_net_writen(void)
 	}
 
 	/* many small messages */
-	for (int i = 2; i < 59; i++)
+	for (int i = 2; i < MANY_THINGS - 1; i++)
 		many[i] = many[1];
-	many[59] = NULL;
+	many[MANY_THINGS - 1] = NULL;
 
 	if (net_writen(many) != 0) {
 		fprintf(stderr, "%s: cannot write 'many' output\n", testname);
@@ -787,14 +789,14 @@ test_net_writen(void)
 
 	strcpy(exp, many[0]);
 	exp[3] = '-';
-	for (int i = 1; i < 51; i++)
+	for (int i = 1; i < MANY_THINGS - 9; i++)
 		strcat(exp, digits);
 
 	if (read_check(exp))
 		ret++;
 
 	strcpy(exp, many[0]);
-	for (int i = 51; i < 59; i++)
+	for (int i = MANY_THINGS - 9; i < MANY_THINGS - 1; i++)
 		strcat(exp, digits);
 
 	if (read_check(exp))
@@ -807,7 +809,7 @@ test_net_writen(void)
 	/* only 3 messages, but the second one is too long to be used
 	 * together with any of the other 2 */
 	exp[0] = '\0';
-	for (int i = 0; i < 50; i++)
+	for (int i = 0; i < MANY_THINGS - 10; i++)
 		strcat(exp, digits);
 	longthings[1] = exp;
 	if (net_writen(longthings) != 0) {
@@ -826,6 +828,7 @@ test_net_writen(void)
 
 	return ret;
 }
+#undef MANY_THINGS
 
 static int
 test_net_write_multiline(void)
@@ -833,8 +836,9 @@ test_net_write_multiline(void)
 	int ret = 0;
 	const char *simple[] = { "250 first", "second", "third", "\r\n", NULL};
 	const char *longthings[] = { "250 012345678901234567890123456789", NULL, "abcdefghijklmnopqrstuvwxyz", "\r\n", NULL };
-	const char *many[30] = { "250 ", digits };
-	char exp[520];
+#define MANY_THINGS 30
+	const char *many[MANY_THINGS] = { "250 ", digits };
+	char exp[220 + MANY_THINGS * 10];
 
 	testname = "net_write_multiline";
 
@@ -855,21 +859,21 @@ test_net_write_multiline(void)
 	}
 
 	/* many small messages */
-	for (int i = 2; i < 28; i++)
+	for (int i = 2; i < MANY_THINGS - 2; i++)
 		many[i] = digits;
-	many[28] = "\r\n";
-	many[29] = NULL;
+	many[MANY_THINGS - 2] = "\r\n";
+	many[MANY_THINGS - 1] = NULL;
 
 	if (net_write_multiline(many) != 0) {
 		fprintf(stderr, "%s: cannot write 'many' output\n", testname);
 		return ++ret;
 	}
 
-	assert(strlen(many[0]) + 27 * strlen(digits) < sizeof(exp));
+	assert(strlen(many[0]) + (MANY_THINGS - 3) * strlen(digits) < sizeof(exp));
 	strncpy(exp, many[0], sizeof(exp));
-	for (int i = 0; i < 27; i++)
+	for (int i = 0; i < MANY_THINGS - 3; i++)
 		memcpy(exp + strlen(many[0]) + strlen(digits) * i, digits, strlen(digits));
-	exp[strlen(many[0]) + strlen(digits) * 30] = '\0';
+	exp[strlen(many[0]) + strlen(digits) * MANY_THINGS] = '\0';
 
 	if (read_check(exp))
 		ret++;
@@ -879,9 +883,9 @@ test_net_write_multiline(void)
 		ret++;
 	}
 
-	for (int i = 0; i < 30; i++)
+	for (int i = 0; i < MANY_THINGS; i++)
 		memcpy(exp + strlen(digits) * i, digits, strlen(digits));
-	size_t offs = strlen(digits) * 30;
+	size_t offs = strlen(digits) * MANY_THINGS;
 	exp[offs] = '\0';
 
 	longthings[1] = exp;
@@ -899,6 +903,7 @@ test_net_write_multiline(void)
 
 	return ret;
 }
+#undef MANY_THINGS
 
 /**
  * @brief create a socketpair between 0 and the return value
