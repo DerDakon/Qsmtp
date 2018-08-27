@@ -35,7 +35,7 @@ addons:
     build_command: "make -j 4"
     branch_pattern: coverity_scan
 script:
- - if [ ! -d ${OPENSSL_ROOT_DIR}/lib ]; then wget -O /tmp/openssl-${OPENSSL_VERSION}.tar.gz https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz; tar xf /tmp/openssl-${OPENSSL_VERSION}.tar.gz -C /tmp; pushd /tmp/openssl-${OPENSSL_VERSION}; ./config --prefix=${OPENSSL_ROOT_DIR} shared; make install; popd; fi
+ - if [ ! -d ${OPENSSL_ROOT_DIR}/lib ]; then wget -O - https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz | tar xz -C /tmp; pushd /tmp/openssl-${OPENSSL_VERSION}; ./config --prefix=${OPENSSL_ROOT_DIR} shared; make install; popd; fi
  - echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nset(CONF_OPTIONS "-DIPV4ONLY=On" "-DALLOW_INSECURE_BZERO=On")\nset(CTEST_SITE "travis-ci.org")\ninclude("/home/travis/build/DerDakon/Qsmtp/ctest_qsmtp.cmake")' > my_qsmtp.cmake
  - ctest -V -D "CTEST_BUILD_NAME=Ubuntu Trusty ${CC}" -S my_qsmtp.cmake
 after_success:
