@@ -31,7 +31,7 @@ cb_namebl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 	if (!xmitstat.mailfrom.len)
 		return FILTER_PASSED;
 
-	*t = userconf_get_buffer(ds, "namebl", &a, domainvalid, userconf_global);
+	*t = userconf_get_buffer(ds, "namebl", &a, domainvalid, userconf_global | userconf_inherit);
 	if (((int)*t) < 0) {
 		errno = -*t;
 		return FILTER_ERROR;
