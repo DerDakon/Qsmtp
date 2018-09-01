@@ -289,9 +289,11 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 	} else if (strcmp(key, "namebl") == 0) {
 		res = testdata[testindex].namebl;
 		expected_cf = domainvalid;
+		expected_flags = userconf_global | userconf_inherit;
 	} else if (strcmp(key, "dnsbl") == 0) {
 		res = testdata[testindex].dnsbl;
 		expected_cf = domainvalid;
+		expected_flags = userconf_global | userconf_inherit;
 	} else if (strcmp(key, "whitednsbl") == 0) {
 		res = testdata[testindex].dnswl;
 		expected_cf = domainvalid;
@@ -302,8 +304,8 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 	}
 
 	if (flags != expected_flags) {
-		fprintf(stderr, "%s() was called with flags %i instead of %i\n",
-				__func__, flags, expected_flags);
+		fprintf(stderr, "%s() was called with flags %i instead of %i for key %s\n",
+				__func__, flags, expected_flags, key);
 		exit(1);
 	}
 
