@@ -462,7 +462,8 @@ netnwrite(const char *s, const size_t l)
  *
  * \warning s[0] must be short enough to fit completely into the buffer
  * \warning s[0] must contain the whole status code as well as the following space (' ') or hyphen ('-')
- * \warning every s[] must not have a sequence longer then 506 characters without a space (' ') in them
+ * \warning every s[] must not have a sequence longer then 506 characters without a space (' ') in them,
+ * or it will be split at arbitrary positions
  */
 int
 net_writen(const char *const *s)
@@ -501,11 +502,15 @@ net_writen(const char *const *s)
 
 					nsp = strchr(s[i] + off, ' ');
 
-					while (nsp - s[i] - off < sizeof(msg) - 6) {
+					while ((nsp != NULL) && (nsp - s[i] - off < sizeof(msg) - 6)) {
 						sp = nsp;
 						nsp = strchr(sp + 1, ' ');
 					}
 					m = sp - s[i] - off;
+					if (m == 0) {
+						/* no space was found, brute force split */
+						m = sizeof(msg) - 8;
+					}
 					memcpy(msg + 4, s[i] + off, m);
 					m += 4;
 					msg[m++] = '\r';

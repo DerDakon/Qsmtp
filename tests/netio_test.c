@@ -754,10 +754,14 @@ test_net_writen(void)
 {
 	int ret = 0;
 	const char *simple[] = { "250 first", "second", "third", NULL};
-	const char *longthings[] = { "250 012345678901234567890123456789", NULL, "abcdefghijklmnopqrstuvwxyz", NULL };
+	const char *pattern = "abcdefghijklmnopqrstuvwxyz";
+	const char *longthings[] = { "250 012345678901234567890123456789", NULL, pattern, NULL };
 #define MANY_THINGS 60
 	const char *many[MANY_THINGS] = { "250 ", digits };
 	char exp[220 + MANY_THINGS * 10];
+	char toolongpart[26 * 30 + 1];
+	const char *toolong[] = { "250 short enough", toolongpart, NULL };
+	char toolongresult[510] = "250-";
 
 	testname = "net_writen";
 
@@ -825,6 +829,26 @@ test_net_writen(void)
 	if (read_check("250 abcdefghijklmnopqrstuvwxyz"))
 		ret++;
 
+	char *pos = toolongpart;
+
+	while (toolongpart + sizeof(toolongpart) > pos + strlen(pattern)) {
+		memcpy(pos, pattern, strlen(pattern));
+		pos += strlen(pattern);
+	}
+	strncat(toolongresult, toolongpart, sizeof(toolongresult) - 6);
+	*pos = '\0';
+	if (net_writen(toolong) != 0) {
+		fprintf(stderr, "%s: cannot write 'too long' output\n", testname);
+		return ++ret;
+	}
+	if (read_check("250-short enough"))
+		ret++;
+	if (read_check(toolongresult))
+		ret++;
+	toolongresult[3] = ' ';
+	strcpy(toolongresult + 4, toolongpart + sizeof(toolongresult) - 6);
+	if (read_check(toolongresult))
+		ret++;
 
 	return ret;
 }
