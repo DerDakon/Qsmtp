@@ -29,7 +29,7 @@ cb_dnsbl(const struct userconf *ds, const char **logmsg, enum config_domain *t)
 		fnw = "whitednsblv6";
 	}
 
-	*t = userconf_get_buffer(ds, fnb, &a, domainvalid, userconf_global | userconf_inherit);
+	*t = userconf_get_buffer(ds, fnb, &a, domainvalid_or_inherit, userconf_global | userconf_inherit);
 	if (((int)*t) < 0) {
 		errno = -*t;
 		return FILTER_ERROR;

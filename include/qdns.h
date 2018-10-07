@@ -53,6 +53,7 @@ extern int ask_dnsname(const struct in6_addr *, char **) __attribute__ ((nonnull
 
 extern void freeips(struct ips *);
 extern int domainvalid(const char * const) __attribute__ ((pure)) __attribute__ ((nonnull (1)));
+extern int domainvalid_or_inherit(const char * const) __attribute__ ((pure)) __attribute__ ((nonnull (1)));
 extern void sortmx(struct ips **p) __attribute__ ((nonnull (1)));
 extern struct ips *in6_to_ips(struct in6_addr *a, unsigned int cnt, const unsigned int priority) __attribute__ ((nonnull (1)));
 

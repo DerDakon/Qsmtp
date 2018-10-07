@@ -67,6 +67,22 @@ domainvalid(const char * const host)
 }
 
 /**
+ * @brief check if a string is a valid fqdn or "!inherit"
+ * @param host the name to check
+ * @return if the string is a valid domain name
+ * @retval 0 everything is ok
+ * @retval 1 on syntax error
+ */
+int
+domainvalid_or_inherit(const char * const host)
+{
+	if (strcmp(host, "!inherit") == 0)
+		return 0;
+
+	return domainvalid(host);
+}
+
+/**
  * free memory of IP list
  *
  * @param p IP list to free
