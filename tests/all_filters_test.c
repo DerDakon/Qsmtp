@@ -288,11 +288,11 @@ userconf_get_buffer(const struct userconf *uc __attribute__ ((unused)), const ch
 		expected_flags = userconf_global | userconf_inherit;
 	} else if (strcmp(key, "namebl") == 0) {
 		res = testdata[testindex].namebl;
-		expected_cf = domainvalid;
+		expected_cf = domainvalid_or_inherit;
 		expected_flags = userconf_global | userconf_inherit;
 	} else if (strcmp(key, "dnsbl") == 0) {
 		res = testdata[testindex].dnsbl;
-		expected_cf = domainvalid;
+		expected_cf = domainvalid_or_inherit;
 		expected_flags = userconf_global | userconf_inherit;
 	} else if (strcmp(key, "whitednsbl") == 0) {
 		res = testdata[testindex].dnswl;
