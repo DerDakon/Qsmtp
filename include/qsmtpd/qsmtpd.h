@@ -36,7 +36,7 @@ struct xmitstat {
 	unsigned int helostatus:3;	/**< status of the given HELO/EHLO, see antispam.h for the meaning */
 	unsigned int datatype:1;	/**< the datatype announced by the client (7BIT or 8BITMIME) */
 	unsigned int spf:4;		/**< result of the SPF lookup */
-	int fromdomain:3;		/**< result of the lookup for fromips */
+	signed int fromdomain:3;	/**< result of the lookup for fromips */
 	unsigned int spacebug:1;	/**< if client sends spaces between ':' and '<' */
 	size_t thisbytes;		/**< size of the message announced by the remote host */
 	string mailfrom;		/**< the current from address */
