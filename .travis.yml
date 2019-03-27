@@ -1,4 +1,4 @@
-dist: trusty
+dist: xenial
 language: c
 compiler:
  - gcc
@@ -36,7 +36,7 @@ addons:
 script:
  - if [ ! -d ${OPENSSL_ROOT_DIR}/lib ]; then wget --no-verbose -O - https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz | tar xz -C /tmp; pushd /tmp/openssl-${OPENSSL_VERSION}; ./config --prefix=${OPENSSL_ROOT_DIR} shared; make install; popd; fi
  - echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nset(CONF_OPTIONS "-DIPV4ONLY=On" "-DALLOW_INSECURE_BZERO=On")\nset(CTEST_SITE "travis-ci.org")\ninclude("/home/travis/build/DerDakon/Qsmtp/ctest_qsmtp.cmake")' > my_qsmtp.cmake
- - ctest -V -D "CTEST_BUILD_NAME=Ubuntu Trusty ${CC}" -S my_qsmtp.cmake
+ - ctest -V -D "CTEST_BUILD_NAME=Ubuntu Xenial ${CC}" -S my_qsmtp.cmake
 after_success:
  - lcov --directory /tmp/Qs-build --capture --output-file coverage.info # capture coverage info
  - lcov --remove coverage.info '/usr/*' --output-file coverage.info # filter out system
