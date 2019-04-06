@@ -105,7 +105,7 @@ test_notdir(void)
 }
 
 static int
-test_found_internal(const char *range, int fd, const int type, const enum config_domain expected_type)
+test_found_internal(const char *range, int fd, const enum config_domain type, const enum config_domain expected_type)
 {
 	if (fd < 0) {
 		fprintf(stderr, "error opening existing file for %s, errno %i\n",
