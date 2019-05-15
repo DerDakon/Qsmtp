@@ -1483,7 +1483,7 @@ txtlookup(char **txt, const char *domain)
 	memcpy(lookup, domain + offs, len - offs);
 	lookup[len - offs] = '\0';
 
-	return dnstxt(txt, lookup);
+	return dnstxt_records(txt, lookup);
 }
 
 /**
@@ -1639,12 +1639,12 @@ spflookup(const char *domain, unsigned int *queries)
 	if (*queries == 0) {
 		if (domainvalid(domain))
 			return SPF_PERMERROR;
-		i = dnstxt(&txt, domain);
+		i = dnstxt_records(&txt, domain);
 	} else {
 		i = txtlookup(&txt, domain);
 	}
 
-	if (i) {
+	if (i < 0) {
 		switch (errno) {
 		case ENOENT:
 			return SPF_NONE;
@@ -1660,19 +1660,37 @@ spflookup(const char *domain, unsigned int *queries)
 			return -1;
 		}
 	}
-	if (!txt)
+	if (i == 0)
 		return SPF_NONE;
 	char *token = txt;
-	while ((token = strstr(token, "v=spf1"))) {
-		if (valid) {
-			free(txt);
-			return SPF_PERMERROR;
-		} else {
-			token += 6;
-			valid = token;
+	/* scan all DNS records if they are valid SPF records */
+	for (int j = 0; j < i; j++) {
+		if (strncmp(token, "v=spf1", strlen("v=spf1")) == 0) {
+			if (valid) {
+				/* there already was another valid token */
+				/* RfC 7208 section 4.5:
+				 * 'If the resultant record set includes more than one record,
+				 * check_host() produces the "permerror" result."'.
+				 */
+				free(txt);
+				return SPF_PERMERROR;
+			} else {
+				token += strlen("v=spf1");
+				/* RfC 7208 section 4.5:
+				 * 'Note that the version section is terminated by either an
+				 * SP character or the end of the record.'
+				 */
+				if (*token == ' ' || *token == '\0')
+					valid = token;
+			}
 		}
+		token += strlen(token) + 1;
 	}
-	if (!valid) {
+	/* RfC 7208 section 4.5:
+	 * 'If the resultant record set includes no records, check_host() produces the
+	 * "none" result.'.
+	 */
+	if (valid == NULL) {
 		free(txt);
 		return SPF_NONE;
 	}
@@ -1900,7 +1918,7 @@ spflookup(const char *domain, unsigned int *queries)
 				}
 				if (dlen > 0) {
 					char *exp;
-					if (txtlookup(&exp, target) == 0) {
+					if (txtlookup(&exp, target) > 0) {
 						/* if this fails the standard answer will be used */
 						free(xmitstat.spfexp);
 						xmitstat.spfexp = NULL;

@@ -285,9 +285,9 @@ test_ask_dnsname(const struct in6_addr *addr, char **name)
 }
 
 static int
-dns_resolve_txt(char **out, const char *host, const enum dnstype stype)
+dns_resolve_txt(char **out, const char *host)
 {
-	const char *value = dnsentry_search(stype, host);
+	const char *value = dnsentry_search(DNSTYPE_TXT, host);
 
 	if (value == NULL) {
 		if (dnsentry_search(DNSTYPE_TIMEOUT, host) != NULL)
@@ -297,19 +297,32 @@ dns_resolve_txt(char **out, const char *host, const enum dnstype stype)
 		return -1;
 	}
 
-	*out = malloc(strlen(value) + 1);
+	int records = 1;
+
+	*out = strdup(value);
 	if (*out == NULL)
 		return -1;
 
-	strcpy(*out, value);
+	/* replace all hashes with '\0' */
+	char *hash = *out;
+	while ((hash = strchr(hash, '#')) != NULL) {
+		*hash++ = '\0';
+		records++;
+	}
 
-	return 0;
+	return records;
 }
 
 int
-dnstxt(char **out, const char *host)
+dnstxt_records(char **out, const char *host)
 {
-	return dns_resolve_txt(out, host, DNSTYPE_TXT);
+	return dns_resolve_txt(out, host);
+}
+
+int
+dnstxt(char **out __attribute__ ((unused)), const char *host __attribute__ ((unused)))
+{
+	abort();
 }
 
 struct spftestcase {
@@ -3344,7 +3357,7 @@ test_parse()
 		{
 			.type = DNSTYPE_TXT,
 			.key = "doublespf.example.net",
-			.value = "v=spf1 ~all v=spf1 -all"
+			.value = "v=spf1 ~all#v=spf1 -all"
 		},
 		{
 			.type = DNSTYPE_TXT,
@@ -3384,7 +3397,7 @@ test_parse()
 		{
 			.type = DNSTYPE_TXT,
 			.key = "redirect-softfail.example.net",
-			.value = " v=spf1 redirect=allsoftfail.example.net"
+			.value = "v=spf1 redirect=allsoftfail.example.net"
 		},
 		{
 			.type = DNSTYPE_TXT,
@@ -3580,6 +3593,11 @@ test_parse()
 			.value = "v=spf1 +all redirect=allfail.example.net"
 		},
 		{
+			.type = DNSTYPE_TXT,
+			.key = "only-vspf.example.net",
+			.value = "v=spf1"
+		},
+		{
 			.type = DNSTYPE_NONE
 		}
 	};
@@ -3606,7 +3624,7 @@ test_parse()
 		SPF_PERMERROR,
 		SPF_PERMERROR,
 		SPF_PERMERROR,
-		SPF_PERMERROR,
+		SPF_NONE,
 		SPF_PERMERROR,
 		SPF_PERMERROR,
 		SPF_PERMERROR,
@@ -3632,6 +3650,7 @@ test_parse()
 		SPF_FAIL,
 		SPF_FAIL,
 		SPF_PASS,
+		SPF_NEUTRAL,
 		SPF_NONE
 	};
 	int err = 0;
