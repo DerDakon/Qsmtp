@@ -295,7 +295,7 @@ tls_init()
 	if (saciphers.len == (size_t)-1) {
 		int e = errno;
 		SSL_CTX_free(ctx);
-		err_control2("control/", ciphfn);
+		(void)err_control2("control/", ciphfn);
 		errno = e;
 		return -1;
 	} else if (saciphers.len) {
