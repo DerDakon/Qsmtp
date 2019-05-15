@@ -73,3 +73,9 @@ target_link_libraries(dnsdane
 	qsmtp_dane_lib
 	qsmtp_lib
 )
+
+add_executable(dnstxt dnstxt.c)
+target_link_libraries(dnstxt
+	qsmtp_io_lib
+	qsmtp_lib
+)

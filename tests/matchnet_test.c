@@ -321,7 +321,8 @@ matchdomain_test()
 	return err;
 }
 
-int dnstxt(char **out __attribute__ ((unused)), const char *host __attribute__ ((unused)))
+int
+dnstxt(char **out __attribute__ ((unused)), const char *host __attribute__ ((unused)))
 {
 	return 0;
 }
