@@ -1,6 +1,9 @@
-project(Qsmtp C)
+cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
-cmake_minimum_required(VERSION 2.8.6 FATAL_ERROR)
+project(Qsmtp
+	VERSION 0.35
+	HOMEPAGE_URL "https://opensource.sf-tec.de/Qsmtp/"
+	LANGUAGES C)
 
 option(CHECK_MEMORY "Add memory access checks" OFF)
 
@@ -29,10 +32,7 @@ else ()
 endif ()
 set(AUTOQMAIL "${AUTOQMAIL}" CACHE PATH "Directory of qmail installation (usually /var/qmail)")
 
-set(QSMTP_VERSION_MAJOR 0)
-set(QSMTP_VERSION_MINOR 35)
-set(QSMTP_VERSION_EXTRAVERSION dev)
-set(QSMTP_VERSION "${QSMTP_VERSION_MAJOR}.${QSMTP_VERSION_MINOR}${QSMTP_VERSION_EXTRAVERSION}")
+set(QSMTP_VERSION "${Qsmtp_VERSION}dev")
 
 find_package(OpenSSL 1.0.2 REQUIRED)
 
