@@ -69,7 +69,7 @@ of these bits and stored as one integer number.
 reject mail if from domain does not exist (dns query returns NXDOMAIN)
 .ie n .IP "bit 2" 4
 reject mail if from domain resolves only to localhost addresses (i.e. something in 127.0.0.0/8 
-or 0.0.0.0/8 for IPv4 or ::1 for IPv6)
+or 0.0.0.0/32 for IPv4 or ::1 for IPv6)
 .ie n .IP "bit 3" 4
 reject mail if from domain resolves only to private nets (RfC 1918)
 .RE

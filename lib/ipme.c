@@ -57,7 +57,7 @@ filter_my_ips(struct ips *ipl)
 		while (tmp != NULL) {
 			unsigned short s = 0;
 			if (curi->ifa_addr->sa_family == AF_INET) {
-				/* either configured as localhost or 127.0.0./8 or 0.0.0.0 */
+				/* either configured as localhost or 127.0.0./8 or 0.0.0.0/32 */
 				for (s = 0; s < tmp->count; s++) {
 					if (!IN6_IS_ADDR_V4MAPPED(tmp->addr + s))
 						continue;
