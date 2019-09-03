@@ -14,6 +14,7 @@ set(CMAKE_C_STANDARD_REQUIRED On)
 
 include(AddCCompilerFlag)
 include(CheckCCompilerFlag)
+include(CheckCSourceCompiles)
 include(CheckSymbolExists)
 include(CheckFunctionExists)
 
@@ -116,6 +117,20 @@ unset(CMAKE_REQUIRED_INCLUDES)
 if (NOT HAS_OPENAT)
 	message(SEND_ERROR "Support for openat() is missing")
 endif ()
+
+check_c_source_compiles("#include <netinet/in.h>
+static struct in6_addr a;
+int test_ip6(const struct in6_addr *i) {
+return i->s6_addr32[3] != 0;
+}
+int main() {
+  return test_ip6(&a);
+}
+" HAS_S6ADDR32)
+if (NOT HAS_S6ADDR32)
+	message(STATUS "adding compat defines for struct in6_addr access")
+	add_definitions(-Ds6_addr32=__u6_addr.__u6_addr32 -Ds6_addr16=__u6_addr.__u6_addr16)
+endif()
 
 option(NOSTDERR "Do not print error messages to stderr" ON)
 
