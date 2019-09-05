@@ -4,10 +4,7 @@
 #ifndef DIROPEN_H
 #define DIROPEN_H
 
-#define _GNU_SOURCE /* needed for O_PATH according to manpage */
-#define __USE_GNU /* needed for O_PATH according to code */
 #include <fcntl.h>
-#undef __USE_GNU /* seems to cause chaos if visible at other places */
 #include <unistd.h>
 #include <sys/stat.h>
 
