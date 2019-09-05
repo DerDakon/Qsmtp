@@ -38,7 +38,7 @@ else ()
 
 	if (NOT AUTOQMAIL)
 		set(AUTOQMAIL /var/qmail)
-		message(STATUS" qmail home directory set to default: ${AUTOQMAIL}")
+		message(STATUS "qmail home directory set to default: ${AUTOQMAIL}")
 	endif ()
 endif ()
 set(AUTOQMAIL "${AUTOQMAIL}" CACHE PATH "Directory of qmail installation (usually /var/qmail)")
