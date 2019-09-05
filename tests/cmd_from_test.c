@@ -406,7 +406,7 @@ main(void)
 				.esmtp = 1
 			},
 			.input = "mail from:<> foo=bar",
-			.from_result = EBADRQC
+			.from_result = ENOEXEC
 		},
 		/* bad extension name, followed by something valid */
 		{
@@ -414,7 +414,7 @@ main(void)
 				.esmtp = 1
 			},
 			.input = "mail from:<> foo=bar size=20",
-			.from_result = EBADRQC
+			.from_result = ENOEXEC
 		},
 		{ }
 	};

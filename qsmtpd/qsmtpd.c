@@ -542,7 +542,7 @@ smtploop(void)
 			 * occured during error handling. This is a very bad sign: either
 			 * we are very short of resources or the client is really really broken */
 			switch (flagbogus) {
-			case EBADRQC:	tarpit();
+			case ENOEXEC:	tarpit();
 					log_write(LOG_INFO, "bad SMTP command parameter");
 					flagbogus = netwrite("501 5.5.2 unrecognized command parameter\r\n") ? errno : 0;
 					break;

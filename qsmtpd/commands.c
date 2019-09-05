@@ -574,7 +574,7 @@ smtp_from_extensions(const char *more, unsigned int * const validlength)
 
 		/* unknown extension */
 		if (names[ext] == NULL)
-			return EBADRQC;
+			return ENOEXEC;
 
 		if (seen & (1 << ext))
 			return EINVAL;
