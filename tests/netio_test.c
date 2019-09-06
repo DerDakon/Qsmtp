@@ -822,7 +822,7 @@ test_net_writen(void)
 	}
 	if (read_check("250-012345678901234567890123456789"))
 		ret++;
-	memmove(exp + 4, exp, strlen(exp));
+	memmove(exp + 4, exp, strlen(exp) + 1);
 	memcpy(exp, "250-", 4);
 	if (read_check(exp))
 		ret++;
