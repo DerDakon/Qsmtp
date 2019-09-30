@@ -1114,12 +1114,12 @@ foreach(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 endforeach()
 
 # something changed there and the certificate signatures are not accepted anymore
-if (OPENSSL_VERSION VERSION_GREATER 1.0.2g)
+# if (OPENSSL_VERSION VERSION_GREATER 1.0.2g)
 	foreach(_ssl_test IN ITEMS simple_clc_clientca relay_multi_first relay_multi_last
 			relay_withca)
 		set_tests_properties(SSL_pp_${_ssl_test} PROPERTIES WILL_FAIL TRUE)
 	endforeach()
-endif ()
+# endif ()
 
 add_subdirectory(smtproutes)
 add_subdirectory(starttlsr)
