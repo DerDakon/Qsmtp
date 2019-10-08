@@ -26,6 +26,8 @@ const char *clientcertname = "control/clientcert.pem";
 
 /**
  * @brief send STARTTLS and handle the connection setup
+ * @param d the dane information received for that domain
+ * @param cnt number of entries in d
  * @return if connection was successfully established
  * @retval 0 SSL mode successfully set up
  * @retval >0 SSL setup failed (non-local fault, e.g. network or reply error)
@@ -35,7 +37,7 @@ const char *clientcertname = "control/clientcert.pem";
  * If the return value is <0 a status code for qmail-rspawn was already written.
  */
 int
-tls_init(void)
+tls_init(const struct daneinfo *tlsa_info __attribute__ ((unused)), int tlsa_cnt __attribute__ ((unused)))
 {
 	char **saciphers;
 	const char *ciphers;

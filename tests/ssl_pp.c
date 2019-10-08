@@ -179,7 +179,7 @@ client(void)
 
 	socketd = sockets[1];
 
-	int r = tls_init();
+	int r = tls_init(NULL, 0);
 	if (r != client_init_result)
 		return 1;
 

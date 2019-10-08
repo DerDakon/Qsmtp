@@ -192,7 +192,7 @@ main(int argc, char **argv)
 			close(sfd[1]);
 	}
 
-	const int r = tls_init();
+	const int r = tls_init(NULL, 0);
 
 	test_net_conn_shutdown(shutdown_clean);
 

@@ -4,7 +4,9 @@
 #ifndef STARTTLSR_H
 #define STARTTLSR_H
 
-extern int tls_init(void);
+struct daneinfo;
+
+extern int tls_init(const struct daneinfo *d, int cnt);
 
 extern const char *clientcertname;	/**< filename of the TLS client certificate */
 

@@ -50,19 +50,30 @@ connection_died(void)
 int
 connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr *outip6)
 {
+	struct daneinfo *d = NULL;
+	int tlsa = 0;
 	/* for all MX entries we got: try to enable connection, check if the SMTP server wants us
 	 * (sends 220 response) and EHLO/HELO succeeds. If not, try next. If none left, exit. */
 	do {
 		int flagerr = 0;
+		if (tlsa > 0) {
+			daneinfo_free(d, tlsa);
+			d = NULL;
+		}
+
 		/* query DNS before opening the socket, otherwise a long DNS timeout could lead to SMTP
 		 * socket timeout */
-		const int tlsa = (mx->name == NULL) ? 0 : dnstlsa(mx->name, targetport, NULL);
+		tlsa = (mx->name == NULL) ? 0 : dnstlsa(mx->name, targetport, &d);
 
 		socketd = tryconn(mx, outip4, outip6);
-		if (socketd < 0)
+		if (socketd < 0) {
+			daneinfo_free(d, tlsa);
 			return socketd;
-		if (dup2(socketd, 0) < 0)
+		}
+		if (dup2(socketd, 0) < 0) {
+			daneinfo_free(d, tlsa);
 			net_conn_shutdown(shutdown_abort);
+		}
 
 		int s = netget(0);
 		if (s < 0) {
@@ -82,6 +93,7 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 			default:
 				/* something unexpected went wrong, assume that this is a local
 				 * problem that will eventually go away. */
+				daneinfo_free(d, tlsa);
 				net_conn_shutdown(shutdown_abort);
 			}
 		}
@@ -132,11 +144,13 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 		smtpext = flagerr;
 
 		if (smtpext & esmtp_starttls) {
-			flagerr = tls_init();
+			flagerr = tls_init(d, tlsa);
 			/* Local error, this would likely happen on the next host again.
 			 * Since it's a local fault stop trying and hope it gets fixed. */
-			if (flagerr < 0)
+			if (flagerr < 0) {
+				daneinfo_free(d, tlsa);
 				net_conn_shutdown(shutdown_clean);
+			}
 
 			if (flagerr != 0) {
 				quitmsg_if_net(-flagerr);
@@ -167,6 +181,8 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 			continue;
 		}
 	} while (socketd < 0);
+
+	daneinfo_free(d, tlsa);
 
 	return 0;
 }

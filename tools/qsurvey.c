@@ -428,7 +428,7 @@ main(int argc, char *argv[])
 
 	if (smtpext & esmtp_starttls) {
 		makelog("tls-init");
-		if (tls_init() != 0) {
+		if (tls_init(NULL, 0) != 0) {
 			net_conn_shutdown(shutdown_clean);
 		} else {
 			X509 *x509 = SSL_get_peer_certificate(ssl);

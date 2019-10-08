@@ -269,13 +269,24 @@ int
 dnstlsa(const char *host, const unsigned short port, struct daneinfo **out)
 {
 	assert(host != NULL);
-	assert(out == NULL);
+	assert(out != NULL);
 	assert(port == targetport);
 
-	if ((strcmp(host, "prio2.example.org") == 0) || (strcmp(host, "prio800.example.org") == 0))
+	if ((strcmp(host, "prio2.example.org") == 0) || (strcmp(host, "prio800.example.org") == 0)) {
+		*out = malloc(sizeof(**out));
+		memset(*out, 0, sizeof(**out));
 		return 1;
+	}
 
 	return 0;
+}
+
+void
+daneinfo_free(struct daneinfo *di, int cnt)
+{
+	for (int i = 0; i < cnt; i++)
+		free(di[i].data);
+	free(di);
 }
 
 int
