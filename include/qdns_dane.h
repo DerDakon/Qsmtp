@@ -65,4 +65,6 @@ struct daneinfo {
  */
 extern int dnstlsa(const char *host, const unsigned short port, struct daneinfo **out) __attribute__((nonnull (1)));
 
+extern void daneinfo_free(struct daneinfo *di, int cnt);
+
 #endif /* QDNS_DANE_H */

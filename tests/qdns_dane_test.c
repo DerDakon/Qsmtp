@@ -281,8 +281,9 @@ test_success(void)
 {
 	struct daneinfo *val = NULL;
 	int ret = 0;
+	int cnt;
 
-	int r = dnstlsa("foo.example.com", 587, &val);
+	const int r = dnstlsa("foo.example.com", 587, &val);
 	int s = dnstlsa("foo.example.com", 587, NULL);
 
 	if (r != s) {
@@ -295,11 +296,10 @@ test_success(void)
 		fprintf(stderr, "dnstlsa(foo.example.com, 587, &val) returned %i, but 3 was expected\n",
 				r);
 		ret++;
-		if (r > 3)
-			r = 3;
 	}
+	cnt = r > 3 ? 3 : r;
 
-	for (s = 0; s < r; s++) {
+	for (s = 0; s < cnt; s++) {
 		unsigned char v;
 		size_t elen;
 		size_t pos;
@@ -338,11 +338,9 @@ test_success(void)
 				ret++;
 				break;
 			}
-
-		free(val[s].data);
 	}
 
-	free(val);
+	daneinfo_free(val, r);
 
 	return ret;
 }

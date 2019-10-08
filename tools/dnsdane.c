@@ -35,11 +35,9 @@ main(int argc, char **argv)
 
 			for (size_t l = 0; l < info[k].datalen; l++)
 				printf("%02X", info[k].data[l]);
-
-			free(info[k].data);
 		}
 
-		free(info);
+		daneinfo_free(info, j);
 
 		printf("\n");
 	}

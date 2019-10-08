@@ -13,16 +13,20 @@
 #define TLSA_DATA_LEN_SHA512 (512 / 8)
 #define TLSA_MIN_RECORD_LEN 3
 
+void daneinfo_free(struct daneinfo *di, int cnt)
+{
+	for (int i = 0; i < cnt; i++)
+		free(di[i].data);
+	free(di);
+}
+
 static int
 free_tlsa_data(struct daneinfo **out, const int cnt)
 {
 	if (out != NULL) {
-		for (int i = 0; i < cnt; i++)
-			free((*out)[i].data);
-		free(*out);
+		daneinfo_free(*out, cnt);
 		*out = NULL;
 	}
-
 	return -1;
 }
 
