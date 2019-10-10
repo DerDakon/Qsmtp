@@ -121,11 +121,9 @@ tls_init(void)
 		err_conf("can't open tlsclientciphers\n");
 	}
 	if (saciphers) {
-		int i = 0;
-		while (saciphers[i + 1]) {
-			saciphers[i][strlen(saciphers[i])] = ':';
-			i++;
-		}
+		// overwrite the '\0' before any later entry with ':' to have a list that OpenSSL understand
+		for (int i = 1; saciphers[i] != NULL; i++)
+			saciphers[i][-1] = ':';
 		ciphers = saciphers[0];
 	} else {
 		ciphers = "DEFAULT";

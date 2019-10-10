@@ -624,13 +624,16 @@ test_listload()
 			}
 		} else if (bufa != NULL) {
 			unsigned int end;
+			const char *ssl_list;
 			if (i == 2) {
+				ssl_list = "b";
 				if (strcmp(bufa[0], "b") != 0) {
 					fputs("loadlistfd() did not return \"b\" as first array entry\n", stderr);
 					err++;
 				}
 				end = 1;
 			} else {
+				ssl_list = "a:b:c";
 				if (strcmp(bufa[0], "a") != 0) {
 					fputs("loadlistfd() did not return \"a\" as first array entry\n", stderr);
 					err++;
@@ -652,6 +655,14 @@ test_listload()
 			if ((void*)(bufa + end + 1) != (void*)bufa[0]) {
 				printf("%i %p %p\n", i, bufa + end + 1, bufa[0]);
 				fputs("loadlistfd() did not put the first entry directly after the pointer section\n", stderr);
+				err++;
+			}
+
+			/* do the "to OpenSSL :-list conversion" that is also done in Qremote */
+			for (int j = 1; bufa[j] != NULL; j++)
+				bufa[j][-1] = ':';
+			if (strcmp(bufa[0], ssl_list) != 0) {
+				fprintf(stderr, "loadlistfd() to OpenSSL conversion did not work, expected 'a:b:c', got '%s'", bufa[0]);
 				err++;
 			}
 		} else {
