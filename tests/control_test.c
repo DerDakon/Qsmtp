@@ -623,30 +623,25 @@ test_listload()
 					err++;
 			}
 		} else if (bufa != NULL) {
-			unsigned int end;
+			unsigned int end = 0;
 			const char *ssl_list;
+			const char *b_list[] = { "b", NULL };
+			const char *full_list[] = { "a", "b", "c", NULL };
+			const char **entries;
 			if (i == 2) {
 				ssl_list = "b";
-				if (strcmp(bufa[0], "b") != 0) {
-					fputs("loadlistfd() did not return \"b\" as first array entry\n", stderr);
-					err++;
-				}
-				end = 1;
+				entries = b_list;
 			} else {
 				ssl_list = "a:b:c";
-				if (strcmp(bufa[0], "a") != 0) {
-					fputs("loadlistfd() did not return \"a\" as first array entry\n", stderr);
+				entries = full_list;
+			}
+			for (int j = 0; entries[j] != NULL; j++) {
+				if (strcmp(bufa[j], entries[j]) != 0) {
+					fprintf(stderr, "loadlistfd() did not return \"%s\" as entry %u, but %s\n",
+							entries[j], j, bufa[j]);
 					err++;
 				}
-				if (strcmp(bufa[1], "b") != 0) {
-					fputs("loadlistfd() did not return \"b\" as second array entry\n", stderr);
-					err++;
-				}
-				if (strcmp(bufa[2], "c") != 0) {
-					fputs("loadlistfd() did not return \"c\" as third array entry\n", stderr);
-					err++;
-				}
-				end = 3;
+				end++;
 			}
 			if (bufa[end] != NULL) {
 				fputs("loadlistfd() did not return a NULL-terminated array\n", stderr);
