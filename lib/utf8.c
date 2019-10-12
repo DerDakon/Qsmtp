@@ -122,8 +122,10 @@ valid_utf8(const cstring s)
 		}
 
 		tails = utf8_2_start(c);
-		if (tails > 0)
+		if (tails > 0) {
+			cnt++;
 			continue;
+		}
 
 		if (i >= s.len - 2)
 			return -1;
@@ -132,12 +134,16 @@ valid_utf8(const cstring s)
 		i++; /* both functions will already handle both bytes */
 
 		tails = utf8_3_start(c, cnext);
-		if (tails > 0)
+		if (tails > 0) {
+			cnt++;
 			continue;
+		}
 
 		tails = utf8_4_start(c, cnext);
-		if (tails > 0)
+		if (tails > 0) {
+			cnt++;
 			continue;
+		}
 
 		return -1;
 	}
