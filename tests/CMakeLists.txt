@@ -208,6 +208,7 @@ add_executable(testcase_qrdata
 		qrdata_test.c
 		${CMAKE_SOURCE_DIR}/qremote/qrdata.c
 		${CMAKE_SOURCE_DIR}/qremote/mime.c
+		${CMAKE_SOURCE_DIR}/lib/utf8.c
 )
 
 target_link_libraries(testcase_qrdata

@@ -1,5 +1,6 @@
 #define _ISOC99_SOURCE
 #include <netio.h>
+#include <qutf8.h>
 #include <qremote/qrdata.h>
 #include <qremote/qremote.h>
 #include "test_io/testcase_io.h"
@@ -954,6 +955,22 @@ int main(int argc, char **argv)
 		if (ascii != testpatterns[usepattern].recodeflag) {
 			fprintf(stderr, "need_recode() returned 0x%x, expected was 0x%x\n", ascii, testpatterns[usepattern].recodeflag);
 			return EFAULT;
+		}
+
+		if (fd >= 0) {
+			cstring cs = {
+				.s = msgdata,
+				.len = msgsize
+			};
+
+			int chars = valid_utf8(cs);
+			if (chars < 0) {
+				fprintf(stderr, "valid_utf8() returned -1\n");
+				return EFAULT;
+			} else if (chars > msgsize) {
+				fprintf(stderr, "valid_utf8() returned %i characters when the input length was %zu\n", chars, msgsize);
+				return EFAULT;
+			}
 		}
 	}
 
