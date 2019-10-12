@@ -29,6 +29,12 @@ typedef struct cstring {
 
 #define STREMPTY_INIT { .s = NULL, .len = 0 }
 
+static inline const cstring *
+to_cstring(const string *s)
+{
+	return (const cstring *)s;
+}
+
 /**
  * @brief allocate a new string buffer of the given length
  * @param s the string container
