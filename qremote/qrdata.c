@@ -382,10 +382,12 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 		}
 	}
 
-	if (!header && (off == len))
+	if (!header) {
+		assert(off == len);
 		header = len;
+	}
 
-	if (!header || (need_recode(buf, header) & recode_8bit)) {
+	if (need_recode(buf, header) & recode_8bit) {
 		/* no empty line found: treat whole message as header. But this means we have
 		 * 8bit characters in header which is a bug in the client that we can't handle */
 		write_status("D5.6.3 message contains unencoded 8bit data in message header");
