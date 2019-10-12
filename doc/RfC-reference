@@ -17,6 +17,7 @@ RfCs interesting for a mail server (and used for implementing this one):
 5321	Simple Mail Transfer Protocol
 5782	DNS Blacklists and Whitelists
 6152	SMTP Service Extension for 8bit-MIMEtransport
+6531	SMTP Extension for Internationalized Email
 6698	The DNS-Based Authentication of Named Entities (DANE) Transport Layer Security (TLS) Protocol: TLSA
 7208	Sender Policy Framework (SPF) for Authorizing Use of Domains in E-Mail, Version 1
 7218	Adding Acronyms to Simplify Conversations about DNS-Based Authentication of Named Entities (DANE)
