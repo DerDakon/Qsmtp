@@ -11,8 +11,9 @@ enum ehlo_extensions {
 	esmtp_starttls = 0x4,	/**< STARTTLS (RfC 3207) */
 	esmtp_8bitmime = 0x8,	/**< 8BITMIME (RfC 6152) */
 	esmtp_auth = 0x10,	/**< AUTH (RfC 2554) */
-	esmtp_chunking = 0x20,	/**< CHUNKING (RfC 3030) */
-	esmtp_x_final = esmtp_chunking/**< end delimiter */
+	esmtp_utf8 = 0x20,	/**< SMTPUTF8 (RfC 6531) */
+	esmtp_chunking = 0x40,	/**< CHUNKING (RfC 3030) */
+	esmtp_x_final = esmtp_chunking /**< end delimiter */
 };
 
 extern unsigned long remotesize;	/**< the maximum size allow by the remote host or 0 if unlimited or unknown */

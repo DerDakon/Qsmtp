@@ -60,6 +60,13 @@ cb_auth(const char *more)
 	return 0;
 }
 
+static int
+cb_utf8(const char *more __attribute__ ((unused)))
+{
+	/* there are no parameters yet, but these must be ignored to be forward compatible */
+	return 0;
+}
+
 int
 esmtp_check_extension(const char *input)
 {
@@ -73,8 +80,9 @@ esmtp_check_extension(const char *input)
 		{ .name = "STARTTLS",	.len = 8,	.func = NULL	}, /* 0x04 */
 		{ .name = "8BITMIME",	.len = 8,	.func = NULL	}, /* 0x08 */
 		{ .name = "AUTH",	.len = 4,	.func = cb_auth	}, /* 0x10 */
+		{ .name = "SMTPUTF8",	.len = 8,	.func = cb_utf8	}, /* 0x20 */
 #ifdef CHUNKING
-		{ .name = "CHUNKING",	.len = 8,	.func = NULL	}, /* 0x20 */
+		{ .name = "CHUNKING",	.len = 8,	.func = NULL	}, /* 0x40 */
 #endif
 		{ .name = NULL }
 	};

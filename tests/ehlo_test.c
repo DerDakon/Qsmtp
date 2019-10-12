@@ -38,6 +38,7 @@ testcase_ignore(void)
 		"AUTHXX",
 		"AUTHX WITH ARGS",
 		"AUTH=LOGIN PLAIN",
+		"SMTPUTF8X",
 		NULL
 	};
 	int ret = 0;
@@ -212,6 +213,40 @@ testcase_auth(void)
 		fprintf(stderr, "line '%s' parsed mechanisms '%s', but expected '%s'\n",
 				lines[i].line, auth_mechs, lines[i].mechs);
 		ret++;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief test the size extension
+ *
+ * This test covers only the valid cases, the invalid cases are tested by
+ * testcase_invalid().
+ */
+static int
+testcase_utf8(void)
+{
+	struct {
+		const char *line;
+	} lines[] = {
+		{
+			.line = "SMTPUTF8"
+		},
+		{
+			.line = "SMTPUTF8 PARAM"
+		},
+		{ }
+	};
+	int ret = 0;
+
+	for (unsigned int i = 0; lines[i].line != NULL; i++) {
+		if (esmtp_check_extension(lines[i].line) != esmtp_utf8) {
+			fprintf(stderr, "line '%s' not detected as correct SMTPUTF8 line\n",
+				lines[i].line);
+			ret++;
+			continue;
+		}
 	}
 
 	return ret;
@@ -575,6 +610,7 @@ main(void)
 	ret += testcase_size();
 	ret += testcase_invalid();
 	ret += testcase_auth();
+	ret += testcase_utf8();
 
 	heloname.s = (char *)helonm;
 	heloname.len = strlen(heloname.s);
