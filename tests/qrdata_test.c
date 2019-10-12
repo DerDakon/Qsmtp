@@ -94,7 +94,7 @@ static struct {
 				" 1050 12345678901234567890123456789012345678901234 \r\n"
 				"another line\t\r\n",
 		.filters = 0,
-		.recodeflag = 2,
+		.recodeflag = recode_long_line,
 		.log_count = 0
 	},
 	{
@@ -123,7 +123,7 @@ static struct {
 				" 1050 12345678901234567890123456789012345678901234\r"
 				"From: <foo@bar.example.com>\r",
 		.filters = 3,
-		.recodeflag = 4,
+		.recodeflag = recode_long_line,
 		.log_count = 0
 	},
 	{
@@ -150,7 +150,7 @@ static struct {
 				"__950_12345678901234567890123456789012345678901234"
 				" 1000 12345678901234567890123456789012345678901234\n",
 		.filters = 3,
-		.recodeflag = 4,
+		.recodeflag = recode_long_line,
 		.log_count = 0
 	},
 	{
@@ -178,7 +178,7 @@ static struct {
 				" 1000 12345678901234567890123456789012345678901234"
 				" 1050 12345678901234567890123456789012345678901234",
 		.filters = 3,
-		.recodeflag = 4,
+		.recodeflag = recode_long_line,
 		.log_count = 0
 	},
 	{
@@ -213,28 +213,28 @@ static struct {
 		.name = "8bitHeader",
 		.msg = "Subject: garbage \244\r\n\r\n",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 0
 	},
 	{
 		.name = "emptyLFheaderWith8bit",
 		.msg = "\ndata \244 \r\n",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 1
 	},
 	{
 		.name = "emptyCRheaderWith8bit",
 		.msg = "\rdata \244 \r\n",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 1
 	},
 	{
 		.name = "emptyCRLFheaderWith8bit",
 		.msg = "\r\ndata \244 \r\n",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 1
 	},
 	{
@@ -264,7 +264,7 @@ static struct {
 		       "--------------0008--\r"
 		       "\r",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 0
 	},
 	{
@@ -294,7 +294,7 @@ static struct {
 		       "--------------0008--\r\n"
 		       "\r\n",
 		.filters = 2,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 0
 	},
 	{
@@ -311,7 +311,7 @@ static struct {
 		       "because of 8bit data: \244\n"
 		       "\r",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 2
 	},
 	{
@@ -326,7 +326,7 @@ static struct {
 		       "This is the data part and it is again about money: \244\n"
 		       "\r",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 2
 	},
 	{
@@ -339,7 +339,7 @@ static struct {
 		"\n"
 		"\244nd\n",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 2
 	},
 	{
@@ -355,7 +355,7 @@ static struct {
 		       "This line is long enough so it needs to be wrapped exaclty at the first do.t.\n"
 		       "--------------0008",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 2
 	},
 	{
@@ -367,7 +367,7 @@ static struct {
 		       "This is the data part and it is again about money: \244\n"
 		       "This line is long enough so it needs to be wrapped exaclty at the first do.t.\n",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 2
 	},
 	{
@@ -383,14 +383,14 @@ static struct {
 		       "This is the data part and it is again about money: \244\n"
 		       "--------------0008--",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 2
 	},
 	{
 		.name = "ContentTypeSyntaxError",
 		.msg = "Content-Type: \n\nfoo bar \244\n",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 0
 	},
 	{
@@ -429,31 +429,31 @@ static struct {
 				" 1500 12345678901234567890123456789012345678901234\r\n"
 				"another line that needs r\244code\t\r\n",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 0
 	},
 	{
 		.name = "longChunkBeforeRecodeMultipart",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 0
 	},
 	{
 		.name = "wrapHeadersWithLongParts",
 		.filters = 0,
-		.recodeflag = 4,
+		.recodeflag = recode_long_line,
 		.log_count = 0
 	},
 	{
 		.name = "8bitAroundSoftbreak",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 0
 	},
 	{
 		.name = "whitespaceBeforeLinebreak",
 		.filters = 0,
-		.recodeflag = 1,
+		.recodeflag = recode_8bit,
 		.log_count = 0
 	},
 	{ }
