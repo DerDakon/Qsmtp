@@ -36,10 +36,7 @@ static int lastlf = 1;		/* set if last byte sent was a LF */
  *
  * @param buf buffer to scan
  * @param len length of buffer
- * @return logical or of:
- *   - 1: buffer has 8bit characters
- *   - 2: buffer contains line longer 998 chars
- *   - 4: header contains line longer 998 chars
+ * @return logical or of recode_reason flags
  */
 unsigned int
 need_recode(const char *buf, off_t len)
@@ -52,12 +49,12 @@ need_recode(const char *buf, off_t len)
 	while ((pos < len) && (res != 3)) {
 		if (llen > 998) {
 			if (in_header)
-				res |= 4;
+				res |= recode_long_header;
 			else
-				res |= 2;
+				res |= recode_long_line;
 		}
 		if (((signed char)buf[pos]) <= 0) {
-			res |= 1;
+			res |= recode_8bit;
 			llen++;
 		} else if ((buf[pos] == '\r') || (buf[pos] == '\n')) {
 			if ((buf[pos] == '\r') && (pos < len - 1) && (buf[pos + 1] == '\n'))
@@ -276,7 +273,7 @@ wrap_header(const char *buf, const off_t len)
 	off_t off = 0;	/* start of current line relative to pos */
 	off_t ll = 0;	/* length of current line */
 
-	if (!(need_recode(buf, len) & 4)) {
+	if (!(need_recode(buf, len) & recode_long_header)) {
 		send_plain(buf, len);
 		return;
 	}
@@ -388,7 +385,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 	if (!header && (off == len))
 		header = len;
 
-	if (!header || (need_recode(buf, header) & 1)) {
+	if (!header || (need_recode(buf, header) & recode_8bit)) {
 		/* no empty line found: treat whole message as header. But this means we have
 		 * 8bit characters in header which is a bug in the client that we can't handle */
 		write_status("D5.6.3 message contains unencoded 8bit data in message header");
@@ -609,10 +606,10 @@ send_qp(const char *buf, const off_t len)
 
 	unsigned int recodeflag = need_recode(buf, len);
 
-	off_t off = qp_header(buf, len, &boundary, &multipart, (recodeflag & 0x3));
+	off_t off = qp_header(buf, len, &boundary, &multipart, (recodeflag & recode_qp_body));
 
 	if (!multipart) {
-		if (recodeflag & 0x3)
+		if (recodeflag & recode_qp_body)
 			recode_qp(buf + off, len - off);
 		else
 			send_plain(buf + off, len - off);
@@ -735,7 +732,8 @@ send_data(unsigned int recodeflag)
 	in_data = 1;
 #endif
 
-	if ((!(smtpext & esmtp_8bitmime) && (recodeflag & 1)) || (recodeflag & 6)) {
+	if ((!(smtpext & esmtp_8bitmime) && (recodeflag & recode_8bit)) ||
+			(recodeflag & recode_long)) {
 		successmsg[2] = "(qp recoded) ";
 		send_qp(msgdata, msgsize);
 	} else {
