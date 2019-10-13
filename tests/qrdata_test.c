@@ -123,7 +123,7 @@ static struct {
 				" 1050 12345678901234567890123456789012345678901234\r"
 				"From: <foo@bar.example.com>\r",
 		.filters = 3,
-		.recodeflag = recode_long_line,
+		.recodeflag = recode_long_header,
 		.log_count = 0
 	},
 	{
@@ -150,7 +150,7 @@ static struct {
 				"__950_12345678901234567890123456789012345678901234"
 				" 1000 12345678901234567890123456789012345678901234\n",
 		.filters = 3,
-		.recodeflag = recode_long_line,
+		.recodeflag = recode_long_header,
 		.log_count = 0
 	},
 	{
@@ -178,7 +178,7 @@ static struct {
 				" 1000 12345678901234567890123456789012345678901234"
 				" 1050 12345678901234567890123456789012345678901234",
 		.filters = 3,
-		.recodeflag = recode_long_line,
+		.recodeflag = recode_long_header,
 		.log_count = 0
 	},
 	{
@@ -441,7 +441,7 @@ static struct {
 	{
 		.name = "wrapHeadersWithLongParts",
 		.filters = 0,
-		.recodeflag = recode_long_line,
+		.recodeflag = recode_long_header,
 		.log_count = 0
 	},
 	{
