@@ -968,7 +968,8 @@ int main(int argc, char **argv)
 				fprintf(stderr, "valid_utf8() returned -1\n");
 				return EFAULT;
 			} else if (chars > msgsize) {
-				fprintf(stderr, "valid_utf8() returned %i characters when the input length was %zu\n", chars, msgsize);
+				fprintf(stderr, "valid_utf8() returned %i characters when the input length was %zu\n",
+						chars, (size_t)msgsize);
 				return EFAULT;
 			}
 		}
