@@ -3866,15 +3866,16 @@ test_received()
 	struct in6_addr sender_ip6;
 	const char myhelo[] = "spftesthost.example.org";
 	const char mailfrom[] = "localpart@spfsender.example.net";
+	const char mfdomain[] =           "spfsender.example.net";
 	const char *mechanism[] = { "MX", "A", "IP4", "default", NULL };
 
 	inet_pton(AF_INET6, "::ffff:10.42.42.42", &sender_ip4);
 	inet_pton(AF_INET6, "fef0::abc:001", &sender_ip6);
 
 	memset(&xmitstat, 0, sizeof(xmitstat));
-	if (newstr(&xmitstat.helostr, strlen(strchr(mailfrom, '@') + 1)))
+	if (newstr(&xmitstat.helostr, strlen(mfdomain)))
 		return ++err;
-	memcpy(xmitstat.helostr.s, strchr(mailfrom, '@') + 1, strlen(strchr(mailfrom, '@') + 1));
+	memcpy(xmitstat.helostr.s, mfdomain, strlen(mfdomain));
 	memcpy(&xmitstat.sremoteip, &sender_ip6, sizeof(sender_ip6));
 	xmitstat.ipv4conn = 0;
 	if (init_helo(myhelo) != 0) {
