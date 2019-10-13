@@ -422,7 +422,7 @@ check_msgbody(const char *expect)
 		}
 		if (r == 0)
 			break;
-		if ((mismatch < 0) && (outbuf[off] != expect[off]) && (off < strlen(expect))) {
+		if ((mismatch < 0) && (off < strlen(expect)) && (outbuf[off] != expect[off])) {
 			mismatch = off;
 			unsigned char e = expect[off];
 			unsigned char o = outbuf[off];
