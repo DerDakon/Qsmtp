@@ -21,9 +21,10 @@ main(int argc, char **argv)
 	if (r < 0)
 		return 2;
 
+	const char *o = out;
 	for (int i = 0; i < r; i++) {
-		printf("result: %s\n", out);
-		out += strlen(out) + 1;
+		printf("result: %s\n", o);
+		o += strlen(o) + 1;
 	}
 
 	free(out);
