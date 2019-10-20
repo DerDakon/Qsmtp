@@ -35,10 +35,10 @@ rcpt_cb rcpt_cbs[] = {
 			cb_soberg,
 			cb_ipbl,
 			cb_helo,
-			cb_spf,
 			cb_badmailfrom,
 			cb_badcc,
 			cb_fromdomain,
+			cb_spf,
 /* now online checks */
 			cb_dnsbl,
 			cb_forceesmtp,
