@@ -134,8 +134,12 @@ cb_fromdomain(const struct userconf *ds, const char **logmsg, enum config_domain
 				*logmsg = "no MX";
 				errmsg = "501 5.1.8 Sorry, can't find a mail exchanger for sender address\r\n";
 				break;
+			case 2:
+				*logmsg = "null MX";
+				errmsg = "501 5.1.8 Sorry, the sender domain does not accept mails\r\n";
+				break;
 			default:
-				assert(xmitstat.fromdomain == 1);
+				assert(1);
 				return FILTER_PASSED;
 			}
 

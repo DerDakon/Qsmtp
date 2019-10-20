@@ -376,6 +376,21 @@ smtp_rcpt(void)
 				free(tmp.s);
 				return e ? -e : EDONE;
 				}
+			case 2:
+				{
+				const char *netmsg[] = { "556 5.1.10 only null MX exists for ",
+						todomain, NULL };
+
+				logmsg[0] = "permanently ";
+				logmsg[8] = "null target MX}";
+				logmsg[9] = NULL;
+
+				log_writen(LOG_INFO, logmsg);
+				userconf_free(&ds);
+				int e = net_writen(netmsg);
+				free(tmp.s);
+				return e ? -e : EDONE;
+				}
 			case 0:
 				freeips(tomx);
 			}

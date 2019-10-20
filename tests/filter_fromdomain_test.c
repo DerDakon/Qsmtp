@@ -271,6 +271,11 @@ main(void)
 	netnwrite_msg = "501 5.1.8 Sorry, can't find a mail exchanger for sender address\r\n";
 	err += check_expect(1, "checking no MX", "no MX");
 
+	xmitstat.fromdomain = 2;
+	xmitstat.frommx = NULL;
+	netnwrite_msg = "501 5.1.8 Sorry, the sender domain does not accept mails\r\n";
+	err += check_expect(1, "checking null MX", "null MX");
+
 	xmitstat.fromdomain = DNS_ERROR_TEMP;
 	xmitstat.frommx = NULL;
 	netnwrite_msg = "451 4.4.3 temporary DNS failure\r\n";

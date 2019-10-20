@@ -202,11 +202,21 @@ getmxlist(char *remhost, struct ips **mx)
 	}
 
 	if (!*mx) {
-		if (ask_dnsmx(remhost, mx)) {
+		switch (ask_dnsmx(remhost, mx)) {
+		case 0:
+			break;
+		case 2: {
+			const char *msg[] = { "D5.1.10 only null MX exists for ",
+					remhost };
+			write_status_m(msg, 2);
+			net_conn_shutdown(shutdown_abort);
+			}
+		default: {
 			const char *msg[] = { "Z4.4.3 cannot find a mail exchanger for ",
 					remhost };
 			write_status_m(msg, 2);
 			net_conn_shutdown(shutdown_abort);
+			}
 		}
 	}
 }

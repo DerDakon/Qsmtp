@@ -18,6 +18,7 @@
  * \param result first element of a list of results will be placed
  * \retval  0 on success
  * \retval  1 if host is not existent
+ * \retval  2 null MX is set for this domain (RfC 7505)
  * \retval DNS_ERROR_TEMP if temporary DNS error
  * \retval DNS_ERROR_PERM if permanent DNS error
  * \retval DNS_ERROR_LOCAL on error (errno is set)
@@ -50,8 +51,6 @@ ask_dnsmx(const char *name, struct ips **result)
 		}
 	}
 
-	char *s = r;
-
 	/* there is no MX record, so we look for an AAAA record */
 	if (!l) {
 		struct in6_addr *a;
@@ -80,6 +79,13 @@ ask_dnsmx(const char *name, struct ips **result)
 
 	*result = NULL;
 
+	/* RfC 7505 null MX: a single entry, any priority, only '.' */
+	if (l == 4 && r[2] == '.') {
+		free(r);
+		return 2;
+	}
+
+	char *s = r;
 	while (r + l > s) {
 		struct in6_addr *a;
 		int rc;

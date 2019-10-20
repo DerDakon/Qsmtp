@@ -1099,6 +1099,7 @@ spfmx(const char *domain, const char *token)
 	}
 	switch (i) {
 	case 1:
+	case 2:
 		return SPF_NONE;
 	case DNS_ERROR_TEMP:
 		return SPF_TEMPERROR;

@@ -312,6 +312,11 @@ test_ask_dnsmx(const char *domain, struct ips **ips)
 		return 0;
 	}
 
+	if (strcmp(domain, "neverthere.example.com") == 0) {
+		*ips = NULL;
+		return 2;
+	}
+
 	return 1;
 }
 
@@ -578,6 +583,22 @@ main(void)
 			.rcpt_result = EDONE,
 			.netmsg = "451 4.4.3 cannot find a mail exchanger for notthere.example.com\r\n",
 			.logmsg1 = "temporarily rejected message to <abc@notthere.example.com> from <baz@example.org> from IP [] {no target MX}",
+			.log_prio1 = LOG_INFO
+		},
+		/* remote user, relaying permitted, target domain only publishes null MX */
+		{
+			.xmitstat = {
+				.mailfrom = {
+					.s = "baz@example.org",
+					.len = strlen("baz@example.org")
+				},
+			},
+			.input = "RCPT TO:<abc@neverthere.example.com>",
+			.tls_verify = 1,
+			.tls_verify_result = 1,
+			.rcpt_result = EDONE,
+			.netmsg = "556 5.1.10 only null MX exists for neverthere.example.com\r\n",
+			.logmsg1 = "permanently rejected message to <abc@neverthere.example.com> from <baz@example.org> from IP [] {null target MX}",
 			.log_prio1 = LOG_INFO
 		},
 		{ }

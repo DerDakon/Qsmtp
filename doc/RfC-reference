@@ -21,3 +21,4 @@ RfCs interesting for a mail server (and used for implementing this one):
 6698	The DNS-Based Authentication of Named Entities (DANE) Transport Layer Security (TLS) Protocol: TLSA
 7208	Sender Policy Framework (SPF) for Authorizing Use of Domains in E-Mail, Version 1
 7218	Adding Acronyms to Simplify Conversations about DNS-Based Authentication of Named Entities (DANE)
+7505	Null MX
