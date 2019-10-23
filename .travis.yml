@@ -1,5 +1,7 @@
-dist: xenial
+dist: bionic
 language: c
+arch:
+ - amd64
 compiler:
  - gcc
  - clang
@@ -11,7 +13,7 @@ env:
 addons:
   apt:
     sources:
-      - sourceline: 'deb https://apt.kitware.com/ubuntu/ xenial main'
+      - sourceline: 'deb https://apt.kitware.com/ubuntu/ bionic main'
         key_url: 'https://apt.kitware.com/keys/kitware-archive-2019.asc'
     packages:
       - cmake
@@ -27,12 +29,12 @@ addons:
       name: "DerDakon/Qsmtp"
       description: "Build submitted via Travis CI"
     notification_email: eike@sf-mail.de
-    build_command_prepend: "mkdir covbuild; cd covbuild; cmake -D CMAKE_BUILD_TYPE=Debug -DALLOW_INSECURE_BZERO=On -D BUILD_DOC=Off /home/travis/build/DerDakon/Qsmtp"
+    build_command_prepend: "mkdir covbuild; cd covbuild; cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_DOC=Off /home/travis/build/DerDakon/Qsmtp"
     build_command: "make -j 4"
     branch_pattern: coverity_scan
 script:
- - echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nset(CONF_OPTIONS "-DIPV4ONLY=On" "-DALLOW_INSECURE_BZERO=On")\nset(CTEST_SITE "travis-ci.org")\ninclude("/home/travis/build/DerDakon/Qsmtp/ctest_qsmtp.cmake")' > my_qsmtp.cmake
- - ctest -V -D "CTEST_BUILD_NAME=Ubuntu Xenial ${CC}" -S my_qsmtp.cmake
+ - echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nset(CONF_OPTIONS "-DIPV4ONLY=On")\nset(CTEST_SITE "travis-ci.org")\ninclude("/home/travis/build/DerDakon/Qsmtp/ctest_qsmtp.cmake")' > my_qsmtp.cmake
+ - ctest -V -D "CTEST_BUILD_NAME=Ubuntu Bionic ${TRAVIS_ARCH} ${CC}" -S my_qsmtp.cmake
 after_success:
  - lcov --directory /tmp/Qs-build --capture --output-file coverage.info # capture coverage info
  - lcov --remove coverage.info '/usr/*' --output-file coverage.info # filter out system
