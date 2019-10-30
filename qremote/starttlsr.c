@@ -8,6 +8,7 @@
 #include <log.h>
 #include <netio.h>
 #include <qdns.h>
+#include <qdns_dane.h>
 #include <qremote/qremote.h>
 #include <ssl_timeoutio.h>
 #include <sstring.h>
@@ -37,7 +38,7 @@ const char *clientcertname = "control/clientcert.pem";
  * If the return value is <0 a status code for qmail-rspawn was already written.
  */
 int
-tls_init(const struct daneinfo *tlsa_info __attribute__ ((unused)), int tlsa_cnt __attribute__ ((unused)))
+tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 {
 	char **saciphers;
 	const char *ciphers;
@@ -88,6 +89,40 @@ tls_init(const struct daneinfo *tlsa_info __attribute__ ((unused)), int tlsa_cnt
 	if (SSL_CTX_use_certificate_chain_file(ctx, clientcertname) == 1)
 		SSL_CTX_use_RSAPrivateKey_file(ctx, clientcertname, SSL_FILETYPE_PEM);
 
+	int tlsa_usable = 0;
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+	if (tlsa_cnt > 0) {
+		/* find out if there is a usable record at all */
+		for (int i = 0; i < tlsa_cnt; i++) {
+			/* see SSL_dane_enable() manpage */
+			switch (tlsa_info[i].cert_usage) {
+			default:
+			case 0:     /* PKIX-TA(0) */
+			case 1:     /* PKIX-EE(1) */
+				continue;
+			case 2:     /* DANE-TA(2) */
+			case 3:     /* DANE-EE(3) */
+				tlsa_usable++;
+				break;
+			}
+		}
+
+		if (tlsa_usable == 0) {
+			tlsa_cnt = 0;
+		} else {
+			if (SSL_CTX_dane_enable(ctx) <= 0) {
+				const char *msg[] = { "Z4.5.0 TLS unable to activate DANE: ", ssl_error(), "; connecting to ",
+						rhost };
+
+				write_status_m(msg, 4);
+				SSL_CTX_free(ctx);
+				ssl_library_destroy();
+				return -1;
+			}
+		}
+	}
+#endif
+
 	SSL *myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);
 	if (!myssl) {
@@ -98,6 +133,56 @@ tls_init(const struct daneinfo *tlsa_info __attribute__ ((unused)), int tlsa_cnt
 		ssl_library_destroy();
 		return -1;
 	}
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+	if (tlsa_cnt > 0) {
+		if (SSL_dane_enable(myssl, partner_fqdn) <= 0) {
+			const char *msg[] = { "Z4.5.0 TLS error setting DANE host: ", ssl_error(), "; connecting to ",
+					rhost };
+
+			write_status_m(msg, 4);
+			ssl_free(myssl);
+			return -1;
+		}
+
+		/* taken from the SSL_dane_enable() manpage, not sure if this is the best idea */
+		SSL_dane_set_flags(myssl, DANE_FLAG_NO_DANE_EE_NAMECHECKS);
+		SSL_set_hostflags(myssl, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
+
+		for (int i = 0; i < tlsa_cnt; i++) {
+			/* see SSL_dane_enable() manpage */
+			switch (tlsa_info[i].cert_usage) {
+			default:
+			case 0:     /* PKIX-TA(0) */
+			case 1:     /* PKIX-EE(1) */
+				continue;
+			case 2:     /* DANE-TA(2) */
+			case 3:     /* DANE-EE(3) */
+				break;
+			}
+
+			int ret = SSL_dane_tlsa_add(myssl, tlsa_info[i].cert_usage, tlsa_info[i].selector, tlsa_info[i].matching_type,
+					tlsa_info[i].data, tlsa_info[i].datalen);
+
+			if (ret < 0) {
+				const char *msg[] = { "Z4.5.0 TLS error adding DANE setting: ", ssl_error(), "; connecting to ",
+						rhost };
+
+				write_status_m(msg, 4);
+				ssl_free(myssl);
+				return -1;
+			} else if (ret == 0) {
+				/* handle unusable TLSA record */
+				if (--tlsa_usable == 0) {
+					const char *msg[] = { "only unusable DANE records found for ", rhost, NULL };
+
+					log_writen(LOG_INFO, msg);
+					break;
+				}
+			}
+		}
+	}
+#endif
 
 	if (*servercert) {
 		X509_VERIFY_PARAM *vparam = SSL_get0_param(myssl);
@@ -178,7 +263,7 @@ tls_init(const struct daneinfo *tlsa_info __attribute__ ((unused)), int tlsa_cnt
 		return -i;
 	}
 
-	if (*servercert) {
+	if (*servercert || tlsa_usable > 0) {
 		long r = SSL_get_verify_result(ssl);
 
 		if (r != X509_V_OK) {
