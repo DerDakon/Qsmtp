@@ -1,5 +1,7 @@
 dist: bionic
 language: c
+version: ~> 1.0
+os: linux
 arch:
  - amd64
 compiler:
