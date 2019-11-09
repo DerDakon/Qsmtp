@@ -184,13 +184,13 @@ client(void)
 		return 1;
 
 	r = 0;
-	printf("CLIENT: init done, cipher is %s\n", SSL_get_cipher(ssl));
+	printf("CLIENT: init done, protocol version is %s, cipher is %s\n", SSL_get_version(ssl), SSL_get_cipher(ssl));
 
 	net_writen(ping);
 	printf("CLIENT: sent ping\n");
 	int k = netget(0);
 	if (k != 250) {
-		fprintf(stderr, "client: netget() returned wrong result %i\n", k);
+		fprintf(stderr, "client: netget() returned wrong result %i, message was '%s'\n", k, linein.s);
 		r++;
 	} else if ((linein.len != strlen(answer) || strcmp(linein.s, answer) != 0)) {
 		fprintf(stderr, "client: netget() returned string '%s' instead of '%s'\n", linein.s, answer);
@@ -230,7 +230,7 @@ server(void)
 	if (r != 0)
 		return r;
 
-	printf("SERVER: init done, cipher is %s\n", SSL_get_cipher(ssl));
+	printf("SERVER: init done, protocol version is %s, cipher is %s\n", SSL_get_version(ssl), SSL_get_cipher(ssl));
 
 	r = smtp_starttls();
 	if (r != 1) {
