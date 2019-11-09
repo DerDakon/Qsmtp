@@ -91,6 +91,9 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 
 	int tlsa_usable = 0;
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
+	SSL_CTX_set_post_handshake_auth(ctx, 1);
+#endif
 	if (tlsa_cnt > 0) {
 		/* find out if there is a usable record at all */
 		for (int i = 0; i < tlsa_cnt; i++) {

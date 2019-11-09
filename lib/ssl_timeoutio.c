@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <openssl/err.h>
+#include <stdbool.h>
 
 #define ndelay_on(fd)  fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK)
 #define ndelay_off(fd) (void) fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) & ~O_NONBLOCK)
@@ -159,12 +160,28 @@ ssl_timeoutconn(time_t t)
 int
 ssl_timeoutrehandshake(time_t t)
 {
-	int r = SSL_renegotiate(ssl);
-	if (r <= 0)
-		return -EPROTO;
+	int r;
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
+	bool tls13 = false;
+	if (SSL_version(ssl) >= TLS1_3_VERSION) {
+		tls13 = true;
+		if (SSL_verify_client_post_handshake(ssl) != 1)
+			return -EPROTO;
+		} else
+#endif
+	{
+		r = SSL_renegotiate(ssl);
+		if (r <= 0)
+			return -EPROTO;
+	}
 	r = ssl_timeoutio(SSL_do_handshake, t, NULL, 0);
 	if (r < 0)
 		return r;
+
+#if (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
+	if (tls13)
+		return 0;
+#endif
 
 	/* this is for the server only */
 #if !((OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER))
