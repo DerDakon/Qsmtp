@@ -91,7 +91,7 @@ int netnwrite(const char *s, size_t l)
 int main(int argc, char *argv[])
 {
 	if (argc != 2) {
-		write(2, "Usage: qp filename\n", 19);
+		fputs("Usage: qp filename\n", stderr);
 		return 1;
 	}
 
