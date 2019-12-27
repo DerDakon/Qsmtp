@@ -56,8 +56,8 @@ date822(char *buf)
 
 	time_t ti = time(NULL);
 	tzset();
-	long tz = timezone / 60;
 	localtime_r(&ti, &stm);
+	long tz = stm.tm_gmtoff / 60;
 	memcpy(buf, weekday[stm.tm_wday], 3);
 	memcpy(buf + 3, ", ", 2);
 	two_digit(buf + 5, stm.tm_mday);
@@ -72,14 +72,10 @@ date822(char *buf)
 	buf[22] = ':';
 	two_digit(buf + 23, stm.tm_sec);
 	buf[25] = ' ';
-	buf[26] = (tz <= 0) ? '+' : '-';
+	buf[26] = (tz >= 0) ? '+' : '-';
 	if (tz < 0)
 	    tz = -tz;
-	if (stm.tm_isdst > 0) {
-		two_digit(buf + 27, 1 + (tz / 60));
-	} else {
-		two_digit(buf + 27, tz / 60);
-	}
+	two_digit(buf + 27, tz / 60);
 	two_digit(buf + 29, tz % 60);
 }
 
