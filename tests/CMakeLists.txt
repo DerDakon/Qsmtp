@@ -32,7 +32,10 @@ check_prototype_definition(dns_domain_fromdot
   "dns.h"
   LIBOWFAT_UINT_DNSDOMFD)
 
-add_definitions(-D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+	# FreeBSD has everything visible by default
+	add_definitions(-D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700)
+endif ()
 
 add_subdirectory(test_io)
 
