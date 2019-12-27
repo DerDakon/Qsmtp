@@ -5,14 +5,14 @@
 #include <qsmtpd/userconf.h>
 #include <qsmtpd/userfilters.h>
 
+#include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <unistd.h>
-#include <arpa/inet.h>
-#include <string.h>
 
 struct xmitstat xmitstat;
 unsigned int goodrcpt;

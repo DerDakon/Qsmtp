@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 
 static const char *testips[] = {
 	"::ffff:127.0.0.1",	/* IPv4 localhost, you must have it */

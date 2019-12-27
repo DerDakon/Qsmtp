@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 
 struct xmitstat xmitstat;
 string heloname = {.s = "caliban.sf-tec.de", .len = 17};

@@ -14,13 +14,14 @@
 #include <sstring.h>
 #include "test_io/testcase_io.h"
 
+#include <arpa/inet.h>
 #include <assert.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <syslog.h>
-#include <arpa/inet.h>
 
 struct xmitstat xmitstat;
 int relayclient;

@@ -37,6 +37,7 @@
 #include <sys/file.h>
 #include <sys/mman.h>
 #include <sys/queue.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <syslog.h>

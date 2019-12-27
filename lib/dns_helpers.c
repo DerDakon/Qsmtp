@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
 
 /**
  * check if a string is a valid fqdn

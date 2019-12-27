@@ -4,13 +4,14 @@
 #include <qremote/qremote.h>
 #include "test_io/testcase_io.h"
 
+#include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
 #include <poll.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/socket.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 
 #define ipstr_example "2001:db8:17:f4:d3::4"
 #define ipstr_fail "2001:db8:17:f4:d3::5"

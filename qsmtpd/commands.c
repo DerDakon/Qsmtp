@@ -25,6 +25,7 @@
 #include <string.h>
 #include <syslog.h>
 #include <sys/queue.h>
+#include <sys/socket.h>
 #include <sys/statvfs.h>
 #include <unistd.h>
 

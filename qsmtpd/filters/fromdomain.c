@@ -11,6 +11,7 @@
 
 #include <assert.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 
 enum filter_fromdomain_flags {
 	FROMDOMAIN_DOMAIN_IN_DNS = 0x1,	/**< reject if domain does not exist in DNS */
