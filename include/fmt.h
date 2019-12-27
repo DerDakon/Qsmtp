@@ -4,7 +4,7 @@
 #ifndef FMT_H
 #define FMT_H
 
-#include <bits/wordsize.h>
+#include <stdint.h>
 
 extern void ultostr(const unsigned long u, char *) __attribute__ ((nonnull (2)));
 
