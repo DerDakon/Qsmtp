@@ -13,6 +13,7 @@
 #include <tls.h>
 
 #include <errno.h>
+#include <strings.h>
 #include <syslog.h>
 #include <sys/types.h>
 #include <sys/wait.h>

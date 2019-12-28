@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <openssl/ssl.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/time.h>
 #include <sys/uio.h>
 #include <syslog.h>
