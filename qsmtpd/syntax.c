@@ -13,6 +13,7 @@
 #include <qsmtpd/qsmtpd.h>
 
 #include <string.h>
+#include <strings.h>
 #include <syslog.h>
 
 #define MAXBADCMDS	5		/**< maximum number of illegal commands in a row */
