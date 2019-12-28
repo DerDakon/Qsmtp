@@ -32,8 +32,9 @@ check_prototype_definition(dns_domain_fromdot
   "dns.h"
   LIBOWFAT_UINT_DNSDOMFD)
 
-if (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" AND NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 	# FreeBSD has everything visible by default
+	# MacOS does not have O_DIRECTORY in _POSIX_C_SOURCE 200809L
 	add_definitions(-D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=200809L -D_XOPEN_SOURCE=700)
 endif ()
 
