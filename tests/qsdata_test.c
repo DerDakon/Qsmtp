@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
 #include <limits.h>
 #include <openssl/ssl.h>
 #include <signal.h>
@@ -1389,7 +1390,7 @@ check_bdat_invalid_args(void)
 
 	printf("%s\n", __func__);
 	goodrcpt = 1;
-	snprintf(longintbuf, sizeof(longintbuf), "42%llu", ULONG_LONG_MAX);
+	snprintf(longintbuf, sizeof(longintbuf), "42%" PRIu64, UINT64_MAX);
 
 	for (i = 0; inputs[i] != NULL; i++) {
 		sprintf(linein.s, "BDAT %s", inputs[i]);
