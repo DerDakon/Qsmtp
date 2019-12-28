@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <assert.h>
 #include <errno.h>
+#include <netinet/in.h>
 #include <poll.h>
 #include <string.h>
 #include <stdlib.h>
