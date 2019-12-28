@@ -14,9 +14,9 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <openssl/ssl.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <sys/signal.h>
 #include <time.h>
 #include <unistd.h>
 
