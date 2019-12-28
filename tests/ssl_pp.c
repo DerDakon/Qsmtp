@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 
 struct xmitstat xmitstat;
