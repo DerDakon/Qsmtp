@@ -51,10 +51,18 @@ time(time_t *t __attribute__ ((unused)))
 }
 
 int
+#ifdef __DARWIN_ONLY_UNIX_CONFORMANCE
+gettimeofday(struct timeval *tv, void *tz)
+#else
 gettimeofday(struct timeval *tv, struct timezone *tz)
+#endif
 {
 	assert(tv);
-	if ((tz != NULL) && ((tz->tz_dsttime != 0) || (tz->tz_minuteswest != 0)))
+	if ((tz != NULL)
+#ifndef __DARWIN_ONLY_UNIX_CONFORMANCE
+		&& ((tz->tz_dsttime != 0) || (tz->tz_minuteswest != 0))
+#endif
+		)
 		abort();
 
 	tv->tv_sec = time(NULL);
