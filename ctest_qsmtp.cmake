@@ -142,6 +142,10 @@ list(APPEND CONF_OPTIONS "-DCMAKE_BUILD_TYPE=Debug")
 list(APPEND CONF_OPTIONS "-DAUTOQMAIL=${CTEST_BINARY_DIRECTORY}/var/qmail")
 # get more coverage: enable some optional features
 list(APPEND CONF_OPTIONS "-DCHUNKING=On" "-DAUTHCRAM=On")
+# no easy way to get libbsd on MacOS
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+	list(APPEND CONF_OPTIONS "-DALLOW_INSECURE_BZERO=On")
+endif ()
 
 ctest_configure(
 		OPTIONS "${CONF_OPTIONS}"
