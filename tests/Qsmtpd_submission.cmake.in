@@ -4,5 +4,8 @@ set(ENV{TCPLOCALIP} "@TEST_LOCAL_IP4@")
 set(ENV{TCPREMOTEIP} "@TEST_REMOTE_IP4@")
 set(ENV{TCPLOCALPORT} "587")
 set(ENV{TCPREMOTEPORT} "54321")
+
+find_program(TRUE_BINARY NAMES true)
+
 execute_process(COMMAND "${CMAKE_COMMAND}" -P "@TEST_SEQUENCE_FILE@"
-		COMMAND "@CMAKE_BINARY_DIR@/qsmtpd/Qsmtpd" example.com /bin/true /bin/true)
+		COMMAND "@CMAKE_BINARY_DIR@/qsmtpd/Qsmtpd" example.com ${TRUE_BINARY} ${TRUE_BINARY})
