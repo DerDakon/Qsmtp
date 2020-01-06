@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
 
 project(Qsmtp
-	VERSION 0.36
+	VERSION 0.37
 	HOMEPAGE_URL "https://opensource.sf-tec.de/Qsmtp/"
 	LANGUAGES C)
 
@@ -44,7 +44,7 @@ else ()
 endif ()
 set(AUTOQMAIL "${AUTOQMAIL}" CACHE PATH "Directory of qmail installation (usually /var/qmail)")
 
-set(QSMTP_VERSION "${Qsmtp_VERSION}dev")
+set(QSMTP_VERSION "${Qsmtp_VERSION}")
 
 find_package(OpenSSL 1.0.2 REQUIRED)
 
