@@ -48,7 +48,7 @@ target_link_libraries(Qremote
 	${OPENSSL_LIBRARIES}
 )
 
-install(TARGETS Qremote DESTINATION bin COMPONENT core)
+install(TARGETS Qremote DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT core)
 
 #install:
 #	install -s -g qmail -o qmailr Qremote $(AUTOQMAIL)/bin

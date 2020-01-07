@@ -17,6 +17,7 @@ include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 include(CheckSymbolExists)
 include(CheckFunctionExists)
+include(GNUInstallDirs)
 
 find_package(owfat REQUIRED)
 
@@ -198,11 +199,7 @@ if (BUILD_DOC)
 			COMMAND ${DOXYGEN_EXECUTABLE}
 			WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
-	if (NOT DOC_DESTINATION_DIRECTORY)
-		set(DOC_DESTINATION_DIRECTORY "doc/")
-	endif ()
-
-	install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION ${DOC_DESTINATION_DIRECTORY})
+	install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION ${CMAKE_INSTALL_FULL_DOCDIR})
 
 	# general documentation
 	install(FILES
@@ -210,7 +207,7 @@ if (BUILD_DOC)
 			${CMAKE_CURRENT_SOURCE_DIR}/doc/INSTALL
 			${CMAKE_CURRENT_SOURCE_DIR}/doc/THOUGHTS
 			${CMAKE_CURRENT_SOURCE_DIR}/doc/faq.html
-			DESTINATION ${DOC_DESTINATION_DIRECTORY})
+			DESTINATION ${CMAKE_INSTALL_FULL_DOCDIR})
 
 	# man pages
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/man/Qremote.8 ${CMAKE_CURRENT_BINARY_DIR}/Qremote.8 @ONLY)
@@ -220,8 +217,8 @@ if (BUILD_DOC)
 	install(FILES
 		${CMAKE_CURRENT_BINARY_DIR}/Qremote.8
 		${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd.8
-		DESTINATION man/man8)
+		DESTINATION ${CMAKE_INSTALL_FULL_MANDIR}/man8)
 	install(FILES
 		${CMAKE_CURRENT_BINARY_DIR}/filterconf.5
-		DESTINATION man/man5)
+		DESTINATION ${CMAKE_INSTALL_FULL_MANDIR}/man5)
 endif ()

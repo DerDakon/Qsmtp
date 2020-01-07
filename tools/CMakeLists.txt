@@ -17,7 +17,7 @@ target_link_libraries(Qsurvey
 
 install(TARGETS
 		Qsurvey
-	DESTINATION bin
+	DESTINATION ${CMAKE_INSTALL_BINDIR}
 	COMPONENT tools
 )
 
@@ -64,7 +64,7 @@ install(TARGETS
 		addipbl
 		sendremote
 #		fcshell
-	DESTINATION bin
+	DESTINATION ${CMAKE_INSTALL_BINDIR}
 	COMPONENT tools
 )
 

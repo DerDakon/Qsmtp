@@ -54,7 +54,7 @@ if (HAS_BSD_EXP_BZERO)
 	)
 endif()
 
-install(TARGETS Qsmtpd DESTINATION bin COMPONENT core)
+install(TARGETS Qsmtpd DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT core)
 
 #install:
 #	install -s -g qmail -o qmaild Qsmtpd $(AUTOQMAIL)/bin
