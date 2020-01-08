@@ -76,7 +76,7 @@ endif ()
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -fprofile-arcs -ftest-coverage")
 
-ADD_C_COMPILER_FLAG(-Wall -W -Wshadow)
+ADD_C_COMPILER_FLAG(-Wall -W)
 add_definitions(-D_FILE_OFFSET_BITS=64)
 
 # these warnings also warn about entirely empty (i.e. 0) structs
