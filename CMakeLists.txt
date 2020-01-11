@@ -17,6 +17,7 @@ include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 include(CheckSymbolExists)
 include(CheckFunctionExists)
+include(CMakeDependentOption)
 include(GNUInstallDirs)
 
 find_package(owfat REQUIRED)
@@ -189,7 +190,9 @@ if (BUILD_TESTS)
 endif ()
 
 option(BUILD_DOC "Build documentation" ON)
-if (BUILD_DOC)
+CMAKE_DEPENDENT_OPTION(BUILD_API_DOC "Build API documentation" OFF
+			"BUILD_DOC" OFF)
+if (BUILD_API_DOC)
 	# API documentation
 	find_package(Doxygen REQUIRED)
 
@@ -199,8 +202,12 @@ if (BUILD_DOC)
 			COMMAND ${DOXYGEN_EXECUTABLE}
 			WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
 
-	install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION ${CMAKE_INSTALL_FULL_DOCDIR})
+	install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html
+		DESTINATION ${CMAKE_INSTALL_FULL_DOCDIR}
+		COMPONENT development EXCLUDE_FROM_ALL)
+endif ()
 
+if (BUILD_DOC)
 	# general documentation
 	install(FILES
 			${CMAKE_CURRENT_SOURCE_DIR}/doc/CREDITS
