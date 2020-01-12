@@ -48,7 +48,7 @@ set(AUTOQMAIL "${AUTOQMAIL}" CACHE PATH "Directory of qmail installation (usuall
 
 set(QSMTP_VERSION "${Qsmtp_VERSION}dev")
 
-find_package(OpenSSL 1.0.2 REQUIRED)
+find_package(OpenSSL 1.1 REQUIRED)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/version.h.tmpl ${CMAKE_BINARY_DIR}/version.h @ONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/qmaildir.h.tmpl ${CMAKE_BINARY_DIR}/qmaildir.h @ONLY)

@@ -1203,9 +1203,6 @@ main(int argc, char **argv)
 	ret += test_netread_socketpair_timeout();
 	ret += test_chunks(argv[1]);
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
-	ERR_remove_thread_state(NULL);
-#endif
 	CONF_modules_unload(1);
 	CRYPTO_cleanup_all_ex_data();
 	EVP_cleanup();
