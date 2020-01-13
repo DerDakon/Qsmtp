@@ -51,7 +51,7 @@ time(time_t *t __attribute__ ((unused)))
 }
 
 int
-#ifdef __DARWIN_ONLY_UNIX_CONFORMANCE
+#if defined(__DARWIN_ONLY_UNIX_CONFORMANCE) || defined(__NetBSD__)
 gettimeofday(struct timeval *tv, void *tz)
 #else
 gettimeofday(struct timeval *tv, struct timezone *tz)
@@ -59,7 +59,7 @@ gettimeofday(struct timeval *tv, struct timezone *tz)
 {
 	assert(tv);
 	if ((tz != NULL)
-#ifndef __DARWIN_ONLY_UNIX_CONFORMANCE
+#if !defined(__DARWIN_ONLY_UNIX_CONFORMANCE) && !defined(__NetBSD__)
 		&& ((tz->tz_dsttime != 0) || (tz->tz_minuteswest != 0))
 #endif
 		)
