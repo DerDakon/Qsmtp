@@ -283,9 +283,11 @@ smtp_data(void)
 					 * We also scan for Message-Id here.
 					 * RfC 2821 says server SHOULD NOT check for this,
 					 * but we let the user decide.*/
-#define HEADER_HAS_DATE 0x1
-#define HEADER_HAS_FROM 0x2
-#define HEADER_HAS_MSGID 0x4
+	enum header_flags {
+		HEADER_HAS_DATE = 0x1,	/**< "Date:" header found */
+		HEADER_HAS_FROM = 0x2,	/**< "From:" header found */
+		HEADER_HAS_MSGID = 0x4	/**< "Message-Id:" header found */
+	};
 	const char *errmsgs[] = { NULL, NULL, NULL, NULL };
 	unsigned int hops = 0;		/* number of "Received:"-lines */
 
