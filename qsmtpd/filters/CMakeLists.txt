@@ -1,4 +1,4 @@
-set(filterSrc
+add_library(rcptfilters STATIC
 	rcpt_filters.c
 	badmailfrom.c
 	check2822.c
@@ -17,5 +17,3 @@ set(filterSrc
 	wildcardns.c
 	nomail.c
 )
-
-add_library(rcptfilters  ${filterSrc})

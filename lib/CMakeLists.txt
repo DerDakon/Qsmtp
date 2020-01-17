@@ -22,7 +22,7 @@ set(QSMTP_IO_LIB_HDRS
 	../include/tls.h
 )
 
-add_library(qsmtp_io_lib ${QSMTP_IO_LIB_SRCS} ${QSMTP_IO_LIB_HDRS})
+add_library(qsmtp_io_lib STATIC ${QSMTP_IO_LIB_SRCS} ${QSMTP_IO_LIB_HDRS})
 target_link_libraries(qsmtp_io_lib
 		${OPENSSL_LIBRARIES}
 		${OWFAT_LIBRARIES}
@@ -66,14 +66,14 @@ set(QSMTP_LIB_HDRS
 	${CMAKE_BINARY_DIR}/version.h
 )
 
-add_library(qsmtp_lib ${QSMTP_LIB_SRCS} ${QSMTP_LIB_HDRS})
+add_library(qsmtp_lib STATIC ${QSMTP_LIB_SRCS} ${QSMTP_LIB_HDRS})
 
 # qsmtp_lib is not linked against qsmtp_io_lib even if that
 # would be the right thing for the binaries. This allows the
 # testcases to easily link against qsmtp_lib and implementing
 # the io stuff themself.
 
-add_library(qsmtp_dane_lib
+add_library(qsmtp_dane_lib STATIC
 	qdns_dane.c
 	../include/qdns_dane.h
 )
