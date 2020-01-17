@@ -2,8 +2,6 @@
  \brief functions to query and parse SPF entries
  */
 
-#define _GNU_SOURCE /* for strcasestr() */
-
 #include <qsmtpd/antispam.h>
 
 #include <fmt.h>

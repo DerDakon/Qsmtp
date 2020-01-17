@@ -2,8 +2,6 @@
  \brief functions for network I/O
  */
 
-#define _GNU_SOURCE /* to get POLLRDHUP if possible */
-
 #include <netio.h>
 
 #include <log.h>

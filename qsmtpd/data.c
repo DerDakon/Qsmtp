@@ -3,7 +3,6 @@
  */
 
 #define _STD_SOURCE
-#define _GNU_SOURCE
 #include <qsmtpd/qsdata.h>
 
 #include <fmt.h>
