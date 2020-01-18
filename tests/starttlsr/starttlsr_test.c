@@ -50,7 +50,7 @@ void
 write_status_raw(const char *str, const size_t len)
 {
 	ssize_t olen = write(1, str, len);
-	assert(olen == len);
+	assert(olen == ((ssize_t)len));
 }
 
 void
