@@ -49,7 +49,8 @@ err_mem(const int k __attribute__((unused)))
 void
 write_status_raw(const char *str, const size_t len)
 {
-	(void) write(1, str, len);
+	ssize_t olen = write(1, str, len);
+	assert(olen == len);
 }
 
 void
