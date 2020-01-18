@@ -28,6 +28,8 @@
 #include <unistd.h>
 #ifdef NEED_BSD_STRING_H
 #include <bsd/string.h>
+#elif defined(HAS_MEMSET_S)
+#define explicit_bzero(a, b) memset_s((a), (b), 0, (b))
 #elif defined(INSECURE_BZERO)
 // insecure fallback, could be optimized out by the compiler so memory is not overwritten
 #define explicit_bzero(a, b) memset((a), 0, (b))
