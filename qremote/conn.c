@@ -39,16 +39,15 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 	int sd;
 
 #ifdef IPV4ONLY
-	struct sockaddr_in sock;
-
 	sd = socket(PF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
 	if (sd < 0)
 		return -errno;
 
-	sock.sin_family = AF_INET;
-	sock.sin_port = 0;
-	sock.sin_addr.s_addr = outip->s6_addr32[3];
+	struct sockaddr_in sock = {
+		.sin_family = AF_INET,
+		.sin_addr.s_addr = outip->s6_addr32[3]
+	};
 
 	if (bind(sd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
 		int err = errno;
@@ -59,18 +58,15 @@ conn(const struct in6_addr remoteip, const struct in6_addr *outip)
 	sock.sin_port = htons(targetport);
 	sock.sin_addr.s_addr = remoteip.s6_addr32[3];
 #else
-	struct sockaddr_in6 sock;
-
 	sd = socket(PF_INET6, SOCK_STREAM | SOCK_CLOEXEC, 0);
 
 	if (sd < 0)
 		return -errno;
 
-	sock.sin6_family = AF_INET6;
-	sock.sin6_port = 0;
-	sock.sin6_flowinfo = 0;
-	sock.sin6_addr = *outip;
-	sock.sin6_scope_id = 0;
+	struct sockaddr_in6 sock = {
+		.sin6_family = AF_INET6,
+		.sin6_addr = *outip
+	};
 
 	if (bind(sd, (struct sockaddr *) &sock, sizeof(sock)) < 0) {
 		int err = errno;
