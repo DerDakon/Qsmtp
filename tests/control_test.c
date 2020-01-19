@@ -608,8 +608,9 @@ test_listload()
 		logcnt = 0;
 		res = loadlistfd(fd, &bufa, callbacks[i]);
 		if (res != 0) {
-			fprintf(stderr, "loadlistfd() returned %i\n", res);
+			fprintf(stderr, "[i=%i] loadlistfd() returned %i\n", i, res);
 			err++;
+			continue;
 		}
 
 		if (i == 0) {
