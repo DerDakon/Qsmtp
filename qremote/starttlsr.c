@@ -124,6 +124,9 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 			}
 		}
 	}
+#else
+	(void) tlsa_info;
+	(void) tlsa_cnt;
 #endif
 
 	SSL *myssl = SSL_new(ctx);

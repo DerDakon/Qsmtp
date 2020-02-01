@@ -161,7 +161,7 @@ int
 ssl_timeoutrehandshake(time_t t)
 {
 	int r;
-#if (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
+#ifdef TLS1_3_VERSION
 	bool tls13 = false;
 	if (SSL_version(ssl) >= TLS1_3_VERSION) {
 		tls13 = true;
@@ -178,17 +178,13 @@ ssl_timeoutrehandshake(time_t t)
 	if (r < 0)
 		return r;
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
+#ifdef TLS1_3_VERSION
 	if (tls13)
 		return 0;
 #endif
 
 	/* this is for the server only */
-#if !((OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER))
-	ssl->state = SSL_ST_ACCEPT;
-#else
 	SSL_set_accept_state(ssl);
-#endif
 	return ssl_timeoutio(SSL_do_handshake, t, NULL, 0);
 }
 

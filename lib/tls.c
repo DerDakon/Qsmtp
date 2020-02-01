@@ -37,7 +37,9 @@ ssl_library_destroy()
 	CRYPTO_cleanup_all_ex_data();
 	EVP_cleanup();
 
+#ifndef LIBRESSL_VERSION_NUMBER
 	SSL_COMP_free_compression_methods();
+#endif
 }
 
 const char *ssl_error(void)

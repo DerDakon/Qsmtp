@@ -26,9 +26,6 @@ static RSA *
 tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)
 {
 	BIGNUM *bn;
-#if !((OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER))
-	BIGNUM bn_store;
-#endif
 	RSA *rsa;
 
 	if (keylen < 2048)
@@ -49,13 +46,9 @@ tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)),
 	if (rsa == NULL)
 		return NULL;
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
 	bn = BN_new();
 	if (bn == NULL)
 		return NULL;
-#else
-	bn = &bn_store;
-#endif
 
 	BN_set_word(bn, RSA_F4);
 	if (RSA_generate_key_ex(rsa, keylen, bn, NULL) == 0) {
@@ -63,9 +56,7 @@ tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)),
 		rsa = NULL;
 	}
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
 	BN_free(bn);
-#endif
 
 	return rsa;
 }
@@ -174,11 +165,7 @@ tls_check_cert(char * const *clients)
 		if (s) {
 			int l = ASN1_STRING_length(s);
 			email.len = (l > 0) ? l : 0;
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
 			email.s = ASN1_STRING_get0_data(s);
-#else
-			email.s = M_ASN1_STRING_data(s);
-#endif
 		}
 	}
 
