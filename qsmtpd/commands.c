@@ -32,6 +32,8 @@
 
 char certfilename[24 + INET6_ADDRSTRLEN + 6] = "control/servercert.pem";		/**< path to SSL certificate filename */
 
+struct rcpt_list head;
+
 /**
  * check if the argument given to HELO/EHLO is syntactically correct
  *

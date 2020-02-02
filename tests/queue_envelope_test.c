@@ -20,6 +20,7 @@ string liphost;
 static struct smtpcomm command;
 struct smtpcomm *current_command = &command;
 static char logbuffer[2048];
+struct rcpt_list head;
 
 pid_t
 fork_clean()

@@ -37,6 +37,7 @@ int queuefd_data = -1;
 int queuefd_hdr = -1;
 
 struct recip *thisrecip;
+struct rcpt_list head;
 
 static struct smtpcomm commands; /* only this one is ever used */
 struct smtpcomm *current_command = &commands;

@@ -16,6 +16,7 @@ struct xmitstat xmitstat;
 unsigned int goodrcpt;
 struct recip *thisrecip;
 const char **globalconf;
+struct rcpt_list head;
 
 extern int cb_badcc(const struct userconf *ds, const char **logmsg, enum config_domain *t);
 

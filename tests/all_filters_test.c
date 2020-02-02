@@ -24,6 +24,7 @@ struct xmitstat xmitstat;
 unsigned int goodrcpt;
 struct recip *thisrecip;
 const char **globalconf;
+struct rcpt_list head;
 
 static unsigned int testindex;
 static int err;

@@ -80,7 +80,7 @@ void __attribute__ ((noreturn)) conn_cleanup(const int rc);
 #define EBOGUS 1002
 #define EDONE 1003
 
-TAILQ_HEAD(, recip) head;
+extern TAILQ_HEAD(rcpt_list, recip) head;
 
 /** \struct recip
  \brief list of recipients given for this transaction
