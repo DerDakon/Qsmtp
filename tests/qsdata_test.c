@@ -59,12 +59,7 @@ gettimeofday(struct timeval *tv, struct timezone *tz)
 #endif
 {
 	assert(tv);
-	if ((tz != NULL)
-#if !defined(__DARWIN_ONLY_UNIX_CONFORMANCE) && !defined(__NetBSD__)
-		&& ((tz->tz_dsttime != 0) || (tz->tz_minuteswest != 0))
-#endif
-		)
-		abort();
+	assert(tz == NULL);
 
 	tv->tv_sec = time(NULL);
 	tv->tv_usec = 10203042;

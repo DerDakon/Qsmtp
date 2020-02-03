@@ -435,14 +435,13 @@ smtp_data(void)
 		if (!(headerflags & HEADER_HAS_MSGID)) {
 			char timebuf[20];
 			struct timeval ti;
-			struct timezone tz = { .tz_minuteswest = 0, .tz_dsttime = 0 };
 			size_t l;
 
 			wdata[wpos].iov_base = "Message-Id: <";
 			wdata[wpos].iov_len = strlen("Message-Id: <");
 			wpos++;
 
-			gettimeofday(&ti, &tz);
+			gettimeofday(&ti, NULL);
 			ultostr((const unsigned long) ti.tv_sec, timebuf);
 			l = strlen(timebuf);
 			timebuf[l] = '.';
