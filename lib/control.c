@@ -136,6 +136,11 @@ lloadfilefd(int fd, char **buf, const int striptab)
 	if (!st.st_size) {
 		return close(fd);
 	}
+	if (st.st_mode & S_IFDIR) {
+		close(fd);
+		errno = EISDIR;
+		return -1;
+	}
 	size_t oldlen = st.st_size;
 	char *inbuf = malloc(oldlen + 1);
 	if (!inbuf) {
