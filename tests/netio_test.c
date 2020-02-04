@@ -27,7 +27,6 @@ log_write(int priority __attribute__ ((unused)), const char *s __attribute__ ((u
 }
 #endif
 
-SSL *ssl;
 int socketd;
 
 static const char *testname;

@@ -21,7 +21,6 @@
 #include <unistd.h>
 
 struct xmitstat xmitstat;
-SSL *ssl = NULL;
 unsigned long sslauth = 0;
 char lineinbuf[1002];
 
