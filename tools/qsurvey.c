@@ -38,7 +38,6 @@ unsigned int smtpext;
 char *rhost;
 size_t rhostlen;
 char *partner_fqdn;
-unsigned long remotesize;
 static int logfd;
 static int logdirfd = -1;
 static struct ips *mx;
