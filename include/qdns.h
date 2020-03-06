@@ -4,6 +4,7 @@
 #ifndef QSMTP_DNS_H
 #define QSMTP_DNS_H
 
+#include <arpa/inet.h>
 #include <netinet/in.h>
 
 /** @enum mx_special_priorities
