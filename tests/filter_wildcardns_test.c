@@ -3,7 +3,6 @@
 #include <control.h>
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/userconf.h>
-#include <qsmtpd/userfilters.h>
 
 #include <arpa/inet.h>
 #include <assert.h>

@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <string.h>
 
 struct xmitstat xmitstat;
 unsigned int goodrcpt;

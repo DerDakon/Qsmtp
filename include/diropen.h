@@ -10,7 +10,6 @@
 
 #if O_DIRECTORY == 0
 #include <errno.h>
-#include <sys/stat.h>
 #endif /* O_DIRECTORY == 0 */
 
 /**
