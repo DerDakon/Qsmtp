@@ -4,6 +4,7 @@
 #ifndef NETIO_H
 #define NETIO_H
 
+#include "compiler.h"
 #include "sstring.h"
 
 #include <string.h>
@@ -16,9 +17,9 @@ extern int net_read(const int fatal);
 extern int net_writen(const char *const *) __attribute__ ((nonnull (1)));
 extern int net_write_multiline(const char *const *) __attribute__ ((nonnull (1)));
 static inline int netwrite(const char *) __attribute__ ((nonnull (1)));
-extern int netnwrite(const char *, const size_t) __attribute__ ((nonnull (1)));
-extern size_t net_readbin(size_t, char *) __attribute__ ((nonnull (2)));
-extern size_t net_readline(size_t, char *) __attribute__ ((nonnull (2)));
+extern int netnwrite(const char *, const size_t) __attribute__ ((nonnull (1))) ATTR_ACCESS(read_only, 1, 2);
+extern size_t net_readbin(size_t, char *) __attribute__ ((nonnull (2))) ATTR_ACCESS(read_write, 2, 1);
+extern size_t net_readline(size_t, char *) __attribute__ ((nonnull (2))) ATTR_ACCESS(read_write, 2, 1);
 extern int data_pending(void);
 
 extern time_t timeout;

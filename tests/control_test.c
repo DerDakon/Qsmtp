@@ -695,7 +695,7 @@ main(void)
 	puts("== Running tests for finddomain()");
 
 	/* empty memory area should not match anything */
-	if (finddomain(NULL, 1024, present[0]) != 0) {
+	if (finddomain(NULL, 0, present[0]) != 0) {
 		fputs("\t ERROR: match found in NULL buffer\n", stderr);
 		error++;
 	}

@@ -3,6 +3,7 @@
  */
 
 #include <cdb.h>
+#include <compiler.h>
 
 #include <errno.h>
 #include <stdint.h>
@@ -14,7 +15,7 @@
 
 #define CDB_HASHSTART 5381
 
-static inline uint32_t
+static inline uint32_t ATTR_ACCESS(read_only, 1, 2)
 cdb_hash(const char *buf, unsigned int len)
 {
 	uint32_t h = CDB_HASHSTART;
