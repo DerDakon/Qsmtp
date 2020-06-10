@@ -327,6 +327,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			}
 			if (clientcertbuf)
 				clientcertname = clientcertbuf;
+			errno = 0;
 			return mx;
 		}
 	}
