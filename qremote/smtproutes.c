@@ -288,8 +288,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 						if (clientcertbuf == NULL) {
 							free(array);
 							err_mem(0);
-						} else
-							clientcertname = clientcertbuf;
+						}
 					}
 					break;
 				case 3:
@@ -323,10 +322,11 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			fd = parse_route_params(&mx, remhost, targetport, array, hv, pv);
 			free(array);
 			if (fd != 0) {
-				free(clientcertbuf);
-				clientcertbuf = NULL;
+				free_smtproute_vals();
 				return NULL;
 			}
+			if (clientcertbuf)
+				clientcertname = clientcertbuf;
 			return mx;
 		}
 	}
