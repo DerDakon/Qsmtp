@@ -132,6 +132,7 @@ readline_check(const char *expect, int error)
 	const size_t rexp = (expect == NULL) ? (size_t) -1 : len;
 
 	assert(len <= sizeof(buffer));
+	memset(buffer, '#', sizeof(buffer));
 	size_t r;
 	/* read in as much data as possible to allow buffer testing */
 	if ((expect == NULL) || ((len > 2) && (expect[len - 2] == '\r') && (expect[len - 1] == '\n')))
