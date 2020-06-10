@@ -227,8 +227,7 @@ main(void)
 	}
 
 	/* free it if it was overwritten in smtproute() */
-	if (clientcertname != str_default)
-		free((char *)clientcertname);
+	free_smtproute_vals();
 	free(outipexpect);
 	free(outip6expect);
 

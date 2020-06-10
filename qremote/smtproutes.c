@@ -363,3 +363,14 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 	errno = 0;
 	return mx;
 }
+
+/**
+ * @brief free values loaded from smtproutes
+ */
+void
+free_smtproute_vals()
+{
+	free(clientcertbuf);
+	clientcertbuf = NULL;
+	clientcertname = "control/clientcert.pem";
+}

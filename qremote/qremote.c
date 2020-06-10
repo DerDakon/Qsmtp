@@ -66,9 +66,7 @@ quitmsg(void)
 	partner_fqdn = NULL;
 	free(rhost);
 	rhost = NULL;
-	free(clientcertbuf);
-	clientcertbuf = NULL;
-	clientcertname = "control/clientcert.pem";
+	free_smtproute_vals();
 }
 
 void
@@ -87,7 +85,7 @@ net_conn_shutdown(const enum conn_shutdown_type sd_type)
 
 		free(partner_fqdn);
 		free(rhost);
-		free(clientcertbuf);
+		free_smtproute_vals();
 	}
 
 #ifdef USESYSLOG

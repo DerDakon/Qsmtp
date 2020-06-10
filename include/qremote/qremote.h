@@ -87,7 +87,9 @@ extern char *clientcertbuf;
 extern struct in6_addr outgoingip;
 extern struct in6_addr outgoingip6;
 
-struct ips *smtproute(const char *, const size_t, unsigned int *);
+extern struct ips *smtproute(const char *, const size_t, unsigned int *);
+extern void free_smtproute_vals();
+
 void quitmsg(void);
 
 #define EDONE 1003
