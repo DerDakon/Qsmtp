@@ -51,11 +51,21 @@ time(time_t *t __attribute__ ((unused)))
 	return testtime;
 }
 
+/*
+ * Glibc has "struct timezone *" or "void *" as second argument, depending on
+ * some feature defines. This is abstracted to __timezone_ptr_t from version
+ * 2.2 to 2.30. Afterwards it was removed and the second argument is void* as
+ * other (current) systems use it.
+ */
 int
-#if defined(__DARWIN_ONLY_UNIX_CONFORMANCE) || defined(__NetBSD__)
-gettimeofday(struct timeval *tv, void *tz)
+#if defined(__GLIBC_PREREQ)
+#if !__GLIBC_PREREQ(2, 31)
+gettimeofday(struct timeval *tv, __timezone_ptr_t tz)
 #else
-gettimeofday(struct timeval *tv, struct timezone *tz)
+gettimeofday(struct timeval *tv, void *tz)
+#endif
+#else
+gettimeofday(struct timeval *tv, void *tz)
 #endif
 {
 	assert(tv);
