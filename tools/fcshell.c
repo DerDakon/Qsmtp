@@ -412,9 +412,9 @@ editread(const int type)
 		off_t len = 0;
 
 		while (len < st.st_size) {
-			int i;
+			ssize_t i = read(fd, editbuffer.buf.map.mem + len, st.st_size - len);
 
-			if ( (i = read(fd, editbuffer.buf.map.mem + len, st.st_size - len)) < 0) {
+			if (i == -1) {
 				commstat = errno;
 				free(editbuffer.buf.map.mem);
 				editbuffer.buf.map.mem = NULL;

@@ -12,7 +12,7 @@ readData(char *buf, const size_t len)
 
 	do {
 		ssize_t res = read(3, buf + pos, 1);
-		if (res < 0)
+		if (res == -1)
 			exit(errno);
 		if (res == 0)
 			exit(EINVAL);

@@ -437,7 +437,7 @@ check_received(int spfstatus, int log)
 
 	do {
 		ssize_t cnt = read(fd[0], buf + off, sizeof(buf) - 1 - off);
-		if (cnt < 0) {
+		if (cnt == -1) {
 			fprintf(stderr, "error %i when reading from pipe\n", errno);
 			close(fd[0]);
 			return 1;

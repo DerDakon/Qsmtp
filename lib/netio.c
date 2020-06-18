@@ -436,7 +436,7 @@ netnwrite(const char *s, const size_t l)
 
 		while (p < l) {
 			const ssize_t r = write(socketd, s + p, l - p);
-			if (r < 0) {
+			if (r == -1) {
 				if (errno == EPIPE)
 					dieerror(ECONNRESET);
 				else if ((errno == ECONNRESET) || (errno == ETIMEDOUT))
@@ -779,7 +779,7 @@ data_pending(void)
 		/* verify that there is really data available and that the
 		 * connection was not simply closed. */
 		i = read(rfd.fd, lineinn, 1);
-		if (i < 0)
+		if (i == -1)
 			return -errno;
 		if (i > 0) {
 			linenlen = i;

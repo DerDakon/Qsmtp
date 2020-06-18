@@ -51,7 +51,7 @@ static int err_write(void)
 
 #define WRITE(a,b) \
 	do { \
-		if (write(pi[1], (a), (b)) < 0) { \
+		if (write(pi[1], (a), (b)) == -1) { \
 			return err_write(); \
 		} \
 	} while (0)

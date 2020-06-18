@@ -372,7 +372,7 @@ user_exists(const string *localpart, const char *domain, struct userconf *dsp)
 
 		res = 0;
 		r = read(fd, buff, sizeof(buff) - 1);
-		if (r < 0) {
+		if (r == -1) {
 			res = -errno;
 			if (err_control2(ds->domainpath.s, ".qmail-default") == 0)
 				res = -EDONE;

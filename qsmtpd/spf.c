@@ -28,7 +28,7 @@ static const char spf_delimiters[] = ".-+,/_=";
 #define WRITEl(fd, s, l) \
 	do { \
 		ssize_t rc = write((fd), (s), (l)); \
-		if (rc < 0) \
+		if (rc == -1) \
 			return (int)rc; \
 	} while (0)
 #define WRITE(fd, s) WRITEl((fd), (s), strlen(s))
