@@ -159,15 +159,42 @@ endif ()
 check_c_source_compiles("#include <netinet/in.h>
 static struct in6_addr a;
 int test_ip6(const struct in6_addr *i) {
-return i->s6_addr32[3] != 0;
+  return i->s6_addr32[3] != 0;
 }
 int main() {
   return test_ip6(&a);
 }
 " HAS_S6ADDR32)
 if (NOT HAS_S6ADDR32)
-	message(STATUS "adding compat defines for struct in6_addr access")
-	add_definitions(-Ds6_addr32=__u6_addr.__u6_addr32 -Ds6_addr16=__u6_addr.__u6_addr16)
+	check_c_source_compiles("#include <netinet/in.h>
+	static struct in6_addr a;
+	int test_ip6(const struct in6_addr *i) {
+	  return i->__u6_addr.__u6_addr32[3] != 0;
+	}
+	int main() {
+	return test_ip6(&a);
+	}
+	" HAS_U6ADDR32)
+	if (HAS_U6ADDR32)
+		message(STATUS "adding compat defines for struct in6_addr access (__u6_addr)")
+		add_definitions(-Ds6_addr32=__u6_addr.__u6_addr32 -Ds6_addr16=__u6_addr.__u6_addr16)
+	else ()
+		check_c_source_compiles("#include <netinet/in.h>
+		static struct in6_addr a;
+		int test_ip6(const struct in6_addr *i) {
+		  return i->_S6_un._S6_u32[3] != 0;
+		}
+		int main() {
+		  return test_ip6(&a);
+		}
+		" HAS_S6U32)
+		if (HAS_S6U32)
+			message(STATUS "adding compat defines for struct in6_addr access (_S6_un)")
+			add_definitions(-Ds6_addr32=_S6_un._S6_u32 -Ds6_addr16=_S6_un._S6_u16)
+		else ()
+			message(SEND_ERROR "unsupported layout of struct in6_addr")
+		endif ()
+	endif ()
 endif()
 
 option(NOSTDERR "Do not print error messages to stderr" ON)
