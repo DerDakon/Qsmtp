@@ -56,8 +56,13 @@ date822(char *buf)
 
 	time_t ti = time(NULL);
 	tzset();
+#ifdef NO_GMTOFF
+	gmtime_r(&ti, &stm);
+	long tz = 0;
+#else
 	localtime_r(&ti, &stm);
 	long tz = stm.tm_gmtoff / 60;
+#endif
 	memcpy(buf, weekday[stm.tm_wday], 3);
 	memcpy(buf + 3, ", ", 2);
 	two_digit(buf + 5, stm.tm_mday);

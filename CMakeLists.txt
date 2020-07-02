@@ -197,6 +197,16 @@ if (NOT HAS_S6ADDR32)
 	endif ()
 endif()
 
+check_c_source_compiles("#include <time.h>
+int test_gmt(const struct tm *tm) {
+  return tm->tm_gmtoff;
+}
+int main() {
+  struct tm t = { 0 };
+  return test_gmt(&t);
+}
+" HAS_GMTOFF)
+
 option(NOSTDERR "Do not print error messages to stderr" ON)
 
 option(USESYSLOG "Use syslog() for logging" ON)

@@ -21,6 +21,10 @@ if (CHUNKING)
 	set_property(SOURCE data.c APPEND PROPERTY COMPILE_DEFINITIONS INCOMING_CHUNK_SIZE=${INCOMING_CHUNK_SIZE})
 endif ()
 
+if (NOT HAS_GMTOFF)
+	set_property(SOURCE data.c APPEND PROPERTY COMPILE_DEFINITIONS NO_GMTOFF)
+endif ()
+
 set(QSMTPD_HDRS
 	../include/qsmtpd/addrparse.h
 	../include/qsmtpd/antispam.h
