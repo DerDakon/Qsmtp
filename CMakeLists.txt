@@ -17,8 +17,18 @@ include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 include(CheckSymbolExists)
 include(CheckFunctionExists)
+include(CheckLibraryExists)
 include(CMakeDependentOption)
 include(GNUInstallDirs)
+
+# Find library needed for connect. Taken from FindX11.cmake
+check_function_exists("connect" CMAKE_HAVE_CONNECT)
+if(NOT CMAKE_HAVE_CONNECT)
+	check_library_exists("socket" "connect" "" CMAKE_LIB_SOCKET_HAS_CONNECT)
+	if (CMAKE_LIB_SOCKET_HAS_CONNECT)
+		set(CMAKE_SOCKET_LIB socket)
+	endif ()
+endif()
 
 find_package(owfat REQUIRED)
 

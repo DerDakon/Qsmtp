@@ -24,6 +24,10 @@ if(OWFAT_FOUND)
 		set_target_properties(owfat::owfat PROPERTIES
 			IMPORTED_LINK_INTERFACE_LANGUAGES "C"
 			IMPORTED_LOCATION "${OWFAT_LIBRARY}")
+		if (CMAKE_SOCKET_LIB)
+			set_target_properties(owfat::owfat PROPERTIES
+				INTERFACE_LINK_LIBRARIES "${CMAKE_SOCKET_LIB}")
+		endif ()
 	endif ()
 	set(OWFAT_INCLUDE_DIRS ${OWFAT_INCLUDE_DIR})
 endif()
