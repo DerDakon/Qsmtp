@@ -2,7 +2,6 @@ include(CMakeDependentOption)
 
 include_directories(
 		${CMAKE_SOURCE_DIR}/include
-		${OWFAT_INCLUDE_DIRS}
 )
 
 set(QSMTP_IO_LIB_SRCS
@@ -24,8 +23,9 @@ set(QSMTP_IO_LIB_HDRS
 
 add_library(qsmtp_io_lib STATIC ${QSMTP_IO_LIB_SRCS} ${QSMTP_IO_LIB_HDRS})
 target_link_libraries(qsmtp_io_lib
-		${OPENSSL_LIBRARIES}
-		${OWFAT_LIBRARIES}
+	PUBLIC
+		OpenSSL::SSL
+		owfat::owfat
 )
 
 CMAKE_DEPENDENT_OPTION(REALLY_NO_LOGGING "Tell me that you intentionally disabled all logging and want to get rid of the warnings" OFF
@@ -78,6 +78,7 @@ add_library(qsmtp_dane_lib STATIC
 	../include/qdns_dane.h
 )
 target_link_libraries(qsmtp_dane_lib
+	PUBLIC
 		qsmtp_lib
-		${OWFAT_LIBRARIES}
+		owfat::owfat
 )

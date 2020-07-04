@@ -360,14 +360,13 @@ target_link_libraries(testcase_qdns
 add_test(NAME "QDNS"
 		COMMAND testcase_qdns)
 
-include_directories(${OWFAT_INCLUDE_DIRS})
-
 add_executable(testcase_qdns_dane
 		qdns_dane_test.c
 		${CMAKE_SOURCE_DIR}/lib/qdns_dane.c
 )
 target_link_libraries(testcase_qdns_dane
 		qsmtp_lib
+		owfat::owfat
 		${MEMCHECK_LIBRARIES}
 )
 if (COMMAND target_compile_definitions)
