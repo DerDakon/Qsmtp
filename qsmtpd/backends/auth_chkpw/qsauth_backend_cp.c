@@ -63,7 +63,7 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 	int wstat;
 	int pi[2];
 
-	if (pipe(pi) == -1)
+	if (wpipe(pi) == -1)
 		return err_pipe();
 
 	switch (child = fork_clean()) {

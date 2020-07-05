@@ -66,12 +66,12 @@ queue_init(void)
 	const char *qqbin = NULL;
 	int fd0[2], fd1[2];		/* the fds to communicate with qmail-queue */
 
-	if (pipe(fd0)) {
+	if (wpipe(fd0)) {
 		if ( (i = err_pipe()) )
 			return i;
 		return EDONE;
 	}
-	if (pipe(fd1)) {
+	if (wpipe(fd1)) {
 		/* EIO on pipe operations? Shit just happens (although I don't know why this could ever happen) */
 		close(fd0[0]);
 		close(fd0[1]);

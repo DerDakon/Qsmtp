@@ -6,6 +6,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <openssl/conf.h>
 #include <openssl/err.h>
@@ -1059,6 +1060,14 @@ test_chunks(char *exe)
 		return 1;
 	}
 
+	if (fcntl(pipefd[0], FD_CLOEXEC) == -1) {
+		int err = errno;
+		(void) close(pipefd[0]);
+		(void) close(pipefd[1]);
+		errno = err;
+		return -1;
+	}
+
 	const pid_t child = fork();
 
 	if (child < 0) {
@@ -1071,12 +1080,13 @@ test_chunks(char *exe)
 	if (child == 0) {
 		char *args[] = { exe, NULL };
 
-		close(pipefd[0]);
-
-		if (dup2(pipefd[1], 1) != 1) {
+		if (pipefd[1] != 1) {
+			if (dup2(pipefd[1], 1) != 1) {
+				close(pipefd[1]);
+				fprintf(stderr, "%s: cannot move write pipe to fd 1\n", __func__);
+				exit(1);
+			}
 			close(pipefd[1]);
-			fprintf(stderr, "%s: cannot move write pipe to fd 1\n", __func__);
-			exit(1);
 		}
 
 		execve(args[0], args, NULL);

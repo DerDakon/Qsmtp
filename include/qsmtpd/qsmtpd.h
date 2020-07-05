@@ -75,6 +75,7 @@ extern int err_control2(const char *, const char *);
 extern void freedata(void);
 extern pid_t fork_clean();
 extern int pipe_move(int p[2], int target);
+extern int wpipe(int p[2]);
 void __attribute__ ((noreturn)) conn_cleanup(const int rc);
 
 #define EBOGUS 1002
