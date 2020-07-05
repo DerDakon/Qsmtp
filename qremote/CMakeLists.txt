@@ -45,7 +45,7 @@ target_link_libraries(Qremote
 	qsmtp_io_lib
 	qsmtp_dane_lib
 	${MEMCHECK_LIBRARIES}
-	${OPENSSL_LIBRARIES}
+	OpenSSL::SSL
 )
 
 install(TARGETS Qremote DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT core)

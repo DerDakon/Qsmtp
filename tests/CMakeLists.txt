@@ -752,7 +752,7 @@ target_link_libraries(testcase_qsdata
 		testcase_io_lib
 		qsmtp_lib
 		${MEMCHECK_LIBRARIES}
-		${OPENSSL_LIBRARIES}
+		OpenSSL::SSL
 )
 
 add_test(NAME "Qsmtpd_data"
@@ -949,7 +949,7 @@ add_executable(testcase_queue_envelope
 target_link_libraries(testcase_queue_envelope
 		qsmtp_lib
 		testcase_io_lib
-		${OPENSSL_LIBRARIES}
+		OpenSSL::SSL
 )
 
 add_test(NAME "Queue_envelope"
@@ -991,7 +991,7 @@ add_executable(testcase_ssl_pp
 
 target_link_libraries(testcase_ssl_pp
 		qsmtp_lib
-		${OPENSSL_LIBRARIES}
+		OpenSSL::SSL
 		${CMAKE_SOCKET_LIB}
 )
 

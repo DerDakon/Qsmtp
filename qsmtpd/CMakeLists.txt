@@ -50,6 +50,7 @@ target_link_libraries(Qsmtpd
 	Qsmtpd_auth_checkpassword
 	Qsmtpd_user_vpopm
 	${MEMCHECK_LIBRARIES}
+	OpenSSL::SSL
 )
 
 if (HAS_BSD_EXP_BZERO)
