@@ -13,6 +13,7 @@ target_link_libraries(testcase_starttlsr
 		testcase_io_lib
 		qsmtp_lib
 		${OPENSSL_LIBRARIES}
+		${CMAKE_SOCKET_LIB}
 )
 
 add_test(NAME "STARTTLSr"

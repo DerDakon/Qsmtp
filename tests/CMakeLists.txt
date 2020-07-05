@@ -555,7 +555,9 @@ add_executable(testcase_getmxlist
 target_link_libraries(testcase_getmxlist
 		testcase_io_lib
 		qsmtp_lib
-		${MEMCHECK_LIBRARIES})
+		${MEMCHECK_LIBRARIES}
+		${CMAKE_SOCKET_LIB}
+)
 
 add_test(NAME "getmxlist"
 		COMMAND testcase_getmxlist)
@@ -567,7 +569,9 @@ add_executable(testcase_getmxlistv4only
 
 target_link_libraries(testcase_getmxlistv4only
 		testcase_io_lib
-		${MEMCHECK_LIBRARIES})
+		${MEMCHECK_LIBRARIES}
+		${CMAKE_SOCKET_LIB}
+)
 
 set_target_properties(testcase_getmxlistv4only PROPERTIES
 		COMPILE_DEFINITIONS IPV4ONLY)
@@ -582,7 +586,9 @@ add_executable(testcase_tryconn
 target_link_libraries(testcase_tryconn
 		testcase_io_lib
 		qsmtp_lib
-		${MEMCHECK_LIBRARIES})
+		${MEMCHECK_LIBRARIES}
+		${CMAKE_SOCKET_LIB}
+)
 
 add_test(NAME "tryconn"
 		COMMAND testcase_tryconn)
@@ -597,7 +603,9 @@ set_target_properties(testcase_tryconnv4only PROPERTIES
 target_link_libraries(testcase_tryconnv4only
 		testcase_io_lib
 		qsmtp_lib
-		${MEMCHECK_LIBRARIES})
+		${MEMCHECK_LIBRARIES}
+		${CMAKE_SOCKET_LIB}
+)
 
 add_test(NAME "tryconn_IPv4_only"
 		COMMAND testcase_tryconnv4only)
@@ -701,6 +709,9 @@ set_tests_properties(Qremote_no_mmap PROPERTIES
 		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}Z4.3.0 internal error: can't mmap\\(\\) input\n")
 
 add_executable(stdin-exec stdin-exec.c)
+target_link_libraries(stdin-exec
+		${CMAKE_SOCKET_LIB}
+)
 
 if (AUTOQMAIL_FROM_TESTSUITE)
 	set_tests_properties(Qremote_noinput_noargs PROPERTIES
@@ -872,6 +883,7 @@ target_link_libraries(testcase_ipme
 		qsmtp_lib
 		testcase_io_lib
 		${MEMCHECK_LIBRARIES}
+		${CMAKE_SOCKET_LIB}
 )
 add_test(NAME "IPme"
 		COMMAND testcase_ipme)
@@ -976,6 +988,7 @@ add_executable(testcase_ssl_pp
 target_link_libraries(testcase_ssl_pp
 		qsmtp_lib
 		${OPENSSL_LIBRARIES}
+		${CMAKE_SOCKET_LIB}
 )
 
 foreach(_ssl_test IN ITEMS simple simple_clc tlsclients_dir

@@ -14,7 +14,9 @@ add_executable(testcase_smtproutes
 target_link_libraries(testcase_smtproutes
 		qsmtp_lib
 		testcase_io_lib
-		${MEMCHECK_LIBRARIES})
+		${MEMCHECK_LIBRARIES}
+		${CMAKE_SOCKET_LIB}
+)
 
 foreach (ROUTETEST IN LISTS ROUTES_TESTS)
 	add_test(NAME "SMTProutes-${ROUTETEST}"
