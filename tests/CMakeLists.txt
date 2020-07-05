@@ -744,6 +744,10 @@ add_executable(testcase_qsdata
 		qsdata_test.c
 )
 
+if (NOT HAS_GMTOFF)
+	set_property(SOURCE qsdata_test.c APPEND PROPERTY COMPILE_DEFINITIONS NO_GMTOFF)
+endif ()
+
 target_link_libraries(testcase_qsdata
 		testcase_io_lib
 		qsmtp_lib
