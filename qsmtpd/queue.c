@@ -97,9 +97,9 @@ queue_init(void)
 			return i;
 		return EDONE;
 	case 0:
-		if (pipe_move(fd0, 0) != 0)
+		if (fd_move(fd0[0], 0) != 0)
 			_exit(120);
-		if (pipe_move(fd1, 1) != 0)
+		if (fd_move(fd1[0], 1) != 0)
 			_exit(120);
 
 		/* no chdir here, we already _are_ there (and qmail-queue does it again) */

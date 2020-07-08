@@ -135,6 +135,10 @@ add_executable(testcase_auth_be_cp
 		${CMAKE_SOURCE_DIR}/qsmtpd/child.c
 )
 
+if (HAS_PIPE2)
+	set_property(SOURCE ${CMAKE_SOURCE_DIR}/qsmtpd/child.c APPEND PROPERTY COMPILE_DEFINITIONS HAS_PIPE2)
+endif ()
+
 target_link_libraries(testcase_auth_be_cp
 		Qsmtpd_auth_checkpassword
 		testcase_io_lib

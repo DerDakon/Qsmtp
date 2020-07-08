@@ -25,6 +25,10 @@ if (NOT HAS_GMTOFF)
 	set_property(SOURCE data.c APPEND PROPERTY COMPILE_DEFINITIONS NO_GMTOFF)
 endif ()
 
+if (HAS_PIPE2)
+	set_property(SOURCE child.c APPEND PROPERTY COMPILE_DEFINITIONS HAS_PIPE2)
+endif ()
+
 set(QSMTPD_HDRS
 	../include/qsmtpd/addrparse.h
 	../include/qsmtpd/antispam.h

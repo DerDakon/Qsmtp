@@ -29,7 +29,7 @@ const char **globalconf;
 static const char *expect_err_control;
 
 int
-pipe_move(int p[2] __attribute__((unused)), int target __attribute__((unused)))
+fd_move(int p __attribute__((unused)), int target __attribute__((unused)))
 {
 	exit(EFAULT);
 }

@@ -75,7 +75,7 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 		{
 		sigset_t mask;
 
-		if (pipe_move(pi, 3) != 0)
+		if (fd_move(pi[0], 3) != 0)
 			_exit(1);
 
 		sigemptyset(&mask);

@@ -166,6 +166,8 @@ if (NOT HAS_OPENAT)
 	message(SEND_ERROR "Support for openat() is missing")
 endif ()
 
+CHECK_FUNCTION_EXISTS(pipe2 HAS_PIPE2)
+
 check_c_source_compiles("#include <netinet/in.h>
 static struct in6_addr a;
 int test_ip6(const struct in6_addr *i) {
