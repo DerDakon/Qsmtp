@@ -224,7 +224,14 @@ The hostname of the target machine.
 The port on the remote machine to connect to.
 .IP clientcert
 The TLS certificate to use when connecting.
+.IP outgoingip
+The IPv4 address used when connecting to the remote server.
+.IP outgoingip6
+The IPv6 address used when connecting to the remote server.
 .RE
+
+Duplicate keys are forbidden. Lines beginning with a hash sign '#' and empty
+lines are ignored.
 
 Given the domain
 .I foo.example.net
@@ -244,6 +251,11 @@ with the absolute destination of the remainder, e. g.
 does not match for a mail sent to
 .I foo@example.net
 .
+
+Only values from one file are considered, if a value is not set in the first
+matching file no further files will be scanned for that value. Every value that
+is not explicitely given will be taken from the default control files as
+specified above.
 
 The following example would route mails to port 24 on
 .I baz.example.org
