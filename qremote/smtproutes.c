@@ -23,11 +23,13 @@
 #include <unistd.h>
 
 char *clientcertbuf;	/* buffer for a user-defined client certificate location */
+char *clientkeybuf;	/* buffer for a user-defined client key location */
 
 static const char *tags[] = {
 	"relay",
 	"port",
 	"clientcert",
+	"clientkey",
 	"outgoingip",
 	"outgoingip6",
 	NULL
@@ -292,13 +294,27 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 					}
 					break;
 				case 3:
+					if (access(v, R_OK) != 0) {
+						const char *logmsg[] = { "invalid key '", v,
+									"' given for \"", remhost, "\"", NULL };
+
+						err_confn(logmsg, array);
+					} else {
+						clientkeybuf = strdup(v);
+						if (clientkeybuf == NULL) {
+							free(array);
+							err_mem(0);
+						}
+					}
+					break;
+				case 4:
 					if (inet_pton_v4mapped(v, &outgoingip) <= 0) {
 						const char *logmsg[] = { "invalid outgoingip '", v, "' given for \"",
 								remhost, "\"", NULL };
 						err_confn(logmsg, array);
 					}
 					break;
-				case 4:
+				case 5:
 					if (inet_pton(AF_INET6, v, &outgoingip6) <= 0) {
 						const char *logmsg[] = { "invalid outgoingip6 '", v, "' given for \"",
 								remhost, "\"", NULL };
@@ -327,6 +343,10 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 			}
 			if (clientcertbuf)
 				clientcertname = clientcertbuf;
+			if (clientkeybuf)
+				clientkeyname = clientkeybuf;
+			else if (clientcertbuf)
+				clientkeyname = clientcertbuf;
 			errno = 0;
 			return mx;
 		}
@@ -373,5 +393,8 @@ free_smtproute_vals()
 {
 	free(clientcertbuf);
 	clientcertbuf = NULL;
+	free(clientkeybuf);
+	clientkeybuf = NULL;
 	clientcertname = "control/clientcert.pem";
+	clientkeyname = clientcertname;
 }

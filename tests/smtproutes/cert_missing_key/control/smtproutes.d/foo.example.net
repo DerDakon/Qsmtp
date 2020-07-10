@@ -1,0 +1,2 @@
+clientcert=control/cert_foo.pem
+clientkey=control/not_there.key

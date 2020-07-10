@@ -16,6 +16,7 @@
 
 const char str_default[] = "default";
 const char *clientcertname = str_default;
+const char *clientkeyname = str_default;
 struct in6_addr outgoingip = IN6ADDR_ANY_INIT;
 struct in6_addr outgoingip6 = IN6ADDR_ANY_INIT;
 
@@ -81,16 +82,14 @@ static struct ips *mx;
 static char *ipexpect, *outipexpect, *outip6expect;
 static size_t ipe_len, oipe_len, oip6e_len;
 static char *certbuf;
-static size_t certlen;
+static char *keybuf;
 static char gotip[INET6_ADDRSTRLEN];
 
 static int
 verify_route(void)
 {
-	char *expected_cert = (char *)"default";
-
-	if (certbuf != NULL)
-		expected_cert = certbuf;
+	char *expected_cert = certbuf != NULL ? certbuf : (char *)"default";
+	char *expected_key = keybuf != NULL ? keybuf : expected_cert;
 
 	if (targetport != expectedport) {
 		fprintf(stderr, "expected port %lu, but got port %u\n", expectedport, targetport);
@@ -100,6 +99,11 @@ verify_route(void)
 	if (strcmp(expected_cert, clientcertname) != 0) {
 		fprintf(stderr, "expected cert name %s, but got %s\n", expected_cert, clientcertname);
 		return 4;
+	}
+
+	if (strcmp(expected_key, clientkeyname) != 0) {
+		fprintf(stderr, "expected key name %s, but got %s\n", expected_key, clientkeyname);
+		return 5;
 	}
 
 	if (!IN6_ARE_ADDR_EQUAL(&outgoingip, &expectedoip)) {
@@ -195,9 +199,18 @@ main(void)
 		return r;
 	}
 
-	certlen = loadoneliner(AT_FDCWD, "expected_cert", &certbuf, 1);
+	size_t certlen = loadoneliner(AT_FDCWD, "expected_cert", &certbuf, 1);
 	if ((certlen == (size_t) -1) && (errno != ENOENT)) {
 		fprintf(stderr, "error %i when opening 'expected_cert'\n", errno);
+		free(ipexpect);
+		free(outipexpect);
+		free(outip6expect);
+		return EFAULT;
+	}
+
+	certlen = loadoneliner(AT_FDCWD, "expected_key", &keybuf, 1);
+	if ((certlen == (size_t) -1) && (errno != ENOENT)) {
+		fprintf(stderr, "error %i when opening 'expected_key'\n", errno);
 		free(ipexpect);
 		free(outipexpect);
 		free(outip6expect);

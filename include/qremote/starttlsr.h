@@ -9,5 +9,6 @@ struct daneinfo;
 extern int tls_init(const struct daneinfo *d, int cnt);
 
 extern const char *clientcertname;	/**< filename of the TLS client certificate */
+extern const char *clientkeyname;	/**< filename of the TLS client key */
 
 #endif

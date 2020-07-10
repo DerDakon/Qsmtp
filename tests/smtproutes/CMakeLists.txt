@@ -1,6 +1,6 @@
 set(ROUTES_TESTS nomatch complete_match with_port port_0 port_100k port_char port_char_no_relay
 		no_colon port_only unresolved
-		cert_dir cert_missing_dir
+		cert_dir cert_split cert_missing_dir cert_missing_key
 		complete_match_dir with_port_dir port_0_dir port_100k_dir port_char_dir port_only_dir
 		port_char_no_relay_dir unresolved_dir duplicate_host_dir invalid_entry_dir
 		invalid_oip_dir invalid_oip6_dir ip4_as_oip6_dir
@@ -26,5 +26,8 @@ foreach (ROUTETEST IN LISTS ROUTES_TESTS)
 		file(READ "${CMAKE_CURRENT_SOURCE_DIR}/${ROUTETEST}/errmsg" ROUTETEST_MSG)
 		set_tests_properties(SMTProutes-${ROUTETEST} PROPERTIES
 			PASS_REGULAR_EXPRESSION "^(.*\n)?LOG: ${ROUTETEST_MSG}(\n.*)?$")
+	else ()
+		set_tests_properties(SMTProutes-${ROUTETEST} PROPERTIES
+			FAIL_REGULAR_EXPRESSION "^(.*\n)?LOG: ")
 	endif ()
 endforeach ()

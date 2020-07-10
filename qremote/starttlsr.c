@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 const char *clientcertname = "control/clientcert.pem";
+const char *clientkeyname = "control/clientcert.pem";
 
 /**
  * @brief send STARTTLS and handle the connection setup
@@ -87,7 +88,7 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 
 	/* let the other side complain if it needs a cert and we don't have one */
 	if (SSL_CTX_use_certificate_chain_file(ctx, clientcertname) == 1)
-		SSL_CTX_use_RSAPrivateKey_file(ctx, clientcertname, SSL_FILETYPE_PEM);
+		SSL_CTX_use_RSAPrivateKey_file(ctx, clientkeyname, SSL_FILETYPE_PEM);
 
 	int tlsa_usable = 0;
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
