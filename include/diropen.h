@@ -6,9 +6,9 @@
 
 #include <fcntl.h>
 #include <unistd.h>
-#include <sys/stat.h>
 
 #if O_DIRECTORY == 0
+#include <sys/stat.h>
 #include <errno.h>
 #endif /* O_DIRECTORY == 0 */
 
