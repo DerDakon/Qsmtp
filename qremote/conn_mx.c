@@ -165,7 +165,7 @@ connect_mx(struct ips *mx, const struct in6_addr *outip4, const struct in6_addr 
 			} else {
 				smtpext = flagerr;
 			}
-		} else if (clientcertbuf != NULL) {
+		} else if (expect_tls) {
 			const char *dropmsg[] = { "no STARTTLS offered by ", rhost, ", but TLS certificate is configured", NULL };
 
 			log_writen(LOG_WARNING, dropmsg);

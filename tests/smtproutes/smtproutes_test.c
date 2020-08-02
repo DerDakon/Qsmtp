@@ -75,6 +75,7 @@ test_ask_dnsaaaa(const char *domain, struct in6_addr **ips)
 
 static unsigned int targetport = 0;
 static unsigned long expectedport;
+static unsigned long expected_tls;
 static struct in6_addr expectedrip;
 static struct in6_addr expectedoip = IN6ADDR_ANY_INIT;
 static struct in6_addr expectedoip6 = IN6ADDR_ANY_INIT;
@@ -118,6 +119,14 @@ verify_route(void)
 		inet_ntop(AF_INET6, &outgoingip6, gip, sizeof(gip));
 		fprintf(stderr, "expected outgoing ip6 %s, but got %s\n", outip6expect, gip);
 		return 3;
+	}
+
+	if (expect_tls != expected_tls) {
+		fprintf(stderr, "expect_tls set to %s, but %s expected\n",
+			expect_tls ? "true" : "false",
+			expected_tls ? "true" : "false"
+		);
+		return 6;
 	}
 
 	if (mx == NULL) {
@@ -184,6 +193,12 @@ main(void)
 
 	if (loadintfd(fd, &expectedport, 25) != 0) {
 		fprintf(stderr, "error loading the expected port");
+		return EFAULT;
+	}
+
+	fd = open("expected_tls", O_RDONLY | O_CLOEXEC);
+	if (loadintfd(fd, &expected_tls, 0) != 0) {
+		fprintf(stderr, "error loading the expected TLS setting");
 		return EFAULT;
 	}
 

@@ -7,6 +7,7 @@
 #include "sstring.h"
 
 #include <netinet/in.h>
+#include <stdbool.h>
 
 struct ips;
 
@@ -83,7 +84,7 @@ extern string heloname;
 #ifdef CHUNKING
 extern size_t chunksize;
 #endif
-extern char *clientcertbuf;
+extern bool expect_tls;
 extern struct in6_addr outgoingip;
 extern struct in6_addr outgoingip6;
 

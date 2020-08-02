@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <syslog.h>
@@ -19,7 +20,7 @@ static int greet_result, next_greet_result;
 static int quitnext;
 static int tls_result = -1;
 unsigned int targetport = 428;
-char *clientcertbuf;
+bool expect_tls;
 static char rhostbuf[96];
 
 #define MX_PRIORITY_SINGLE_TLSA 800
@@ -324,7 +325,7 @@ main(void)
 		close(socketd);
 
 	mxsetup(testmx, 1);
-	clientcertbuf = "";
+	expect_tls = true;
 	log_write_msg = "no STARTTLS offered by prio1.example.org [2001:db8::1], but TLS certificate is configured";
 	log_write_priority = LOG_WARNING;
 
@@ -338,7 +339,7 @@ main(void)
 		close(socketd);
 
 	mxsetup(testmx, MX_PRIORITY_SINGLE_TLSA);
-	clientcertbuf = NULL;
+	expect_tls = false;
 	log_write_msg = "no STARTTLS offered by prio800.example.org [2001:db8::800], but TLSA record exists";
 	log_write_priority = LOG_WARNING;
 

@@ -22,8 +22,9 @@
 #include <syslog.h>
 #include <unistd.h>
 
-char *clientcertbuf;	/* buffer for a user-defined client certificate location */
-char *clientkeybuf;	/* buffer for a user-defined client key location */
+static char *clientcertbuf;	/**< buffer for a user-defined client certificate location */
+char *clientkeybuf;	/**< buffer for a user-defined client key location */
+bool expect_tls;	/**< if TLS is expected: if clientcertbuf is set and not from the default file */
 
 static const char *tags[] = {
 	"relay",
@@ -210,18 +211,20 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 	const int dirfd = get_dirfd(controldir_fd, "smtproutes.d");
 
 	*targetport = 25;
+	expect_tls = false;
 
 	if (dirfd >= 0) {
 		char fnbuf[DOMAINNAME_MAX + 2];
 		const char *fn = remhost;
 		const char *curpart = remhost;
+		bool is_default_file = false;
 
 		while (1) {
 			char **array;
-			int fd = openat(dirfd, fn, O_RDONLY | O_CLOEXEC);
 			const char *hv = NULL;
 			const char *pv = NULL;
 			unsigned int i;
+			int fd = openat(dirfd, fn, O_RDONLY | O_CLOEXEC);
 
 			if (fd < 0) {
 				if (errno != ENOENT) {
@@ -239,6 +242,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 					if (dot == NULL) {
 						fn = "default";
 						curpart = NULL;
+						is_default_file = true;
 					} else {
 						assert(strlen(dot) < sizeof(fnbuf) - 2);
 						fnbuf[0] = '*';
@@ -291,6 +295,7 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 							free(array);
 							err_mem(0);
 						}
+						expect_tls = !is_default_file;
 					}
 					break;
 				case 3:
@@ -393,6 +398,7 @@ free_smtproute_vals()
 {
 	free(clientcertbuf);
 	clientcertbuf = NULL;
+	expect_tls = false;
 	free(clientkeybuf);
 	clientkeybuf = NULL;
 	clientcertname = "control/clientcert.pem";
