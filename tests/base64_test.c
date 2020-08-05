@@ -329,7 +329,7 @@ errdetect_test(void)
 
 	puts("== Running error detection test");
 
-	for (unsigned char i = 0; i < strlen(testpattern); i++) {
+	for (size_t i = 0; i < strlen(testpattern); i++) {
 		STREMPTY(odata);
 		memcpy(testdata, testpattern, sizeof(testpattern));
 		testdata[i] += 128;
@@ -342,7 +342,7 @@ errdetect_test(void)
 		}
 	}
 
-	for (unsigned char i = 0; i < strlen(badchars); i++) {
+	for (size_t i = 0; i < strlen(badchars); i++) {
 		STREMPTY(odata);
 		memcpy(testdata, testpattern, sizeof(testpattern));
 		testdata[42] = badchars[i];
