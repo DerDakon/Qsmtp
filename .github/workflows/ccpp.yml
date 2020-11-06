@@ -4,24 +4,38 @@ on: [push]
 
 jobs:
   build:
-    name: build​-${{ matrix.cc }}
-    runs-on: ubuntu-latest
+    name: build​-${{ matrix.config.cc }}-${{ matrix.config.host }}
+    runs-on: ${{ matrix.config.host }}
     strategy:
       fail-fast: false
       matrix:
-        cc: [gcc, clang]
+        config:
+        - {
+           cc: "gcc",
+           host: "ubuntu-latest"
+          }
+        - {
+           cc: "clang",
+           host: "ubuntu-latest"
+          }
+        - {
+           cc: "clang",
+           host: "macos-latest"
+          }
 
     steps:
     - name: checkout
       uses: actions/checkout@v2
 
     - name: install deps
-      run: sudo apt-get install libowfat-dev libssl-dev openssl valgrind libbsd-dev
+      run: if [ "${OS}" = "macos-latest" ]; then brew install libowfat; echo 'list(APPEND CONF_OPTIONS "-DOWFAT_INCLUDE_DIR=/usr/local/Cellar/libowfat/0.32/include/libowfat/libowfat" "-DCMAKE_PREFIX_PATH=/usr/local/Cellar/libowfat/0.32" "-DOpenSSL_ROOT=/usr/local/Cellar/openssl@1.1/1.1.1h")' > my_qsmtp.cmake; else sudo apt-get install libowfat-dev libssl-dev openssl valgrind libbsd-dev; fi
+      env:
+        OS: ${{ matrix.config.host }}
 
     - name: configure
-      run:  echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nset(CONF_OPTIONS "-DIPV4ONLY=On")\nset(CTEST_SITE "github.com")\ninclude("$ENV{GITHUB_WORKSPACE}/ctest_qsmtp.cmake")' > my_qsmtp.cmake
+      run:  echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nlist(APPEND CONF_OPTIONS "-DIPV4ONLY=On")\nset(CTEST_SITE "github.com")\ninclude("$ENV{GITHUB_WORKSPACE}/ctest_qsmtp.cmake")' >> my_qsmtp.cmake
 
     - name: run tests
       run: ctest -V -D "CTEST_BUILD_NAME=GitHub CI ${CC}" -S my_qsmtp.cmake -j 3
       env:
-        CC: ${{ matrix.cc }}
+        CC: ${{ matrix.config.cc }}
