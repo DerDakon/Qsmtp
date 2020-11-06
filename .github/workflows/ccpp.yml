@@ -4,15 +4,24 @@ on: [push]
 
 jobs:
   build:
-    name: build​
+    name: build​-${{ matrix.cc }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
 
     steps:
     - name: checkout
       uses: actions/checkout@v2
-    - name: test_deps
+
+    - name: install deps
       run: sudo apt-get install libowfat-dev libssl-dev openssl valgrind libbsd-dev
+
     - name: configure
       run:  echo -e 'set(QSMTP_BUILD_DIR "/tmp/Qs-build")\nset(dashboard_model "Continuous")\nset(CONF_OPTIONS "-DIPV4ONLY=On")\nset(CTEST_SITE "github.com")\ninclude("$ENV{GITHUB_WORKSPACE}/ctest_qsmtp.cmake")' > my_qsmtp.cmake
+
     - name: run tests
-      run: ctest -V -D "CTEST_BUILD_NAME=GitHub CI" -S my_qsmtp.cmake
+      run: ctest -V -D "CTEST_BUILD_NAME=GitHub CI ${CC}" -S my_qsmtp.cmake -j 3
+      env:
+        CC: ${{ matrix.cc }}
