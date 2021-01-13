@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 execute_process(COMMAND sleep 3)
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "EHLO remote.example.org\r")

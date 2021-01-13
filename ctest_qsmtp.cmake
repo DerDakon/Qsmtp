@@ -56,7 +56,7 @@ foreach (req
         endif ()
 endforeach ()
 
-cmake_minimum_required(VERSION 2.8.6)
+cmake_minimum_required(VERSION 3.0)
 
 set(CTEST_SOURCE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 set(CTEST_BINARY_DIRECTORY ${QSMTP_BUILD_DIR})
