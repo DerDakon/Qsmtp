@@ -13,12 +13,6 @@ jobs:
       arch: amd64
       env:
         - CTEST_BUILD_NAME="Ubuntu Bionic ${TRAVIS_ARCH} Clang"
-#    - os: osx
-#      compiler: clang
-#      arch: amd64
-#      env:
-#        - OPENSSL_ROOT_DIR="/usr/local/opt/openssl"
-#        - CTEST_BUILD_NAME="MacOS XCode 9.4.1"
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
