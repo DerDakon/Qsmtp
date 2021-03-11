@@ -28,7 +28,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: install deps
-      run: if [ "${OS}" = "macos-latest" ]; then brew install libowfat; echo 'list(APPEND CONF_OPTIONS "-DOWFAT_INCLUDE_DIR=/usr/local/Cellar/libowfat/0.32/include/libowfat/libowfat" "-DCMAKE_PREFIX_PATH=/usr/local/Cellar/libowfat/0.32" "-DOpenSSL_ROOT=/usr/local/Cellar/openssl@1.1/1.1.1h")' > my_qsmtp.cmake; else sudo apt-get install libowfat-dev libssl-dev openssl valgrind libbsd-dev; fi
+      run: if [ "${OS}" = "macos-latest" ]; then brew install libowfat; echo 'list(APPEND CONF_OPTIONS "-DOWFAT_INCLUDE_DIR=/usr/local/Cellar/libowfat/0.32/include/libowfat/libowfat" "-DCMAKE_PREFIX_PATH=/usr/local/Cellar/libowfat/0.32" "-DOpenSSL_ROOT=/usr/local/Cellar/openssl@1.1/1.1.1h")' > my_qsmtp.cmake; else sudo apt-get install libowfat-dev libssl-dev openssl valgrind libbsd-dev lcov; fi
       env:
         OS: ${{ matrix.config.host }}
 
@@ -39,3 +39,15 @@ jobs:
       run: ctest -V -D "CTEST_BUILD_NAME=GitHub CI ${CC}" -S my_qsmtp.cmake -j 3
       env:
         CC: ${{ matrix.config.cc }}
+
+    - name: generate coverage
+      if: matrix.config.cc == 'gcc'
+      run: |
+        lcov --directory /tmp/Qs-build --capture --output-file coverage.info
+        lcov --remove coverage.info '/usr/*' --output-file coverage.info
+
+    - name: upload covecov info
+      if: matrix.config.cc == 'gcc'
+      uses: codecov/codecov-action@v1
+      with:
+        files: coverage.info
