@@ -18,10 +18,10 @@ jobs:
            cc: "clang",
            host: "ubuntu-latest"
           }
-        - {
-           cc: "clang",
-           host: "macos-latest"
-          }
+        #- {
+           #cc: "clang",
+           #host: "macos-latest"
+          #}
 
     steps:
     - name: checkout
