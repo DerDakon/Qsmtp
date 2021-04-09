@@ -1,13 +1,9 @@
-cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.0...3.20 FATAL_ERROR)
 
 project(Qsmtp
 	VERSION 0.38
 	HOMEPAGE_URL "https://opensource.sf-tec.de/Qsmtp/"
 	LANGUAGES C)
-
-if (POLICY CMP0074)
-	cmake_policy(SET CMP0074 NEW)
-endif ()
 
 option(CHECK_MEMORY "Add memory access checks" OFF)
 
@@ -35,10 +31,6 @@ if(NOT CMAKE_HAVE_CONNECT)
 endif()
 
 find_package(owfat REQUIRED)
-
-if (COMMAND cmake_policy)
-	cmake_policy(SET CMP0003 NEW)
-endif ()
 
 if (AUTOQMAIL)
 	if (NOT IS_ABSOLUTE "${AUTOQMAIL}")
