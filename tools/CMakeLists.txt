@@ -79,3 +79,7 @@ target_link_libraries(dnstxt
 	qsmtp_io_lib
 	qsmtp_lib
 )
+
+if (BUILD_TESTING)
+	add_subdirectory(tests)
+endif ()
