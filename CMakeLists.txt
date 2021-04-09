@@ -19,6 +19,7 @@ include(CheckSymbolExists)
 include(CheckFunctionExists)
 include(CheckLibraryExists)
 include(CMakeDependentOption)
+include(CTest)
 include(GNUInstallDirs)
 
 # Find library needed for connect. Taken from FindX11.cmake
@@ -259,10 +260,7 @@ add_subdirectory(qsmtpd)
 add_subdirectory(qremote)
 add_subdirectory(tools)
 
-option(BUILD_TESTS "Build testcases" ON)
-if (BUILD_TESTS)
-	include(CTest)
-
+if (BUILD_TESTING)
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake @ONLY)
 
 	enable_testing()
