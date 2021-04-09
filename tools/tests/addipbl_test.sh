@@ -9,4 +9,4 @@ shift 2
 
 rm -f "${OUTFILE}"
 "${BINARY}" "${OUTFILE}" "${@}"
-hexdump -x "${OUTFILE}"
+hexdump -b "${OUTFILE}"

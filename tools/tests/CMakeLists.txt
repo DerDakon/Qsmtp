@@ -5,9 +5,9 @@ macro(iptest testname pass_expr)
 	set_tests_properties(addipbl_${testname} PROPERTIES PASS_REGULAR_EXPRESSION "${pass_expr}")
 endmacro()
 
-iptest(localIP "a8c0[ \t]*1811[ \t]*0020" "192.168.17.24")
-iptest(localNet "a8c0[ \t]*1811[ \t]*001e" "192.168.17.24/30")
-iptest(2localIPs "a8c0[ \t]*1811[ \t]*c020[ \t]*18a8[ \t]*2011" "192.168.17.24" "192.168.24.17")
+iptest(localIP "00000 300 250 021 030 040" "192.168.17.24")
+iptest(localNet "00000 300 250 021 030 036" "192.168.17.24/30")
+iptest(2localIPs "00000 300 250 021 030 040 300 250 030 021 040" "192.168.17.24" "192.168.24.17")
 
 iptest(mixed46 "error: IPv4 and IPv6 addresses cannot be mixed in the same file" "192.168.17.24/30" "::1")
 
