@@ -25,10 +25,6 @@ char *outbuf;
 size_t outlen;
 size_t outpos;
 
-#ifdef DEBUG_IO
-int in_data;
-#endif /* DEBUG_IO */
-
 static unsigned int expect_quit;
 static const char **write_msgs;
 static unsigned int write_msg_index;

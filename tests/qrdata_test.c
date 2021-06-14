@@ -43,10 +43,6 @@ static int msgdata_mmaped;		/**< 1 if msgdata was mmap()'ed from file */
 static const unsigned char *msg_expect;	/**< if expected output is given it is mmap()'ed here */
 static off_t msg_expect_len;		/**< length of msg_expect */
 
-#ifdef DEBUG_IO
-int in_data;
-#endif /* DEBUG_IO */
-
 static struct {
 	const char *name;
 	const char *msg;
