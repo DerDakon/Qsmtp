@@ -241,11 +241,9 @@ addrsyntax(char *in, const int flags, string *addr, char **more)
 	}
 
 	if (addr) {
-		if (newstr(addr, len + 1))
+		if (dupstr(addr, f))
 			return -1;
 
-		strncpy(addr->s, f, len);
-		addr->s[--addr->len] = '\0';
 		while (len > 0) {
 			len--;
 			if ((addr->s[len] >= 'A') && (addr->s[len] <= 'Z'))
