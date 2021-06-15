@@ -14,7 +14,7 @@ target_link_libraries(testcase_ssl_pp
 		${CMAKE_SOCKET_LIB}
 )
 
-foreach(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
+foreach(_ssl_test IN ITEMS simple simple_clc simple_clc_emptyDANE tlsclients_dir
 		simple_clc_tlsclients simple_clc_clientca simple_clientca
 		relay_no_name relay_other relay_multi_first relay_multi_last
 		relay_withca
@@ -38,6 +38,11 @@ foreach(_ssl_test IN ITEMS simple simple_clc tlsclients_dir
 	elseif (_ssl_test STREQUAL "simple_clc")
 		set(_ssl_client_cert "valid1024.key")
 		set(_ssl_server_cert "valid1024.key")
+	elseif (_ssl_test STREQUAL "simple_clc_emptyDANE")
+		# simple valid certificate, and 2 DANE entries that are unusable by type
+		set(_ssl_client_cert "valid1024.key")
+		set(_ssl_server_cert "valid1024.key")
+		set(_ssl_test_arg "-d2")
 	elseif (_ssl_test STREQUAL "tlsclients_dir")
 		set(_ssl_server_cert "valid1024.key")
 		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlsclients")

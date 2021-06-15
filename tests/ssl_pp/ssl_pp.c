@@ -2,6 +2,7 @@
 #include <diropen.h>
 #include <log.h>
 #include <netio.h>
+#include <qdns_dane.h>
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/starttls.h>
 #include <ssl_timeoutio.h>
@@ -28,6 +29,7 @@ static const char *logmsg;
 static const char *client_log;
 static const char *server_log;
 static int client_init_result;
+static int dane_count;
 static int is_client;
 
 int
@@ -168,6 +170,15 @@ static int
 client(void)
 {
 	const char *ping[] = { query, NULL };
+	/* only usage types that are ignored by tls_init() as unusable */
+	const struct daneinfo tlsa_info[2] = {
+		{
+			.cert_usage = 1	/* PKIX-EE(1) */
+		},
+		{
+			/* PKIX-TA(0) */
+		}
+	};
 
 	is_client = 1;
 
@@ -181,7 +192,7 @@ client(void)
 
 	socketd = sockets[1];
 
-	int r = tls_init(NULL, 0);
+	int r = tls_init(tlsa_info, dane_count);
 	if (r != client_init_result)
 		return 1;
 
@@ -273,7 +284,7 @@ main(int argc, char **argv)
 {
 	int r;
 
-	while ((r = getopt(argc, argv, "s:f:l:L:i:")) != -1) {
+	while ((r = getopt(argc, argv, "s:f:l:L:i:d:")) != -1) {
 		switch(r) {
 		case 's':
 			/* result of server tls_verify() */
@@ -302,6 +313,18 @@ main(int argc, char **argv)
 			/* expected server log message */
 			server_log = optarg;
 			break;
+		case 'd':
+			{
+				char *endp;
+				unsigned long l = strtoul(optarg, &endp, 10);
+
+				if ((*endp != '\0') || (l == 0) || (l >= INT_MAX)) {
+					fprintf(stderr, "bad value: %s\n", optarg);
+					return 1;
+				}
+				dane_count = l;
+			}
+			break;
 		case 'i':
 			/* expected return value of client tls_init() */
 			if (strcmp(optarg, "EDONE") == 0) {
@@ -314,6 +337,7 @@ main(int argc, char **argv)
 					fprintf(stderr, "bad value: %s\n", optarg);
 					return 1;
 				}
+				client_init_result = l;
 			}
 			break;
 		case ':':
