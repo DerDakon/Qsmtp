@@ -14,163 +14,205 @@ target_link_libraries(testcase_ssl_pp
 		${CMAKE_SOCKET_LIB}
 )
 
-foreach(_ssl_test IN ITEMS simple simple_clc simple_clc_emptyDANE tlsclients_dir
-		simple_clc_tlsclients simple_clc_clientca simple_clientca
-		relay_no_name relay_other relay_multi_first relay_multi_last
-		relay_withca
-		matching_servercert matching_wildcard
-		nonmatching_servercert nonmatching_wildcard
-		SubjAN_match SubjAN2_match SubjAN_cn
-		servercert_no_name expired)
-	set(_tgt_dir "${CMAKE_CURRENT_BINARY_DIR}/${_ssl_test}")
-	file(MAKE_DIRECTORY "${_tgt_dir}/control")
+include(CMakeParseArguments)
+
+function (SSL_Testcase)
+	cmake_parse_arguments(PARSE_ARGV 1 SSL ""
+			"CLIENT_CERT;CLIENT_KEY;SERVER_CERT;SERVER_KEY;EXTRA_CONTROL_DIR"
+			"TEST_ARGS")
+	set(TEST_NAME "${ARGV0}")
+
+	set(_tgt_dir "${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME}")
+	set(SSL_TESTCASE_CONTROL_DIR "${_tgt_dir}/control")
+	set(SSL_TESTCASE_CONTROL_DIR "${SSL_TESTCASE_CONTROL_DIR}" PARENT_SCOPE)
+	file(MAKE_DIRECTORY "${SSL_TESTCASE_CONTROL_DIR}")
+
+	if (SSL_EXTRA_CONTROL_DIR)
+		file(MAKE_DIRECTORY "${SSL_TESTCASE_CONTROL_DIR}/${SSL_EXTRA_CONTROL_DIR}")
+	endif ()
+
+	if (SSL_CLIENT_CERT)
+		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${SSL_CLIENT_CERT}
+				"${SSL_TESTCASE_CONTROL_DIR}/clientcert.pem" COPYONLY)
+	endif ()
+	if (SSL_CLIENT_KEY)
+		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${SSL_CLIENT_KEY}
+				"${SSL_TESTCASE_CONTROL_DIR}/clientkey.pem" COPYONLY)
+	endif ()
+	if (SSL_SERVER_CERT)
+		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${SSL_SERVER_CERT}
+				"${SSL_TESTCASE_CONTROL_DIR}/servercert.pem" COPYONLY)
+	endif ()
+	if (SSL_SERVER_KEY)
+		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${SSL_SERVER_KEY}
+				"${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem" COPYONLY)
+	endif ()
 
 	foreach(_pem IN ITEMS rsa2048 dh2048)
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${_pem}.pem
-				"${_tgt_dir}/control/${_pem}.pem" COPYONLY)
+				"${SSL_TESTCASE_CONTROL_DIR}/${_pem}.pem" COPYONLY)
 	endforeach()
 
-	unset(_ssl_test_arg)
-	unset(_ssl_client_cert)
-	unset(_ssl_server_cert)
-	if (_ssl_test STREQUAL "simple")
-		set(_ssl_server_cert "valid1024.key")
-	elseif (_ssl_test STREQUAL "simple_clc")
-		set(_ssl_client_cert "valid1024.key")
-		set(_ssl_server_cert "valid1024.key")
-	elseif (_ssl_test STREQUAL "simple_clc_emptyDANE")
-		# simple valid certificate, and 2 DANE entries that are unusable by type
-		set(_ssl_client_cert "valid1024.key")
-		set(_ssl_server_cert "valid1024.key")
-		set(_ssl_test_arg "-d2")
-	elseif (_ssl_test STREQUAL "tlsclients_dir")
-		set(_ssl_server_cert "valid1024.key")
-		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlsclients")
-		set(_ssl_test_arg "-sEISDIR")
-	elseif (_ssl_test STREQUAL "relay_withca")
-		set(_ssl_client_cert "withca.key")
-		set(_ssl_server_cert "valid1024.key")
-		file(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test-ca.crt
-				"${_tgt_dir}/control/clientca.pem" COPYONLY)
-		set(_ssl_test_arg "-s1")
-	elseif (_ssl_test STREQUAL "simple_clc_tlsclients" OR _ssl_test STREQUAL "simple_clc_clientca")
-		set(_ssl_client_cert "valid1024.key")
-		set(_ssl_server_cert "valid1024.key")
-		file(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
-		if (_ssl_test STREQUAL "simple_clc_clientca")
-			configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024.crt
-					"${_tgt_dir}/control/clientca.pem" COPYONLY)
-			set(_ssl_test_arg "-s1")
-		endif ()
-	elseif (_ssl_test STREQUAL "simple_clientca")
-		set(_ssl_server_cert "valid1024.key")
-		file(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024.crt
-				"${_tgt_dir}/control/clientca.pem" COPYONLY)
-	elseif (_ssl_test STREQUAL "relay_no_name")
-		set(_ssl_client_cert "noname.key")
-		set(_ssl_server_cert "valid1024.key")
-		file(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.crt
-				"${_tgt_dir}/control/clientca.pem" COPYONLY)
-	elseif (_ssl_test STREQUAL "relay_other")
-		set(_ssl_client_cert "valid1024_san.key")
-		set(_ssl_server_cert "valid1024.key")
-		file(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.crt
-				"${_tgt_dir}/control/clientca.pem" COPYONLY)
-	elseif (_ssl_test STREQUAL "relay_multi_first" OR _ssl_test STREQUAL "relay_multi_last")
-		set(_ssl_client_cert "valid1024.key")
-		set(_ssl_server_cert "valid1024.key")
-		file(WRITE "${_tgt_dir}/control/tlsclients" "testcert.example.org\n")
-		file(READ ${CMAKE_CURRENT_SOURCE_DIR}/noname.crt NONAME_CRT)
-		file(READ ${CMAKE_CURRENT_SOURCE_DIR}/valid1024.crt VALID_CRT)
-		if (_ssl_test STREQUAL "relay_multi_first")
-			file(WRITE "${_tgt_dir}/control/clientca.pem"
-				"${VALID_CRT}${NONAME_CRT}")
-		else ()
-			file(WRITE "${_tgt_dir}/control/clientca.pem"
-				"${NONAME_CRT}${VALID_CRT}")
-		endif ()
-		set(_ssl_test_arg "-s1")
-	elseif (_ssl_test STREQUAL "matching_servercert")
-		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
-		set(_ssl_server_cert "valid1024.key")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
-	elseif (_ssl_test STREQUAL "matching_wildcard")
-		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
-		set(_ssl_server_cert "wildcard1024.key")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/wildcard1024.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
-	elseif (_ssl_test STREQUAL "nonmatching_servercert")
-		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
-		set(_ssl_server_cert "valid1024.key")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPYONLY)
-		set(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net with control/tlshosts/testcert.example.net.pem: Hostname mismatch" "-iEDONE")
-	elseif (_ssl_test STREQUAL "nonmatching_wildcard")
-		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
-		set(_ssl_server_cert "wildcard1024.key")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/wildcard1024.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.net.pem" COPYONLY)
-		set(_ssl_test_arg "-ftestcert.example.net" "-lunable to verify testcert.example.net with control/tlshosts/testcert.example.net.pem: Hostname mismatch" "-iEDONE")
-	elseif (_ssl_test STREQUAL "SubjAN_match")
-		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
-		set(_ssl_server_cert "valid1024_san.key")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024_san.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
-	elseif (_ssl_test STREQUAL "SubjAN2_match")
-		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
-		set(_ssl_server_cert "valid1024_san2.key")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024_san2.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
-	elseif (_ssl_test STREQUAL "SubjAN_cn")
-		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
-		set(_ssl_server_cert "valid1024_san_cn.key")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024_san_cn.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
-		set(_ssl_test_arg "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: Hostname mismatch" "-iEDONE")
-	elseif (_ssl_test STREQUAL "servercert_no_name")
-		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
-		set(_ssl_server_cert "noname.key")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
-		set(_ssl_test_arg "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: Hostname mismatch" "-iEDONE")
-	elseif (_ssl_test STREQUAL "expired")
-		file(MAKE_DIRECTORY "${_tgt_dir}/control/tlshosts")
-		set(_ssl_server_cert "expired.key")
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/expired.crt
-				"${_tgt_dir}/control/tlshosts/testcert.example.org.pem" COPYONLY)
-		set(_ssl_test_arg "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: certificate has expired" "-iEDONE")
-	endif ()
-
-	if (_ssl_client_cert)
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${_ssl_client_cert}
-				"${_tgt_dir}/control/clientcert.pem" COPYONLY)
-	endif ()
-	if (_ssl_client_key)
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${_ssl_client_key}
-				"${_tgt_dir}/control/clientkey.pem" COPYONLY)
-	endif ()
-	if (_ssl_server_cert)
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${_ssl_server_cert}
-				"${_tgt_dir}/control/servercert.pem" COPYONLY)
-	endif ()
-	if (_ssl_server_key)
-		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${_ssl_server_key}
-				"${_tgt_dir}/control/serverkey.pem" COPYONLY)
-	endif ()
-
-	add_test(NAME "SSL_pp_${_ssl_test}"
-			COMMAND testcase_ssl_pp ${_ssl_test_arg}
+	add_test(NAME "SSL_pp_${TEST_NAME}"
+			COMMAND testcase_ssl_pp ${SSL_TEST_ARGS}
 			WORKING_DIRECTORY "${_tgt_dir}")
-endforeach()
+endfunction ()
+
+function (write_tlsclients)
+	file(WRITE "${SSL_TESTCASE_CONTROL_DIR}/tlsclients" "testcert.example.org\n")
+endfunction ()
+
+# the server offers a valid TLS key
+SSL_Testcase(simple
+		SERVER_CERT "valid1024.key")
+
+# server and client offer a valid TLS key
+SSL_Testcase(simple_clc
+		CLIENT_CERT "valid1024.key"
+		SERVER_CERT "valid1024.key")
+
+# simple valid certificate, and 2 DANE entries that are unusable by type
+SSL_Testcase(simple_clc_emptyDANE
+		CLIENT_CERT "valid1024.key"
+		SERVER_CERT "valid1024.key"
+		TEST_ARGS "-d2")
+
+# tlsclients is a directory instead of a file -> return error
+SSL_Testcase(tlsclients_dir
+		SERVER_CERT "valid1024.key"
+		EXTRA_CONTROL_DIR "tlsclients"
+		TEST_ARGS "-sEISDIR")
+
+SSL_Testcase(relay_withca
+		CLIENT_CERT "withca.key"
+		SERVER_CERT "valid1024.key"
+		TEST_ARGS "-s1")
+write_tlsclients()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test-ca.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" COPYONLY)
+
+SSL_Testcase(simple_clc_tlsclients
+		CLIENT_CERT "valid1024.key"
+		SERVER_CERT "valid1024.key")
+write_tlsclients()
+
+SSL_Testcase(simple_clc_clientca
+		CLIENT_CERT "valid1024.key"
+		SERVER_CERT "valid1024.key"
+		TEST_ARGS "-s1")
+write_tlsclients()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" COPYONLY)
+
+SSL_Testcase(simple_clientca
+		SERVER_CERT "valid1024.key")
+write_tlsclients()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" COPYONLY)
+
+SSL_Testcase(relay_no_name
+		CLIENT_CERT "noname.key"
+		SERVER_CERT "valid1024.key")
+write_tlsclients()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" COPYONLY)
+
+SSL_Testcase(relay_other
+		CLIENT_CERT "valid1024_san.key"
+		SERVER_CERT "valid1024.key")
+write_tlsclients()
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" COPYONLY)
+
+# used for the relay_mult_ tests
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/noname.crt NONAME_CRT)
+file(READ ${CMAKE_CURRENT_SOURCE_DIR}/valid1024.crt VALID_CRT)
+
+# relay by client certificate, the matching certificate is first in clientca.pem
+SSL_Testcase(relay_multi_first
+		CLIENT_CERT "valid1024.key"
+		SERVER_CERT "valid1024.key"
+		TEST_ARGS "-s1")
+write_tlsclients()
+file(WRITE "${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" "${VALID_CRT}${NONAME_CRT}")
+
+# relay by client certificate, the matching certificate is last in clientca.pem
+SSL_Testcase(relay_multi_last
+		CLIENT_CERT "valid1024.key"
+		SERVER_CERT "valid1024.key"
+		TEST_ARGS "-s1")
+write_tlsclients()
+file(WRITE "${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" "${NONAME_CRT}${VALID_CRT}")
+
+# the client verifies that the server has the expected certificate
+SSL_Testcase(matching_servercert
+		SERVER_CERT "valid1024.key"
+		EXTRA_CONTROL_DIR "tlshosts")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
+
+# the client verifies that the server has the expected certificate, which is a wildcard one
+SSL_Testcase(matching_wildcard
+		SERVER_CERT "wildcard1024.key"
+		EXTRA_CONTROL_DIR "tlshosts")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/wildcard1024.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
+
+# the client verifies that the server has the expected certificate, but it is not
+SSL_Testcase(nonmatching_servercert
+		SERVER_CERT "valid1024.key"
+		EXTRA_CONTROL_DIR "tlshosts"
+		TEST_ARGS "-ftestcert.example.net" "-lunable to verify testcert.example.net with control/tlshosts/testcert.example.net.pem: Hostname mismatch" "-iEDONE")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.net.pem" COPYONLY)
+
+# the client verifies that the server has the expected certificate, but it is not (wildcard case)
+SSL_Testcase(nonmatching_wildcard
+		SERVER_CERT "wildcard1024.key"
+		EXTRA_CONTROL_DIR "tlshosts"
+		TEST_ARGS "-ftestcert.example.net" "-lunable to verify testcert.example.net with control/tlshosts/testcert.example.net.pem: Hostname mismatch" "-iEDONE")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/wildcard1024.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.net.pem" COPYONLY)
+
+# certificate matches by Subject Alternative Names
+SSL_Testcase(SubjAN_match
+		SERVER_CERT "valid1024_san.key"
+		EXTRA_CONTROL_DIR "tlshosts")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024_san.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
+
+# certificate matches by Subject Alternative Names
+SSL_Testcase(SubjAN2_match
+		SERVER_CERT "valid1024_san2.key"
+		EXTRA_CONTROL_DIR "tlshosts")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024_san2.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
+
+
+SSL_Testcase(SubjAN_cn
+		SERVER_CERT "valid1024_san_cn.key"
+		EXTRA_CONTROL_DIR "tlshosts"
+		TEST_ARGS "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: Hostname mismatch" "-iEDONE")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024_san_cn.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
+
+SSL_Testcase(servercert_no_name
+		SERVER_CERT "noname.key"
+		EXTRA_CONTROL_DIR "tlshosts"
+		TEST_ARGS "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: Hostname mismatch" "-iEDONE")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
+
+# certificate verification required, but certificate is expired
+SSL_Testcase(expired
+		SERVER_CERT "expired.key"
+		EXTRA_CONTROL_DIR "tlshosts"
+		TEST_ARGS "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: certificate has expired" "-iEDONE")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/expired.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
 
 # something changed durin OpenSSL cycle there and the certificate signatures are not accepted anymore
 foreach(_ssl_test IN ITEMS simple_clc_clientca relay_multi_first relay_multi_last
 		relay_withca)
 	set_tests_properties(SSL_pp_${_ssl_test} PROPERTIES WILL_FAIL TRUE)
 endforeach()
-
