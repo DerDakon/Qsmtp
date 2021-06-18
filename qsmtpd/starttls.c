@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <syslog.h>
 #include <sys/stat.h>
 
 static RSA *
@@ -107,7 +108,14 @@ tls_out(const char *s1, const char *s2, const int def_return)
 static int __attribute__((nonnull(1)))
 tls_err(const char *s)
 {
-	return -tls_out(s, ssl_error(), -EDONE);
+	const char *logmsg[] = { "TLS init error: '", s, "', reason: '", ssl_error(), "'", NULL };
+	const char *msg[] = {"454 4.3.0 local TLS initialization failed", NULL};
+
+	log_writen(LOG_ERR, logmsg);
+
+	int r = net_writen(msg);
+
+	return r ? r : -EDONE;
 }
 
 #define CLIENTCA "control/clientca.pem"

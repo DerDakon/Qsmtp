@@ -29,6 +29,7 @@ static const char *logmsg;
 static const char *client_log;
 static const char *server_log;
 static int client_init_result;
+static int server_init_result;
 static int dane_count;
 static int is_client;
 
@@ -196,6 +197,11 @@ client(void)
 	if (r != client_init_result)
 		return 1;
 
+	if (ssl == NULL) {
+		printf("CLIENT: init done, ssl is NULL\n");
+		return 0;
+	}
+
 	r = 0;
 	printf("CLIENT: init done, protocol version is %s, cipher is %s\n", SSL_get_version(ssl), SSL_get_cipher(ssl));
 
@@ -240,8 +246,12 @@ server(void)
 	xmitstat.esmtp = 1;
 	int r = smtp_starttls();
 
-	if (r != 0)
+	if (r != 0) {
+		if (r == -server_init_result) {
+			return 0;
+		}
 		return r;
+	}
 
 	printf("SERVER: init done, protocol version is %s, cipher is %s\n", SSL_get_version(ssl), SSL_get_cipher(ssl));
 
@@ -279,12 +289,28 @@ server(void)
 	return r;
 }
 
+static int parse_init_result(const char *opt)
+{
+	if (strcmp(opt, "EDONE") == 0) {
+		return EDONE;
+	} else {
+		char *endp;
+		unsigned long l = strtoul(opt, &endp, 10);
+
+		if ((*endp != '\0') || (l == 0) || (l >= INT_MAX)) {
+			fprintf(stderr, "bad value: %s\n", opt);
+			exit(1);
+		}
+		return l;
+	}
+}
+
 int
 main(int argc, char **argv)
 {
 	int r;
 
-	while ((r = getopt(argc, argv, "s:f:l:L:i:d:")) != -1) {
+	while ((r = getopt(argc, argv, "s:f:l:L:i:I:d:")) != -1) {
 		switch(r) {
 		case 's':
 			/* result of server tls_verify() */
@@ -326,19 +352,10 @@ main(int argc, char **argv)
 			}
 			break;
 		case 'i':
-			/* expected return value of client tls_init() */
-			if (strcmp(optarg, "EDONE") == 0) {
-				client_init_result = EDONE;
-			} else {
-				char *endp;
-				unsigned long l = strtoul(optarg, &endp, 10);
-
-				if ((*endp != '\0') || (l == 0) || (l >= INT_MAX)) {
-					fprintf(stderr, "bad value: %s\n", optarg);
-					return 1;
-				}
-				client_init_result = l;
-			}
+			client_init_result = parse_init_result(optarg);
+			break;
+		case 'I':
+			server_init_result = parse_init_result(optarg);
 			break;
 		case ':':
 			printf("-%c without argument\n", optopt);

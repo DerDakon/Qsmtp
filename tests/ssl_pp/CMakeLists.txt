@@ -188,7 +188,6 @@ SSL_Testcase(SubjAN2_match
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024_san2.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
 
-
 SSL_Testcase(SubjAN_cn
 		SERVER_CERT "valid1024_san_cn.key"
 		EXTRA_CONTROL_DIR "tlshosts"
@@ -210,6 +209,12 @@ SSL_Testcase(expired
 		TEST_ARGS "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: certificate has expired" "-iEDONE")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/expired.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
+
+# the keyfile is invalid
+SSL_Testcase(emptycert
+		TEST_ARGS "-LTLS init error: 'missing certificate', reason: 'error:02001002:system library:fopen:No such file or directory'"
+				"-lSTARTTLS failed at testcert.example.org: 454 4.3.0 local TLS initialization failed" "-iEDONE" "-IEDONE")
+file(TOUCH "${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem")
 
 # something changed durin OpenSSL cycle there and the certificate signatures are not accepted anymore
 foreach(_ssl_test IN ITEMS simple_clc_clientca relay_multi_first relay_multi_last
