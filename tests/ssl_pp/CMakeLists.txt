@@ -216,6 +216,12 @@ SSL_Testcase(emptycert
 				"-lSTARTTLS failed at testcert.example.org: 454 4.3.0 local TLS initialization failed" "-iEDONE" "-IEDONE")
 file(TOUCH "${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem")
 
+# the key file is only a certificate, but no key
+SSL_Testcase(cert_as_key
+		SERVER_CERT "valid4096.crt"
+		TEST_ARGS "-LTLS init error: 'no valid RSA private key', reason: 'error:02001002:system library:fopen:No such file or directory'"
+				"-lSTARTTLS failed at testcert.example.org: 454 4.3.0 local TLS initialization failed" "-iEDONE" "-IEDONE")
+
 # something changed durin OpenSSL cycle there and the certificate signatures are not accepted anymore
 foreach(_ssl_test IN ITEMS simple_clc_clientca relay_multi_first relay_multi_last
 		relay_withca)
