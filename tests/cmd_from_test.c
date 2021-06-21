@@ -202,6 +202,12 @@ err_control2(const char *m1, const char *m2)
 }
 
 int
+find_servercert(const char *localport __attribute__((unused)))
+{
+	abort();
+}
+
+int
 tls_verify(void)
 {
 	assert(expected_tls_verify);

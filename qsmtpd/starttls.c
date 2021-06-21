@@ -22,6 +22,56 @@
 #include <string.h>
 #include <syslog.h>
 #include <sys/stat.h>
+#include <unistd.h>
+
+static char certfilename[24 + INET6_ADDRSTRLEN + 6] = "control/servercert.pem";		/**< path to SSL certificate filename */
+
+/**
+ * @brief check if a TLS certificate is present
+ * @param localport local port string
+ * @retval 0 certificate is present
+ */
+int
+find_servercert(const char *localport)
+{
+	const size_t oldlen = strlen(certfilename);
+	/* here we can use openat(), but the SSL functions can't,
+	 * so the directory name must still be part of certfilename,
+	 * but we can skip over it here. */
+	const size_t diroffs = strlen("control/");
+	size_t iplen;
+	int fd;
+
+	/* append ".<ip>" to the normal certfilename */
+	certfilename[oldlen] = '.';
+	strncpy(certfilename + oldlen + 1, xmitstat.localip,
+			sizeof(certfilename) - oldlen - 1);
+
+	if (localport != NULL) {
+		/* if we know the local port, append ":<port>" */
+		iplen = oldlen + 1 + strlen(xmitstat.localip);
+		certfilename[iplen] = ':';
+		strncpy(certfilename + iplen + 1, localport,
+				sizeof(certfilename) - iplen - 1);
+	}
+
+	fd = faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
+	if ((fd < 0) && (localport != NULL)) {
+		/* if we know the port, but no file with the port exists
+		 * try without the port now */
+		certfilename[iplen] = '\0';
+		fd = faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
+	}
+
+	if (fd < 0) {
+		/* the certificate has not been found with ip, try the
+		 * general name. */
+		certfilename[oldlen] = '\0';
+		fd = faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
+	}
+
+	return fd;
+}
 
 static RSA *
 tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)

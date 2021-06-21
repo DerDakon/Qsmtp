@@ -22,7 +22,6 @@
 
 struct xmitstat xmitstat;
 char *partner_fqdn = "testcert.example.org";
-char certfilename[] = "control/servercert.pem";
 char *rhost;
 int socketd;
 static const char *logmsg;
@@ -242,6 +241,10 @@ server(void)
 		close(socketd);
 		return 1;
 	}
+
+	strcpy(xmitstat.localip, "::ffff:192.168.42.42");
+	if (find_servercert("587") != 0)
+		return -ENOENT;
 
 	xmitstat.esmtp = 1;
 	int r = smtp_starttls();

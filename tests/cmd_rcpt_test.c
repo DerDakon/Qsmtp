@@ -285,6 +285,12 @@ tls_verify(void)
 	return tls_verify_result;
 }
 
+int
+find_servercert(const char *localport __attribute__((unused)))
+{
+	abort();
+}
+
 void
 tarpit(void)
 {
