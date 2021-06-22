@@ -40,7 +40,6 @@ find_servercert(const char *localport)
 	 * but we can skip over it here. */
 	const size_t diroffs = strlen("control/");
 	size_t iplen;
-	int fd;
 
 	/* append ".<ip>" to the normal certfilename */
 	certfilename[oldlen] = '.';
@@ -51,26 +50,22 @@ find_servercert(const char *localport)
 		/* if we know the local port, append ":<port>" */
 		iplen = oldlen + 1 + strlen(xmitstat.localip);
 		certfilename[iplen] = ':';
-		strncpy(certfilename + iplen + 1, localport,
-				sizeof(certfilename) - iplen - 1);
-	}
+		strncpy(certfilename + iplen + 1, localport, sizeof(certfilename) - iplen - 1);
 
-	fd = faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
-	if ((fd < 0) && (localport != NULL)) {
-		/* if we know the port, but no file with the port exists
-		 * try without the port now */
+		if (faccessat(controldir_fd, certfilename + diroffs, R_OK, 0) == 0)
+			return 0;
+
+		/* try without the port now */
 		certfilename[iplen] = '\0';
-		fd = faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
 	}
 
-	if (fd < 0) {
-		/* the certificate has not been found with ip, try the
-		 * general name. */
-		certfilename[oldlen] = '\0';
-		fd = faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
-	}
+	if (faccessat(controldir_fd, certfilename + diroffs, R_OK, 0) == 0)
+		return 0;
 
-	return fd;
+	/* the certificate has not been found with ip, try the
+	 * general name. */
+	certfilename[oldlen] = '\0';
+	return faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
 }
 
 static RSA *
