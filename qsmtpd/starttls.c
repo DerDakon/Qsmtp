@@ -16,6 +16,7 @@
 #include <tls.h>
 #include <version.h>
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
@@ -25,6 +26,8 @@
 #include <unistd.h>
 
 static char certfilename[24 + INET6_ADDRSTRLEN + 6] = "control/servercert.pem";		/**< path to SSL certificate filename */
+static char keyfilenamebuf[sizeof(certfilename)] = "control/serverkey.pem";	/**< buffer for SSL key filename */
+static const char *keyfilename = certfilename;		/**< path to SSL key filename, defaults to reuse cert file */
 
 /**
  * @brief check if a TLS certificate is present
@@ -43,8 +46,8 @@ find_servercert(const char *localport)
 
 	/* append ".<ip>" to the normal certfilename */
 	certfilename[oldlen] = '.';
-	strncpy(certfilename + oldlen + 1, xmitstat.localip,
-			sizeof(certfilename) - oldlen - 1);
+	strncpy(certfilename + oldlen + 1, xmitstat.localip, sizeof(certfilename) - oldlen - 1);
+	assert(strlen(keyfilenamebuf) == oldlen - 1);
 
 	if (localport != NULL) {
 		/* if we know the local port, append ":<port>" */
@@ -52,20 +55,34 @@ find_servercert(const char *localport)
 		certfilename[iplen] = ':';
 		strncpy(certfilename + iplen + 1, localport, sizeof(certfilename) - iplen - 1);
 
-		if (faccessat(controldir_fd, certfilename + diroffs, R_OK, 0) == 0)
+		if (faccessat(controldir_fd, certfilename + diroffs, R_OK, 0) == 0) {
+			memcpy(keyfilenamebuf + oldlen - 1, certfilename + oldlen, sizeof(certfilename) - oldlen);
+			if (faccessat(controldir_fd, keyfilenamebuf + diroffs, R_OK, 0) == 0)
+				keyfilename = keyfilenamebuf;
 			return 0;
+		}
 
 		/* try without the port now */
 		certfilename[iplen] = '\0';
 	}
 
-	if (faccessat(controldir_fd, certfilename + diroffs, R_OK, 0) == 0)
+	if (faccessat(controldir_fd, certfilename + diroffs, R_OK, 0) == 0) {
+		memcpy(keyfilenamebuf + oldlen - 1, certfilename + oldlen, sizeof(certfilename) - oldlen);
+		if (faccessat(controldir_fd, keyfilenamebuf + diroffs, R_OK, 0) == 0)
+			keyfilename = keyfilenamebuf;
 		return 0;
+	}
 
 	/* the certificate has not been found with ip, try the
 	 * general name. */
 	certfilename[oldlen] = '\0';
-	return faccessat(controldir_fd, certfilename + diroffs, R_OK, 0);
+	if (faccessat(controldir_fd, certfilename + diroffs, R_OK, 0) == 0) {
+		if (faccessat(controldir_fd, keyfilenamebuf + diroffs, R_OK, 0) == 0)
+			keyfilename = keyfilenamebuf;
+		return 0;
+	}
+
+	return -1;
 }
 
 static RSA *
@@ -363,7 +380,7 @@ tls_init()
 	SSL_set_verify(myssl, SSL_VERIFY_NONE, NULL);
 
 	/* this will also check whether public and private keys match */
-	if (!SSL_use_RSAPrivateKey_file(myssl, certfilename, SSL_FILETYPE_PEM)) {
+	if (!SSL_use_RSAPrivateKey_file(myssl, keyfilename, SSL_FILETYPE_PEM)) {
 		ssl_free(myssl);
 		free(saciphers.s);
 		return tls_err("no valid RSA private key");

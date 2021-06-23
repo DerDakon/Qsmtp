@@ -222,6 +222,36 @@ SSL_Testcase(cert_as_key
 		TEST_ARGS "-LTLS init error: 'no valid RSA private key', reason: 'error:02001002:system library:fopen:No such file or directory'"
 				"-lSTARTTLS failed at testcert.example.org: 454 4.3.0 local TLS initialization failed" "-iEDONE" "-IEDONE")
 
+# key and certificate for server in distinct files
+SSL_Testcase(detached_server_key
+		SERVER_CERT "valid4096.crt"
+		SERVER_KEY "valid4096.key")
+write_tlsclients()
+
+# key and certificate for server in distinct files, the IP key is the correct one
+SSL_Testcase(detached_server_key_ip)
+write_tlsclients()
+file(TOUCH "${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/servercert.pem.::ffff:192.168.42.42" COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.key
+		"${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem.::ffff:192.168.42.42" COPYONLY)
+
+# key and certificate for server in distinct files, the IP and port key is the correct one
+SSL_Testcase(detached_server_key_ip_port
+		EXTRA_CONTROL_DIR "tlshosts")
+write_tlsclients()
+file(TOUCH "${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
+		"${SSL_TESTCASE_CONTROL_DIR}/servercert.pem.::ffff:192.168.42.42:587" COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.key
+		"${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem.::ffff:192.168.42.42:587" COPYONLY)
+# this certificate should not be used by the server
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.key
+		"${SSL_TESTCASE_CONTROL_DIR}/servercert.pem.::ffff:192.168.42.42" COPYONLY)
+
 # something changed durin OpenSSL cycle there and the certificate signatures are not accepted anymore
 foreach(_ssl_test IN ITEMS simple_clc_clientca relay_multi_first relay_multi_last
 		relay_withca)
