@@ -4,7 +4,7 @@ set(ROUTES_TESTS nomatch complete_match with_port port_0 port_100k port_char por
 		complete_match_dir with_port_dir port_0_dir port_100k_dir port_char_dir port_only_dir
 		port_char_no_relay_dir unresolved_dir duplicate_host_dir invalid_entry_dir
 		invalid_oip_dir invalid_oip6_dir ip4_as_oip6_dir
-		no_equal_dir start_equal_dir)
+		no_equal_dir start_equal_dir noroute_split_key)
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/..")
 

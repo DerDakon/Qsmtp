@@ -346,15 +346,19 @@ smtproute(const char *remhost, const size_t reml, unsigned int *targetport)
 				free_smtproute_vals();
 				return NULL;
 			}
-			if (clientcertbuf)
+			if (clientcertbuf) {
 				clientcertname = clientcertbuf;
+				clientkeyname = clientcertbuf;
+			}
 			if (clientkeybuf)
 				clientkeyname = clientkeybuf;
-			else if (clientcertbuf)
-				clientkeyname = clientcertbuf;
 			errno = 0;
 			return mx;
 		}
+	} else {
+		/* check if default client certificate exists */
+		if (faccessat(controldir_fd, "clientkey.pem", R_OK, 0) == 0)
+			clientkeyname = "control/clientkey.pem";
 	}
 
 	char **smtproutes;
