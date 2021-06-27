@@ -125,10 +125,8 @@ vget_dir(const char *domain, struct userconf *ds)
 	/* format of cdb_buf is :
 	 * realdomain\0uid\0gid\0path\0
 	 */
-	len = strlen(cdb_buf);
-	cdb_buf += len + 1;	/* advance pointer past the realdomain */
-	while( *cdb_buf++ != '\0' );	/* skip over the uid */
-	while( *cdb_buf++ != '\0' );	/* skip over the gid */
+	for (int i = 3; i > 0; i--)
+		cdb_buf += strlen(cdb_buf) + 1;
 
 	/* get the domain directory */
 	len = strlen(cdb_buf);
