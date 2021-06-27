@@ -2,6 +2,7 @@
 #include "test_io/testcase_io.h"
 
 #include <cdb.h>
+#include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/vpop.h>
 #include <qsmtpd/userconf.h>
 
@@ -16,13 +17,24 @@
 
 /* to satisfy the linker */
 const char **globalconf;
+static const char *expected_err_control;
 
 int
 err_control(const char *fn)
 {
-	fprintf(stderr, "%s(%s) called unexpected\n",
+	if (expected_err_control == NULL) {
+		fprintf(stderr, "unexpected call to %s(%s)\n",
 			__func__, fn);
-	exit(1);
+		exit(1);
+	} else if (strcmp(fn, expected_err_control) != 0) {
+		fprintf(stderr, "expected call to %s(%s), but argument was %s\n",
+			__func__, expected_err_control, fn);
+		exit(1);
+	} else {
+		expected_err_control = NULL;
+	}
+
+	return 0;
 }
 
 int
@@ -171,6 +183,23 @@ main(int argc, char **argv)
 		err++;
 	}
 	unlink("users/cdb");
+
+	if (mkdir("users/cdb", 0700) != 0) {
+		err = errno;
+		fputs("ERROR: can not create temporary CDB directory test\n", stderr);
+		rmdir("users");
+		if (chdir("..") == 0)
+			rmdir(cdbtestdir);
+		return err;
+	}
+	err = 0;
+	expected_err_control = "users/cdb";
+	if (vget_dir("example.net", &ds) != -EDONE) {
+		fputs("searching for example.net with cdb being a directory did not work as expected\n", stderr);
+		err++;
+	}
+
+	rmdir("users/cdb");
 	rmdir("users");
 	if (chdir("..") == 0)
 		rmdir(cdbtestdir);

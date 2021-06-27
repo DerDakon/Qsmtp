@@ -236,7 +236,7 @@ test_cdbdir(void)
 		userconf_free(&ds);
 
 		if (r != -EDONE) {
-			fprintf(stderr, "user_exists() without cdb as directory returned %i instead of %i\n", r, -EDONE);
+			fprintf(stderr, "user_exists() with cdb as directory returned %i instead of %i\n", r, -EDONE);
 			ret++;
 		}
 	}
