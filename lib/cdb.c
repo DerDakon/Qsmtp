@@ -60,6 +60,17 @@ cdb_unpack(const char *buf)
 const char *
 cdb_seekmm(int fd, const char *key, unsigned int len, char **mm, const struct stat *st)
 {
+	if (!st->st_size) {
+		errno = 0;
+		close(fd);
+		return NULL;
+	}
+	if (S_ISDIR(st->st_mode)) {
+		if (close(fd) == 0)
+			errno = EISDIR;
+		return NULL;
+	}
+
 	*mm = mmap(NULL, st->st_size, PROT_READ, MAP_SHARED, fd, 0);
 	int err = errno;
 

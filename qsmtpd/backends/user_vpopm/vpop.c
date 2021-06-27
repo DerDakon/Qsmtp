@@ -94,17 +94,6 @@ vget_dir(const char *domain, struct userconf *ds)
 		close(fd);
 		return err;
 	}
-	if (!st.st_size) {
-		if (close(fd) < 0)
-			return -errno;
-		return 0;
-	}
-	if (S_ISDIR(st.st_mode)) {
-		err_control("users/cdb");
-		if (close(fd) < 0)
-			return -errno;
-		return -EDONE;
-	}
 
 	/* search the cdb file for our requested domain */
 	cdb_buf = cdb_seekmm(fd, cdb_key, cdbkeylen, &cdb_mmap, &st);
