@@ -2,14 +2,14 @@ task:
   name: FreeBSD
   freebsd_instance:
     matrix:
-      image: freebsd-12-1-release-amd64
-      image: freebsd-12-0-release-amd64
+      image_family: freebsd-13-0-snap
+      image_family: freebsd-12-2
 
   env:
     MAKE_FLAGS: -j 3
 
   pkginstall_script:
-    - pkg install -y cmake git libowfat openssl111
+    - pkg install -y cmake git libowfat openssl
   compile_script:
     - echo -e "set(QSMTP_BUILD_DIR \"/tmp/Qs-build\")\nset(dashboard_model \"Continuous\")\nset(CONF_OPTIONS \"-DIPV4ONLY=On\")\nset(CTEST_SITE \"cirrus-ci.org\")\ninclude(\"$(pwd)/ctest_qsmtp.cmake\")" > my_qsmtp.cmake
     - ctest -V -D "CTEST_BUILD_NAME=FreeBSD $(uname -r)" -S my_qsmtp.cmake
