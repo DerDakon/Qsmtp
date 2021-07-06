@@ -21,6 +21,7 @@ const char *tempnoauth = "[MSG:tempnoauth]";
 static int err;	/* global error counter */
 
 static char baddummy[PATH_MAX];
+extern const char *auth_sub_arg;
 
 static void
 check_all_msgs(const char *caller)
@@ -166,6 +167,7 @@ int
 main(int argc, char **argv)
 {
 	const char *args[] = { "Qsmtpd", "foo.example.com", argv[1], autharg };
+	const char *subargs[] = { "Qsmtpd", "foo.example.com", argv[1], autharg, "authsub" };
 	if (argc != 2) {
 		fprintf(stderr, "Usage: %s auth_dummy\n", argv[0]);
 		return 1;
@@ -180,10 +182,18 @@ main(int argc, char **argv)
 
 	test_setup_errors(argv[1]);
 
+	if (auth_backend_setup(5, subargs) != 0) {
+		fprintf(stderr, "correct call to auth_backend_setup() failed\n");
+		return ++err;
+	}
+	assert(auth_sub_arg != NULL);
+	assert(strcmp(auth_sub_arg, subargs[4]) == 0);
+
 	if (auth_backend_setup(4, args) != 0) {
 		fprintf(stderr, "correct call to auth_backend_setup() failed\n");
 		return ++err;
 	}
+	assert(auth_sub_arg == NULL);
 
 	test_chkpw_abort();
 	test_chkpw_wrong();

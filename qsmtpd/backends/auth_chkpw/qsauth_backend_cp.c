@@ -15,7 +15,8 @@
 #include <unistd.h>
 
 const char *auth_check;			/**< checkpassword or one of his friends for auth */
-const char **auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
+const char *auth_sub;			/**< subprogram to be invoked by auth_check (usually /bin/true) */
+const char *auth_sub_arg;		/**< additional argument passed after subprogram */
 
 static int err_child(void)
 {
@@ -83,7 +84,7 @@ auth_backend_execute(const struct string *user, const struct string *pass, const
 		if (sigprocmask(SIG_UNBLOCK, &mask, NULL) != 0)
 			_exit(1);
 
-		execlp(auth_check, auth_check, *auth_sub, NULL);
+		execlp(auth_check, auth_check, auth_sub, auth_sub_arg, NULL);
 		_exit(1);
 		}
 	}
@@ -119,7 +120,8 @@ auth_backend_setup(int argc, const char **argv)
 	}
 
 	auth_check = argv[2];
-	auth_sub = ((const char **)argv) + 3;
+	auth_sub = argv[3];
+	auth_sub_arg = argc > 4 ? argv[4] : NULL;
 
 	if (access(auth_check, X_OK) != 0) {
 		const char *msg[] = { "checkpassword program '", auth_check,

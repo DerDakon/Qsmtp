@@ -11,6 +11,6 @@ extern int auth_permitted(void);
 extern void auth_setup(int argc, const char **argv);
 
 extern const char *auth_check;		/**< checkpassword or one of his friends for auth */
-extern const char **auth_sub;		/**< subprogram and arguments to be invoked by auth_check (usually /bin/true) */
+extern const char *auth_sub;		/**< subprogram and arguments to be invoked by auth_check (usually /bin/true) */
 
 #endif
