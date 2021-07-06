@@ -64,6 +64,8 @@ gettimeofday(struct timeval *tv, __timezone_ptr_t tz)
 #else
 gettimeofday(struct timeval *tv, void *tz)
 #endif
+#elif defined(__FreeBSD__) || defined(__FreeBSD)
+gettimeofday(struct timeval *tv, struct timezone *tz)
 #else
 gettimeofday(struct timeval *tv, void *tz)
 #endif
