@@ -191,20 +191,20 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096_san.crt
 
 # certificate matches by Subject Alternative Names
 SSL_Testcase(SubjAN2_match
-		SERVER_CERT "valid1024_san2.key"
+		SERVER_CHAIN "valid4096_san2"
 		EXTRA_CONTROL_DIR "tlshosts")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024_san2.crt
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096_san2.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
 
 SSL_Testcase(SubjAN_cn
-		SERVER_CERT "valid1024_san_cn.key"
+		SERVER_CHAIN "valid4096_san_cn"
 		EXTRA_CONTROL_DIR "tlshosts"
 		TEST_ARGS "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: Hostname mismatch" "-iEDONE")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid1024_san_cn.crt
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096_san_cn.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
 
 SSL_Testcase(servercert_no_name
-		SERVER_CERT "noname.key"
+		SERVER_CHAIN "noname"
 		EXTRA_CONTROL_DIR "tlshosts"
 		TEST_ARGS "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: Hostname mismatch" "-iEDONE")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.crt
@@ -212,7 +212,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.crt
 
 # certificate verification required, but certificate is expired
 SSL_Testcase(expired
-		SERVER_CERT "expired.key"
+		SERVER_CHAIN "expired"
 		EXTRA_CONTROL_DIR "tlshosts"
 		TEST_ARGS "-lunable to verify testcert.example.org with control/tlshosts/testcert.example.org.pem: certificate has expired" "-iEDONE")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/expired.crt
