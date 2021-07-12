@@ -18,7 +18,7 @@ include(CMakeParseArguments)
 
 function (SSL_Testcase)
 	cmake_parse_arguments(PARSE_ARGV 1 SSL ""
-			"CLIENT_CERT;CLIENT_KEY;SERVER_CERT;SERVER_KEY;EXTRA_CONTROL_DIR"
+			"CLIENT_CERT;CLIENT_CHAIN;CLIENT_KEY;SERVER_CERT;SERVER_CHAIN;SERVER_KEY;EXTRA_CONTROL_DIR"
 			"TEST_ARGS")
 	set(TEST_NAME "${ARGV0}")
 
@@ -31,7 +31,11 @@ function (SSL_Testcase)
 		file(MAKE_DIRECTORY "${SSL_TESTCASE_CONTROL_DIR}/${SSL_EXTRA_CONTROL_DIR}")
 	endif ()
 
-	if (SSL_CLIENT_CERT)
+	if (SSL_CLIENT_CHAIN)
+		file(READ "${CMAKE_CURRENT_SOURCE_DIR}/${SSL_CLIENT_CHAIN}.key" PRIVKEY)
+		file(READ "${CMAKE_CURRENT_SOURCE_DIR}/${SSL_CLIENT_CHAIN}.crt" CERT)
+		file(WRITE "${SSL_TESTCASE_CONTROL_DIR}/clientcert.pem" "${PRIVKEY}${CERT}")
+	elseif (SSL_CLIENT_CERT)
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${SSL_CLIENT_CERT}
 				"${SSL_TESTCASE_CONTROL_DIR}/clientcert.pem" COPYONLY)
 	endif ()
@@ -39,7 +43,11 @@ function (SSL_Testcase)
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${SSL_CLIENT_KEY}
 				"${SSL_TESTCASE_CONTROL_DIR}/clientkey.pem" COPYONLY)
 	endif ()
-	if (SSL_SERVER_CERT)
+	if (SSL_SERVER_CHAIN)
+		file(READ "${CMAKE_CURRENT_SOURCE_DIR}/${SSL_SERVER_CHAIN}.key" PRIVKEY)
+		file(READ "${CMAKE_CURRENT_SOURCE_DIR}/${SSL_SERVER_CHAIN}.crt" CERT)
+		file(WRITE "${SSL_TESTCASE_CONTROL_DIR}/servercert.pem" "${PRIVKEY}${CERT}")
+	elseif (SSL_SERVER_CERT)
 		configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${SSL_SERVER_CERT}
 				"${SSL_TESTCASE_CONTROL_DIR}/servercert.pem" COPYONLY)
 	endif ()
@@ -64,62 +72,62 @@ endfunction ()
 
 # the server offers a valid TLS key
 SSL_Testcase(simple
-		SERVER_CERT "valid4096.chain")
+		SERVER_CHAIN "valid4096")
 
 # server and client offer a valid TLS key
 SSL_Testcase(simple_clc
-		CLIENT_CERT "valid4096.chain"
-		SERVER_CERT "valid4096.chain")
+		CLIENT_CHAIN "valid4096"
+		SERVER_CHAIN "valid4096")
 
 # simple valid certificate, and 2 DANE entries that are unusable by type
 SSL_Testcase(simple_clc_emptyDANE
-		CLIENT_CERT "valid4096.chain"
-		SERVER_CERT "valid4096.chain"
+		CLIENT_CHAIN "valid4096"
+		SERVER_CHAIN "valid4096"
 		TEST_ARGS "-d2")
 
 # tlsclients is a directory instead of a file -> return error
 SSL_Testcase(tlsclients_dir
-		SERVER_CERT "valid4096.chain"
+		SERVER_CHAIN "valid4096"
 		EXTRA_CONTROL_DIR "tlsclients"
 		TEST_ARGS "-sEISDIR")
 
 SSL_Testcase(relay_withca
 		CLIENT_CERT "withca.key"
-		SERVER_CERT "valid4096.chain"
+		SERVER_CHAIN "valid4096"
 		TEST_ARGS "-s1")
 write_tlsclients()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/test-ca.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" COPYONLY)
 
 SSL_Testcase(simple_clc_tlsclients
-		CLIENT_CERT "valid4096.chain"
-		SERVER_CERT "valid4096.chain")
+		CLIENT_CHAIN "valid4096"
+		SERVER_CHAIN "valid4096")
 write_tlsclients()
 
 SSL_Testcase(simple_clc_clientca
-		CLIENT_CERT "valid4096.chain"
-		SERVER_CERT "valid4096.chain"
+		CLIENT_CHAIN "valid4096"
+		SERVER_CHAIN "valid4096"
 		TEST_ARGS "-s1")
 write_tlsclients()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" COPYONLY)
 
 SSL_Testcase(simple_clientca
-		SERVER_CERT "valid4096.chain")
+		SERVER_CHAIN "valid4096")
 write_tlsclients()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" COPYONLY)
 
 SSL_Testcase(relay_no_name
 		CLIENT_CERT "noname.key"
-		SERVER_CERT "valid4096.chain")
+		SERVER_CHAIN "valid4096")
 write_tlsclients()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" COPYONLY)
 
 SSL_Testcase(relay_other
-		CLIENT_CERT "valid4096_san.chain"
-		SERVER_CERT "valid4096.chain")
+		CLIENT_CHAIN "valid4096_san"
+		SERVER_CHAIN "valid4096")
 write_tlsclients()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/noname.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" COPYONLY)
@@ -130,37 +138,37 @@ file(READ ${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt VALID_CRT)
 
 # relay by client certificate, the matching certificate is first in clientca.pem
 SSL_Testcase(relay_multi_first
-		CLIENT_CERT "valid4096.chain"
-		SERVER_CERT "valid4096.chain"
+		CLIENT_CHAIN "valid4096"
+		SERVER_CHAIN "valid4096"
 		TEST_ARGS "-s1")
 write_tlsclients()
 file(WRITE "${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" "${VALID_CRT}${NONAME_CRT}")
 
 # relay by client certificate, the matching certificate is last in clientca.pem
 SSL_Testcase(relay_multi_last
-		CLIENT_CERT "valid4096.chain"
-		SERVER_CERT "valid4096.chain"
+		CLIENT_CHAIN "valid4096"
+		SERVER_CHAIN "valid4096"
 		TEST_ARGS "-s1")
 write_tlsclients()
 file(WRITE "${SSL_TESTCASE_CONTROL_DIR}/clientca.pem" "${NONAME_CRT}${VALID_CRT}")
 
 # the client verifies that the server has the expected certificate
 SSL_Testcase(matching_servercert
-		SERVER_CERT "valid4096.chain"
+		SERVER_CHAIN "valid4096"
 		EXTRA_CONTROL_DIR "tlshosts")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
 
 # the client verifies that the server has the expected certificate, which is a wildcard one
 SSL_Testcase(matching_wildcard
-		SERVER_CERT "wildcard4096.chain"
+		SERVER_CHAIN "wildcard4096"
 		EXTRA_CONTROL_DIR "tlshosts")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/wildcard4096.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
 
 # the client verifies that the server has the expected certificate, but it is not
 SSL_Testcase(nonmatching_servercert
-		SERVER_CERT "valid4096.chain"
+		SERVER_CHAIN "valid4096"
 		EXTRA_CONTROL_DIR "tlshosts"
 		TEST_ARGS "-ftestcert.example.net" "-lunable to verify testcert.example.net with control/tlshosts/testcert.example.net.pem: Hostname mismatch" "-iEDONE")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
@@ -168,7 +176,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
 
 # the client verifies that the server has the expected certificate, but it is not (wildcard case)
 SSL_Testcase(nonmatching_wildcard
-		SERVER_CERT "wildcard4096.chain"
+		SERVER_CHAIN "wildcard4096"
 		EXTRA_CONTROL_DIR "tlshosts"
 		TEST_ARGS "-ftestcert.example.net" "-lunable to verify testcert.example.net with control/tlshosts/testcert.example.net.pem: Hostname mismatch" "-iEDONE")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/wildcard4096.crt
@@ -176,7 +184,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/wildcard4096.crt
 
 # certificate matches by Subject Alternative Names
 SSL_Testcase(SubjAN_match
-		SERVER_CERT "valid4096_san.chain"
+		SERVER_CHAIN "valid4096_san"
 		EXTRA_CONTROL_DIR "tlshosts")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096_san.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
