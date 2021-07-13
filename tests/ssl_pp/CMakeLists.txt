@@ -222,7 +222,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/expired.crt
 SSL_Testcase(emptycert
 		TEST_ARGS "-LTLS init error: 'missing certificate', reason: 'error:0909006C:PEM routines:get_name:no start line'"
 				"-lSTARTTLS failed at testcert.example.org: 454 4.3.0 local TLS initialization failed" "-iEDONE" "-IEDONE")
-file(TOUCH "${SSL_TESTCASE_CONTROL_DIR}/servercert.pem")
+file(WRITE "${SSL_TESTCASE_CONTROL_DIR}/servercert.pem" " ")
 
 # the key file is only a certificate, but no key
 SSL_Testcase(cert_as_key
