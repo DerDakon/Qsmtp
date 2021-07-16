@@ -133,7 +133,7 @@ if (NOT dashboard_model STREQUAL "Experimental")
 endif ()
 
 # avoid spamming the syslog with our messages: USESYSLOG off
-list(APPEND CONF_OPTIONS "-DUSESYSLOG=Off" "-DNOSTDERR=On" "-DREALLY_NO_LOGGING=On")
+list(APPEND CONF_OPTIONS "-DUSESYSLOG=Off" "-DNOSTDERR=Off" "-DREALLY_NO_LOGGING=Off")
 # avoid spamming the dashboard with doxygen warnings: BUILD_DOC off
 list(APPEND CONF_OPTIONS "-DBUILD_DOC=Off")
 # get coverage: debug build

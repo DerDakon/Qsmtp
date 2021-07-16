@@ -391,6 +391,9 @@ net_read(const int fatal)
 	}
 }
 
+#include <sys/time.h>
+#include <stdio.h>
+
 /**
  * write one line to the network
  *
@@ -433,6 +436,15 @@ netnwrite(const char *s, const size_t l)
 		case -1:
 			return -1;
 		}
+
+		struct timeval tv;
+		gettimeofday(&tv, NULL);
+
+		char timebuf[64];
+		ssize_t len = snprintf(timebuf, sizeof(timebuf) - 1, "%lu.%09lu\t", tv.tv_sec, tv.tv_usec);
+		timebuf[len] = '\0';
+
+		write(socketd, timebuf, len);
 
 		while (p < l) {
 			const ssize_t r = write(socketd, s + p, l - p);

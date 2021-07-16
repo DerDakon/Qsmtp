@@ -170,11 +170,7 @@ setup(void)
 	}
 
 #ifdef DEBUG_IO
-	tmp = getenv("QSMTPD_DEBUG");
-	if ((tmp != NULL) && (*tmp != '\0'))
-		do_debug_io = 1;
-	else
-		do_debug_io = (faccessat(controldir_fd, "Qsmtpd_debug", R_OK, 0) == 0);
+	do_debug_io = 1;
 #endif
 
 	int j = loadoneliner(controldir_fd, "me", &heloname.s, 0);
@@ -646,12 +642,14 @@ main(int argc, char **argv)
 {
 	const char *localport = getenv("TCPLOCALPORT");
 
+	dup2(1, 2);
+
 	if (setup()) {
 		/* setup failed: make sure we wait until the "quit" of the other host but
 		 * do not process any mail. Commands RSET, QUIT and NOOP are still allowed.
 		 * The state will not change so a client ignoring our error code will get
 		 * "bad sequence of commands" and will be kicked if it still doesn't care */
-		for (unsigned int i = 3; i < (sizeof(commands) / sizeof(struct smtpcomm)) - 1; i++) {
+		for (unsigned int i = 3; i < (sizeof(commands) / sizeof(commands[0])); i++) {
 			commands[i].func = smtp_temperror;
 			commands[i].state = -1;
 		}
@@ -665,8 +663,10 @@ main(int argc, char **argv)
 
 	/* Assume all given parameters are for auth checking */
 	auth_setup(argc, (const char **) argv);
+	log_write(LOG_DEBUG, "auth_setup() done");
 
 	if (connsetup() < 0)
 		flagbogus = errno;
+	log_write(LOG_DEBUG, "connsetup() done");
 	smtploop();
 }
