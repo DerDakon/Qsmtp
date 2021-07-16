@@ -651,8 +651,7 @@ main(int argc, char **argv)
 		 * do not process any mail. Commands RSET, QUIT and NOOP are still allowed.
 		 * The state will not change so a client ignoring our error code will get
 		 * "bad sequence of commands" and will be kicked if it still doesn't care */
-		int i;
-		for (i = (sizeof(commands) / sizeof(struct smtpcomm)) - 1; i > 2; i--) {
+		for (unsigned int i = 3; i < (sizeof(commands) / sizeof(struct smtpcomm)) - 1; i++) {
 			commands[i].func = smtp_temperror;
 			commands[i].state = -1;
 		}
