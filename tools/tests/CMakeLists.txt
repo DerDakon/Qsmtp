@@ -1,8 +1,4 @@
 macro(iptest testname pass_expr)
-	add_test(NAME addipbl_${testname}
-			COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/addipbl_test.sh "$<TARGET_FILE:addipbl>" "testout_${testname}" ${ARGN}
-			WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
-	set_tests_properties(addipbl_${testname} PROPERTIES PASS_REGULAR_EXPRESSION "${pass_expr}")
 endmacro()
 
 iptest(localIP "00000 300 250 021 030 040" "192.168.17.24")
