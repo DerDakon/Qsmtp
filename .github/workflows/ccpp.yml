@@ -36,14 +36,8 @@ jobs:
       env:
         CC: ${{ matrix.config.cc }}
 
-    - name: generate coverage
-      if: matrix.config.cc == 'gcc'
+    - name: debug DNS
       run: |
-        lcov --directory /tmp/Qs-build --capture --output-file coverage.info
-        lcov --remove coverage.info '/usr/*' --output-file coverage.info
-
-    - name: upload covecov info
-      if: matrix.config.cc == 'gcc'
-      uses: codecov/codecov-action@v1
-      with:
-        files: coverage.info
+        host -t MX example.com
+        host -t MX example.com 1.1.1.1
+        cat /etc/resolv.conf
