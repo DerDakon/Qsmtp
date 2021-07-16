@@ -14,10 +14,6 @@ jobs:
            cc: "gcc",
            host: "ubuntu-latest"
           }
-        - {
-           cc: "clang",
-           host: "ubuntu-latest"
-          }
         #- {
            #cc: "clang",
            #host: "macos-latest"
