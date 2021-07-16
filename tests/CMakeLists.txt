@@ -697,6 +697,8 @@ add_test(NAME "Qremote_to_invalid"
 		COMMAND stdin-exec "${CMAKE_CURRENT_LIST_FILE}" $<TARGET_FILE:Qremote> invalid.invalid from@invalid.invalid to@invalid.invalid)
 add_test(NAME "Qremote_to_null_MX"
 		COMMAND stdin-exec "${CMAKE_CURRENT_LIST_FILE}" $<TARGET_FILE:Qremote> example.com from@example.com to@example.com)
+set_tests_properties(Qremote_to_null_MX PROPERTIES
+		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}D5\\.1\\.10 only null MX exists for example.com\n")
 add_test(NAME "Qremote_to_localhost"
 		COMMAND stdin-exec "${CMAKE_CURRENT_LIST_FILE}" $<TARGET_FILE:Qremote> "[127.0.0.1]" "from@invalid.invalid" "to@[127.0.0.1]")
 if (NOT IPV4ONLY)
@@ -722,8 +724,6 @@ if (AUTOQMAIL_FROM_TESTSUITE)
 			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}Z4.3.0 internal error: Qremote called with invalid arguments\n")
 	set_tests_properties(Qremote_to_invalid PROPERTIES
 			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}Z4\\.4\\.3 cannot find a mail exchanger for invalid\\.invalid\n")
-	set_tests_properties(Qremote_to_null_MX PROPERTIES
-			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}D5\\.1\\.10 only null MX exists for example.com\n")
 	set_tests_properties(Qremote_to_localhost PROPERTIES
 			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}Z4\\.4\\.3 all mail exchangers for \\[127\\.0\\.0\\.1\\] point back to me\n")
 	if (NOT IPV4ONLY)
@@ -737,7 +737,7 @@ else ()
 		set(V6TESTS Qremote_to_localhost6)
 	endif ()
 	set_tests_properties(Qremote_noinput_noargs Qremote_to_invalid
-			Qremote_to_null_MX Qremote_to_localhost
+			Qremote_to_localhost
 			Qremote_to_bad_expression Qremote_to_bad_expression2
 			${V6TESTS}
 			PROPERTIES
