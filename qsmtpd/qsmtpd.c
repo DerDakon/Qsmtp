@@ -650,8 +650,10 @@ main(int argc, char **argv)
 		/* setup failed: make sure we wait until the "quit" of the other host but
 		 * do not process any mail. Commands RSET, QUIT and NOOP are still allowed.
 		 * The state will not change so a client ignoring our error code will get
-		 * "bad sequence of commands" and will be kicked if it still doesn't care */
-		for (unsigned int i = 3; i < (sizeof(commands) / sizeof(struct smtpcomm)) - 1; i++) {
+		 * "bad sequence of commands" and will be kicked if it still doesn't care.
+		 * The HTTP POST stub is also kept enabled.
+		 */
+		for (unsigned int i = 3; i < (sizeof(commands) / sizeof(commands[0])) - 1; i++) {
 			commands[i].func = smtp_temperror;
 			commands[i].state = -1;
 		}
