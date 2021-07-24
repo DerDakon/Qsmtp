@@ -473,7 +473,7 @@ net_writen(const char *const *s)
 	 *   conveyed through multiple-line replies. */
 	char msg[512];
 
-	assert(sizeof(msg) > len - 2);
+	assert(sizeof(msg) - 2 > len);
 	assert(len > 3);
 
 	memcpy(msg, s[0], len);
