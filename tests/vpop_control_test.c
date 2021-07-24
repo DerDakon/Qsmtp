@@ -287,10 +287,9 @@ test_getbuffer_inherit(const char *fname, const char *inherit_content)
 			fprintf(stderr, "existing file should have returned only 2 entries, but had more: %s\n", array[2]);
 			ret++;
 		}
-
-		free(array);
 	}
 
+	free(array);
 	close(ds.userdirfd);
 	close(ds.domaindirfd);
 
