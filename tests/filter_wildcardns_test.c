@@ -54,8 +54,10 @@ static const char *jokers[] = {
 };
 
 int
-loadlistfd(int fd __attribute__ ((unused)), char ***buf, checkfunc cf)
+loadlistfd(int fd, char ***buf, checkfunc cf)
 {
+	assert(fd == -1);
+
 	for (unsigned int i = 0; jokers[i] != NULL; i++)
 		if (cf(jokers[i]) != 0) {
 			fprintf(stderr, "checker rejected input line %s\n",
