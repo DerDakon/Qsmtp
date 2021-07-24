@@ -578,16 +578,21 @@ test_listload()
 	}
 	if (bufa != NULL) {
 		fputs("loadlistfd() with a not existing file should set the pointers to NULL\n", stderr);
-		if (bufa != NULL) {
-			bufa = NULL;
-			err++;
-		}
+		if (bufa != &ch)
+			free(bufa);
+		bufa = NULL;
+		err++;
 	}
 
 	errno = EACCES;
 	res = loadlistfd(-1, &bufa, NULL);
 	if (res != -1) {
 		fputs("loadlistfd() with a read protected file should fail\n", stderr);
+		err++;
+	}
+	if (bufa != NULL) {
+		fputs("loadlistfd() with a read protected file not output a buffer\n", stderr);
+		free(bufa);
 		err++;
 	}
 
