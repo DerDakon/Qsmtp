@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-execute_process(COMMAND sleep 2)
+execute_process(COMMAND sleep 15)
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "HELO \r")
 execute_process(COMMAND sleep 1)
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "rset\r")

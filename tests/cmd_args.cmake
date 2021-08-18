@@ -8,7 +8,7 @@ foreach(i 1 2 3 4 5 6 7)
 	set(SPACES "${SPACES}${SPACES}")
 endforeach()
 
-execute_process(COMMAND sleep 3)
+execute_process(COMMAND sleep 15)
 # invalid HELO, but this will be filtered later
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "HELO [foo] \r")
 execute_process(COMMAND sleep 1)
