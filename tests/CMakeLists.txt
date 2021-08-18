@@ -1,5 +1,6 @@
 # check if the qmail directory is maintained by the build, which means
 # we are running inside the testsuite and can mess with that directory
+unset(QSMTPD_QUEUE_LOG)
 if (AUTOQMAIL MATCHES "^${CMAKE_BINARY_DIR}/")
 	set(AUTOQMAIL_FROM_TESTSUITE TRUE)
 	file(WRITE "${AUTOQMAIL}/control/outgoingip" "192.0.2.61")
@@ -14,6 +15,9 @@ else ()
 	set(QSMTPD_QUIT_LINE "221 2\\.0\\.0 [^\n ]* service closing transmission channel\n")
 	set(QSMTPD_HELO_RESPONSE "250 [^\n ]*\n")
 	set(QSMTPD_GREETING_LINE "220 [^\n ]* Qsmtpd ${QSMTP_VERSION} ESMTP\n")
+	if (NOT NOSTDERR AND NOT IS_DIRECTORY /var/qmail/queue)
+		set(QSMTPD_QUEUE_LOG "warning: can not get free queue disk space")
+	endif ()
 endif ()
 
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
@@ -686,8 +690,13 @@ add_test(NAME "Qremote_envelope_pipeline_5rcpt"
 # any arguments.
 add_test(NAME "Qremote_no_stdin"
 		COMMAND stdin-exec "" $<TARGET_FILE:Qremote> invalid.invalid from@invalid.invalid to@invalid.invalid)
-set_tests_properties(Qremote_no_stdin PROPERTIES
-		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}Z4.3.0 internal error: can't fstat\\(\\) input\n")
+if (NOSTDERR)
+	set_tests_properties(Qremote_no_stdin PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}Z4.3.0 internal error: can't fstat\\(\\) input\n")
+else ()
+	set_tests_properties(Qremote_no_stdin PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}can't fstat\\(\\) inputZ4.3.0 internal error: can't fstat\\(\\) input\n")
+endif ()
 add_test(NAME "Qremote_noinput_noargs"
 		COMMAND stdin-exec "" $<TARGET_FILE:Qremote>)
 
@@ -711,8 +720,13 @@ add_test(NAME "Qremote_to_bad_expression2"
 		COMMAND stdin-exec "${CMAKE_CURRENT_LIST_FILE}" $<TARGET_FILE:Qremote> "[127.0.a.v]" "from@invalid.invalid" "to@localhost")
 add_test(NAME "Qremote_no_mmap"
 		COMMAND stdin-exec "s" $<TARGET_FILE:Qremote> "[192.0.2.19]" "from@invalid.invalid" "to@localhost")
-set_tests_properties(Qremote_no_mmap PROPERTIES
-		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}Z4.3.0 internal error: can't mmap\\(\\) input\n")
+if (NOSTDERR)
+	set_tests_properties(Qremote_no_mmap PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}Z4.3.0 internal error: can't mmap\\(\\) input\n")
+else ()
+	set_tests_properties(Qremote_no_mmap PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}can't mmap\\(\\) inputZ4.3.0 internal error: can't mmap\\(\\) input\n")
+endif ()
 
 add_executable(stdin-exec stdin-exec.c)
 target_link_libraries(stdin-exec
@@ -736,12 +750,30 @@ else ()
 	if (NOT IPV4ONLY)
 		set(V6TESTS Qremote_to_localhost6)
 	endif ()
-	set_tests_properties(Qremote_noinput_noargs Qremote_to_invalid
-			Qremote_to_localhost
-			Qremote_to_bad_expression Qremote_to_bad_expression2
+	set_tests_properties(Qremote_to_invalid Qremote_to_localhost
 			${V6TESTS}
 			PROPERTIES
 			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}Z[45]\\.[0-9]\\.[0-9] ")
+	if (NOSTDERR)
+		set_tests_properties(Qremote_noinput_noargs
+				Qremote_to_bad_expression Qremote_to_bad_expression2
+				${V6TESTS}
+				PROPERTIES
+				PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}Z[45]\\.[0-9]\\.[0-9] ")
+	else ()
+		set_tests_properties(Qremote_noinput_noargs
+				${V6TESTS}
+				PROPERTIES
+				PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}too few argumentsZ[45]\\.[0-9]\\.[0-9] ")
+		set_tests_properties(Qremote_to_bad_expression
+				${V6TESTS}
+				PROPERTIES
+				PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}parse error in first argument \"\\[127\\.0\"\nZ[45]\\.[0-9]\\.[0-9] ")
+		set_tests_properties(Qremote_to_bad_expression2
+				${V6TESTS}
+				PROPERTIES
+				PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}parse error in first argument \"\\[127\\.0\\.a\\.v\\]\"\nZ[45]\\.[0-9]\\.[0-9] ")
+	endif ()
 endif ()
 
 add_executable(testcase_qsdata
@@ -776,8 +808,13 @@ add_test(NAME "Qsmtpd_quit_no_ips"
 
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
-set_tests_properties(Qsmtpd_quit Qsmtpd_quit_no_ips PROPERTIES
-		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_QUIT_LINE}$")
+if (NOSTDERR)
+	set_tests_properties(Qsmtpd_quit Qsmtpd_quit_no_ips PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_QUIT_LINE}$")
+else ()
+	set_tests_properties(Qsmtpd_quit Qsmtpd_quit_no_ips PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}(can't figure out local IP \\(TCPLOCALIP not set\\))?(can't figure out port of remote host \\(TCPREMOTEPORT not set\\))?${QSMTPD_GREETING_LINE}(can't figure out port of remote host \\(TCPREMOTEPORT not set\\))?${QSMTPD_QUIT_LINE}$")
+endif ()
 
 set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/postmaster_rset.cmake")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_quit_postmaster.cmake" @ONLY)
@@ -787,8 +824,13 @@ add_test(NAME "Qsmtpd_postmaster_rset"
 
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
-set_tests_properties(Qsmtpd_postmaster_rset PROPERTIES
-		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_HELO_RESPONSE}250 2\\.0\\.0 ok\n250 2\\.0\\.0 ok\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n250 2\\.0\\.0 ok\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
+if (NOSTDERR)
+	set_tests_properties(Qsmtpd_postmaster_rset PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_HELO_RESPONSE}250 2\\.0\\.0 ok\n250 2\\.0\\.0 ok\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n250 2\\.0\\.0 ok\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
+else ()
+	set_tests_properties(Qsmtpd_postmaster_rset PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_HELO_RESPONSE}250 2\\.0\\.0 ok\n250 2\\.0\\.0 ok\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n${QSMTPD_QUEUE_LOG}250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n250 2\\.0\\.0 ok\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
+endif ()
 
 set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/bounce_multi_rcpt.cmake")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_bad_bounce.cmake" @ONLY)
@@ -798,8 +840,13 @@ add_test(NAME "Qsmtpd_bad_bounce"
 
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
-set_tests_properties(Qsmtpd_bad_bounce PROPERTIES
-		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n550 5\\.5\\.3 bounce messages must not have more than one recipient\n554 5\\.1\\.1 no valid recipients\n${QSMTPD_QUIT_LINE}$")
+if (NOSTDERR)
+	set_tests_properties(Qsmtpd_bad_bounce PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n550 5\\.5\\.3 bounce messages must not have more than one recipient\n554 5\\.1\\.1 no valid recipients\n${QSMTPD_QUIT_LINE}$")
+else ()
+	set_tests_properties(Qsmtpd_bad_bounce PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n${QSMTPD_QUEUE_LOG}250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n550 5\\.5\\.3 bounce messages must not have more than one recipient\nrejected message to <postmaster> from <> from IP \\[::ffff:127.0.0.1\\] {bad bounce}\nrejected message to <postmaster> from <> from IP \\[::ffff:127.0.0.1\\] {bad bounce}\n554 5\\.1\\.1 no valid recipients\n${QSMTPD_QUIT_LINE}$")
+endif ()
 
 set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmd_args.cmake")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_cmd_args.cmake" @ONLY)
@@ -808,8 +855,13 @@ add_test(NAME "Qsmtpd_cmd_args"
 				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_cmd_args.cmake")
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
-set_tests_properties(Qsmtpd_cmd_args PROPERTIES
-		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_HELO_RESPONSE}${QSMTPD_HELO_RESPONSE}500 5\\.5\\.2 command syntax error\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n501 5\\.5\\.2 unrecognized command parameter\n250 2\\.1\\.5 sender <> is syntactically correct\n500 5\\.5\\.2 command syntax error\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n250 2\\.1\\.5 sender <> is syntactically correct\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+500-5\\.5\\.2 line too long\n500-5\\.5\\.2 This is usually a bug in your mail client\n500 5\\.5\\.2 Try to use a different encoding like quoted-printable for this mail.\n250 2.0.0 ok\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
+if (NOSTDERR)
+	set_tests_properties(Qsmtpd_cmd_args PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_HELO_RESPONSE}${QSMTPD_HELO_RESPONSE}500 5\\.5\\.2 command syntax error\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n501 5\\.5\\.2 unrecognized command parameter\n250 2\\.1\\.5 sender <> is syntactically correct\n500 5\\.5\\.2 command syntax error\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n250 2\\.1\\.5 sender <> is syntactically correct\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+500-5\\.5\\.2 line too long\n500-5\\.5\\.2 This is usually a bug in your mail client\n500 5\\.5\\.2 Try to use a different encoding like quoted-printable for this mail.\n250 2.0.0 ok\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
+else ()
+	set_tests_properties(Qsmtpd_cmd_args PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_HELO_RESPONSE}${QSMTPD_HELO_RESPONSE}(bad SMTP command syntax)?500 5\\.5\\.2 command syntax error\n(bad SMTP command syntax)?250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n(bad SMTP command parameter)?501 5\\.5\\.2 unrecognized command parameter\n(bad SMTP command parameter)?${QSMTPD_QUEUE_LOG}250 2\\.1\\.5 sender <> is syntactically correct\n500 5\\.5\\.2 command syntax error\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n(bad SMTP command syntax)?250 2\\.1\\.5 sender <> is syntactically correct\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+bad SMTP command syntax500-5\\.5\\.2 line too long\n500-5\\.5\\.2 This is usually a bug in your mail client\n500 5\\.5\\.2 Try to use a different encoding like quoted-printable for this mail.\n250 2.0.0 ok\ntoo long SMTP line501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}bad SMTP command syntax$")
+endif ()
 
 set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_bad_args.cmake")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_bad_args.cmake" @ONLY)
@@ -818,8 +870,13 @@ add_test(NAME "Qsmtpd_bad_args"
 				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_bad_args.cmake")
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
-set_tests_properties(Qsmtpd_bad_args PROPERTIES
-		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}500 5\\.5\\.2 command syntax error\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n500 5\\.5\\.2 command syntax error\n252 2\\.1\\.5 send some mail, I'll do my very best\n500 5\\.5\\.2 command syntax error\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+250 [^\n]+\n250 2\\.1\\.5 sender <someone@example.invalid> is syntactically correct\n${QSMTPD_QUIT_LINE}$")
+if (NOSTDERR)
+	set_tests_properties(Qsmtpd_bad_args PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}500 5\\.5\\.2 command syntax error\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n500 5\\.5\\.2 command syntax error\n252 2\\.1\\.5 send some mail, I'll do my very best\n500 5\\.5\\.2 command syntax error\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+250 [^\n]+\n250 2\\.1\\.5 sender <someone@example.invalid> is syntactically correct\n${QSMTPD_QUIT_LINE}$")
+else ()
+	set_tests_properties(Qsmtpd_bad_args PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}500 5\\.5\\.2 command syntax error\n(bad SMTP command syntax)?250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n(bad SMTP command syntax)*500 5\\.5\\.2 command syntax error\n(bad SMTP command syntax)*252 2\\.1\\.5 send some mail, I'll do my very best\n(bad SMTP command syntax)*500 5\\.5\\.2 command syntax error\n((bad SMTP command syntax)*500 5\\.5\\.2 command syntax error\n(bad SMTP command syntax)*250 2\\.0\\.0 ok\n)+(bad SMTP command syntax)*250 [^\n]+\n${QSMTPD_QUEUE_LOG}250 2\\.1\\.5 sender <someone@example.invalid> is syntactically correct\n${QSMTPD_QUIT_LINE}$")
+endif ()
 
 set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/bad_pipelining.cmake")
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_bad_pipelining.cmake" @ONLY)
@@ -870,9 +927,13 @@ else ()
 	# when using the system control directory ignore if STARTTLS is given or not
 	# AUTH without STARTTLS may be permitted or not
 	# databytes may be set as small as in this testcase (unlikely), set to a higher value or not set at all
-	set_tests_properties(Qsmtpd_more_commands PROPERTIES
-			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}(250-[^\n]+\n)+250 SIZE( [0-9]+)?\n(235 2\\.7\\.0 ok, go ahead\n(250 2\\.1\\.5 sender <> is syntactically correct|452 4\\.3\\.1 Requested action not taken: insufficient system storage)|503 5\\.5\\.1 Bad sequence of commands\n550 5\\.7\\.1 authentication required)\n${QSMTPD_HELO_RESPONSE}503 5.5.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
-
+	if (NOSTDERR)
+		set_tests_properties(Qsmtpd_more_commands PROPERTIES
+				PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}(250-[^\n]+\n)+250 SIZE( [0-9]+)?\n(235 2\\.7\\.0 ok, go ahead\n(250 2\\.1\\.5 sender <> is syntactically correct|452 4\\.3\\.1 Requested action not taken: insufficient system storage)|503 5\\.5\\.1 Bad sequence of commands\n550 5\\.7\\.1 authentication required)\n${QSMTPD_HELO_RESPONSE}503 5.5.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
+	else ()
+		set_tests_properties(Qsmtpd_more_commands PROPERTIES
+				PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}(250-[^\n]+\n)+250 SIZE( [0-9]+)?\n((235 2\\.7\\.0 ok, go ahead\n${QSMTPD_QUEUE_LOG}(250 2\\.1\\.5 sender <> is syntactically correct|452 4\\.3\\.1 Requested action not taken: insufficient system storage))|503 5\\.5\\.1 Bad sequence of commands\n550 5\\.7\\.1 authentication required)\n${QSMTPD_HELO_RESPONSE}503 5.5.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
+	endif ()
 endif ()
 
 set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/broken_helo.cmake")
@@ -882,8 +943,13 @@ add_test(NAME "Qsmtpd_broken_helo"
 				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_broken_helo.cmake")
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
-set_tests_properties(Qsmtpd_broken_helo PROPERTIES
-		PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}(500 5\\.5\\.2 command syntax error\n250 2.0.0 ok\n)+${QSMTPD_QUIT_LINE}$")
+if (NOSTDERR)
+	set_tests_properties(Qsmtpd_broken_helo PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}(500 5\\.5\\.2 command syntax error\n250 2.0.0 ok\n)+${QSMTPD_QUIT_LINE}$")
+else ()
+	set_tests_properties(Qsmtpd_broken_helo PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}((bad SMTP command syntax)*500 5\\.5\\.2 command syntax error\n(bad SMTP command syntax)*250 2.0.0 ok\n)+(bad SMTP command syntax)*${QSMTPD_QUIT_LINE}$")
+endif ()
 
 add_executable(testcase_ipme
 		ipme_test.c)
