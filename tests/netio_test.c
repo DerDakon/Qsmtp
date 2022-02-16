@@ -922,7 +922,7 @@ test_net_write_multiline(void)
 	memmove(exp + strlen(longthings[0]), exp, offs + 1);
 	memcpy(exp, longthings[0], strlen(longthings[0]));
 	offs += strlen(longthings[0]);
-	assert(offs < sizeof(exp) - strlen(longthings[2]));
+	assert(offs < sizeof(exp) - strlen(longthings[2]) - 1);
 	strncpy(exp + offs, longthings[2], strlen(longthings[2]));
 	if (read_check(exp))
 		ret++;
