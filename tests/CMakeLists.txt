@@ -374,8 +374,11 @@ add_executable(testcase_qdns_dane
 )
 target_link_libraries(testcase_qdns_dane
 		qsmtp_lib
-		owfat::owfat
 		${MEMCHECK_LIBRARIES}
+)
+target_include_directories(testcase_qdns_dane
+		PRIVATE
+			${OWFAT_INCLUDE_DIR}
 )
 if (COMMAND target_compile_definitions)
 	target_compile_definitions(testcase_qdns_dane PRIVATE -DLIBOWFAT_UINT_DNSDOMFD=${LIBOWFAT_UINT_DNSDOMFD})
