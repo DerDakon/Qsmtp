@@ -136,39 +136,39 @@ main(void)
 	err += verify_test(0, -EINVAL);
 
 	/* now all correct results */
-	for (int i = 200; i < 600; i++) {
+	for (unsigned int i = 200; i < 600; i++) {
 		char buf[8];
 
-		snprintf(buf, sizeof(buf), "%i ", i);
+		snprintf(buf, sizeof(buf), "%u ", i);
 		net_read_msg = buf;
 		err += verify_test(1, i);
 
-		snprintf(buf, sizeof(buf), "%i-", i);
+		snprintf(buf, sizeof(buf), "%u-", i);
 		net_read_msg = buf;
 		err += verify_test(1, i);
 	}
 
 	/* just to be sure: all other NNN[ -] results again */
-	for (int i = 0; i < 200; i++) {
+	for (unsigned int i = 0; i < 200; i++) {
 		char buf[8];
 
-		snprintf(buf, sizeof(buf), "%3i ", i);
+		snprintf(buf, sizeof(buf), "%3u ", i);
 		net_read_msg = buf;
 		err += verify_test(0, -EINVAL);
 
-		snprintf(buf, sizeof(buf), "%3i-", i);
+		snprintf(buf, sizeof(buf), "%3u-", i);
 		net_read_msg = buf;
 		err += verify_test(0, -EINVAL);
 	}
 
-	for (int i = 600; i < 1000; i++) {
+	for (unsigned int i = 600; i < 1000; i++) {
 		char buf[8];
 
-		snprintf(buf, sizeof(buf), "%i ", i);
+		snprintf(buf, sizeof(buf), "%u ", i);
 		net_read_msg = buf;
 		err += verify_test(0, -EINVAL);
 
-		snprintf(buf, sizeof(buf), "%i-", i);
+		snprintf(buf, sizeof(buf), "%u-", i);
 		net_read_msg = buf;
 		err += verify_test(0, -EINVAL);
 	}

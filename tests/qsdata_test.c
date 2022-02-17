@@ -311,18 +311,18 @@ check_twodigit(void)
 {
 	int ret = 0;
 
-	for (int i = 0; i < 100; i++) {
+	for (unsigned int i = 0; i < 100; i++) {
 		char mine[3];
 		char other[3];
 
-		snprintf(other, sizeof(other), "%02i", i);
+		snprintf(other, sizeof(other), "%02u", i);
 		two_digit(mine, i);
 		mine[2] = '\0';
 
 		if (strcmp(mine, other)) {
 			ret++;
 
-			fprintf(stderr, "two_digit(%i) = %s\n", i, mine);
+			fprintf(stderr, "two_digit(%u) = %s\n", i, mine);
 		}
 	}
 
