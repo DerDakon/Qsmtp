@@ -1,4 +1,3 @@
-dist: bionic
 language: c
 version: ~> 1.0
 jobs:
@@ -6,13 +5,39 @@ jobs:
     - os: linux
       compiler: gcc
       arch: amd64
+      dist: bionic
       env:
         - CTEST_BUILD_NAME="Ubuntu Bionic ${TRAVIS_ARCH} gcc"
     - os: linux
       compiler: clang
       arch: amd64
+      dist: bionic
       env:
         - CTEST_BUILD_NAME="Ubuntu Bionic ${TRAVIS_ARCH} Clang"
+    - os: linux
+      compiler: gcc
+      arch: amd64
+      dist: focal
+      env:
+        - CTEST_BUILD_NAME="Ubuntu Focal ${TRAVIS_ARCH} gcc"
+    - os: linux
+      compiler: clang
+      arch: amd64
+      dist: focal
+      env:
+        - CTEST_BUILD_NAME="Ubuntu Focal ${TRAVIS_ARCH} Clang"
+    - os: linux
+      compiler: gcc
+      arch: arm64
+      dist: focal
+      env:
+        - CTEST_BUILD_NAME="Ubuntu Focal ${TRAVIS_ARCH} gcc"
+    - os: linux
+      compiler: clang
+      arch: arm64
+      dist: focal
+      env:
+        - CTEST_BUILD_NAME="Ubuntu Focal ${TRAVIS_ARCH} Clang"
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -20,9 +45,6 @@ env:
    - secure: "EGED1QtcBZ7U1WYBhNVuOlvvMcYsT+e/MMiE26ejEwysh7dGu3YxeKmOKs3+Pl+e31niwH6fqi9qXbQHb2A0hXsE3AzykzKJyVCgl5RmUR4J4ViamIdRHT8vGyoBLZvTia6s0PvlHRIfABvrjnloJ1t6yxO5JJNyMNz3uAnSDw1oaNTWCWiMA4TxVP9IxMHng/iF06mJa6pVsCgC/zVK40pKzs76sk4m+zX4vpvSdD9dPMzhhQbWSce/uyE9M8y39wDpgmXOMCIq+hrgCBaH+z5HQ7y37xw2a2VI0tCBmWEq84AKLG+t3D2F1L4wLwKAfrD6EfA9j/I3i2Md0y/DyrP9UpQkZjHAQX/9pFruXPxWyT9HS2Te0PD9iob5TXg41Ufl9E4oj316K9j9mPwdSttDiG5YqRc7nm0mPARFmGYWtQwwbRWdmq+2OmGNY8V7TtNq/jaOuFUXkLZ8xLBcvWSrx7kXPbNfp+rgL8B9Pz7V0Y/pQ2nLw1huRXE3JV8Zt5v7UF7Y7JPOrEPUiXBGCOP0CTH3D3QFovRiT9CiL8IR2xV19RCLje77tJlbmsZDnSZ6gIyby0h0mAKbin5ntA50fYcfJHWiorXjyZ53/0bOMqMGjnlAQS1+cctgTSQYbGuxoZ47O+AWXYEWV4Sec3lymstt/abFEa/lSjM3NoI="
 addons:
   apt:
-    sources:
-      - sourceline: 'deb https://apt.kitware.com/ubuntu/ bionic main'
-        key_url: 'https://apt.kitware.com/keys/kitware-archive-2019.asc'
     packages:
       - cmake
       - libowfat-dev
