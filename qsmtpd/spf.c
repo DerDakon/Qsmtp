@@ -832,7 +832,7 @@ spf_domainspec(const char *domain, const char *token, char **domainspec, int *ip
 		const char *tokenend = NULL;
 
 		while (*t && !WSPACE(*t) && (*t != '/')) {
-			if (*t < 0)
+			if (((signed char)*t) < 0)
 				return SPF_PERMERROR;
 
 			switch (i) {
@@ -1937,7 +1937,7 @@ spflookup(const char *domain, unsigned int *queries)
 								/* replace unsafe characters */
 								if ((unsigned char)(xmitstat.spfexp[pos]) < ' ') {
 									xmitstat.spfexp[pos] = '%';
-								} else if (xmitstat.spfexp[pos] < 0) {
+								} else if (((signed char)xmitstat.spfexp[pos]) < 0) {
 									free(xmitstat.spfexp);
 									xmitstat.spfexp = NULL;
 									break;
