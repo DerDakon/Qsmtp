@@ -65,7 +65,6 @@ compact_buffer(char **buf, char *inbuf, size_t oldlen)
 	}
 
 	/* free the now useless memory at the end (if any) */
-	j = k;
 	if (k != oldlen + 1) {
 		*buf = realloc(inbuf, k);
 		if (*buf == NULL)
@@ -75,7 +74,7 @@ compact_buffer(char **buf, char *inbuf, size_t oldlen)
 		*buf = inbuf;
 	}
 
-	return j;
+	return k;
 }
 
 /**
@@ -205,6 +204,7 @@ lloadfilefd(int fd, char **buf, const int striptab)
 		free(inbuf);
 		j = 0;
 	}
+
 	return j;
 }
 
