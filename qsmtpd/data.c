@@ -110,6 +110,8 @@ write_received(const int chunked)
 	size_t i = (authhide && is_authenticated_client()) ? 1 : 0;
 	const char afterprot[]     =  "\n\tfor <";	/* the string to be written after the protocol */
 	const char afterprotauth[] = "A\n\tfor <";	/* the string to be written after the protocol for authenticated mails*/
+	const char authstr[] = ") (auth=";		/* the string to be written on password authenticatation */
+	const char certstr[] = ") (cert=";		/* the string to be written on certificate authenticatation */
 	struct iovec wdata[20];
 	unsigned int wpos = 0;
 	ssize_t wlen = 0;
@@ -142,12 +144,10 @@ write_received(const int chunked)
 		}
 	}
 	if (xmitstat.authname.len) {
-		const char authstr[] = ") (auth=";
 		WRITEL(authstr + i);
 		WRITE(xmitstat.authname.s, xmitstat.authname.len);
 	} else if (xmitstat.tlsclient != NULL) {
-		const char authstr[] = ") (cert=";
-		WRITEL(authstr + i);
+		WRITEL(certstr + i);
 		WRITEL(xmitstat.tlsclient);
 	} else if ((xmitstat.remoteinfo != NULL) && !i) {
 		WRITEL(") (ident=");
