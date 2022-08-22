@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.0...3.20 FATAL_ERROR)
 
 project(Qsmtp
 	VERSION 0.38
-	HOMEPAGE_URL "https://opensource.sf-tec.de/Qsmtp/"
 	LANGUAGES C)
+	# 3.12+ HOMEPAGE_URL "https://opensource.sf-tec.de/Qsmtp/"
 
 option(CHECK_MEMORY "Add memory access checks" OFF)
 

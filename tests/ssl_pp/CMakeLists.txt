@@ -239,7 +239,11 @@ write_tlsclients()
 # key and certificate for server in distinct files, the IP key is the correct one
 SSL_Testcase(detached_server_key_ip)
 write_tlsclients()
-file(TOUCH "${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem")
+if (CMAKE_VERSION VERSION_LESS 3.12)
+	file(WRITE "${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem" "")
+else ()
+	file(TOUCH "${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem")
+endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/servercert.pem.::ffff:192.168.42.42" COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.key
@@ -249,7 +253,11 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.key
 SSL_Testcase(detached_server_key_ip_port
 		EXTRA_CONTROL_DIR "tlshosts")
 write_tlsclients()
-file(TOUCH "${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem")
+if (CMAKE_VERSION VERSION_LESS 3.12)
+	file(WRITE "${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem" "")
+else ()
+	file(TOUCH "${SSL_TESTCASE_CONTROL_DIR}/serverkey.pem")
+endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
 		"${SSL_TESTCASE_CONTROL_DIR}/tlshosts/testcert.example.org.pem" COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/valid4096.crt
