@@ -355,6 +355,7 @@ test_log_messages(void)
 					__func__, i, r, testpattern[i].envsize);
 			ret++;
 		} else {
+			assert(r > 0);
 			if (memcmp(rpipe, testpattern[i].envelope, r) != 0) {
 				fprintf(stderr, "%s[%u]: envelope did not match expected one\n", __func__, i);
 				ret++;
