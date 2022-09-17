@@ -14,7 +14,7 @@
 #include <string.h>
 #include <unistd.h>
 
-SSL *ssl = NULL;
+SSL *ssl;
 
 void ssl_free(SSL *myssl)
 {
