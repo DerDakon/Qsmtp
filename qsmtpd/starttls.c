@@ -209,7 +209,7 @@ tls_check_cert(char * const *clients)
 	}
 
 	/* renegotiate to force the client to send it's certificate */
-	int n = ssl_timeoutrehandshake(timeout);
+	int n = ssl_timeoutrehandshake(xmitstat.ssl, timeout);
 	if (n == -ETIMEDOUT) {
 		dieerror(ETIMEDOUT);
 	} else if (n < 0) {
@@ -412,20 +412,20 @@ tls_init()
 	}
 
 	/* can't set ssl earlier, else netwrite above would try to send the data encrypted with the unfinished ssl */
-	ssl = myssl;
-	xmitstat.ssl = myssl;
-	j = ssl_timeoutaccept(timeout);
+	j = ssl_timeoutaccept(myssl, timeout);
 	if (j == -ETIMEDOUT) {
+		ssl_free(myssl);
 		dieerror(ETIMEDOUT);
 	} else if (j < 0) {
 		/* neither cleartext nor any other response here is part of a standard */
 		const char *err = ssl_strerror();
 
 		ssl_free(myssl);
-		ssl = NULL;
-		xmitstat.ssl = NULL;
 		return -tls_out("connection failed", err, -EDONE);
 	}
+
+	ssl = myssl;
+	xmitstat.ssl = myssl;
 
 	/* have to discard the pre-STARTTLS HELO/EHLO argument, if any */
 	return 0;

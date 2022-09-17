@@ -7,11 +7,11 @@
 #include <openssl/ssl.h>
 #include <time.h>
 
-extern int ssl_timeoutconn(time_t);
-extern int ssl_timeoutaccept(time_t);
-extern int ssl_timeoutrehandshake(time_t);
+extern int ssl_timeoutconn(SSL *s, time_t t);
+extern int ssl_timeoutaccept(SSL *s, time_t t);
+extern int ssl_timeoutrehandshake(SSL *s, time_t t);
 
-extern int ssl_timeoutread(time_t, char *, const int);
-extern int ssl_timeoutwrite(time_t, const char *, const int);
+extern int ssl_timeoutread(SSL *s, time_t t, char *buf, const int len);
+extern int ssl_timeoutwrite(SSL *s, time_t t, const char *buf, const int len);
 
 #endif

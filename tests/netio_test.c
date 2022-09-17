@@ -41,14 +41,14 @@ dieerror(int error)
 }
 
 int
-ssl_timeoutread(time_t a __attribute__ ((unused)), char *b  __attribute__ ((unused)),
+ssl_timeoutread(SSL *s __attribute__ ((unused)), time_t a __attribute__ ((unused)), char *b  __attribute__ ((unused)),
 		const int c  __attribute__ ((unused)), const int f __attribute__ ((unused)))
 {
 	abort();
 }
 
 int
-ssl_timeoutwrite(time_t a __attribute__ ((unused)), const char *b, const int c)
+ssl_timeoutwrite(SSL *s __attribute__ ((unused)), time_t a __attribute__ ((unused)), const char *b, const int c)
 {
 	return write(socketd, b, c);
 }

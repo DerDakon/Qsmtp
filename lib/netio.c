@@ -126,7 +126,7 @@ readinput(char *buffer, const size_t len, const int fatal)
 	size_t retval;
 
 	if (ssl) {
-		int r = ssl_timeoutread(timeout, buffer, len - 1);
+		int r = ssl_timeoutread(ssl, timeout, buffer, len - 1);
 
 		switch (r) {
 		case -ECONNRESET:
@@ -407,7 +407,7 @@ netnwrite(const char *s, const size_t l)
 	DEBUG_OUT(s, l);
 
 	if (ssl) {
-		int r = ssl_timeoutwrite(timeout, s, l);
+		int r = ssl_timeoutwrite(ssl, timeout, s, l);
 		switch (r) {
 		case -ETIMEDOUT:
 		case -ECONNRESET:

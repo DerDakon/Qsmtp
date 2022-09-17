@@ -261,17 +261,18 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 		return i < 0 ? -i : EDONE;
 	}
 
-	ssl = myssl;
-	i = ssl_timeoutconn(timeout);
+	i = ssl_timeoutconn(myssl, timeout);
 	if (i < 0) {
 		const char *msg[] = { "TLS connection failed at ", rhost, ": ", ssl_strerror(), NULL };
 
 		log_writen(LOG_ERR, msg);
+		ssl_free(myssl);
 		return -i;
 	}
 
+	ssl = myssl;
 	if (*servercert || tlsa_usable > 0) {
-		long r = SSL_get_verify_result(ssl);
+		long r = SSL_get_verify_result(myssl);
 
 		if (r != X509_V_OK) {
 			const char *msg[] = { "unable to verify ", rhost, " with ", servercert,

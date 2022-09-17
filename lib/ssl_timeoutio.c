@@ -4,8 +4,6 @@
 
 #include <ssl_timeoutio.h>
 
-#include <tls.h>
-
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -31,17 +29,17 @@
  * This function never returns 0.
  */
 static int __attribute__ ((nonnull (1)))
-ssl_timeoutio(int (*func)(), time_t t, char *buf, const int len)
+ssl_timeoutio(int (*func)(), SSL *s, time_t t, char *buf, const int len)
 {
 	int n = 0;
 	const time_t end = t + time(NULL);
 	struct pollfd fds[2] = {
 		{
-			.fd = SSL_get_rfd(ssl),
+			.fd = SSL_get_rfd(s),
 			.events = POLLIN
 		},
 		{
-			.fd = SSL_get_wfd(ssl),
+			.fd = SSL_get_wfd(s),
 			.events = POLLOUT
 		}
 	};
@@ -51,7 +49,7 @@ ssl_timeoutio(int (*func)(), time_t t, char *buf, const int len)
 
 	do {
 		errno = 0;
-		int r = buf ? func(ssl, buf, len) : func(ssl);
+		int r = buf ? func(s, buf, len) : func(s);
 
 		if (r > 0)
 			return r;
@@ -62,7 +60,7 @@ ssl_timeoutio(int (*func)(), time_t t, char *buf, const int len)
 		if (t < 0)
 			t = 0;
 
-		switch (SSL_get_error(ssl, r)) {
+		switch (SSL_get_error(s, r)) {
 		case SSL_ERROR_WANT_READ:
 			n = poll(fds, 1, t);
 			break;
@@ -105,15 +103,15 @@ ssl_timeoutio(int (*func)(), time_t t, char *buf, const int len)
  * @retval <0 error code
  */
 int
-ssl_timeoutaccept(time_t t)
+ssl_timeoutaccept(SSL *s, time_t t)
 {
-	int ssl_wfd = SSL_get_wfd(ssl);
-	int ssl_rfd = SSL_get_rfd(ssl);
+	int ssl_wfd = SSL_get_wfd(s);
+	int ssl_rfd = SSL_get_rfd(s);
 
 	/* if connection is established, keep NDELAY */
 	if (ndelay_on(ssl_rfd) == -1 || ndelay_on(ssl_wfd) == -1)
 		return -errno;
-	int r = ssl_timeoutio(SSL_accept, t, NULL, 0);
+	int r = ssl_timeoutio(SSL_accept, s, t, NULL, 0);
 
 	if (r < 0) {
 		ndelay_off(ssl_rfd);
@@ -132,15 +130,15 @@ ssl_timeoutaccept(time_t t)
  * @retval <0 error code
  */
 int
-ssl_timeoutconn(time_t t)
+ssl_timeoutconn(SSL *s, time_t t)
 {
-	int ssl_wfd = SSL_get_wfd(ssl);
-	int ssl_rfd = SSL_get_rfd(ssl);
+	int ssl_wfd = SSL_get_wfd(s);
+	int ssl_rfd = SSL_get_rfd(s);
 
 	/* if connection is established, keep NDELAY */
 	if ( (ndelay_on(ssl_rfd) == -1) || (ndelay_on(ssl_wfd) == -1) )
 		return -errno;
-	int r = ssl_timeoutio(SSL_connect, t, NULL, 0);
+	int r = ssl_timeoutio(SSL_connect, s, t, NULL, 0);
 
 	if (r < 0) {
 		/* keep nonblocking, the socket is closed anyway */
@@ -158,23 +156,23 @@ ssl_timeoutconn(time_t t)
  * @retval <0 error code
  */
 int
-ssl_timeoutrehandshake(time_t t)
+ssl_timeoutrehandshake(SSL *s, time_t t)
 {
 	int r;
 #ifdef TLS1_3_VERSION
 	bool tls13 = false;
-	if (SSL_version(ssl) >= TLS1_3_VERSION) {
+	if (SSL_version(s) >= TLS1_3_VERSION) {
 		tls13 = true;
-		if (SSL_verify_client_post_handshake(ssl) != 1)
+		if (SSL_verify_client_post_handshake(s) != 1)
 			return -EPROTO;
 		} else
 #endif
 	{
-		r = SSL_renegotiate(ssl);
+		r = SSL_renegotiate(s);
 		if (r <= 0)
 			return -EPROTO;
 	}
-	r = ssl_timeoutio(SSL_do_handshake, t, NULL, 0);
+	r = ssl_timeoutio(SSL_do_handshake, s, t, NULL, 0);
 	if (r < 0)
 		return r;
 
@@ -184,13 +182,13 @@ ssl_timeoutrehandshake(time_t t)
 #endif
 
 	/* this is for the server only */
-	SSL_set_accept_state(ssl);
-	return ssl_timeoutio(SSL_do_handshake, t, NULL, 0);
+	SSL_set_accept_state(s);
+	return ssl_timeoutio(SSL_do_handshake, s, t, NULL, 0);
 }
 
-int ssl_timeoutread(time_t t, char *buf, const int len)
+int ssl_timeoutread(SSL *s, time_t t, char *buf, const int len)
 {
-	return ssl_timeoutio(SSL_read, t, buf, len);
+	return ssl_timeoutio(SSL_read, s, t, buf, len);
 }
 
 /**
@@ -202,9 +200,9 @@ int ssl_timeoutread(time_t t, char *buf, const int len)
  * @return return code of SSL_write
  */
 int
-ssl_timeoutwrite(time_t t, const char *buf, const int len)
+ssl_timeoutwrite(SSL *s, time_t t, const char *buf, const int len)
 {
 	/* SSL_write takes a const char* as second argument so
 	 * we do not need to worry here, just shut up the compiler */
-	return ssl_timeoutio(SSL_write, t, (char *)buf, len);
+	return ssl_timeoutio(SSL_write, s, t, (char *)buf, len);
 }
