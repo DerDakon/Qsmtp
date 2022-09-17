@@ -56,7 +56,7 @@ get_from_inbuffer(char *dest, const size_t len, const size_t droplen)
 int do_debug_io;
 int in_data;
 
-void DEBUG_IN(const size_t len)
+static void DEBUG_IN(const size_t len)
 {
 	char buffer[len + 4];
 	size_t en = 0;
@@ -80,7 +80,7 @@ void DEBUG_IN(const size_t len)
 	log_write(LOG_DEBUG, buffer);
 }
 
-void DEBUG_OUT(const char *s, const size_t l)
+static void DEBUG_OUT(const char *s, const size_t l)
 {
 	char buffer[l + 4];
 	int en = 0;
