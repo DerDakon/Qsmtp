@@ -14,7 +14,6 @@
 #include <qsmtpd/userfilters.h>
 #include <qsmtpd/xtext.h>
 #include <qsmtpd/userconf.h>
-#include <tls.h>
 
 #include <arpa/inet.h>
 #include <assert.h>
@@ -245,7 +244,7 @@ smtp_ehlo(void)
 	}
 	/* check if STARTTLS should be announced. Don't announce if already in SSL mode or if certificate can't be opened */
 	const char *localport = getenv("TCPLOCALPORT");
-	if (!ssl && ((localport == NULL) || (strcmp(localport, "465") != 0))) {
+	if (!xmitstat.ssl && ((localport == NULL) || (strcmp(localport, "465") != 0))) {
 		if (find_servercert(localport) == 0)
 			msg[next++] = "250-STARTTLS\r\n";
 	}

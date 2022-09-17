@@ -8,6 +8,7 @@
 #include <sstring.h>
 
 #include <netinet/in.h>
+#include <openssl/ssl.h>
 #include <sys/queue.h>
 #include <sys/types.h>
 
@@ -38,6 +39,7 @@ struct xmitstat {
 	unsigned int spf:4;		/**< result of the SPF lookup */
 	signed int fromdomain:3;	/**< result of the lookup for fromips */
 	unsigned int spacebug:1;	/**< if client sends spaces between ':' and '<' */
+	SSL *ssl;			/**< SSL context used for this connection */
 	size_t thisbytes;		/**< size of the message announced by the remote host */
 	string mailfrom;		/**< the current from address */
 	string authname;		/**< if SMTP AUTH is used (and successful) this is set */

@@ -417,19 +417,20 @@ fork_clean()
 	closelog();
 #endif /* USESYSLOG */
 
-	if (ssl) {
-		int rfd = SSL_get_rfd(ssl);
-		int wfd = SSL_get_wfd(ssl);
+	if (xmitstat.ssl) {
+		int rfd = SSL_get_rfd(xmitstat.ssl);
+		int wfd = SSL_get_wfd(xmitstat.ssl);
 
 		/* the fds need to be removed from SSL first, otherwise
 		 * destroying the SSL object will terminate the SSL connection
 		 * to the remote host. */
-		SSL_set_fd(ssl, -1);
+		SSL_set_fd(xmitstat.ssl, -1);
 		close(wfd);
 		if (rfd != wfd)
 			close(rfd);
 
-		ssl_free(ssl);
+		ssl_free(xmitstat.ssl);
+		xmitstat.ssl = NULL;
 	}
 
 	return 0;

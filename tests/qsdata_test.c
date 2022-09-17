@@ -493,7 +493,7 @@ check_queueheader(void)
 		int chunked = 0;
 
 		memset(&xmitstat, 0, sizeof(xmitstat));
-		ssl = NULL;
+		xmitstat.ssl = NULL;
 
 		strncpy(xmitstat.remoteip, "192.0.2.42", sizeof(xmitstat.remoteip));
 
@@ -626,7 +626,7 @@ check_queueheader(void)
 			/* plain SSL mail */
 			testname = "SSL minimal";
 			relayclient = 1;
-			ssl = dummy_ssl;
+			xmitstat.ssl = dummy_ssl;
 			expect = "Received: from unknown ([192.0.2.42])\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with (" DUMMY_CIPHER_STRING " encrypted) ESMTPS\n"
 					"\tfor <test@example.com>; Wed, 11 Apr 2012 18:32:17 +0200\n";
@@ -635,7 +635,7 @@ check_queueheader(void)
 			/* plain SSL mail */
 			testname = "SSL chunked";
 			relayclient = 1;
-			ssl = dummy_ssl;
+			xmitstat.ssl = dummy_ssl;
 			chunked = 1;
 			expect = "Received: from unknown ([192.0.2.42])\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with (chunked " DUMMY_CIPHER_STRING " encrypted) ESMTPS\n"
@@ -650,7 +650,7 @@ check_queueheader(void)
 		if (xmitstat.authname.s != NULL)
 			xmitstat.authname.len = strlen(xmitstat.authname.s);
 
-		if ((xmitstat.authname.s != NULL) || chunked || ssl)
+		if ((xmitstat.authname.s != NULL) || chunked || xmitstat.ssl)
 			xmitstat.esmtp = 1;
 
 		printf("%s: Running test: %s\n", __func__, testname);
@@ -2100,7 +2100,7 @@ main()
 
 	ret += check_data_read_fails();
 
-	ssl = NULL;
+	xmitstat.ssl = NULL;
 
 	ret += check_bdat_no_rcpt();
 	ret += check_bdat_invalid_args();

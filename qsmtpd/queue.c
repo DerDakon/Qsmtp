@@ -10,7 +10,6 @@
 #include <qsmtpd/antispam.h>
 #include <qsmtpd/qsmtpd.h>
 #include <sstring.h>
-#include <tls.h>
 
 #include <errno.h>
 #include <strings.h>
@@ -157,8 +156,8 @@ queue_envelope(const unsigned long msgsize, const int chunked)
 		return -1;
 	queuefd_data = -1;
 
-	if (ssl) {
-		logmail[1] = SSL_get_cipher(ssl);
+	if (xmitstat.ssl) {
+		logmail[1] = SSL_get_cipher(xmitstat.ssl);
 		logmail[2] = chunked ? " encrypted chunked message " : " encrypted message ";
 	} else if (chunked) {
 		logmail[2] = "chunked message ";

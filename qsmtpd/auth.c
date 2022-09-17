@@ -13,7 +13,6 @@
 #include <qsmtpd/antispam.h>
 #include <qsmtpd/qsmtpd.h>
 #include <sstring.h>
-#include <tls.h>
 
 #include <assert.h>
 #include <ctype.h>
@@ -540,7 +539,7 @@ auth_permitted(void)
 	if (auth_host == NULL)
 		return 0;
 
-	if (sslauth && (ssl == NULL))
+	if (sslauth && (xmitstat.ssl == NULL))
 		return 0;
 
 	return 1;

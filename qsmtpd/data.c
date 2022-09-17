@@ -12,7 +12,6 @@
 #include <qsmtpd/qsmtpd.h>
 #include <qsmtpd/queue.h>
 #include <qsmtpd/syntax.h>
-#include <tls.h>
 #include <version.h>
 
 #include <errno.h>
@@ -158,13 +157,13 @@ write_received(const int chunked)
 	WRITEL(" (" VERSIONSTRING ") with ");
 	if (!xmitstat.esmtp) {
 		WRITEL("SMTP");
-	} else if (!ssl) {
+	} else if (!xmitstat.ssl) {
 		if (chunked)
 			WRITEL("(chunked) ESMTP");
 		else
 			WRITEL("ESMTP");
 	} else {
-		const char *cipher = SSL_get_cipher(ssl);
+		const char *cipher = SSL_get_cipher(xmitstat.ssl);
 		if (chunked)
 			WRITEL("(chunked ");
 		else

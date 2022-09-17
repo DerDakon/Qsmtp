@@ -329,9 +329,9 @@ test_log_messages(void)
 		xmitstat.spacebug = testpattern[i].spacebug;
 		goodrcpt = 0;
 		if (testpattern[i].encrypted)
-			ssl = myssl;
+			xmitstat.ssl = myssl;
 		else
-			ssl = NULL;
+			xmitstat.ssl = NULL;
 
 		xmitstat.authname.s = (char *)testpattern[i].authname;
 		xmitstat.authname.len = (testpattern[i].authname == NULL) ? 0 : strlen(testpattern[i].authname);

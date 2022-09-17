@@ -13,13 +13,11 @@
 #include <netio.h>
 #include <qdns.h>
 #include <qsmtpd/qsmtpd.h>
-#include <tls.h>
 
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <openssl/ssl.h>
 #include <poll.h>
 #include <stdint.h>
 #include <string.h>
@@ -159,7 +157,7 @@ tarpit(void)
 		return;
 	if (i < 0)
 		dieerror(-i);
-	if (ssl) {
+	if (xmitstat.ssl) {
 		/* SSL encoding is too much overhead for worms and friends, so at the other side we can expect a real
 		 * mail server. We just have to check here if there is data pending (he's using PIPELINING) or not. */
 		sleep(5 + tarpitcount);

@@ -35,7 +35,7 @@ cb_smtpbugs(const struct userconf *ds, const char **logmsg __attribute__ ((unuse
 
 	switch (filter) {
 	case SPB_PERMIT_TLS:
-		if (ssl)
+		if (xmitstat.ssl)
 			return FILTER_PASSED;
 		/* fallthrough */
 	case SPB_PERMIT_AUTH:

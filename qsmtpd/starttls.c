@@ -203,7 +203,7 @@ tls_check_cert(char * const *clients)
 	cstring email = { .len = 0, .s = NULL };
 	int ret = 0;
 
-	if (SSL_set_session_id_context(ssl, VERSIONSTRING, strlen(VERSIONSTRING)) != 1) {
+	if (SSL_set_session_id_context(xmitstat.ssl, VERSIONSTRING, strlen(VERSIONSTRING)) != 1) {
 		const char *err = ssl_strerror();
 		return tls_out("setting session id failed", err, -EPROTO);
 	}
@@ -217,10 +217,10 @@ tls_check_cert(char * const *clients)
 		return tls_out("rehandshake failed", err, n);
 	}
 
-	if (SSL_get_verify_result(ssl) != X509_V_OK)
+	if (SSL_get_verify_result(xmitstat.ssl) != X509_V_OK)
 		return 0;
 
-	X509 *peercert = SSL_get_peer_certificate(ssl);
+	X509 *peercert = SSL_get_peer_certificate(xmitstat.ssl);
 	if (!peercert)
 		return 0;
 
@@ -276,7 +276,7 @@ tls_verify(void)
 {
 	char **clients;
 
-	if (!ssl || ssl_verified || is_authenticated_client())
+	if (!xmitstat.ssl || ssl_verified || is_authenticated_client())
 		return 0;
 	ssl_verified = 1; /* don't do this twice */
 
@@ -298,14 +298,14 @@ tls_verify(void)
 		return 0;
 	}
 
-	SSL_set_client_CA_list(ssl, sk);
-	SSL_set_verify(ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, verify_callback);
+	SSL_set_client_CA_list(xmitstat.ssl, sk);
+	SSL_set_verify(xmitstat.ssl, SSL_VERIFY_PEER | SSL_VERIFY_CLIENT_ONCE, verify_callback);
 
 	int tlsrelay = tls_check_cert(clients);
 
 	free(clients);
-	SSL_set_client_CA_list(ssl, NULL);
-	SSL_set_verify(ssl, SSL_VERIFY_NONE, NULL);
+	SSL_set_client_CA_list(xmitstat.ssl, NULL);
+	SSL_set_verify(xmitstat.ssl, SSL_VERIFY_NONE, NULL);
 
 	return tlsrelay;
 }
@@ -413,6 +413,7 @@ tls_init()
 
 	/* can't set ssl earlier, else netwrite above would try to send the data encrypted with the unfinished ssl */
 	ssl = myssl;
+	xmitstat.ssl = myssl;
 	j = ssl_timeoutaccept(timeout);
 	if (j == -ETIMEDOUT) {
 		dieerror(ETIMEDOUT);
@@ -420,8 +421,9 @@ tls_init()
 		/* neither cleartext nor any other response here is part of a standard */
 		const char *err = ssl_strerror();
 
-		ssl_free(ssl);
+		ssl_free(myssl);
 		ssl = NULL;
+		xmitstat.ssl = NULL;
 		return -tls_out("connection failed", err, -EDONE);
 	}
 
@@ -437,7 +439,7 @@ tls_init()
 int
 smtp_starttls(void)
 {
-	if (ssl || !xmitstat.esmtp)
+	if (xmitstat.ssl || !xmitstat.esmtp)
 		return 1;
 	return tls_init();
 }

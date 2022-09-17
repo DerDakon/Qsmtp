@@ -23,7 +23,7 @@ cb_boolean(const struct userconf *ds, const char **logmsg, enum config_domain *t
 	 *     STARTTLS extension in order to deliver mail locally.
 	 * We offer it for paranoid users but don't use getsettingglobal here so
 	 * it can't be turned on for everyone by accident (or stupid postmaster) */
-	if (!ssl && (getsetting(ds, "forcestarttls", t) > 0)) {
+	if (!xmitstat.ssl && (getsetting(ds, "forcestarttls", t) > 0)) {
 		int rc = netwrite("501 5.7.1 recipient requires encrypted message transmission\r\n");
 		*logmsg = "TLS required";
 		return (rc != 0) ? FILTER_ERROR : FILTER_DENIED_WITH_MESSAGE;
