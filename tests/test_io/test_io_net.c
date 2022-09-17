@@ -248,15 +248,15 @@ tc_ignore_net_readline(size_t a __attribute__((unused)), char *b __attribute__((
 }
 
 int
-data_pending(void)
+data_pending(SSL *ssl)
 {
 	ASSERT_CALLBACK(testcase_data_pending);
 
-	return testcase_data_pending();
+	return testcase_data_pending(ssl);
 }
 
 int
-tc_ignore_data_pending(void)
+tc_ignore_data_pending(SSL *s __attribute__((unused)))
 {
 	return 0;
 }

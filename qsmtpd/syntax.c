@@ -85,7 +85,7 @@ wait_for_quit(void)
 void
 sync_pipelining(void)
 {
-	int i = data_pending();
+	int i = data_pending(xmitstat.ssl);
 	if (i == 0)
 		return;
 	if (i < 0)
@@ -121,7 +121,7 @@ sync_pipelining(void)
 int
 hasinput(const int quitloop)
 {
-	int rc = data_pending();
+	int rc = data_pending(xmitstat.ssl);
 
 	if (rc <= 0)
 		return -rc;

@@ -7,6 +7,7 @@
 #include "compiler.h"
 #include "sstring.h"
 
+#include <openssl/ssl.h>
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
@@ -20,7 +21,7 @@ static inline int netwrite(const char *) __attribute__ ((nonnull (1)));
 extern int netnwrite(const char *, const size_t) __attribute__ ((nonnull (1))) ATTR_ACCESS(read_only, 1, 2);
 extern size_t net_readbin(size_t, char *) __attribute__ ((nonnull (2))) ATTR_ACCESS(read_write, 2, 1);
 extern size_t net_readline(size_t, char *) __attribute__ ((nonnull (2))) ATTR_ACCESS(read_write, 2, 1);
-extern int data_pending(void);
+extern int data_pending(SSL *s);
 
 extern time_t timeout;
 extern int socketd;

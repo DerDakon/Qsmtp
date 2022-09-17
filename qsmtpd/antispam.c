@@ -152,7 +152,7 @@ static unsigned int tarpitcount = 0;	/* number of extra seconds from tarpit */
 void
 tarpit(void)
 {
-	int i = data_pending();
+	int i = data_pending(xmitstat.ssl);
 	if (i > 0)
 		return;
 	if (i < 0)

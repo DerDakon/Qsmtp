@@ -754,12 +754,12 @@ net_readline(size_t num, char *buf)
  * This will return -ECONNRESET if the connection has been closed by the remote end.
  */
 int
-data_pending(void)
+data_pending(SSL *s)
 {
 	if (linenlen) {
 		return 1;
-	} else if (ssl) {
-		int i = SSL_pending(ssl);
+	} else if (s) {
+		int i = SSL_pending(s);
 		return (i < 0) ? -errno : i;
 	} else {
 		struct pollfd rfd = {

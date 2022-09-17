@@ -69,7 +69,7 @@ SSL_pending(const SSL *s __attribute__ ((unused)))
 static int
 unexpected_pending(void)
 {
-	if (data_pending()) {
+	if (data_pending(NULL)) {
 		fprintf(stderr, "%s: data pending at start of test\n", testname);
 		return 1;
 	} else {
@@ -170,7 +170,7 @@ test_pending()
 
 	/* nothing happened yet, so no data should be pending */
 	for (int i = 0; i < 10; i++)
-		if (data_pending()) {
+		if (data_pending(NULL)) {
 			fprintf(stderr, "spurious data pending\n");
 			ret++;
 		}
@@ -184,13 +184,13 @@ test_pending()
 
 	/* now we have data read, and another line of data should be pending */
 
-	if (!data_pending()) {
+	if (!data_pending(NULL)) {
 		fprintf(stderr, "no data available on first try\n");
 		ret++;
 	}
 
 	/* since we did not read in anything here the data should still be available */
-	if (!data_pending()) {
+	if (!data_pending(NULL)) {
 		fprintf(stderr, "no data available on second try\n");
 		ret++;
 	}
@@ -201,29 +201,28 @@ test_pending()
 		return ++ret;
 	}
 
-	if (data_pending()) {
+	if (data_pending(NULL)) {
 		fprintf(stderr, "spurious data pending after read\n");
 		ret++;
 	}
 
 	/* pretend we would be in SSL mode */
 	SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
-	ssl = SSL_new(ctx);
+	SSL *myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);
 	allow_ssl_pending = 0;
-	if (data_pending()) {
+	if (data_pending(myssl)) {
 		fprintf(stderr, "spurious SSL data pending\n");
 		ret++;
 	}
 	allow_ssl_pending = 1;
-	if (!data_pending()) {
+	if (!data_pending(myssl)) {
 		fprintf(stderr, "SSL pseudo data missing\n");
 		ret++;
 	}
-	SSL_free(ssl);
-	ssl = NULL;
+	SSL_free(myssl);
 	allow_ssl_pending = -1;
-	if (data_pending()) {
+	if (data_pending(NULL)) {
 		fprintf(stderr, "spurious data pending after SSL\n");
 		ret++;
 	}
@@ -442,9 +441,9 @@ test_long_lines(void)
 		send_all_test_data(digits);
 	send_all_test_data(valid);
 
-	i = data_pending();
+	i = data_pending(NULL);
 	if (i != 1) {
-		fprintf(stderr, "data_pending() with available data returned %i instead of 1\n", i);
+		fprintf(stderr, "data_pending(NULL) with available data returned %i instead of 1\n", i);
 		ret++;
 	}
 
@@ -778,7 +777,7 @@ test_net_writen(void)
 
 	if (read_check("250 firstsecondthird"))
 		ret++;
-	if (data_pending()) {
+	if (data_pending(NULL)) {
 		fprintf(stderr, "%s: spurious data after 'simple' test\n", testname);
 		ret++;
 	}
@@ -807,7 +806,7 @@ test_net_writen(void)
 
 	if (read_check(exp))
 		ret++;
-	if (data_pending()) {
+	if (data_pending(NULL)) {
 		fprintf(stderr, "%s: spurious data after 'many' test\n", testname);
 		ret++;
 	}
@@ -879,7 +878,7 @@ test_net_write_multiline(void)
 
 	if (read_check("250 firstsecondthird"))
 		ret++;
-	if (data_pending()) {
+	if (data_pending(NULL)) {
 		fprintf(stderr, "%s: spurious data after 'simple' test\n", testname);
 		ret++;
 	}
@@ -904,7 +903,7 @@ test_net_write_multiline(void)
 	if (read_check(exp))
 		ret++;
 
-	if (data_pending()) {
+	if (data_pending(NULL)) {
 		fprintf(stderr, "%s: spurious data after 'many' test\n", testname);
 		ret++;
 	}
@@ -965,7 +964,7 @@ setup_socketpair(void)
 }
 
 /**
- * @brief test using a sopcketpair that data_pending() detects a socket closed by the remote end
+ * @brief test using a sopcketpair that data_pending(NULL) detects a socket closed by the remote end
  */
 static int
 test_pending_socketpair_closed(void)
@@ -978,9 +977,9 @@ test_pending_socketpair_closed(void)
 
 	close(i);
 
-	i = data_pending();
+	i = data_pending(NULL);
 	if (i != -ECONNRESET) {
-		fprintf(stderr, "data_pending() on closed socket returned %i instead of %i (-ECONNRESET)\n", i, -ECONNRESET);
+		fprintf(stderr, "data_pending(NULL) on closed socket returned %i instead of %i (-ECONNRESET)\n", i, -ECONNRESET);
 		ret++;
 	}
 
@@ -1193,7 +1192,7 @@ main(int argc, char **argv)
 	ret += test_net_writen();
 	ret += test_net_write_multiline();
 
-	int i = data_pending();
+	int i = data_pending(NULL);
 	if (i != 0) {
 		fprintf(stderr, "data pending at end of tests: %i\n", i);
 		ret++;
@@ -1202,9 +1201,9 @@ main(int argc, char **argv)
 	close(0);
 	close(socketd);
 
-	i = data_pending();
+	i = data_pending(NULL);
 	if (i != -EBADF) {
-		fprintf(stderr, "data_pending() on closed fd returned %i instead of %i (-EBADF)\n", i, -EBADF);
+		fprintf(stderr, "data_pending(NULL) on closed fd returned %i instead of %i (-EBADF)\n", i, -EBADF);
 		ret++;
 	}
 

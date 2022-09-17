@@ -100,7 +100,7 @@ DECLARE_TC_SETUP(net_readbin);
 typedef size_t (func_net_readline)(size_t, char *);
 DECLARE_TC_SETUP(net_readline);
 
-typedef int (func_data_pending)(void);
+typedef int (func_data_pending)(SSL *);
 DECLARE_TC_SETUP(data_pending);
 
 typedef void (func_net_conn_shutdown)(const enum conn_shutdown_type);
