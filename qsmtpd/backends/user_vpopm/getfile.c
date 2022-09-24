@@ -60,32 +60,29 @@ getfile(const struct userconf *ds, const char *fn, enum config_domain *type, con
 static long
 checkconfig(const char * const *config, const char *flag, const size_t l)
 {
-	int i = 0;
-
 	errno = 0;
 	if (!config || !*config)
 		return 0;
-	while (config[i]) {
+
+	for (int i = 0; config[i]; i++) {
 		if (!strncmp(config[i], flag, l)) {
 			if (!config[i][l]) {
 				/* only the name of the value is given: implicitely set to 1 */
 				return 1;
-			} else {
-				if (config[i][l] == '=') {
-					char *s;
-					long r;
+			} else if (config[i][l] == '=') {
+				char *s;
+				long r;
 
-					r = strtol(config[i] + l + 1, &s, 10);
-					if (*s) {
-						errno = EINVAL;
-						return -1;
-					}
-					return r;
+				r = strtol(config[i] + l + 1, &s, 10);
+				if (*s) {
+					errno = EINVAL;
+					return -1;
 				}
+				return r;
 			}
 		}
-		i++;
 	}
+
 	return 0;
 }
 
