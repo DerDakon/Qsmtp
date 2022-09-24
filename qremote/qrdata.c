@@ -397,7 +397,7 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 
 	*multipart = is_multipart(&ctype, boundary);
 	if (*multipart > 0) {
-		/* content is implicitely 7bit if no declaration is present */
+		/* content is implicitly 7bit if no declaration is present */
 		if (cenc.len) {
 			wrap_header(buf, cenc.s - buf);
 			wrap_header(cenc.s + cenc.len, buf + header - cenc.s - cenc.len);

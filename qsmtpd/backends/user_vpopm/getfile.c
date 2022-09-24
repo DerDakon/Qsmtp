@@ -67,7 +67,7 @@ checkconfig(const char * const *config, const char *flag, const size_t l)
 	for (int i = 0; config[i]; i++) {
 		if (!strncmp(config[i], flag, l)) {
 			if (!config[i][l]) {
-				/* only the name of the value is given: implicitely set to 1 */
+				/* only the name of the value is given: implicitly set to 1 */
 				return 1;
 			} else if (config[i][l] == '=') {
 				char *s;
