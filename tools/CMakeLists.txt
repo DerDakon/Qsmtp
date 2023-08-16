@@ -51,6 +51,11 @@ target_link_libraries(clearpass
 
 add_executable(addipbl addipbl.c)
 
+add_executable(dumpipbl dumpipbl.c)
+target_link_libraries(dumpipbl
+	qsmtp_lib
+)
+
 add_executable(sendremote sendremote.c)
 
 include_directories(
@@ -62,6 +67,7 @@ install(TARGETS
 		qpencode
 		clearpass
 		addipbl
+		dumpipbl
 		sendremote
 #		fcshell
 	DESTINATION ${CMAKE_INSTALL_BINDIR}
