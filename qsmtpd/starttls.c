@@ -315,7 +315,7 @@ tls_init()
 {
 	const char *ciphers = "DEFAULT";
 	string saciphers;
-	const char ciphfn[] = "tlsserverciphers";
+	const char *ciphfn = "tlsserverciphers";
 	long ssl_options = SSL_OP_SINGLE_DH_USE;
 
 	SSL_library_init();

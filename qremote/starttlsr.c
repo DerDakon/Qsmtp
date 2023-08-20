@@ -44,8 +44,8 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 	char **saciphers;
 	const char *ciphers;
 	size_t fqlen = 0;
-	const char fnprefix[] = "control/tlshosts/";
-	const char fnsuffix[] = ".pem";
+	const char *fnprefix = "control/tlshosts/";
+	const char *fnsuffix = ".pem";
 	char servercert[strlen(fnprefix) + DOMAINNAME_MAX + strlen(fnsuffix) + 1];
 
 	if (partner_fqdn == NULL) {

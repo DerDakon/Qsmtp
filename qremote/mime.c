@@ -193,7 +193,7 @@ is_multipart(const cstring *line, cstring *boundary)
 
 	i++;
 	while (1) {
-		const char sboundary[] = "boundary=";
+		const char *sboundary = "boundary=";
 		const size_t blen = strlen(sboundary);
 
 		ch += i;

@@ -54,7 +54,7 @@ check_max_bad_commands(void)
 void
 wait_for_quit(void)
 {
-	const char quitcmd[] = "QUIT";
+	const char *quitcmd = "QUIT";
 
 	/* this is the bastard version of the main command loop */
 	while (1) {

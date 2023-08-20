@@ -18,7 +18,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-static const char noqueue[] = "451 4.3.2 can not connect to queue\r\n";
+static const char *noqueue = "451 4.3.2 can not connect to queue\r\n";
 static pid_t qpid;			/* the pid of qmail-queue */
 int queuefd_data = -1;			/**< descriptor to send message data to qmail-queue */
 int queuefd_hdr = -1;			/**< descriptor to send header data to qmail-queue */

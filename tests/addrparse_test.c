@@ -269,7 +269,7 @@ main(void)
 		struct string addr1 = STREMPTY_INIT, addr2 = STREMPTY_INIT;
 		char *more;
 		struct userconf ds;
-		const char netstring[] = "501 5.1.3 domain of mail address is syntactically incorrect\r\n";
+		const char *netstring = "501 5.1.3 domain of mail address is syntactically incorrect\r\n";
 
 		userconf_init(&ds);
 

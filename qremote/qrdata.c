@@ -161,8 +161,7 @@ send_plain(const char *buf, const off_t len)
 static void
 recodeheader(void)
 {
-	static const char recodedstr[] = "Content-Transfer-Encoding: "
-			"quoted-printable\r\n"
+	static const char *recodedstr = "Content-Transfer-Encoding: quoted-printable\r\n"
 			"X-MIME-Autoconverted: from 8bit to quoted-printable by Qremote " QSMTPVERSION " at ";
 	char buf[heloname.len + 2 + strlen(recodedstr)];
 
@@ -352,8 +351,8 @@ qp_header(const char *buf, const off_t len, cstring *boundary, int *multipart, c
 		case 'C':
 			{
 				off_t rest = len - off;
-				static const char content_type[] = "ontent-Type:";
-				static const char content_tr_enc[] = "ontent-Transfer-Encoding:";
+				static const char *content_type = "ontent-Type:";
+				static const char *content_tr_enc = "ontent-Transfer-Encoding:";
 				const char *cr = buf + off;
 
 				if ((rest >= (off_t)strlen(content_type)) &&
