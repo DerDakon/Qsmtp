@@ -209,6 +209,8 @@ The only allowed envelope recipient address without @ sign is postmaster.
 If this 2048 bit Diffie Hellman group is provided,
 .B Qsmtpd
 will use it for TLS sessions instead of generaring one on-the-fly.
+When OpenSSL 1.1.0 or newer is used this file will be ignored and the builtin
+DH group from OpenSSL is used instead.
 
 .TP 4
 .I rsa2048.pem

@@ -124,6 +124,7 @@ tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)),
 	return rsa;
 }
 
+#ifndef SSL_set_dh_auto
 static DH *
 tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)
 {
@@ -157,6 +158,7 @@ tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), 
 
 	return dh;
 }
+#endif
 
 static int __attribute__((nonnull(1, 2)))
 tls_out(const char *s1, const char *s2, const int def_return)
@@ -394,7 +396,11 @@ tls_init()
 	}
 
 	SSL_set_tmp_rsa_callback(myssl, tmp_rsa_cb);
+#ifdef SSL_set_dh_auto
+	SSL_set_dh_auto(myssl, 1);
+#else
 	SSL_set_tmp_dh_callback(myssl, tmp_dh_cb);
+#endif
 	j = SSL_set_rfd(myssl, 0);
 	if (j == 1)
 		j = SSL_set_wfd(myssl, socketd);
