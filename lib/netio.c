@@ -132,9 +132,10 @@ readinput(char *buffer, const size_t len, const int fatal)
 		case -ECONNRESET:
 			retval = 0;
 			break;
+		case -EPROTO:
 		case -ETIMEDOUT:
 			if (fatal)
-				dieerror(ETIMEDOUT);
+				dieerror(-r);
 			/* fallthrough */
 		default:
 			if (r < 0) {
@@ -411,6 +412,7 @@ netnwrite(const char *s, const size_t l)
 		switch (r) {
 		case -ETIMEDOUT:
 		case -ECONNRESET:
+		case -EPROTO:
 			dieerror(-r);
 		default:
 			if (r < 0) {
