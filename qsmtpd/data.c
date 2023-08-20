@@ -107,10 +107,10 @@ write_received(const int chunked)
 	 * and hopefully merge both code paths and use an offset or something
 	 * like that. */
 	size_t i = (authhide && is_authenticated_client()) ? 1 : 0;
-	const char afterprot[]     =  "\n\tfor <";	/* the string to be written after the protocol */
-	const char afterprotauth[] = "A\n\tfor <";	/* the string to be written after the protocol for authenticated mails*/
-	const char authstr[] = ") (auth=";		/* the string to be written on password authenticatation */
-	const char certstr[] = ") (cert=";		/* the string to be written on certificate authenticatation */
+	const char *afterprot     =  "\n\tfor <";	/* the string to be written after the protocol */
+	const char *afterprotauth = "A\n\tfor <";	/* the string to be written after the protocol for authenticated mails*/
+	const char *authstr = ") (auth=";		/* the string to be written on password authenticatation */
+	const char *certstr = ") (cert=";		/* the string to be written on certificate authenticatation */
 	struct iovec wdata[20];
 	unsigned int wpos = 0;
 	ssize_t wlen = 0;
