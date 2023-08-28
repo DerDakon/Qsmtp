@@ -53,7 +53,7 @@ else ()
 endif ()
 set(AUTOQMAIL "${AUTOQMAIL}" CACHE PATH "Directory of qmail installation (usually /var/qmail)")
 
-set(QSMTP_VERSION "${Qsmtp_VERSION}")
+set(QSMTP_VERSION "${Qsmtp_VERSION}dev")
 
 find_package(OpenSSL 1.1 REQUIRED)
 
