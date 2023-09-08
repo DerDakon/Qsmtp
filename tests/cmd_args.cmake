@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.0...3.27)
 
 # The maximum permitted line length without extensions is 510 characters + CRLF.
 # The easiest way to have a otherwise valid line that violates this length limit

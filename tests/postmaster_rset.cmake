@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.0...3.27)
 
 execute_process(COMMAND sleep 15)
 execute_process(COMMAND ${CMAKE_COMMAND} -E echo "HELO nonsense.example.org\r")
