@@ -258,6 +258,9 @@ include_directories(
 add_subdirectory(lib)
 add_subdirectory(qsmtpd)
 add_subdirectory(qremote)
+
+option(BUILD_DEVTOOLS "Build also tools only useful for development" OFF)
+
 add_subdirectory(tools)
 
 if (BUILD_TESTING)

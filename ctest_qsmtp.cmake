@@ -142,6 +142,8 @@ list(APPEND CONF_OPTIONS "-DCMAKE_BUILD_TYPE=Debug")
 list(APPEND CONF_OPTIONS "-DAUTOQMAIL=${CTEST_BINARY_DIRECTORY}/var/qmail")
 # get more coverage: enable some optional features
 list(APPEND CONF_OPTIONS "-DCHUNKING=On" "-DAUTHCRAM=On")
+# build all the tools
+list(APPEND CONF_OPTIONS "-DBUILD_DEVTOOLS=On")
 
 ctest_configure(
 		OPTIONS "${CONF_OPTIONS}"

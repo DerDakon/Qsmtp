@@ -21,11 +21,13 @@ install(TARGETS
 	COMPONENT tools
 )
 
-add_executable(testspf testspf.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
-target_link_libraries(testspf
-	qsmtp_lib
-	qsmtp_io_lib
-)
+if (BUILD_DEVTOOLS)
+	add_executable(testspf testspf.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
+	target_link_libraries(testspf
+		qsmtp_lib
+		qsmtp_io_lib
+	)
+endif ()
 
 add_executable(spfquery spfquery.c ${CMAKE_SOURCE_DIR}/qsmtpd/spf.c ${CMAKE_SOURCE_DIR}/qsmtpd/antispam.c)
 target_link_libraries(spfquery
@@ -33,21 +35,23 @@ target_link_libraries(spfquery
 	qsmtp_io_lib
 )
 
-add_executable(qpencode
-	qp.c
-	${CMAKE_SOURCE_DIR}/qremote/mime.c
-	${CMAKE_SOURCE_DIR}/qremote/qrdata.c
-)
-target_link_libraries(qpencode
-	qsmtp_lib
-	qsmtp_io_lib
-)
+if (BUILD_DEVTOOLS)
+	add_executable(qpencode
+		qp.c
+		${CMAKE_SOURCE_DIR}/qremote/mime.c
+		${CMAKE_SOURCE_DIR}/qremote/qrdata.c
+	)
+	target_link_libraries(qpencode
+		qsmtp_lib
+		qsmtp_io_lib
+	)
 
-add_executable(clearpass clearpass.c)
-target_link_libraries(clearpass
-	qsmtp_lib
-	qsmtp_io_lib
-)
+	add_executable(clearpass clearpass.c)
+	target_link_libraries(clearpass
+		qsmtp_lib
+		qsmtp_io_lib
+	)
+endif ()
 
 add_executable(addipbl addipbl.c)
 
@@ -56,19 +60,18 @@ target_link_libraries(dumpipbl
 	qsmtp_lib
 )
 
-add_executable(sendremote sendremote.c)
+if (BUILD_DEVTOOLS)
+	add_executable(sendremote sendremote.c)
+endif ()
 
 include_directories(
 		${OWFAT_INCLUDE_DIRS}
 )
 
 install(TARGETS
-		testspf
-		qpencode
-		clearpass
 		addipbl
 		dumpipbl
-		sendremote
+		spfquery
 #		fcshell
 	DESTINATION ${CMAKE_INSTALL_BINDIR}
 	COMPONENT tools
