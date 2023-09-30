@@ -44,15 +44,12 @@ need_recode(const char *buf, off_t len)
 {
 	int res = 0;
 	int llen = 0;
-	int in_header = 1;
+	int long_flag = recode_long_header;
 	off_t pos = 0;
 
 	while ((pos < len) && (res != 3)) {
 		if (llen > 998) {
-			if (in_header)
-				res |= recode_long_header;
-			else
-				res |= recode_long_line;
+			res |= long_flag;
 		}
 		if (((signed char)buf[pos]) <= 0) {
 			res |= recode_8bit;
@@ -60,8 +57,10 @@ need_recode(const char *buf, off_t len)
 		} else if ((buf[pos] == '\r') || (buf[pos] == '\n')) {
 			if ((buf[pos] == '\r') && (pos < len - 1) && (buf[pos + 1] == '\n'))
 				pos++;
-			if (llen == 0)
-				in_header = 0;
+			if (llen == 0) {
+				/* header is done, now long recoding affects body */
+				long_flag = recode_long_line;
+			}
 			llen = 0;
 			/* if buffer is too short we don't need to check for long lines */
 			if ((len - pos < 998) && (res & 1))
