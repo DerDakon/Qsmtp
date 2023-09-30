@@ -7,6 +7,7 @@
 
 #include <fmt.h>
 #include <netio.h>
+#include <mmap.h>
 #include <qremote/qrdata.h>
 #include <sstring.h>
 
@@ -103,17 +104,9 @@ int main(int argc, char *argv[])
 	if (fd < 0)
 		return errno;
 
-	struct stat st;
-	int i = fstat(fd, &st);
-	if (i) {
-		close(fd);
-		return i;
-	}
+	msgdata = mmap_fd(fd, &msgsize);
 
-	msgsize = st.st_size;
-	msgdata = mmap(NULL, msgsize, PROT_READ, MAP_SHARED, fd, 0);
-
-	if (msgdata == MAP_FAILED)
+	if (msgdata == NULL)
 		return errno;
 
 	send_data(need_recode(msgdata, msgsize));
