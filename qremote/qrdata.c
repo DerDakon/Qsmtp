@@ -47,7 +47,7 @@ need_recode(const char *buf, off_t len)
 	int long_flag = recode_long_header;
 	off_t pos = 0;
 
-	while ((pos < len) && (res != 3)) {
+	while ((pos < len) && ((res & recode_qp_body) != recode_qp_body)) {
 		if (llen > 998) {
 			res |= long_flag;
 		}
