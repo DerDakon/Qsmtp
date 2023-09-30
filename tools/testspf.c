@@ -1,5 +1,9 @@
 /** \file testspf.c
  \brief tool for checking SPF entries
+
+ \details With this tool you can check a given SPF string, passed as argument to the binary,
+ with a few hardcoded values. No network looksups will be done. This is mainly useful when
+ debugging the SPF implementation. See spfquery for a tool to do actual SPF lookups.
  */
 
 #include <qsmtpd/antispam.h>

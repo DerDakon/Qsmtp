@@ -1,5 +1,8 @@
-/** \file testspf.c
+/** \file spfquery.c
  \brief tool for checking SPF entries
+
+ \details With this tools you can construct the SMTP context and then do a real SPF lookup and
+ check the outcome.
  */
 
 #include <qsmtpd/antispam.h>

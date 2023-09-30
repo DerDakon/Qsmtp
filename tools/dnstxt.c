@@ -1,3 +1,11 @@
+/** \file dnstxt.c
+ \brief tool to query the DNS TXT record for a given host
+
+ \details This uses the exact same code that Qremote uses to check the TXT record.
+ It should give the same result as `host -t TXT HOSTNAME` with only formatting
+ differences.
+ */
+
 #include <errno.h>
 #include <netinet/in.h>
 #include <stdint.h>

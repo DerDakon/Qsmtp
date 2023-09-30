@@ -1,3 +1,11 @@
+/** \file dnsdane.c
+ \brief tool to query the DNS TLSA record for a given host
+
+ \details This uses the exact same code that Qremote uses to check the TLSA record.
+ It should give the same result as `host -t TLSA _25._tcp.HOSTNAME` with only formatting
+ differences.
+ */
+
 #include <qdns_dane.h>
 
 #include <errno.h>

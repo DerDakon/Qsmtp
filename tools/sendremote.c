@@ -1,3 +1,11 @@
+/** \file sendremote.c
+ \brief tool to directly send a file to a remote host
+
+ \details This tool can be used to directly send the contents of a file, which is expected to
+ contain the complete email including headers, to a remote host. If will directly execute
+ Qremote, i.e. there will be no queueing or transmission retry.
+ */
+
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
