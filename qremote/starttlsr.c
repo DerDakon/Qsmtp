@@ -64,7 +64,7 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 	}
 
 	SSL_library_init();
-	SSL_CTX *ctx = SSL_CTX_new(SSLv23_client_method());
+	SSL_CTX *ctx = SSL_CTX_new(TLS_client_method());
 	if (!ctx) {
 		const char *msg[] = { "Z4.5.0 TLS error initializing ctx: ", ssl_error(), "; connecting to ",
 				rhost };

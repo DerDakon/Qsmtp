@@ -324,7 +324,7 @@ tls_init()
 	STREMPTY(saciphers);
 
 	/* a new SSL context with the bare minimum of options */
-	SSL_CTX *ctx = SSL_CTX_new(SSLv23_server_method());
+	SSL_CTX *ctx = SSL_CTX_new(TLS_server_method());
 	if (!ctx) {
 		return tls_err("unable to initialize ctx");
 	}

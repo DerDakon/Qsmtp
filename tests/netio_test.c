@@ -207,7 +207,7 @@ test_pending()
 	}
 
 	/* pretend we would be in SSL mode */
-	SSL_CTX *ctx = SSL_CTX_new(SSLv23_method());
+	SSL_CTX *ctx = SSL_CTX_new(TLS_method());
 	SSL *myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);
 	allow_ssl_pending = 0;
