@@ -851,19 +851,26 @@ else ()
 			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n${QSMTPD_QUEUE_LOG}250 2\\.1\\.5 sender <> is syntactically correct\n250 2\\.1\\.0 recipient <postmaster> OK\n550 5\\.5\\.3 bounce messages must not have more than one recipient\nrejected message to <postmaster> from <> from IP \\[::ffff:127.0.0.1\\] {bad bounce}\nrejected message to <postmaster> from <> from IP \\[::ffff:127.0.0.1\\] {bad bounce}\n554 5\\.1\\.1 no valid recipients\n${QSMTPD_QUIT_LINE}$")
 endif ()
 
-set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmd_args.cmake")
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_cmd_args.cmake" @ONLY)
-add_test(NAME "Qsmtpd_cmd_args"
-		COMMAND "${CMAKE_COMMAND}"
-				-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_cmd_args.cmake")
+foreach (cmd_test IN ITEMS ehlo helo)
+	set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmd_args_${cmd_test}.cmake")
+	configure_file("${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_quit.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_cmd_args_${cmd_test}.cmake" @ONLY)
+	add_test(NAME "Qsmtpd_cmd_args_${cmd_test}"
+			COMMAND "${CMAKE_COMMAND}"
+					-P "${CMAKE_CURRENT_BINARY_DIR}/Qsmtpd_cmd_args_${cmd_test}.cmake")
+endforeach()
+
 # Do not add \r here, looks like CMake automatically strips it, so just
 # assume we are doing it right.
 if (NOSTDERR)
-	set_tests_properties(Qsmtpd_cmd_args PROPERTIES
-			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_HELO_RESPONSE}${QSMTPD_HELO_RESPONSE}500 5\\.5\\.2 command syntax error\n250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n501 5\\.5\\.2 unrecognized command parameter\n250 2\\.1\\.5 sender <> is syntactically correct\n500 5\\.5\\.2 command syntax error\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n250 2\\.1\\.5 sender <> is syntactically correct\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+500-5\\.5\\.2 line too long\n500-5\\.5\\.2 This is usually a bug in your mail client\n500 5\\.5\\.2 Try to use a different encoding like quoted-printable for this mail.\n250 2.0.0 ok\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
+	set_tests_properties(Qsmtpd_cmd_args_helo PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_HELO_RESPONSE}${QSMTPD_HELO_RESPONSE}500 5\\.5\\.2 command syntax error\n${QSMTPD_QUIT_LINE}$")
+	set_tests_properties(Qsmtpd_cmd_args_ehlo PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n501 5\\.5\\.2 unrecognized command parameter\n250 2\\.1\\.5 sender <> is syntactically correct\n500 5\\.5\\.2 command syntax error\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n250 2\\.1\\.5 sender <> is syntactically correct\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+500-5\\.5\\.2 line too long\n500-5\\.5\\.2 This is usually a bug in your mail client\n500 5\\.5\\.2 Try to use a different encoding like quoted-printable for this mail.\n250 2.0.0 ok\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}$")
 else ()
-	set_tests_properties(Qsmtpd_cmd_args PROPERTIES
-			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_HELO_RESPONSE}${QSMTPD_HELO_RESPONSE}(bad SMTP command syntax)?500 5\\.5\\.2 command syntax error\n(bad SMTP command syntax)?250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n(bad SMTP command parameter)?501 5\\.5\\.2 unrecognized command parameter\n(bad SMTP command parameter)?${QSMTPD_QUEUE_LOG}250 2\\.1\\.5 sender <> is syntactically correct\n500 5\\.5\\.2 command syntax error\n501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n(bad SMTP command syntax)?250 2\\.1\\.5 sender <> is syntactically correct\n(500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+bad SMTP command syntax500-5\\.5\\.2 line too long\n500-5\\.5\\.2 This is usually a bug in your mail client\n500 5\\.5\\.2 Try to use a different encoding like quoted-printable for this mail.\n250 2.0.0 ok\ntoo long SMTP line501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n${QSMTPD_QUIT_LINE}bad SMTP command syntax$")
+	set_tests_properties(Qsmtpd_cmd_args_helo PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}${QSMTPD_HELO_RESPONSE}${QSMTPD_HELO_RESPONSE}(bad SMTP command syntax)?500 5\\.5\\.2 command syntax error\n(bad SMTP command syntax)?${QSMTPD_QUIT_LINE}(bad SMTP command syntax\n)?$")
+	set_tests_properties(Qsmtpd_cmd_args_ehlo PROPERTIES
+			PASS_REGULAR_EXPRESSION "^${PROFILE_MSG}${QSMTPD_GREETING_LINE}250-[^\n ]*\n250-ENHANCEDSTATUSCODES\n250-PIPELINING\n250-8BITMIME\n(.*\n)?250 SIZE( [0-9]+)?\n(bad SMTP command parameter)?501 5\\.5\\.2 unrecognized command parameter\n(bad SMTP command parameter)?${QSMTPD_QUEUE_LOG}250 2\\.1\\.5 sender <> is syntactically correct\n(bad SMTP command parameter)?500 5\\.5\\.2 command syntax error\n(bad SMTP command syntax)?501 5\\.1\\.3 domain of mail address is syntactically incorrect\n(bad SMTP command syntax)?250 2\\.0\\.0 ok\n(bad SMTP command syntax)?250 2\\.1\\.5 sender <> is syntactically correct\n((bad SMTP command syntax)*500 5\\.5\\.2 command syntax error\n250 2\\.0\\.0 ok\n)+bad SMTP command syntax500-5\\.5\\.2 line too long\n500-5\\.5\\.2 This is usually a bug in your mail client\n500 5\\.5\\.2 Try to use a different encoding like quoted-printable for this mail.\n250 2.0.0 ok\ntoo long SMTP line501 5\\.1\\.3 domain of mail address is syntactically incorrect\n250 2\\.0\\.0 ok\n500 5\\.5\\.2 command syntax error\n503 5\\.5\\.1 SMTP command sent after end of PIPELINING command group\n503 5\\.5\\.1 Bad sequence of commands\n(bad SMTP command syntax)?${QSMTPD_QUIT_LINE}(bad SMTP command syntax\n)?$")
 endif ()
 
 set(TEST_SEQUENCE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Qsmtpd_bad_args.cmake")
