@@ -278,6 +278,10 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 			const char *msg[] = { "unable to verify ", rhost, " with ", servercert,
 					": ", X509_verify_cert_error_string(r), NULL };
 
+			/* no configured cert, but e.g. DANE mismatch */
+			if (!*servercert)
+				msg[2] = "";
+
 			log_writen(LOG_ERR, msg);
 			return EDONE;
 		}
