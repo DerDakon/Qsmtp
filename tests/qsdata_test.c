@@ -663,6 +663,9 @@ check_queueheader(void)
 			break;
 	}
 
+	if (TAILQ_EMPTY(&head))
+		abort();
+
 	struct recip *l = TAILQ_FIRST(&head);
 
 	TAILQ_REMOVE(&head, TAILQ_FIRST(&head), entries);
