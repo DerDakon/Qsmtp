@@ -43,11 +43,11 @@ main(int argc, char **argv)
 
 			for (size_t l = 0; l < info[k].datalen; l++)
 				printf("%02X", info[k].data[l]);
+			printf("\n");
 		}
 
 		daneinfo_free(info, j);
 
-		printf("\n");
 	}
 
 	return 0;
