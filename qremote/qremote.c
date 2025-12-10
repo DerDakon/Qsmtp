@@ -228,11 +228,9 @@ main(int argc, char *argv[])
 	if (ssl) {
 		successmsg[3] = "message ";
 		successmsg[4] = SSL_get_cipher(ssl);
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
 		if (SSL_get0_dane_tlsa(ssl, NULL, NULL, NULL, NULL, NULL) > 0)
 			successmsg[5] = " encrypted and DANE secured";
 		else
-#endif
 			successmsg[5] = " encrypted";
 	}
 

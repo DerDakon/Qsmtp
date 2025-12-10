@@ -91,10 +91,7 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 		SSL_CTX_use_RSAPrivateKey_file(ctx, clientkeyname, SSL_FILETYPE_PEM);
 
 	int tlsa_usable = 0;
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
-#if (OPENSSL_VERSION_NUMBER >= 0x10101000L) && !defined(LIBRESSL_VERSION_NUMBER)
 	SSL_CTX_set_post_handshake_auth(ctx, 1);
-#endif
 	if (tlsa_cnt > 0) {
 		/* find out if there is a usable record at all */
 		for (int i = 0; i < tlsa_cnt; i++) {
@@ -125,10 +122,6 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 			}
 		}
 	}
-#else
-	(void) tlsa_info;
-	(void) tlsa_cnt;
-#endif
 
 	SSL *myssl = SSL_new(ctx);
 	SSL_CTX_free(ctx);
@@ -141,7 +134,6 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 		return -1;
 	}
 
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L) && !defined(LIBRESSL_VERSION_NUMBER)
 	if (tlsa_cnt > 0) {
 		if (SSL_dane_enable(myssl, partner_fqdn) <= 0) {
 			const char *msg[] = { "Z4.5.0 TLS error setting DANE host: ", ssl_error(), "; connecting to ",
@@ -189,7 +181,6 @@ tls_init(const struct daneinfo *tlsa_info, int tlsa_cnt)
 			}
 		}
 	}
-#endif
 
 	if (*servercert) {
 		X509_VERIFY_PARAM *vparam = SSL_get0_param(myssl);
