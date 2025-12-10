@@ -494,6 +494,7 @@ check_queueheader(void)
 
 		memset(&xmitstat, 0, sizeof(xmitstat));
 		xmitstat.ssl = NULL;
+		authhide = 0;
 
 		strncpy(xmitstat.remoteip, "192.0.2.42", sizeof(xmitstat.remoteip));
 
@@ -582,7 +583,6 @@ check_queueheader(void)
 		case 9:
 			testname = "minimal + ident";
 			relayclient = 1;
-			authhide = 0;
 			xmitstat.remoteinfo = "auth=foo"; /* fake attempt */
 			expect = "Received: from unknown ([192.0.2.42]) (ident=auth=foo)\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
@@ -596,7 +596,6 @@ check_queueheader(void)
 			if (idx == 11)
 				testname = "minimal + cert";
 			relayclient = 0;
-			authhide = 0;
 			xmitstat.tlsclient = "mail@cert.example.com";
 			expect = "Received: from unknown ([192.0.2.42]) (cert=mail@cert.example.com)\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with SMTP\n"
@@ -605,7 +604,6 @@ check_queueheader(void)
 		case 12:
 			testname = "chunked";
 			chunked = 1;
-			authhide = 0;
 			relayclient = 1;
 			expect = "Received: from unknown ([192.0.2.42])\n"
 					"\tby testcase.example.net (" VERSIONSTRING ") with (chunked) ESMTP\n"
