@@ -3,7 +3,7 @@
 .SH NAME
 Qremote \- send mail via (E)SMTP
 .SH SYNOPSIS
-.B Qemote
+.B Qremote
 .I host
 .I sender
 .I recip
@@ -11,7 +11,7 @@ Qremote \- send mail via (E)SMTP
 .I recip ...
 ]
 .SH DESCRIPTION
-.B Qemote
+.B Qremote
 reads a mail message from its standard input and sends 
 the message to one or more recipients at a remote host.
 The standard input must be a descriptor of a file opened 
@@ -24,12 +24,10 @@ first argument,
 .B Qremote
 sends the message to
 .IR host ,
-using the routing algorihm described below.
-
-or to a mail exchanger for
+using the routing algorithm described below or to a mail exchanger for
 .I host
-listed in the Domain Name System,
-via the Simple Mail Transfer Protocol (SMTP).
+listed in the Domain Name System, via the Simple Mail Transfer
+Protocol (SMTP), where
 .I host
 can be either a fully-qualified domain name:
 
@@ -67,7 +65,7 @@ to CRLF.
 If the message contains non-ascii characters the message is encoded
 as quoted-printable if the remote server does not support the 8BITMIME
 extension defined in RfC 1652. If a message contains lines with more than
-1000 characters it is always recoded to quoted-printable, sending such a
+1000 characters it is always recoded to quoted-printable: sending such a
 long line would be a SMTP protocol violation.
 
 .B Qremote
@@ -76,10 +74,10 @@ supports CHUNKING no message recoding is done at all.
 .SH "RESULTS"
 .B Qremote
 prints some number of 
-.I recipient reports\fP,
+.I recipient reports\fP
 followed by a
 .I message report\fR.
-Each report is terminated by a 0 byte.
+Each report is terminated by a 0-byte.
 Each report begins with a single letter:
 .TP 5
 r
@@ -105,8 +103,8 @@ Message report: permanent failure.
 .PP
 After this letter comes a human-readable description of
 what happened. No human readable description is printed
-after 'r' status report (
-.B qmail-rspawn
+after 'r' status report
+.RB ( qmail-rspawn
 would get confused otherwise).
 
 The recipient reports will always be printed in the same order as
@@ -249,16 +247,16 @@ the following lookups will be performed:
 .EE
 
 The search is terminated on the first match.
-Please note that a wildcards subdomain does not match mails
+Please note that a wildcard-subdomain does not match messages
 with the absolute destination of the remainder, e. g.
 .I *.example.net
-does not match for a mail sent to
+does not match a message sent to
 .I foo@example.net
 .
 
-Only values from one file are considered, if a value is not set in the first
+Only values from one file are considered; if a value is not set in the first
 matching file no further files will be scanned for that value. Every value that
-is not explicitely given will be taken from the default control files as
+is not explicitly given will be taken from the default control files as
 specified above.
 
 The following example would route mails to port 24 on
@@ -324,7 +322,7 @@ files.
 
 .RS
 .nr step 1 1
-The routing algorihm is as follows:
+The routing algorithm is as follows:
 .IP \n[step] 4
 search for a matching entry in
 .I smtproutes.d
@@ -371,7 +369,7 @@ if you do not accept mail from the network.
 .SH DEBUGGING
 If
 .B Qremote
-has been with the
+is compiled with the
 .I DEBUG_IO
 flag the contents of the SMTP transmissions can be recorded. They will
 be sent to the syslog daemon with facility mail and log level debug. The contents of the SMTP DATA phase will
