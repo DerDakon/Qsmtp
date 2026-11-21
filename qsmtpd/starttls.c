@@ -85,45 +85,6 @@ find_servercert(const char *localport)
 	return -1;
 }
 
-static RSA *
-tmp_rsa_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)
-{
-	BIGNUM *bn;
-	RSA *rsa;
-
-	if (keylen < 2048)
-		keylen = 2048;
-	if (keylen == 2048) {
-		FILE *in = fdopen(openat(controldir_fd, "rsa2048.pem", O_RDONLY | O_CLOEXEC), "r");
-		if (in) {
-			rsa = PEM_read_RSAPrivateKey(in, NULL, NULL, NULL);
-
-			fclose(in);
-
-			if (rsa)
-				return rsa;
-		}
-	}
-
-	rsa = RSA_new();
-	if (rsa == NULL)
-		return NULL;
-
-	bn = BN_new();
-	if (bn == NULL)
-		return NULL;
-
-	BN_set_word(bn, RSA_F4);
-	if (RSA_generate_key_ex(rsa, keylen, bn, NULL) == 0) {
-		RSA_free(rsa);
-		rsa = NULL;
-	}
-
-	BN_free(bn);
-
-	return rsa;
-}
-
 #ifndef SSL_set_dh_auto
 static DH *
 tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)
@@ -395,7 +356,6 @@ tls_init()
 		return tls_err("unable to set ciphers");
 	}
 
-	SSL_set_tmp_rsa_callback(myssl, tmp_rsa_cb);
 #ifdef SSL_set_dh_auto
 	SSL_set_dh_auto(myssl, 1);
 #else
