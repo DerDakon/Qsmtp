@@ -85,42 +85,6 @@ find_servercert(const char *localport)
 	return -1;
 }
 
-#ifndef SSL_set_dh_auto
-static DH *
-tmp_dh_cb(SSL *s __attribute__ ((unused)), int export __attribute__ ((unused)), int keylen)
-{
-	char fname[ULSTRLEN + strlen("dh.pem") + 1];
-
-	if (keylen < 2048)
-		keylen = 2048;
-
-	strcpy(fname, "dh");
-	ultostr(keylen, fname + strlen("dh"));
-	strcat(fname, ".pem");
-
-	FILE *in = fdopen(openat(controldir_fd, fname, O_RDONLY | O_CLOEXEC), "r");
-	if (in) {
-		DH *dh = PEM_read_DHparams(in, NULL, NULL, NULL);
-
-		fclose(in);
-
-		if (dh)
-			return dh;
-	}
-
-	DH *dh = DH_new();
-	if (dh == NULL)
-		return NULL;
-
-	if (DH_generate_parameters_ex(dh, keylen, DH_GENERATOR_2, NULL) != 1) {
-		DH_free(dh);
-		dh = NULL;
-	}
-
-	return dh;
-}
-#endif
-
 static int __attribute__((nonnull(1, 2)))
 tls_out(const char *s1, const char *s2, const int def_return)
 {
@@ -356,11 +320,7 @@ tls_init()
 		return tls_err("unable to set ciphers");
 	}
 
-#ifdef SSL_set_dh_auto
 	SSL_set_dh_auto(myssl, 1);
-#else
-	SSL_set_tmp_dh_callback(myssl, tmp_dh_cb);
-#endif
 	j = SSL_set_rfd(myssl, 0);
 	if (j == 1)
 		j = SSL_set_wfd(myssl, socketd);
