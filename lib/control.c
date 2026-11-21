@@ -504,7 +504,7 @@ finddomain(const char *buf, const off_t size, const char *domain)
 
 	const char *cur = buf;
 	do {
-		char *cure = memchr(cur, '\n', size - pos);
+		const char *cure = memchr(cur, '\n', size - pos);
 
 		if (*cur != '#') {
 			size_t len;

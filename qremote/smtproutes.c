@@ -43,7 +43,7 @@ static const char *tags[] = {
 static int
 hascolon(const char *s)
 {
-	char *colon = strchr(s, ':');
+	const char *colon = strchr(s, ':');
 
 	if (!colon)
 		return 1;

@@ -83,7 +83,7 @@ parsein6(const char *list, int *cnt)
 	for (const char *next = list; next != NULL; ) {
 		char curbuf[INET6_ADDRSTRLEN];
 		const char *parsep;
-		char *end = strchr(next, ';');
+		const char *end = strchr(next, ';');
 		struct in6_addr *n;
 
 		*cnt += 1;

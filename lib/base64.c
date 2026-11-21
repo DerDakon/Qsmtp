@@ -66,9 +66,7 @@ b64decode(const char *in, size_t l, string *out)
 			}
 
 			if (((i + j) < l) && (in[i + j] != B64PAD)) {
-				char *c;
-
-				c = strchr(b64alpha, in[i + j]);
+				const char *c = strchr(b64alpha, in[i + j]);
 
 				if (!c) {
 					free(out->s);
